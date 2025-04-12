@@ -1,0 +1,1111 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ML Workflow Visualizer</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        #canvas {
+            background-color: #f8fafc;
+            background-image:
+                linear-gradient(#e5e7eb 1px, transparent 1px),
+                linear-gradient(90deg, #e5e7eb 1px, transparent 1px);
+            background-size: 20px 20px;
+        }
+
+        .node {
+            transition: all 0.2s ease;
+            z-index: 10;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+            min-width: 120px;
+            text-align: center;
+        }
+
+        .node:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+        }
+
+        .node.selected {
+            outline: 2px solid #f59e0b;
+            box-shadow: 0 0 0 4px rgba(245, 158, 11, 0.3);
+        }
+
+        svg {
+            pointer-events: none;
+        }
+
+        .connection-label {
+            pointer-events: none;
+            z-index: 5;
+            font-size: 0.75rem;
+            font-weight: 500;
+            border: 1px solid #d1d5db;
+        }
+
+        /* Node type colors */
+        .node-data-prep {
+            background-color: #3b82f6;
+        }
+
+        .node-feature-eng {
+            background-color: #10b981;
+        }
+
+        .node-model {
+            background-color: #8b5cf6;
+        }
+
+        .node-evaluation {
+            background-color: #ec4899;
+        }
+
+        .node-deployment {
+            background-color: #f59e0b;
+        }
+
+        /* Sidebar transitions */
+        #sidebar {
+            transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            box-shadow: 2px 0 10px rgba(0, 0, 0, 0.1);
+        }
+
+        @media (max-width: 768px) {
+            #sidebar {
+                transform: translateX(-100%);
+                position: fixed;
+                z-index: 30;
+                height: 100vh;
+                width: 280px;
+            }
+
+            #sidebar.open {
+                transform: translateX(0);
+                box-shadow: 4px 0 15px rgba(0, 0, 0, 0.2);
+            }
+
+            #main-content {
+                margin-left: 0;
+            }
+
+            #mobile-menu-button {
+                display: block;
+            }
+        }
+
+        /* Custom scrollbar */
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: #f1f1f1;
+            border-radius: 4px;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: #c1c1c1;
+            border-radius: 4px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: #a1a1a1;
+        }
+
+        /* Modal animations */
+        .modal-enter {
+            opacity: 0;
+            transform: scale(0.95);
+        }
+
+        .modal-enter-active {
+            opacity: 1;
+            transform: scale(1);
+            transition: opacity 200ms, transform 200ms;
+        }
+
+        .modal-exit {
+            opacity: 1;
+        }
+
+        .modal-exit-active {
+            opacity: 0;
+            transform: scale(0.95);
+            transition: opacity 200ms, transform 200ms;
+        }
+
+        /* Tooltip for nodes */
+        .tooltip {
+            position: absolute;
+            z-index: 50;
+            padding: 0.5rem;
+            background: #1f2937;
+            color: white;
+            border-radius: 0.375rem;
+            font-size: 0.875rem;
+            pointer-events: none;
+            opacity: 0;
+            transition: opacity 0.2s;
+            max-width: 200px;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+        }
+
+        .tooltip-arrow {
+            position: absolute;
+            width: 0;
+            height: 0;
+            border-style: solid;
+        }
+
+        /* Floating action button */
+        .fab {
+            position: fixed;
+            bottom: 2rem;
+            right: 2rem;
+            width: 56px;
+            height: 56px;
+            border-radius: 50%;
+            background: #3b82f6;
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+            cursor: pointer;
+            z-index: 20;
+            transition: all 0.2s;
+        }
+
+        .fab:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+            background: #2563eb;
+        }
+
+        /* Connection line styles */
+        .connection-line {
+            stroke: #4b5563;
+            stroke-width: 2;
+            stroke-dasharray: 0;
+            animation: dashdraw 0.5s linear forwards;
+        }
+
+        @keyframes dashdraw {
+            from {
+                stroke-dashoffset: 100;
+            }
+
+            to {
+                stroke-dashoffset: 0;
+            }
+        }
+    </style>
+</head>
+
+<body class="flex h-screen bg-gray-50 overflow-hidden font-sans">
+    <!-- Mobile menu button -->
+    <div id="mobile-menu-button" class="md:hidden fixed top-4 left-4 z-40">
+        <button class="p-2 rounded-md bg-gray-800 text-white shadow-md hover:bg-gray-700 transition-all">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24"
+                stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
+            </svg>
+        </button>
+    </div>
+
+    <!-- Sidebar -->
+    <div id="sidebar" class="bg-gray-800 w-64 p-4 flex flex-col md:static md:translate-x-0">
+        <div class="flex items-center text-white text-xl font-bold mb-6 pt-4">
+            <i class="fas fa-project-diagram mr-3 text-blue-400"></i>
+            <span>ML Workflow</span>
+        </div>
+
+        <div class="text-gray-300 font-medium mb-3 flex items-center">
+            <i class="fas fa-shapes mr-2"></i>
+            <span>Components</span>
+        </div>
+        <div class="space-y-2 flex-1 overflow-y-auto">
+            <div class="tool-item node-data-prep text-white px-4 py-3 rounded-md cursor-grab select-none flex items-center"
+                draggable="true" data-type="Data Prep">
+                <i class="fas fa-database mr-3"></i>
+                <span>Data Preparation</span>
+            </div>
+            <div class="tool-item node-feature-eng text-white px-4 py-3 rounded-md cursor-grab select-none flex items-center"
+                draggable="true" data-type="Feature Eng">
+                <i class="fas fa-cogs mr-3"></i>
+                <span>Feature Engineering</span>
+            </div>
+            <div class="tool-item node-model text-white px-4 py-3 rounded-md cursor-grab select-none flex items-center"
+                draggable="true" data-type="Model">
+                <i class="fas fa-brain mr-3"></i>
+                <span>Model Training</span>
+            </div>
+            <div class="tool-item node-evaluation text-white px-4 py-3 rounded-md cursor-grab select-none flex items-center"
+                draggable="true" data-type="Evaluation">
+                <i class="fas fa-chart-line mr-3"></i>
+                <span>Model Evaluation</span>
+            </div>
+            <div class="tool-item node-deployment text-white px-4 py-3 rounded-md cursor-grab select-none flex items-center"
+                draggable="true" data-type="Deployment">
+                <i class="fas fa-rocket mr-3"></i>
+                <span>Model Deployment</span>
+            </div>
+        </div>
+
+        <div class="mt-auto pt-4 border-t border-gray-700 space-y-3">
+            <button id="exportBtn"
+                class="w-full bg-indigo-600 text-white px-4 py-2 rounded-md hover:bg-indigo-700 transition-colors flex items-center justify-center gap-2">
+                <i class="fas fa-file-export"></i>
+                Export Workflow
+            </button>
+            <button id="clearBtn"
+                class="w-full bg-red-600 text-white px-4 py-2 rounded-md hover:bg-red-700 transition-colors flex items-center justify-center gap-2">
+                <i class="fas fa-trash-alt"></i>
+                Clear All
+            </button>
+            <button id="helpBtn"
+                class="w-full bg-gray-600 text-white px-4 py-2 rounded-md hover:bg-gray-700 transition-colors flex items-center justify-center gap-2">
+                <i class="fas fa-question-circle"></i>
+                Help
+            </button>
+        </div>
+    </div>
+
+    <!-- Main content -->
+    <div id="main-content" class="flex-1 flex flex-col overflow-hidden md:ml-0">
+        <!-- Top bar -->
+        <div class="bg-white border-b border-gray-200 p-3 flex justify-between items-center shadow-sm">
+            <div class="flex items-center">
+                <h1 class="text-xl font-semibold text-gray-800 ml-2">Workflow Canvas</h1>
+            </div>
+            <div class="flex items-center space-x-2">
+                <button id="zoomInBtn" class="p-2 rounded-md hover:bg-gray-100 text-gray-600">
+                    <i class="fas fa-search-plus"></i>
+                </button>
+                <button id="zoomOutBtn" class="p-2 rounded-md hover:bg-gray-100 text-gray-600">
+                    <i class="fas fa-search-minus"></i>
+                </button>
+                <button id="centerBtn" class="p-2 rounded-md hover:bg-gray-100 text-gray-600">
+                    <i class="fas fa-expand"></i>
+                </button>
+            </div>
+        </div>
+
+        <!-- Canvas -->
+        <div id="canvas" class="flex-1 relative overflow-auto">
+            <svg id="connections" class="absolute top-0 left-0 w-full h-full"></svg>
+            <div id="tooltip" class="tooltip hidden"></div>
+        </div>
+    </div>
+
+    <!-- Floating action button for quick add -->
+    <div id="fab" class="fab hidden">
+        <i class="fas fa-plus text-xl"></i>
+    </div>
+
+    <!-- Instructions Modal -->
+    <div id="instructionsModal"
+        class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 hidden">
+        <div class="bg-white rounded-lg p-6 max-w-2xl w-full max-h-[90vh] overflow-y-auto mx-4 shadow-xl">
+            <div class="flex justify-between items-center mb-4">
+                <h2 class="text-2xl font-bold text-gray-800 flex items-center">
+                    <i class="fas fa-info-circle text-blue-500 mr-2"></i>
+                    ML Workflow Visualizer Guide
+                </h2>
+                <button id="closeInstructions" class="text-gray-500 hover:text-gray-700 transition-colors">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="space-y-6 text-gray-700">
+                <div class="bg-blue-50 p-4 rounded-lg">
+                    <h3 class="font-semibold text-lg text-blue-600 flex items-center">
+                        <i class="fas fa-magic mr-2"></i>
+                        Getting Started
+                    </h3>
+                    <p class="mt-2">Drag components from the sidebar to create your machine learning workflow. Connect
+                        them to define the data flow between steps.</p>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div class="bg-white border border-gray-200 rounded-lg p-4 shadow-sm">
+                        <h3 class="font-semibold text-lg text-blue-600 flex items-center">
+                            <i class="fas fa-mouse-pointer mr-2"></i>
+                            Adding Nodes
+                        </h3>
+                        <p class="mt-2 text-sm">Drag and drop components from the sidebar onto the canvas to create your
+                            ML workflow steps.</p>
+                    </div>
+
+                    <div class="bg-white border border-gray-200 rounded-lg p-4 shadow-sm">
+                        <h3 class="font-semibold text-lg text-blue-600 flex items-center">
+                            <i class="fas fa-link mr-2"></i>
+                            Connecting Nodes
+                        </h3>
+                        <ul class="mt-2 text-sm list-disc pl-5 space-y-1">
+                            <li><strong>Right-click</strong> to select a node (yellow outline)</li>
+                            <li><strong>Right-click</strong> another node to connect them</li>
+                        </ul>
+                    </div>
+
+                    <div class="bg-white border border-gray-200 rounded-lg p-4 shadow-sm">
+                        <h3 class="font-semibold text-lg text-blue-600 flex items-center">
+                            <i class="fas fa-cog mr-2"></i>
+                            Configuring Nodes
+                        </h3>
+                        <p class="mt-2 text-sm"><strong>Left-click</strong> on any node to edit its name, parameters,
+                            and add documentation.</p>
+                    </div>
+
+                    <div class="bg-white border border-gray-200 rounded-lg p-4 shadow-sm">
+                        <h3 class="font-semibold text-lg text-blue-600 flex items-center">
+                            <i class="fas fa-arrows-alt mr-2"></i>
+                            Moving Nodes
+                        </h3>
+                        <p class="mt-2 text-sm">Drag nodes to reposition them. Connections will automatically update to
+                            follow the nodes.</p>
+                    </div>
+                </div>
+
+                <div class="bg-yellow-50 p-4 rounded-lg border-l-4 border-yellow-400">
+                    <h3 class="font-semibold text-lg text-yellow-700 flex items-center">
+                        <i class="fas fa-lightbulb mr-2"></i>
+                        Pro Tip
+                    </h3>
+                    <p class="mt-2">Hover over nodes to see quick details. Double-click to quickly edit node names.</p>
+                </div>
+
+                <div class="pt-4 flex justify-end">
+                    <button id="gotItBtn"
+                        class="bg-blue-600 text-white px-6 py-2 rounded-md hover:bg-blue-700 transition-colors flex items-center">
+                        <i class="fas fa-check mr-2"></i>
+                        Got it, let's start!
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Configuration Modal -->
+    <div id="configModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-40 hidden">
+        <div class="bg-white rounded-lg p-6 w-full max-w-md mx-4 shadow-xl">
+            <div class="flex justify-between items-center mb-4">
+                <h2 class="text-2xl font-bold text-gray-800 flex items-center">
+                    <i class="fas fa-cog text-blue-500 mr-2"></i>
+                    <span id="modalTitle"></span>
+                </h2>
+                <button id="closeModal" class="text-gray-500 hover:text-gray-700 transition-colors">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <form id="configForm" class="space-y-4">
+                <div>
+                    <label class="block text-gray-700 mb-1 font-medium">Node Name</label>
+                    <input type="text" name="name" required
+                        class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all">
+                </div>
+                <div>
+                    <label class="block text-gray-700 mb-1 font-medium">Parameters</label>
+                    <textarea name="params" rows="3" placeholder="Enter key parameters for this step..."
+                        class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all font-mono text-sm"></textarea>
+                </div>
+                <div>
+                    <label class="block text-gray-700 mb-1 font-medium">Documentation</label>
+                    <textarea name="notes" rows="3" placeholder="Add notes or documentation..."
+                        class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"></textarea>
+                </div>
+                <div class="flex justify-end gap-3 pt-2">
+                    <button type="button" id="deleteNode"
+                        class="px-4 py-2 bg-red-100 text-red-700 rounded-md hover:bg-red-200 transition-colors flex items-center">
+                        <i class="fas fa-trash-alt mr-2"></i>
+                        Delete
+                    </button>
+                    <button type="submit"
+                        class="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors flex items-center">
+                        <i class="fas fa-save mr-2"></i>
+                        Save
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Confirmation Modal -->
+    <div id="confirmModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-40 hidden">
+        <div class="bg-white rounded-lg p-6 w-full max-w-md mx-4 shadow-xl">
+            <div class="flex items-center mb-4">
+                <div class="bg-red-100 p-3 rounded-full mr-3">
+                    <i class="fas fa-exclamation-triangle text-red-500 text-xl"></i>
+                </div>
+                <h2 class="text-2xl font-bold text-gray-800">Confirm Clear</h2>
+            </div>
+            <p class="text-gray-700 mb-6">Are you sure you want to clear all nodes and connections? This action cannot
+                be undone.</p>
+            <div class="flex justify-end gap-3">
+                <button type="button" id="cancelClear"
+                    class="px-4 py-2 bg-gray-200 text-gray-800 rounded-md hover:bg-gray-300 transition-colors flex items-center">
+                    <i class="fas fa-times mr-2"></i>
+                    Cancel
+                </button>
+                <button type="button" id="confirmClear"
+                    class="px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 transition-colors flex items-center">
+                    <i class="fas fa-trash-alt mr-2"></i>
+                    Clear All
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Export Modal -->
+    <div id="exportModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-40 hidden">
+        <div class="bg-white rounded-lg p-6 w-full max-w-md mx-4 shadow-xl">
+            <div class="flex justify-between items-center mb-4">
+                <h2 class="text-2xl font-bold text-gray-800 flex items-center">
+                    <i class="fas fa-file-export text-blue-500 mr-2"></i>
+                    Export Workflow
+                </h2>
+                <button id="closeExportModal" class="text-gray-500 hover:text-gray-700 transition-colors">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="space-y-4">
+                <div>
+                    <label class="block text-gray-700 mb-2 font-medium">Export Format</label>
+                    <div class="grid grid-cols-2 gap-3">
+                        <button
+                            class="export-format-btn border border-gray-300 rounded-md p-3 hover:bg-gray-50 transition-colors">
+                            <i class="fas fa-file-code text-blue-500 text-xl mb-2"></i>
+                            <div>JSON</div>
+                        </button>
+                        <button
+                            class="export-format-btn border border-gray-300 rounded-md p-3 hover:bg-gray-50 transition-colors">
+                            <i class="fas fa-file-image text-green-500 text-xl mb-2"></i>
+                            <div>PNG Image</div>
+                        </button>
+                    </div>
+                </div>
+                <div class="pt-4 border-t border-gray-200">
+                    <button id="copyJsonBtn"
+                        class="w-full bg-indigo-600 text-white px-4 py-2 rounded-md hover:bg-indigo-700 transition-colors flex items-center justify-center gap-2">
+                        <i class="fas fa-copy"></i>
+                        Copy JSON to Clipboard
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const canvas = document.getElementById('canvas');
+        const svg = document.getElementById('connections');
+        const configModal = document.getElementById('configModal');
+        const confirmModal = document.getElementById('confirmModal');
+        const instructionsModal = document.getElementById('instructionsModal');
+        const exportModal = document.getElementById('exportModal');
+        const sidebar = document.getElementById('sidebar');
+        const mobileMenuButton = document.getElementById('mobile-menu-button');
+        const configForm = document.getElementById('configForm');
+        const modalTitle = document.getElementById('modalTitle');
+        const clearBtn = document.getElementById('clearBtn');
+        const helpBtn = document.getElementById('helpBtn');
+        const exportBtn = document.getElementById('exportBtn');
+        const closeInstructions = document.getElementById('closeInstructions');
+        const gotItBtn = document.getElementById('gotItBtn');
+        const fab = document.getElementById('fab');
+        const tooltip = document.getElementById('tooltip');
+        const zoomInBtn = document.getElementById('zoomInBtn');
+        const zoomOutBtn = document.getElementById('zoomOutBtn');
+        const centerBtn = document.getElementById('centerBtn');
+        const deleteNodeBtn = document.getElementById('deleteNode');
+        const copyJsonBtn = document.getElementById('copyJsonBtn');
+        const closeExportModal = document.getElementById('closeExportModal');
+
+        let nodes = [];
+        let connections = [];
+        let selectedNode = null;
+        let isDragging = false;
+        let dragOffset = { x: 0, y: 0 };
+        let mouseDownTime = 0;
+        let mouseDownTarget = null;
+        let currentConfigNode = null;
+        let zoomLevel = 1;
+        let canvasOffset = { x: 0, y: 0 };
+
+        // Initialize the app
+        function init() {
+            setupDragAndDrop();
+            setupEventListeners();
+            addArrowheadMarker();
+            showInstructions();
+            setupTooltips();
+            setupFAB();
+        }
+
+        // Show instructions on first load
+        function showInstructions() {
+            const seenInstructions = localStorage.getItem('seenInstructions');
+            if (!seenInstructions) {
+                instructionsModal.classList.remove('hidden');
+                localStorage.setItem('seenInstructions', 'true');
+            }
+        }
+
+        // Setup floating action button
+        function setupFAB() {
+            fab.addEventListener('click', () => {
+                fab.classList.add('hidden');
+                // Show quick add menu
+                // This would be expanded in a full implementation
+            });
+
+            // Show FAB when scrolling
+            canvas.addEventListener('scroll', () => {
+                if (canvas.scrollTop > 100) {
+                    fab.classList.remove('hidden');
+                } else {
+                    fab.classList.add('hidden');
+                }
+            });
+        }
+
+        // Setup tooltips for nodes
+        function setupTooltips() {
+            document.addEventListener('mousemove', (e) => {
+                if (e.target.classList.contains('node')) {
+                    const node = nodes.find(n => n.element === e.target);
+                    if (node) {
+                        tooltip.innerHTML = `
+                            <div class="font-semibold">${node.name}</div>
+                            ${node.params ? `<div class="mt-1 text-sm text-gray-300">${node.params.split('\n')[0]}</div>` : ''}
+                        `;
+                        tooltip.style.left = `${e.clientX + 15}px`;
+                        tooltip.style.top = `${e.clientY + 15}px`;
+                        tooltip.classList.remove('hidden');
+                    }
+                } else {
+                    tooltip.classList.add('hidden');
+                }
+            });
+        }
+
+        // Toggle mobile sidebar
+        function toggleSidebar() {
+            sidebar.classList.toggle('open');
+        }
+
+        // Set up drag and drop functionality
+        function setupDragAndDrop() {
+            // Drag from sidebar
+            document.querySelectorAll('.tool-item').forEach(item => {
+                item.addEventListener('dragstart', (e) => {
+                    e.dataTransfer.setData('text/plain', item.dataset.type);
+                    // Hide any open modals during drag
+                    hideAllModals();
+                });
+            });
+
+            // Drop on canvas
+            canvas.addEventListener('dragover', (e) => {
+                e.preventDefault();
+                e.dataTransfer.dropEffect = 'copy';
+            });
+
+            canvas.addEventListener('drop', (e) => {
+                e.preventDefault();
+                const type = e.dataTransfer.getData('text/plain');
+                if (type) {
+                    const rect = canvas.getBoundingClientRect();
+                    const x = (e.clientX - rect.left + canvas.scrollLeft - 60) / zoomLevel;
+                    const y = (e.clientY - rect.top + canvas.scrollTop - 20) / zoomLevel;
+                    createNode(type, x, y);
+                    // Close mobile sidebar after drop
+                    if (window.innerWidth < 768) {
+                        sidebar.classList.remove('open');
+                    }
+                }
+            });
+        }
+
+        // Set up event listeners
+        function setupEventListeners() {
+            // Mobile menu button
+            mobileMenuButton.addEventListener('click', toggleSidebar);
+
+            // Clear button
+            clearBtn.addEventListener('click', () => {
+                if (nodes.length > 0 || connections.length > 0) {
+                    showModal(confirmModal);
+                }
+            });
+
+            // Export button
+            exportBtn.addEventListener('click', () => {
+                showModal(exportModal);
+            });
+
+            // Close export modal
+            closeExportModal.addEventListener('click', () => {
+                hideModal(exportModal);
+            });
+
+            // Copy JSON button
+            copyJsonBtn.addEventListener('click', () => {
+                const workflowData = {
+                    nodes: nodes.map(node => ({
+                        id: node.id,
+                        type: node.type,
+                        name: node.name,
+                        params: node.params,
+                        notes: node.notes,
+                        x: node.x,
+                        y: node.y
+                    })),
+                    connections
+                };
+
+                navigator.clipboard.writeText(JSON.stringify(workflowData, null, 2))
+                    .then(() => {
+                        copyJsonBtn.innerHTML = '<i class="fas fa-check mr-2"></i> Copied!';
+                        setTimeout(() => {
+                            copyJsonBtn.innerHTML = '<i class="fas fa-copy mr-2"></i> Copy JSON to Clipboard';
+                        }, 2000);
+                    });
+            });
+
+            // Help button
+            helpBtn.addEventListener('click', () => {
+                showModal(instructionsModal);
+            });
+
+            // Close instructions buttons
+            closeInstructions.addEventListener('click', () => {
+                instructionsModal.classList.add('hidden');
+            });
+
+            gotItBtn.addEventListener('click', () => {
+                instructionsModal.classList.add('hidden');
+            });
+
+            // Confirm modal buttons
+            document.getElementById('confirmClear').addEventListener('click', clearCanvas);
+            document.getElementById('cancelClear').addEventListener('click', () => {
+                hideModal(confirmModal);
+            });
+
+            // Close config modal buttons
+            document.getElementById('closeModal').addEventListener('click', () => {
+                hideModal(configModal);
+            });
+
+            // Delete node button
+            deleteNodeBtn.addEventListener('click', () => {
+                if (currentConfigNode) {
+                    deleteNode(currentConfigNode);
+                    hideModal(configModal);
+                }
+            });
+
+            // Zoom controls
+            zoomInBtn.addEventListener('click', () => {
+                zoomLevel = Math.min(2, zoomLevel + 0.1);
+                updateCanvasZoom();
+            });
+
+            zoomOutBtn.addEventListener('click', () => {
+                zoomLevel = Math.max(0.5, zoomLevel - 0.1);
+                updateCanvasZoom();
+            });
+
+            centerBtn.addEventListener('click', centerCanvas);
+
+            // Click outside modals to close
+            document.addEventListener('click', (e) => {
+                if (e.target === configModal || e.target === confirmModal ||
+                    e.target === instructionsModal || e.target === exportModal) {
+                    hideModal(configModal);
+                    hideModal(confirmModal);
+                    hideModal(instructionsModal);
+                    hideModal(exportModal);
+                }
+            });
+
+            // Handle node mouse events
+            document.addEventListener('mousedown', (e) => {
+                if (e.button === 0) { // Left click
+                    mouseDownTime = Date.now();
+                    mouseDownTarget = e.target;
+                }
+            });
+
+            document.addEventListener('mouseup', (e) => {
+                if (e.button === 0 && mouseDownTarget === e.target) {
+                    const clickDuration = Date.now() - mouseDownTime;
+                    // If it was a quick click (not a drag) and on a node
+                    if (clickDuration < 200 && e.target.classList.contains('node')) {
+                        const node = nodes.find(n => n.element === e.target);
+                        if (node) {
+                            openConfigModal(node.type, node.element);
+                        }
+                    }
+                }
+                mouseDownTarget = null;
+            });
+
+            // Handle double click for quick edit
+            document.addEventListener('dblclick', (e) => {
+                if (e.target.classList.contains('node')) {
+                    const node = nodes.find(n => n.element === e.target);
+                    if (node) {
+                        const newName = prompt('Enter new node name:', node.name);
+                        if (newName && newName.trim() !== '') {
+                            node.name = newName.trim();
+                            node.element.textContent = newName.trim();
+                        }
+                    }
+                }
+            });
+
+            // Close sidebar when clicking on canvas
+            canvas.addEventListener('click', () => {
+                if (window.innerWidth < 768 && sidebar.classList.contains('open')) {
+                    sidebar.classList.remove('open');
+                }
+            });
+        }
+
+        // Update canvas zoom level
+        function updateCanvasZoom() {
+            canvas.style.transform = `scale(${zoomLevel})`;
+            canvas.style.transformOrigin = '0 0';
+            updateConnections();
+        }
+
+        // Center all nodes on canvas
+        function centerCanvas() {
+            if (nodes.length === 0) return;
+
+            // Calculate bounding box of all nodes
+            let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+
+            nodes.forEach(node => {
+                minX = Math.min(minX, node.x);
+                minY = Math.min(minY, node.y);
+                maxX = Math.max(maxX, node.x + node.element.offsetWidth);
+                maxY = Math.max(maxY, node.y + node.element.offsetHeight);
+            });
+
+            const canvasWidth = canvas.clientWidth;
+            const canvasHeight = canvas.clientHeight;
+            const nodesWidth = maxX - minX;
+            const nodesHeight = maxY - minY;
+
+            // Calculate center offset
+            const offsetX = (canvasWidth - nodesWidth) / 2 - minX;
+            const offsetY = (canvasHeight - nodesHeight) / 2 - minY;
+
+            // Move all nodes
+            nodes.forEach(node => {
+                node.x += offsetX;
+                node.y += offsetY;
+                node.element.style.left = `${node.x}px`;
+                node.element.style.top = `${node.y}px`;
+            });
+
+            updateConnections();
+        }
+
+        // Create a new node
+        function createNode(type, x, y) {
+            const nodeId = Date.now();
+            const node = document.createElement('div');
+            node.className = `node absolute text-white px-4 py-3 rounded-md cursor-move select-none shadow-md flex items-center justify-center node-${type.toLowerCase().replace(' ', '-')}`;
+            node.textContent = type;
+            node.style.left = `${x}px`;
+            node.style.top = `${y}px`;
+            node.dataset.id = nodeId;
+
+            // Make node draggable
+            node.addEventListener('mousedown', startDrag);
+            node.addEventListener('contextmenu', (e) => {
+                e.preventDefault();
+                handleNodeConnection(node);
+            });
+
+            canvas.appendChild(node);
+
+            const nodeData = {
+                element: node,
+                type,
+                x,
+                y,
+                id: nodeId,
+                name: `${type} ${nodes.length + 1}`,
+                params: '',
+                notes: ''
+            };
+
+            nodes.push(nodeData);
+            return nodeData;
+        }
+
+        // Delete a node
+        function deleteNode(nodeElement) {
+            const nodeIndex = nodes.findIndex(n => n.element === nodeElement);
+            if (nodeIndex === -1) return;
+
+            // Remove all connections involving this node
+            const nodeId = nodes[nodeIndex].id;
+            connections = connections.filter(conn => conn.from !== nodeId && conn.to !== nodeId);
+
+            // Remove node from DOM
+            if (nodeElement.parentNode) {
+                nodeElement.parentNode.removeChild(nodeElement);
+            }
+
+            // Remove node from array
+            nodes.splice(nodeIndex, 1);
+
+            updateConnections();
+        }
+
+        // Handle node dragging
+        function startDrag(e) {
+            if (e.button !== 0) return; // Only left mouse button
+
+            const node = e.currentTarget;
+            selectedNode = node;
+            isDragging = true;
+
+            // Calculate offset from mouse to node position
+            const rect = node.getBoundingClientRect();
+            dragOffset = {
+                x: e.clientX - rect.left,
+                y: e.clientY - rect.top
+            };
+
+            node.classList.add('selected');
+
+            document.addEventListener('mousemove', dragNode);
+            document.addEventListener('mouseup', stopDrag);
+            e.preventDefault();
+        }
+
+        function dragNode(e) {
+            if (!isDragging || !selectedNode) return;
+
+            const canvasRect = canvas.getBoundingClientRect();
+            let x = (e.clientX - canvasRect.left + canvas.scrollLeft - dragOffset.x) / zoomLevel;
+            let y = (e.clientY - canvasRect.top + canvas.scrollTop - dragOffset.y) / zoomLevel;
+
+            // Constrain to canvas boundaries
+            x = Math.max(0, Math.min(x, canvas.scrollWidth - selectedNode.offsetWidth));
+            y = Math.max(0, Math.min(y, canvas.scrollHeight - selectedNode.offsetHeight));
+
+            selectedNode.style.left = `${x}px`;
+            selectedNode.style.top = `${y}px`;
+
+            // Update node data
+            const nodeData = nodes.find(n => n.element === selectedNode);
+            if (nodeData) {
+                nodeData.x = x;
+                nodeData.y = y;
+            }
+
+            updateConnections();
+        }
+
+        function stopDrag() {
+            if (selectedNode) {
+                selectedNode.classList.remove('selected');
+                selectedNode = null;
+            }
+            isDragging = false;
+            document.removeEventListener('mousemove', dragNode);
+            document.removeEventListener('mouseup', stopDrag);
+        }
+
+        // Handle node connections
+        function handleNodeConnection(node) {
+            if (!selectedNode) {
+                // Select this node for connection
+                selectedNode = node;
+                node.classList.add('selected');
+            } else if (selectedNode === node) {
+                // Deselect the node
+                selectedNode.classList.remove('selected');
+                selectedNode = null;
+            } else {
+                // Connect to the selected node
+                connectNodes(selectedNode, node);
+                selectedNode.classList.remove('selected');
+                selectedNode = null;
+            }
+        }
+
+        // Connect two nodes
+        function connectNodes(node1, node2) {
+            const n1 = nodes.find(n => n.element === node1);
+            const n2 = nodes.find(n => n.element === node2);
+
+            if (!n1 || !n2) return;
+
+            // Check if connection already exists
+            const existingConnection = connections.find(conn =>
+                (conn.from === n1.id && conn.to === n2.id) ||
+                (conn.from === n2.id && conn.to === n1.id));
+
+            if (!existingConnection) {
+                const connectionId = Date.now();
+                connections.push({
+                    id: connectionId,
+                    from: n1.id,
+                    to: n2.id,
+                    label: `Step ${connections.length + 1}`
+                });
+                updateConnections();
+            }
+        }
+
+        // Update SVG connections
+        function updateConnections() {
+            svg.innerHTML = '';
+            addArrowheadMarker(); // Re-add arrowhead marker
+
+            // Remove any existing connection labels
+            document.querySelectorAll('.connection-label').forEach(el => el.remove());
+
+            connections.forEach(conn => {
+                const fromNode = nodes.find(n => n.id === conn.from);
+                const toNode = nodes.find(n => n.id === conn.to);
+
+                if (!fromNode || !toNode) return;
+
+                // Calculate positions
+                const fromRect = fromNode.element.getBoundingClientRect();
+                const toRect = toNode.element.getBoundingClientRect();
+                const canvasRect = canvas.getBoundingClientRect();
+
+                const fromX = (fromRect.left - canvasRect.left + fromRect.width / 2 + canvas.scrollLeft) / zoomLevel;
+                const fromY = (fromRect.top - canvasRect.top + fromRect.height / 2 + canvas.scrollTop) / zoomLevel;
+                const toX = (toRect.left - canvasRect.left + toRect.width / 2 + canvas.scrollLeft) / zoomLevel;
+                const toY = (toRect.top - canvasRect.top + toRect.height / 2 + canvas.scrollTop) / zoomLevel;
+
+                // Draw connection line
+                const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+                line.setAttribute('x1', fromX);
+                line.setAttribute('y1', fromY);
+                line.setAttribute('x2', toX);
+                line.setAttribute('y2', toY);
+                line.setAttribute('stroke', '#4b5563');
+                line.setAttribute('stroke-width', '2');
+                line.setAttribute('marker-end', 'url(#arrowhead)');
+                line.classList.add('connection-line');
+                svg.appendChild(line);
+
+                // Add connection label
+                const labelX = (fromX + toX) / 2;
+                const labelY = (fromY + toY) / 2;
+
+                const label = document.createElement('div');
+                label.className = 'connection-label absolute bg-white text-gray-800 text-xs px-2 py-1 rounded shadow-sm border';
+                label.textContent = conn.label;
+                label.style.left = `${labelX}px`;
+                label.style.top = `${labelY}px`;
+                canvas.appendChild(label);
+            });
+        }
+
+        // Add arrowhead marker to SVG
+        function addArrowheadMarker() {
+            const defs = document.createElementNS('http://www.w3.org/2000/svg', 'defs');
+            const marker = document.createElementNS('http://www.w3.org/2000/svg', 'marker');
+
+            marker.setAttribute('id', 'arrowhead');
+            marker.setAttribute('markerWidth', '10');
+            marker.setAttribute('markerHeight', '7');
+            marker.setAttribute('refX', '9');
+            marker.setAttribute('refY', '3.5');
+            marker.setAttribute('orient', 'auto');
+
+            const polygon = document.createElementNS('http://www.w3.org/2000/svg', 'polygon');
+            polygon.setAttribute('points', '0 0, 10 3.5, 0 7');
+            polygon.setAttribute('fill', '#4b5563');
+
+            marker.appendChild(polygon);
+            defs.appendChild(marker);
+            svg.appendChild(defs);
+        }
+
+        // Open configuration modal
+        function openConfigModal(type, node) {
+            const nodeData = nodes.find(n => n.element === node);
+            if (!nodeData) return;
+
+            currentConfigNode = node;
+            modalTitle.textContent = type;
+            document.querySelector('#configForm input[name="name"]').value = nodeData.name || '';
+            document.querySelector('#configForm textarea[name="params"]').value = nodeData.params || '';
+            document.querySelector('#configForm textarea[name="notes"]').value = nodeData.notes || '';
+
+            configForm.onsubmit = (e) => {
+                e.preventDefault();
+                const formData = new FormData(configForm);
+                nodeData.name = formData.get('name');
+                nodeData.params = formData.get('params');
+                nodeData.notes = formData.get('notes');
+
+                // Update node display if name changed
+                if (nodeData.name !== node.textContent && nodeData.name.trim() !== '') {
+                    node.textContent = nodeData.name;
+                }
+
+                hideModal(configModal);
+            };
+
+            showModal(configModal);
+        }
+
+        // Show modal
+        function showModal(modal) {
+            modal.classList.remove('hidden');
+            document.body.style.overflow = 'hidden';
+        }
+
+        // Hide modal
+        function hideModal(modal) {
+            modal.classList.add('hidden');
+            document.body.style.overflow = '';
+        }
+
+        // Hide all modals
+        function hideAllModals() {
+            hideModal(configModal);
+            hideModal(confirmModal);
+            hideModal(instructionsModal);
+            hideModal(exportModal);
+        }
+
+        // Clear the canvas
+        function clearCanvas() {
+            nodes.forEach(node => {
+                if (node.element && node.element.parentNode) {
+                    node.element.parentNode.removeChild(node.element);
+                }
+            });
+
+            nodes = [];
+            connections = [];
+            svg.innerHTML = '';
+            addArrowheadMarker();
+            hideModal(confirmModal);
+        }
+
+        // Initialize the app when DOM is loaded
+        document.addEventListener('DOMContentLoaded', init);
+    </script>
+</body>
+
+</html>

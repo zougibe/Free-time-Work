@@ -1,0 +1,722 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Movie Recommendation Widget</title>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Roboto', sans-serif;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        :root {
+            --primary-color: #1976d2;
+            --primary-light: #42a5f5;
+            --primary-dark: #1565c0;
+            --secondary-color: #f50057;
+            --secondary-light: #ff4081;
+            --secondary-dark: #c51162;
+            --background-color: #121212;
+            --surface-color: #1e1e1e;
+            --dark-color: #383838;
+            --dark-light-color: #4b4b4b;
+            --text-primary: #ffffff;
+            --text-secondary: rgba(255, 255, 255, 0.7);
+            --text-disabled: rgba(255, 255, 255, 0.5);
+        }
+
+        body {
+            background: var(--background-color);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .widget-container {
+            width: 100%;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 16px;
+            flex: 1;
+        }
+
+        h2 {
+            color: var(--text-primary);
+            margin-bottom: 16px;
+            text-align: center;
+            font-size: clamp(1.25rem, 4vw, 1.75rem);
+            font-weight: 500;
+        }
+
+        .carousel {
+            position: relative;
+            overflow: hidden;
+            width: 100%;
+            margin: 0 auto;
+            background: var(--surface-color);
+            border-radius: 12px;
+            padding: 0 8px;
+            touch-action: pan-y;
+        }
+
+        .movie-list {
+            display: flex;
+            transition: transform 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+            gap: 12px;
+            padding: 16px 0;
+            will-change: transform;
+        }
+
+        .movie-card {
+            flex: 0 0 calc(100% - 16px);
+            scroll-snap-align: start;
+            background: var(--surface-color);
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
+            margin: 0;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            min-width: 0;
+        }
+
+        .movie-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 8px 16px rgba(0, 0, 0, 0.3);
+            border-color: var(--dark-light-color);
+        }
+
+        .movie-poster {
+            width: 100%;
+            height: auto;
+            aspect-ratio: 2/3;
+            object-fit: cover;
+            transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .movie-card:hover .movie-poster {
+            transform: scale(1.05);
+        }
+
+        .movie-info {
+            padding: 12px;
+        }
+
+        .movie-title {
+            font-size: clamp(0.9rem, 3vw, 1.1rem);
+            font-weight: bold;
+            margin-bottom: 8px;
+            color: var(--text-primary);
+            line-height: 1.4;
+            display: -webkit-box;
+            /* -webkit-line-clamp: 2; */
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+        }
+
+        .rating {
+            display: flex;
+            gap: 2px;
+            margin-top: 8px;
+        }
+
+        .star {
+            cursor: pointer;
+            color: var(--text-disabled);
+            font-size: clamp(0.9rem, 3vw, 1.1rem);
+            transition: color 0.2s ease;
+        }
+
+        .star:hover {
+            color: var(--secondary-color);
+        }
+
+        .star.filled {
+            color: var(--secondary-color);
+        }
+
+        .movie-details {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(18, 18, 18, 0.9);
+            backdrop-filter: blur(4px);
+            -webkit-backdrop-filter: blur(4px);
+            color: var(--text-primary);
+            padding: 16px;
+            transform: translateY(100%);
+            transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+            border-radius: 12px;
+            overflow-y: auto;
+        }
+
+        .movie-card:hover .movie-details,
+        .movie-card:focus .movie-details,
+        .movie-card:active .movie-details {
+            transform: translateY(0);
+        }
+
+        .movie-details h4 {
+            font-size: clamp(1rem, 4vw, 1.3rem);
+            margin-bottom: 10px;
+            font-weight: bold;
+        }
+
+        .movie-details p {
+            font-size: clamp(0.8rem, 3vw, 0.95rem);
+            line-height: 1.5;
+            margin: 0;
+            max-width: 90%;
+            color: var(--text-secondary);
+        }
+
+        .nav-arrow {
+            position: absolute;
+            top: 50%;
+            transform: translateY(-50%);
+            background: var(--dark-color);
+            color: var(--text-primary);
+            border: none;
+            padding: 8px;
+            border-radius: 50%;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 2;
+            transition: all 0.3s ease;
+            opacity: 1;
+            visibility: visible;
+            width: 36px;
+            height: 36px;
+        }
+
+        .nav-arrow svg {
+            width: 20px;
+            height: 20px;
+            fill: currentColor;
+        }
+
+        .nav-arrow:hover {
+            background: var(--dark-light-color);
+            box-shadow: 0 2px 5px rgba(218, 218, 218, 0.178);
+        }
+
+        .nav-arrow.hidden {
+            opacity: 0;
+            visibility: hidden;
+            pointer-events: none;
+        }
+
+        .prev {
+            left: 4px;
+        }
+
+        .next {
+            right: 4px;
+        }
+
+        /* Touch indicators for mobile */
+        .touch-indicator {
+            display: none;
+            position: absolute;
+            bottom: 8px;
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            gap: 6px;
+            z-index: 1;
+        }
+
+        .indicator-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: var(--text-disabled);
+            transition: background 0.3s ease;
+        }
+
+        .indicator-dot.active {
+            background: var(--secondary-color);
+        }
+
+        /* Small devices (576px and up) */
+        @media (min-width: 576px) {
+            .carousel {
+                padding: 0 12px;
+            }
+
+            .movie-card {
+                flex: 0 0 calc(50% - 6px);
+            }
+
+            .nav-arrow {
+                padding: 10px;
+                width: 40px;
+                height: 40px;
+            }
+
+            .prev {
+                left: 8px;
+            }
+
+            .next {
+                right: 8px;
+            }
+        }
+
+        /* Medium devices (768px and up) */
+        @media (min-width: 768px) {
+            .widget-container {
+                padding: 20px;
+            }
+
+            .movie-list {
+                gap: 16px;
+            }
+
+            .movie-card {
+                flex: 0 0 calc(33.333% - 11px);
+            }
+
+            .movie-info {
+                padding: 14px;
+            }
+
+            .nav-arrow {
+                padding: 12px;
+                width: 44px;
+                height: 44px;
+            }
+        }
+
+        /* Large devices (992px and up) */
+        @media (min-width: 992px) {
+            .widget-container {
+                padding: 24px;
+            }
+
+            .movie-card {
+                flex: 0 0 calc(25% - 12px);
+            }
+
+            .movie-info {
+                padding: 16px;
+            }
+
+            .nav-arrow {
+                padding: 14px;
+                width: 48px;
+                height: 48px;
+            }
+
+            .prev {
+                left: 16px;
+            }
+
+            .next {
+                right: 16px;
+            }
+        }
+
+        /* Extra large devices (1200px and up) */
+        @media (min-width: 1200px) {
+            .movie-list {
+                gap: 20px;
+            }
+
+            .movie-card {
+                flex: 0 0 calc(25% - 15px);
+            }
+        }
+
+        /* Mobile-specific touch improvements */
+        @media (hover: none) {
+            .movie-details {
+                position: static;
+                transform: none;
+                background: transparent;
+                backdrop-filter: none;
+                padding: 12px 16px 16px;
+                overflow: visible;
+            }
+
+            .movie-card {
+                display: flex;
+                flex-direction: column;
+                height: 100%;
+            }
+
+            .movie-poster {
+                flex: 1;
+                height: auto;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="widget-container">
+        <h2>Recommended For You</h2>
+        <div class="carousel">
+            <button class="nav-arrow prev hidden" aria-label="Previous movie">
+                <svg viewBox="0 0 24 24">
+                    <path d="M15.41 7.41L14 6l-6 6 6 6 1.41-1.41L10.83 12z" />
+                </svg>
+            </button>
+            <div class="movie-list" id="movieList"></div>
+            <button class="nav-arrow next hidden" aria-label="Next movie">
+                <svg viewBox="0 0 24 24">
+                    <path d="M10 6L8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6z" />
+                </svg>
+            </button>
+            <div class="touch-indicator" id="touchIndicator"></div>
+        </div>
+    </div>
+
+    <script>
+        const movies = [
+            {
+                title: "The Midnight Sky",
+                poster: "https://m.media-amazon.com/images/M/MV5BMTE2NzJiM2UtZGRiMy00M2Q2LWFmZTAtYmI0MzVmZThkYTFhXkEyXkFqcGc@._V1_.jpg",
+                desc: "A lone scientist in the Arctic races to contact a crew of astronauts returning home to a mysterious global catastrophe.",
+                rating: 3
+            },
+            {
+                title: "Dune",
+                poster: "https://upload.wikimedia.org/wikipedia/en/8/8e/Dune_%282021_film%29.jpg",
+                desc: "A noble family becomes embroiled in a war for control over the galaxy's most valuable asset while its heir becomes troubled by visions of a dark future.",
+                rating: 4
+            },
+            {
+                title: "Inception",
+                poster: "https://upload.wikimedia.org/wikipedia/en/2/2e/Inception_%282010%29_theatrical_poster.jpg",
+                desc: "A thief who steals corporate secrets through the use of dream-sharing technology is given the inverse task of planting an idea into the mind of a C.E.O.",
+                rating: 5
+            },
+            {
+                title: "The Matrix",
+                poster: "https://upload.wikimedia.org/wikipedia/en/c/c1/The_Matrix_Poster.jpg",
+                desc: "A computer hacker learns from mysterious rebels about the true nature of his reality and his role in the war against its controllers.",
+                rating: 4
+            },
+            {
+                title: "Interstellar",
+                poster: "https://upload.wikimedia.org/wikipedia/en/b/bc/Interstellar_film_poster.jpg",
+                desc: "A team of explorers travel through a wormhole in space in an attempt to ensure humanity's survival.",
+                rating: 5
+            },
+            {
+                title: "Parasite",
+                poster: "https://upload.wikimedia.org/wikipedia/en/5/53/Parasite_%282019_film%29.png",
+                desc: "Greed and class discrimination threaten the newly formed symbiotic relationship between the wealthy Park family and the destitute Kim clan.",
+                rating: 5
+            },
+            {
+                title: "The Social Network",
+                poster: "https://upload.wikimedia.org/wikipedia/en/7/7a/Social_network_film_poster.jpg",
+                desc: "As Harvard student Mark Zuckerberg creates the social networking site that would become known as Facebook, he is sued by the twins who claimed he stole their idea.",
+                rating: 4
+            }
+        ];
+
+        const movieList = document.getElementById('movieList');
+        const prevBtn = document.querySelector('.prev');
+        const nextBtn = document.querySelector('.next');
+        const touchIndicator = document.getElementById('touchIndicator');
+        let currentPosition = 0;
+        let autoSlideInterval = null;
+        let isDragging = false;
+        let startX = 0;
+        let scrollLeft = 0;
+        let currentIndex = 0;
+
+        function createMovieCard(movie) {
+            const card = document.createElement('div');
+            card.className = 'movie-card';
+            card.tabIndex = 0; // Make cards focusable for keyboard navigation
+            card.innerHTML = `
+                <img src="${movie.poster}" alt="${movie.title}" class="movie-poster" loading="lazy">
+                <div class="movie-info">
+                    <h3 class="movie-title">${movie.title}</h3>
+                    <div class="rating" data-title="${movie.title}">
+                        ${Array(5).fill().map((_, i) =>
+                `<span class="star ${i < movie.rating ? 'filled' : ''}" aria-label="${i + 1} star">&#9733;</span>`
+            ).join('')}
+                    </div>
+                </div>
+                <div class="movie-details">
+                    <h4>${movie.title}</h4>
+                    <p>${movie.desc}</p>
+                </div>
+            `;
+            return card;
+        }
+
+        function renderMovies() {
+            movieList.innerHTML = '';
+            movies.forEach(movie => {
+                movieList.appendChild(createMovieCard(movie));
+            });
+            addRatingListeners();
+            createTouchIndicators();
+            updateButtonState();
+        }
+
+        function createTouchIndicators() {
+            touchIndicator.innerHTML = '';
+            const visibleCards = calculateVisibleCards();
+
+            if (visibleCards >= movies.length) {
+                touchIndicator.style.display = 'none';
+                return;
+            }
+
+            touchIndicator.style.display = 'flex';
+
+            for (let i = 0; i < Math.ceil(movies.length / visibleCards); i++) {
+                const dot = document.createElement('div');
+                dot.className = `indicator-dot ${i === 0 ? 'active' : ''}`;
+                touchIndicator.appendChild(dot);
+            }
+        }
+
+        function updateTouchIndicators() {
+            const dots = document.querySelectorAll('.indicator-dot');
+            const visibleCards = calculateVisibleCards();
+            const activeIndex = Math.floor(Math.abs(currentPosition) / (movieList.children[0]?.offsetWidth + 12));
+
+            dots.forEach((dot, index) => {
+                dot.classList.toggle('active', Math.floor(index * visibleCards) === Math.floor(activeIndex));
+            });
+        }
+
+        function calculateVisibleCards() {
+            if (!movieList.children.length) return 0;
+
+            const cardWidth = movieList.children[0].offsetWidth;
+            const containerWidth = movieList.parentElement.offsetWidth;
+            return Math.floor(containerWidth / (cardWidth + 12));
+        }
+
+        function addRatingListeners() {
+            document.querySelectorAll('.rating').forEach(rating => {
+                const stars = rating.querySelectorAll('.star');
+                stars.forEach((star, index) => {
+                    star.addEventListener('click', () => {
+                        const title = rating.dataset.title;
+                        const movie = movies.find(m => m.title === title);
+                        movie.rating = index + 1;
+                        renderMovies();
+                    });
+                });
+            });
+        }
+
+        function calculateMaxPosition() {
+            if (!movieList.children.length) return 0;
+
+            const cards = Array.from(movieList.children);
+            const listStyle = getComputedStyle(movieList);
+            const gapSize = parseFloat(listStyle.gap || 0);
+
+            const totalContentWidth = cards.reduce((total, card) => {
+                return total + card.offsetWidth;
+            }, 0) + (gapSize * (cards.length - 1));
+
+            const containerStyle = getComputedStyle(movieList.parentElement);
+            const containerPadding = parseFloat(containerStyle.paddingLeft || 0) +
+                parseFloat(containerStyle.paddingRight || 0);
+            const visibleWidth = movieList.parentElement.offsetWidth - containerPadding;
+
+            return Math.min(0, -(totalContentWidth - visibleWidth));
+        }
+
+        function updateButtonState() {
+            if (!movieList.children.length) {
+                prevBtn.classList.add('hidden');
+                nextBtn.classList.add('hidden');
+                return;
+            }
+
+            const maxPosition = calculateMaxPosition();
+            const isAtStart = currentPosition >= -1;
+            const isAtEnd = currentPosition <= maxPosition + 1;
+
+            prevBtn.classList.toggle('hidden', isAtStart);
+            nextBtn.classList.toggle('hidden', isAtEnd);
+
+            // Hide both if all cards are visible
+            if (maxPosition === 0) {
+                prevBtn.classList.add('hidden');
+                nextBtn.classList.add('hidden');
+            }
+        }
+
+        function slideCarousel(direction, animate = true) {
+            if (!movieList.children.length) return;
+
+            const visibleCards = calculateVisibleCards();
+            const cardWidth = movieList.children[0].offsetWidth;
+            const gapSize = 12; // Fixed gap size for consistent behavior
+
+            let slideDistance;
+            if (direction === 0) {
+                // Snap to current index
+                slideDistance = -(currentIndex * (cardWidth + gapSize));
+            } else {
+                // Move by visible cards
+                slideDistance = direction * visibleCards * (cardWidth + gapSize);
+                currentIndex = Math.max(0, Math.min(
+                    movies.length - visibleCards,
+                    currentIndex + (direction * visibleCards)
+                ));
+            }
+
+            currentPosition += slideDistance;
+            const maxPosition = calculateMaxPosition();
+            currentPosition = Math.max(maxPosition, Math.min(0, currentPosition));
+
+            movieList.style.transition = animate ? 'transform 0.5s cubic-bezier(0.4, 0, 0.2, 1)' : 'none';
+            movieList.style.transform = `translateX(${currentPosition}px)`;
+
+            updateButtonState();
+            updateTouchIndicators();
+        }
+
+        function startAutoSlide() {
+            stopAutoSlide();
+            if (calculateMaxPosition() === 0) return;
+
+            autoSlideInterval = setInterval(() => {
+                const maxPosition = calculateMaxPosition();
+                if (currentPosition <= maxPosition) {
+                    currentPosition = 0;
+                    currentIndex = 0;
+                    movieList.style.transform = `translateX(0px)`;
+                    updateButtonState();
+                    updateTouchIndicators();
+                } else {
+                    slideCarousel(-1);
+                }
+            }, 5000);
+        }
+
+        function stopAutoSlide() {
+            clearInterval(autoSlideInterval);
+            autoSlideInterval = null;
+        }
+
+        // Touch event handlers for mobile swipe
+        function handleTouchStart(e) {
+            stopAutoSlide();
+            isDragging = true;
+            startX = e.touches[0].pageX;
+            scrollLeft = currentPosition;
+            movieList.style.transition = 'none';
+        }
+
+        function handleTouchMove(e) {
+            if (!isDragging) return;
+            e.preventDefault();
+            const x = e.touches[0].pageX;
+            const walk = (x - startX) * 1.5; // Multiply for faster swipe
+            currentPosition = scrollLeft - walk;
+            movieList.style.transform = `translateX(${currentPosition}px)`;
+        }
+
+        function handleTouchEnd() {
+            if (!isDragging) return;
+            isDragging = false;
+
+            // Determine if we should snap to next/previous based on swipe velocity
+            const visibleCards = calculateVisibleCards();
+            const cardWidth = movieList.children[0].offsetWidth;
+            const threshold = cardWidth * 0.3;
+
+            if (currentPosition > scrollLeft + threshold) {
+                // Swiped right - go previous
+                slideCarousel(1);
+            } else if (currentPosition < scrollLeft - threshold) {
+                // Swiped left - go next
+                slideCarousel(-1);
+            } else {
+                // Return to original position
+                slideCarousel(0);
+            }
+
+            startAutoSlide();
+        }
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', () => {
+            renderMovies();
+
+            // Event listeners
+            prevBtn.addEventListener('click', () => {
+                stopAutoSlide();
+                slideCarousel(1);
+                startAutoSlide();
+            });
+
+            nextBtn.addEventListener('click', () => {
+                stopAutoSlide();
+                slideCarousel(-1);
+                startAutoSlide();
+            });
+
+            // Touch events
+            movieList.addEventListener('touchstart', handleTouchStart, { passive: false });
+            movieList.addEventListener('touchmove', handleTouchMove, { passive: false });
+            movieList.addEventListener('touchend', handleTouchEnd);
+
+            // Keyboard navigation
+            movieList.addEventListener('keydown', (e) => {
+                if (e.key === 'ArrowLeft') {
+                    e.preventDefault();
+                    slideCarousel(1);
+                } else if (e.key === 'ArrowRight') {
+                    e.preventDefault();
+                    slideCarousel(-1);
+                }
+            });
+
+            // Start auto-slide after a brief delay
+            setTimeout(() => {
+                updateButtonState();
+                startAutoSlide();
+            }, 100);
+
+            // Handle window resize
+            let resizeTimeout;
+            window.addEventListener('resize', () => {
+                clearTimeout(resizeTimeout);
+                resizeTimeout = setTimeout(() => {
+                    currentPosition = 0;
+                    currentIndex = 0;
+                    renderMovies();
+                    slideCarousel(0, false);
+                }, 250);
+            });
+        });
+
+        // Clean up on page unload
+        window.addEventListener('beforeunload', stopAutoSlide);
+    </script>
+</body>
+
+</html>

@@ -1,0 +1,292 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Recipe Suggester</title>
+    <link href="https://fonts.googleapis.com/css?family=Roboto:400,500,700&display=swap" rel="stylesheet">
+    <style>
+        html,
+        body {
+            height: 100%;
+            margin: 0;
+            font-family: 'Roboto', sans-serif;
+        }
+
+        .container {
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+            width: 100%;
+        }
+
+        header {
+            background: linear-gradient(90deg, #f09819, #edde5d);
+            padding: 20px;
+            text-align: center;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+        }
+
+        header h1 {
+            color: #2c3e50;
+            font-size: 2rem;
+            margin: 0;
+        }
+
+        .main {
+            flex: 1;
+            display: flex;
+            gap: 20px;
+            padding: 20px;
+            background: linear-gradient(to bottom, #fff, #f8f9fa);
+            overflow: hidden;
+        }
+
+        .left-col {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .input-section,
+        .notes-section {
+            flex: 1;
+            background: #fffaf0;
+            padding: 20px;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+            display: flex;
+            flex-direction: column;
+        }
+
+        .left-col label {
+            display: block;
+            margin-bottom: 10px;
+            font-weight: 500;
+        }
+
+        .left-col textarea {
+            flex: 1;
+            width: 100%;
+            padding: 10px;
+            margin-bottom: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            resize: none;
+        }
+
+        .left-col button {
+            background-color: #3498db;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: transform 0.3s, background-color 0.3s;
+            align-self: flex-start;
+        }
+
+        .left-col button:hover {
+            background-color: #2980b9;
+            transform: scale(1.05);
+        }
+
+        .recipes-section {
+            flex: 1;
+            background: #fffaf0;
+            padding: 20px;
+            border-radius: 4px;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+            display: flex;
+            flex-direction: column;
+        }
+
+        .recipes-section h2 {
+            margin-bottom: 10px;
+            color: #2c3e50;
+        }
+
+        #recipes {
+            flex: 1;
+            overflow-y: auto;
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+        }
+
+        .recipe-card {
+            background: #fffaf0;
+            border-radius: 4px;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+            transition: transform 0.3s, box-shadow 0.3s;
+        }
+
+        .recipe-card:hover {
+            transform: scale(1.02);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+        }
+
+        .recipe-card img {
+            width: 100%;
+            height: auto;
+            display: block;
+        }
+
+        .recipe-card .content {
+            padding: 20px;
+        }
+
+        .recipe-card h3 {
+            color: #e74c3c;
+            margin-bottom: 10px;
+        }
+
+        @media (max-width: 600px) {
+            .main {
+                flex-direction: column;
+                padding: 10px;
+            }
+
+            .left-col,
+            .recipes-section {
+                flex: 1;
+            }
+
+            .input-section,
+            .notes-section {
+                padding: 15px;
+            }
+
+            .left-col button {
+                width: 100%;
+            }
+
+            #recipes {
+                grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <header>
+            <h1>Recipe Suggester</h1>
+        </header>
+
+        <div class="main">
+            <div class="left-col">
+                <div class="input-section">
+                    <label for="ingredients">Enter your available ingredients (one per line):</label>
+                    <textarea id="ingredients" placeholder="e.g.
+chicken
+rice
+tomatoes
+onions"></textarea>
+                    <button onclick="suggestRecipes()">Get Recipe Suggestions</button>
+                </div>
+                <div class="notes-section">
+                    <label for="notes">Notes/Substitutions:</label>
+                    <textarea id="notes" placeholder="Add your notes or substitutions here..."></textarea>
+                </div>
+            </div>
+
+            <div class="recipes-section">
+                <h2>Recipe Suggestions</h2>
+                <div id="recipes" class="recipes">
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const recipeDatabase = [
+            {
+                name: "Chicken Fried Rice",
+                ingredients: ["chicken", "rice", "eggs", "soy sauce", "onions"],
+                time: "30 minutes",
+                steps: [
+                    "Cook rice according to package instructions",
+                    "Dice chicken and sauté with onions until cooked",
+                    "Scramble eggs and mix with chicken",
+                    "Add cooked rice and soy sauce, stir-fry for 5 minutes"
+                ]
+            },
+            {
+                name: "Chicken Tomato Stew",
+                ingredients: ["chicken", "tomatoes", "onions", "garlic"],
+                time: "45 minutes",
+                steps: [
+                    "Brown chicken pieces in a pot",
+                    "Add chopped onions and garlic, sauté until fragrant",
+                    "Add diced tomatoes and simmer for 30 minutes",
+                    "Season to taste with salt and pepper"
+                ]
+            },
+            {
+                name: "Simple Tomato Rice",
+                ingredients: ["rice", "tomatoes", "onions"],
+                time: "25 minutes",
+                steps: [
+                    "Sauté onions until translucent",
+                    "Add chopped tomatoes and cook until soft",
+                    "Mix in rice and water, cook until rice is tender"
+                ]
+            }
+        ];
+
+        function suggestRecipes() {
+            const input = document.getElementById("ingredients").value;
+            const userIngredients = input.toLowerCase()
+                .split("\n")
+                .map(item => item.trim())
+                .filter(item => item.length > 0);
+
+            const matchingRecipes = recipeDatabase.filter(recipe => {
+                return recipe.ingredients.some(ingredient => userIngredients.includes(ingredient));
+            });
+
+            displayRecipes(matchingRecipes);
+        }
+
+        function displayRecipes(recipes) {
+            const recipesDiv = document.getElementById("recipes");
+            recipesDiv.innerHTML = "";
+
+            if (recipes.length === 0) {
+                recipesDiv.innerHTML = "<p>No recipes found with those ingredients.</p>";
+                return;
+            }
+
+            recipes.forEach(recipe => {
+                const card = document.createElement("div");
+                card.className = "recipe-card";
+
+                const stepsList = recipe.steps.map(step => `<li>${step}</li>`).join("");
+
+                card.innerHTML = `
+          <img src="https://via.placeholder.com/400x200?text=${encodeURIComponent(recipe.name)}" alt="${recipe.name} Image">
+          <div class="content">
+            <h3>${recipe.name}</h3>
+            <p><strong>Cooking Time:</strong> ${recipe.time}</p>
+            <p><strong>Ingredients:</strong> ${recipe.ingredients.join(", ")}</p>
+            <h4>Steps:</h4>
+            <ol>${stepsList}</ol>
+          </div>
+        `;
+
+                recipesDiv.appendChild(card);
+            });
+        }
+
+        const notesTextarea = document.getElementById("notes");
+        notesTextarea.value = localStorage.getItem("recipeNotes") || "";
+        notesTextarea.addEventListener("input", () => {
+            localStorage.setItem("recipeNotes", notesTextarea.value);
+        });
+    </script>
+</body>
+
+</html>

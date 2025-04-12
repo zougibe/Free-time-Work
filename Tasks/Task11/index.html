@@ -1,0 +1,359 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Vendor Management Portal</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        dark: {
+                            900: '#0a0a0a',
+                            800: '#1a1a1a',
+                            700: '#2a2a2a',
+                            600: '#3a3a3a',
+                            500: '#4a4a4a',
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+</head>
+
+<body class="bg-gray-900 text-gray-200 min-h-screen p-5">
+    <div class="container mx-auto max-w-7xl">
+        <!-- Role Tabs -->
+        <div id="roleTabs" class="flex space-x-2 mb-6">
+            <button onclick="switchRole('vendor')"
+                class="tab px-4 py-2 rounded-t-lg bg-gray-700 hover:bg-gray-600 transition-colors">
+                Vendor View
+            </button>
+            <button onclick="switchRole('admin')"
+                class="tab px-4 py-2 rounded-t-lg bg-gray-700 hover:bg-gray-600 transition-colors">
+                Admin View
+            </button>
+        </div>
+
+        <!-- Vendor Section -->
+        <div id="vendorSection" class="section hidden bg-gray-800 rounded-lg shadow-lg p-6 mb-6">
+            <h2 class="text-2xl font-bold mb-4 text-blue-400">Vendor Portal</h2>
+
+            <form id="quoteForm" class="grid gap-4 max-w-md mb-8">
+                <input type="text" id="vendorName" placeholder="Vendor Name" required
+                    class="px-4 py-2 bg-gray-700 border border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+                <input type="number" id="quotePrice" placeholder="Quote Price" required
+                    class="px-4 py-2 bg-gray-700 border border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+                <input type="number" id="deliveryTime" placeholder="Delivery Time (days)" required
+                    class="px-4 py-2 bg-gray-700 border border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+                <button type="submit"
+                    class="px-4 py-2 bg-blue-600 hover:bg-blue-700 rounded-md transition-colors font-medium">
+                    Submit Quote
+                </button>
+            </form>
+
+            <form id="contactForm" class="grid gap-4 max-w-md mb-8">
+                <input type="text" id="contactEmail" placeholder="Email"
+                    class="px-4 py-2 bg-gray-700 border border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+                <input type="text" id="contactPhone" placeholder="Phone"
+                    class="px-4 py-2 bg-gray-700 border border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+                <button type="submit"
+                    class="px-4 py-2 bg-blue-600 hover:bg-blue-700 rounded-md transition-colors font-medium">
+                    Update Contact
+                </button>
+            </form>
+
+            <h3 class="text-xl font-semibold mb-3 text-blue-400">Contract Status</h3>
+            <div id="contractStatus" class="bg-gray-700 p-4 rounded-md"></div>
+        </div>
+
+        <!-- Admin Section -->
+        <div id="adminSection" class="section hidden bg-gray-800 rounded-lg shadow-lg p-6">
+            <h2 class="text-2xl font-bold mb-6 text-blue-400">Admin Dashboard</h2>
+
+            <div class="charts grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+                <div id="quoteChart" class="bg-gray-700 p-4 rounded-md"></div>
+                <div id="trendChart" class="bg-gray-700 p-4 rounded-md"></div>
+            </div>
+
+            <h3 class="text-xl font-semibold mb-3 text-blue-400">Vendor List</h3>
+            <input type="text" id="searchInput" placeholder="Search vendors..." onkeyup="filterTable()"
+                class="w-full mb-4 px-4 py-2 bg-gray-700 border border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+
+            <div class="overflow-x-auto">
+                <table id="vendorTable" class="w-full border-collapse">
+                    <thead>
+                        <tr class="bg-gray-700 text-left">
+                            <th onclick="sortTable(0)"
+                                class="p-3 border border-gray-600 cursor-pointer hover:bg-gray-600">Name</th>
+                            <th onclick="sortTable(1)"
+                                class="p-3 border border-gray-600 cursor-pointer hover:bg-gray-600">Status</th>
+                            <th onclick="sortTable(2)"
+                                class="p-3 border border-gray-600 cursor-pointer hover:bg-gray-600">Last Quote</th>
+                            <th class="p-3 border border-gray-600">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="vendorTableBody" class="divide-y divide-gray-600"></tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Data storage
+        let vendorData = JSON.parse(localStorage.getItem('vendorData')) || {
+            vendors: {},
+            quotes: [],
+            contracts: {}
+        };
+        const currentUser = { role: 'vendor', name: 'Vendor1' }; // Simulated user
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', () => {
+            switchRole(currentUser.role === 'admin' ? 'admin' : 'vendor');
+            updateContractStatus();
+            if (currentUser.role === 'admin') {
+                updateAdminDashboard();
+            }
+        });
+
+        // Role switching
+        function switchRole(role) {
+            const tabs = document.querySelectorAll('.tab');
+            const sections = document.querySelectorAll('.section');
+            tabs.forEach(tab => tab.classList.remove('bg-blue-600', 'text-white'));
+            sections.forEach(section => section.classList.add('hidden'));
+
+            document.querySelector(`[onclick="switchRole('${role}')"]`).classList.add('bg-blue-600', 'text-white');
+            document.getElementById(`${role}Section`).classList.remove('hidden');
+
+            if (role === 'admin') updateAdminDashboard();
+        }
+
+        // Vendor quote submission
+        document.getElementById('quoteForm').addEventListener('submit', (e) => {
+            e.preventDefault();
+            const quote = {
+                vendor: document.getElementById('vendorName').value,
+                price: parseFloat(document.getElementById('quotePrice').value),
+                deliveryTime: parseInt(document.getElementById('deliveryTime').value),
+                date: new Date().toISOString(),
+                status: 'pending'
+            };
+            vendorData.quotes.push(quote);
+            saveData();
+            updateContractStatus();
+            e.target.reset();
+            showNotification('Quote submitted successfully!', 'success');
+        });
+
+        // Contact update
+        document.getElementById('contactForm').addEventListener('submit', (e) => {
+            e.preventDefault();
+            const vendor = document.getElementById('vendorName').value || currentUser.name;
+            vendorData.vendors[vendor] = {
+                email: document.getElementById('contactEmail').value,
+                phone: document.getElementById('contactPhone').value
+            };
+            saveData();
+            showNotification('Contact updated successfully!', 'success');
+        });
+
+        // Update contract status
+        function updateContractStatus() {
+            const statusDiv = document.getElementById('contractStatus');
+            const vendorQuotes = vendorData.quotes.filter(q => q.vendor === currentUser.name);
+            statusDiv.innerHTML = vendorQuotes.length > 0
+                ? vendorQuotes.map(q =>
+                    `<div class="mb-2 p-2 ${getStatusColor(q.status)} rounded-md">
+                        <p class="font-medium">$${q.price.toFixed(2)} - ${q.deliveryTime} days delivery</p>
+                        <p class="text-sm">Status: <span class="font-semibold">${q.status}</span></p>
+                        <p class="text-xs text-gray-400">Submitted: ${new Date(q.date).toLocaleString()}</p>
+                    </div>`
+                ).join('')
+                : '<p class="text-gray-400">No contracts yet.</p>';
+        }
+
+        function getStatusColor(status) {
+            switch (status) {
+                case 'active': return 'bg-green-900/50 border-l-4 border-green-500';
+                case 'rejected': return 'bg-red-900/50 border-l-4 border-red-500';
+                default: return 'bg-yellow-900/50 border-l-4 border-yellow-500';
+            }
+        }
+
+        // Admin dashboard
+        function updateAdminDashboard() {
+            updateVendorTable();
+            updateCharts();
+        }
+
+        // Vendor table
+        function updateVendorTable() {
+            const tbody = document.getElementById('vendorTableBody');
+            tbody.innerHTML = '';
+            Object.entries(vendorData.vendors).forEach(([name]) => {
+                const lastQuote = vendorData.quotes.filter(q => q.vendor === name).slice(-1)[0];
+                const row = document.createElement('tr');
+                row.className = 'hover:bg-gray-700/50';
+                row.innerHTML = `
+                    <td class="p-3 border border-gray-600">${name}</td>
+                    <td class="p-3 border border-gray-600">
+                        <span class="${getStatusBadgeColor(lastQuote?.status)} px-2 py-1 rounded-full text-xs">
+                            ${lastQuote?.status || 'No quotes'}
+                        </span>
+                    </td>
+                    <td class="p-3 border border-gray-600">${lastQuote ? `$${lastQuote.price.toFixed(2)}` : '-'}</td>
+                    <td class="p-3 border border-gray-600 space-x-2">
+                        <button onclick="approveQuote('${name}')" 
+                            class="px-3 py-1 bg-green-600 hover:bg-green-700 rounded text-sm">
+                            Approve
+                        </button>
+                        <button onclick="rejectQuote('${name}')" 
+                            class="px-3 py-1 bg-red-600 hover:bg-red-700 rounded text-sm">
+                            Reject
+                        </button>
+                    </td>
+                `;
+                tbody.appendChild(row);
+            });
+        }
+
+        function getStatusBadgeColor(status) {
+            switch (status) {
+                case 'active': return 'bg-green-900 text-green-300';
+                case 'rejected': return 'bg-red-900 text-red-300';
+                case 'pending': return 'bg-yellow-900 text-yellow-300';
+                default: return 'bg-gray-600 text-gray-300';
+            }
+        }
+
+        // Table sorting
+        function sortTable(n) {
+            const table = document.getElementById('vendorTable');
+            let switching = true, dir = 'asc', switchcount = 0;
+            while (switching) {
+                switching = false;
+                const rows = table.rows;
+                for (let i = 1; i < (rows.length - 1); i++) {
+                    let shouldSwitch = false;
+                    const x = rows[i].getElementsByTagName('TD')[n];
+                    const y = rows[i + 1].getElementsByTagName('TD')[n];
+                    if (dir === 'asc' ? x.innerHTML > y.innerHTML : x.innerHTML < y.innerHTML) {
+                        shouldSwitch = true;
+                        break;
+                    }
+                }
+                if (shouldSwitch) {
+                    rows[i].parentNode.insertBefore(rows[i + 1], rows[i]);
+                    switching = true;
+                    switchcount++;
+                } else if (switchcount === 0 && dir === 'asc') {
+                    dir = 'desc';
+                    switching = true;
+                }
+            }
+        }
+
+        // Table search
+        function filterTable() {
+            const input = document.getElementById('searchInput').value.toLowerCase();
+            const rows = document.getElementById('vendorTableBody').getElementsByTagName('tr');
+            Array.from(rows).forEach(row => {
+                const name = row.cells[0].textContent.toLowerCase();
+                row.style.display = name.includes(input) ? '' : 'none';
+            });
+        }
+
+        // Charts
+        function updateCharts() {
+            const quoteData = vendorData.quotes.reduce((acc, q) => {
+                acc[q.vendor] = (acc[q.vendor] || 0) + q.price;
+                return acc;
+            }, {});
+
+            // Bar chart - Quote values
+            Plotly.newPlot('quoteChart', [{
+                x: Object.keys(quoteData),
+                y: Object.values(quoteData),
+                type: 'bar',
+                marker: { color: '#3b82f6' }
+            }], {
+                title: 'Vendor Quote Values',
+                yaxis: { title: 'Total Quote ($)' },
+                paper_bgcolor: 'rgba(31, 41, 55, 1)',
+                plot_bgcolor: 'rgba(31, 41, 55, 1)',
+                font: { color: '#e5e7eb' }
+            });
+
+            // Line chart - Submission trends
+            const dates = vendorData.quotes.map(q => q.date.slice(0, 10));
+            const trendData = dates.reduce((acc, date) => {
+                acc[date] = (acc[date] || 0) + 1;
+                return acc;
+            }, {});
+            Plotly.newPlot('trendChart', [{
+                x: Object.keys(trendData),
+                y: Object.values(trendData),
+                type: 'scatter',
+                mode: 'lines+markers',
+                line: { color: '#3b82f6' }
+            }], {
+                title: 'Quote Submission Trend',
+                yaxis: { title: 'Number of Quotes' },
+                paper_bgcolor: 'rgba(31, 41, 55, 1)',
+                plot_bgcolor: 'rgba(31, 41, 55, 1)',
+                font: { color: '#e5e7eb' }
+            });
+        }
+
+        // Admin actions
+        function approveQuote(vendor) {
+            const quote = vendorData.quotes.find(q => q.vendor === vendor && q.status === 'pending');
+            if (quote) {
+                quote.status = 'active';
+                vendorData.contracts[vendor] = quote;
+                saveData();
+                updateAdminDashboard();
+                showNotification(`Approved quote for ${vendor}`, 'success');
+            }
+        }
+
+        function rejectQuote(vendor) {
+            const quote = vendorData.quotes.find(q => q.vendor === vendor && q.status === 'pending');
+            if (quote) {
+                quote.status = 'rejected';
+                saveData();
+                updateAdminDashboard();
+                showNotification(`Rejected quote for ${vendor}`, 'error');
+            }
+        }
+
+        // Data persistence
+        function saveData() {
+            localStorage.setItem('vendorData', JSON.stringify(vendorData));
+        }
+
+        // Notification helper
+        function showNotification(message, type) {
+            const notification = document.createElement('div');
+            notification.className = `fixed top-4 right-4 px-4 py-2 rounded-md shadow-lg ${type === 'success' ? 'bg-green-800 text-green-100' : 'bg-red-800 text-red-100'
+                }`;
+            notification.textContent = message;
+            document.body.appendChild(notification);
+
+            setTimeout(() => {
+                notification.classList.add('opacity-0', 'transition-opacity', 'duration-300');
+                setTimeout(() => notification.remove(), 300);
+            }, 3000);
+        }
+    </script>
+</body>
+
+</html>

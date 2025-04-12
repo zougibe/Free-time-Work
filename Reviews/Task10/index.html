@@ -1,0 +1,814 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Data Comparison Dashboard</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.1.1/css/all.min.css">
+    <style>
+        body {
+            font-family: 'Poppins', sans-serif;
+            margin: 0;
+            padding: 0;
+            background: #f5f5f5;
+            transition: all 0.3s ease;
+            background: #039595;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 0 15px;
+        }
+
+        .headerContainer {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 20px;
+            background-color: #ffffff;
+            border-radius: 12px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            min-height: 120px;
+            flex-wrap: wrap;
+            /* Allow wrapping for smaller screens */
+            gap: 20px;
+
+        }
+
+        .filters {
+            width: 100%;
+            display: flex;
+            gap: 30px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+
+        select {
+            padding: 8px;
+            border-radius: 4px;
+            border: 2px solid #ddd;
+            cursor: pointer;
+        }
+
+        .chart-grid {
+            width: 100%;
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 20px;
+            opacity: 1;
+            transition: opacity 0.3s ease;
+        }
+
+        .chart-container {
+            background: white;
+            padding: 15px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        .chart-wrapper {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+
+        }
+
+        canvas {
+            width: 100% !important;
+            height: 100% !important;
+            /* Ensure the canvas stretches to fill the container */
+        }
+
+        button {
+            padding: 0.7rem 1.5rem;
+            font-size: 1rem;
+
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: background 0.3s ease;
+            line-height: 1;
+            display: flex;
+            flex-direction: row;
+            align-items: center;
+            justify-content: flex-start;
+        }
+
+        button:hover {
+
+            scale: 1.05;
+        }
+
+        @media (max-width: 768px) {
+            .chart-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .filters {
+                flex-direction: column;
+                gap: 15px;
+            }
+
+            .headerContainer {
+                flex-direction: column;
+                text-align: center;
+            }
+
+            .headerContainer h1 {
+                font-size: 1.5rem;
+            }
+
+            .headerContainer button {
+                width: 100%;
+            }
+
+            .data-table th,
+            .data-table td {
+                font-size: 0.8rem;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .headerContainer h1 {
+                font-size: 1.2rem;
+            }
+
+            .filters label {
+                font-size: 0.9rem;
+            }
+
+            .filters button {
+                font-size: 0.9rem;
+            }
+        }
+
+        .fade {
+            opacity: 0;
+        }
+
+        /* Custom select dropdown */
+        .select-container {
+            position: relative;
+        }
+
+        .select-container button {
+            width: 250px;
+            border: 2px solid #d6e6f8;
+        }
+
+        .custom-select {
+            appearance: none;
+            -webkit-appearance: none;
+            cursor: pointer;
+        }
+
+        .select-dropdown {
+            position: absolute;
+            top: calc(100% + 5px);
+            left: 0;
+            right: 0;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+            opacity: 0;
+            transform: translateY(-10px);
+            pointer-events: none;
+            transition: all 0.3s ease;
+            z-index: 100;
+
+            overflow: hidden;
+            border: 2px solid #4a90e2;
+        }
+
+        .select-dropdown.active {
+            opacity: 1;
+            transform: translateY(0);
+            pointer-events: auto;
+        }
+
+        .select-option {
+            padding: 12px 16px;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+        }
+
+        .select-option:hover {
+            background: #f3f4f6;
+        }
+
+        .select-option.selected {
+            background: #6366f1;
+            color: white;
+        }
+
+        .select-option i {
+            margin-right: 8px;
+            font-size: 14px;
+        }
+
+        .headerContainer {
+            background-color: #ffffff;
+            border-radius: 12px
+        }
+
+        /* Table styling */
+        .data-table-container {
+            margin-top: 2rem;
+            background-color: #ffffff;
+            border-radius: 12px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            padding: 1.5rem;
+            overflow-x: auto;
+        }
+
+        .data-table {
+            width: 100%;
+            border-collapse: collapse;
+            border: 1px solid #e5e7eb;
+            font-size: 0.9rem;
+            color: #374151;
+        }
+
+
+        .data-table thead {
+            background-color: #f3f4f6;
+            font-weight: 600;
+        }
+
+        .data-table th {
+            text-align: left;
+            padding: 0.75rem;
+            border: 1px solid #e5e7eb;
+            color: #111827;
+        }
+
+
+        .data-table td {
+            padding: 0.75rem;
+            border: 1px solid #e5e7eb;
+            text-align: left;
+        }
+
+        .data-table tbody tr:nth-child(odd) {
+            background-color: #f9fafb;
+        }
+
+        .data-table tbody tr:hover {
+            background-color: #e5e7eb;
+            transition: background-color 0.2s ease;
+        }
+    </style>
+</head>
+
+<body class="min-h-screen">
+    <div class="container mx-auto m-2 p-4 md:p-6">
+        <header class="mb-8 pt-2 pb-2 text-center headerContainer flex items-center justify-between">
+            <div class="flex flex-col items-start">
+                <h1 class="text-4xl md:text-4xl font-bold text-gray-800">
+                    <i class="fas fa-chart-area text-4xl text-teal-700 mr-4"></i>Data Comparison Dashboard
+                </h1>
+                <p class="text-gray-600 text-md font-semibold mt-2">
+                    A powerful tool for visualizing and analyzing data trends.</p>
+            </div>
+
+            <button onclick="exportPDF()"
+                class="bg-teal-600 text-white font-bold rounded-md hover:bg-teal-700 transition-colors duration-200 shadow-lg hover:shadow-green-500/50 px-2 py-2">
+                <i class="fas fa-file-pdf text-2xl text-white-700 mr-2"></i>Export to PDF
+            </button>
+        </header>
+
+
+        <div class="content-container">
+            <div class="filters bg-white rounded-xl shadow-lg p-6 mb-8 flex gap-8">
+                <div class="filter-item flex items-center gap-4">
+                    <label class="block text-gray-700 font-medium">Select Year:</label>
+                    <div class="select-container">
+                        <div class="relative">
+                            <button id="yearButton" aria-haspopup="listbox" aria-expanded="false"
+                                class="pl-12 pr-10 py-4 w-full border border-gray-200 rounded-xl shadow-sm bg-white focus:outline-none focus:ring-2 focus:ring-indigo-300 transition-all text-left">
+                                <span id="selectedYear">All Years</span>
+                            </button>
+                            <span class="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400">
+                                <i class="fas fa-calendar-alt"></i>
+                            </span>
+                            <span
+                                class="absolute right-4 top-1/2 transform -translate-y-1/2 text-gray-400 pointer-events-none">
+                                <i class="fas fa-chevron-down"></i>
+                            </span>
+                        </div>
+                        <div id="yearDropdown" role="listbox" class="select-dropdown" aria-labelledby="yearButton">
+                            <div class="select-option" data-value="all" role="option" aria-selected="true">
+                                <i class="fas fa-history"></i> All Years
+                            </div>
+                            <div class="select-option" data-value="2023" role="option" aria-selected="false">
+                                <i class="fas fa-calendar-day"></i> 2023
+                            </div>
+                            <div class="select-option" data-value="2024" role="option" aria-selected="false">
+                                <i class="fas fa-calendar-week"></i> 2024
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="filter-item flex items-center gap-4">
+                    <label class="block text-gray-700 font-medium">Select Category:</label>
+                    <div class="select-container">
+                        <div class="relative">
+                            <button id="categoryButton" aria-haspopup="listbox" aria-expanded="false"
+                                class="pl-12 pr-10 py-4 w-full border border-gray-200 rounded-xl shadow-sm bg-white focus:outline-none focus:ring-2 focus:ring-indigo-300 transition-all text-left">
+                                <span id="selectedCatetory">All Categories</span>
+                            </button>
+                            <span class="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400">
+                                <i class="fas fa-tags"></i>
+                            </span>
+                            <span
+                                class="absolute right-4 top-1/2 transform -translate-y-1/2 text-gray-400 pointer-events-none">
+                                <i class="fas fa-chevron-down"></i>
+                            </span>
+                        </div>
+                        <div id="categoryDropdown" class="select-dropdown" role="listbox"
+                            aria-labelledby="categoryButton">
+                            <div class="select-option" data-value="all" role="option" aria-selected="true">
+                                <i class="fas fa-list"></i> All Categories
+                            </div>
+                            <div class="select-option" data-value="sales" role="option" aria-selected="false">
+                                <i class="fas fa-chart-line"></i> Sales
+                            </div>
+                            <div class="select-option" data-value="users" role="option" aria-selected="false">
+                                <i class="fas fa-users"></i> Users
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="chart-grid">
+                <div class="chart-container">
+                    <h2 class="text-xl font-semibold text-gray-800 mb-4">
+                        <i class="fas fa-chart-bar mr-2 text-2xl text-green-700"></i>Bar Chart
+                    </h2>
+                    <div class="chart-wrapper">
+
+                        <canvas id="barChart"></canvas>
+                    </div>
+                </div>
+                <div class="chart-container">
+                    <h2 class="text-xl font-semibold text-gray-800 mb-4">
+                        <i class="fas fa-chart-line mr-2 text-2xl text-green-700"></i>Line chart
+                    </h2>
+                    <div class="chart-wrapper">
+                        <canvas id="lineChart"></canvas>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+
+
+        <div class="data-table-container">
+            <h2 class="text-xl font-semibold text-gray-800 mb-4">
+                <i class="fas fa-table mr-2 text-2xl text-green-700"></i>Sample Data Table
+            </h2>
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th>Month</th>
+                        <th>2023 Sales</th>
+                        <th>2023 Users</th>
+                        <th>2024 Sales</th>
+                        <th>2024 Users</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>January</td>
+                        <td>65</td>
+                        <td>28</td>
+                        <td>75</td>
+                        <td>38</td>
+                    </tr>
+                    <tr>
+                        <td>February</td>
+                        <td>59</td>
+                        <td>48</td>
+                        <td>69</td>
+                        <td>58</td>
+                    </tr>
+                    <tr>
+                        <td>March</td>
+                        <td>80</td>
+                        <td>40</td>
+                        <td>90</td>
+                        <td>50</td>
+                    </tr>
+                    <tr>
+                        <td>April</td>
+                        <td>81</td>
+                        <td>19</td>
+                        <td>91</td>
+                        <td>29</td>
+                    </tr>
+                    <tr>
+                        <td>May</td>
+                        <td>56</td>
+                        <td>86</td>
+                        <td>66</td>
+                        <td>96</td>
+                    </tr>
+                    <tr>
+                        <td>June</td>
+                        <td>55</td>
+                        <td>27</td>
+                        <td>65</td>
+                        <td>37</td>
+                    </tr>
+                    <tr>
+                        <td>July</td>
+                        <td>40</td>
+                        <td>90</td>
+                        <td>50</td>
+                        <td>100</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <footer class="text-center mt-8">
+        <p class="text-gray-600 text-sm">&copy; 2023 Data Comparison Dashboard. All rights reserved.</p>
+
+        <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+        <script>
+            // Sample data
+            const data = {
+                2023: {
+                    sales: [65, 59, 80, 81, 56, 55, 40],
+                    users: [28, 48, 40, 19, 86, 27, 90]
+                },
+                2024: {
+                    sales: [75, 69, 90, 91, 66, 65, 50],
+                    users: [38, 58, 50, 29, 96, 37, 100]
+                }
+            };
+
+            const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul'];
+
+            const barChartConfig = {
+                type: 'bar',
+                data: {
+                    labels: ['January', 'February', 'March', 'April', 'May', 'June', 'July'],
+                    datasets: [
+                        {
+                            label: '2023 Sales',
+                            data: [65, 59, 80, 81, 56, 55, 40],
+                            backgroundColor: 'rgba(136, 227, 176, 1)',
+                            borderColor: 'rgba(144, 248, 144, 1)',
+                            borderWidth: 1
+                        },
+                        {
+                            label: '2024 Sales',
+                            data: [75, 69, 90, 91, 66, 65, 50],
+                            backgroundColor: 'rgba(216, 191, 216, 1)',
+                            borderColor: 'rgba(216, 191, 216, 1)',
+                            borderWidth: 1
+                        },
+                        {
+                            label: '2023 Users',
+                            data: [28, 48, 40, 19, 86, 27, 90],
+                            backgroundColor: 'rgba(113, 152, 243,1)', // Blue 
+                            borderColor: '#2196F3',
+                            borderWidth: 1
+                        },
+                        {
+                            label: '2024 Users',
+                            data: [38, 58, 50, 29, 96, 37, 100],
+                            backgroundColor: 'rgba(255, 152, 0, 1)', // Orange 
+                            borderColor: '#FF9800',
+                            borderWidth: 1
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    plugins: {
+                        legend: {
+                            display: true,
+                            position: 'top',
+                            labels: {
+                                color: '#374151' // Dark gray text for legend
+                            }
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: function (context) {
+                                    const year = context.dataset.label;
+                                    const value = context.raw;
+                                    return `${year}: ${value}`;
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        x: {
+                            beginAtZero: true,
+                            ticks: {
+                                color: '#374151' // Dark gray text for x-axis
+                            }
+                        },
+                        y: {
+                            beginAtZero: true,
+                            ticks: {
+                                color: '#374151' // Dark gray text for y-axis
+                            }
+                        }
+                    }
+                }
+            };
+
+            // Line Chart Configuration
+            const lineChartConfig = {
+                type: 'line',
+                data: {
+                    labels: ['January', 'February', 'March', 'April', 'May', 'June', 'July'],
+                    datasets: [
+                        {
+                            label: '2023 Sales',
+                            data: [65, 59, 80, 81, 56, 55, 40],
+                            backgroundColor: 'rgba(136, 227, 176, 1)',
+                            borderColor: 'rgba(144, 248, 144, 01)',
+                            borderWidth: 2,
+                            fill: false
+                        },
+                        {
+                            label: '2024 Sales',
+                            data: [75, 69, 90, 91, 66, 65, 50],
+                            backgroundColor: 'rgba(216, 191, 216, 1)',
+                            borderColor: 'rgba(216, 191, 216, 1)',
+                            borderWidth: 2,
+                            fill: false
+                        },
+                        {
+                            label: '2023 Users',
+                            data: [28, 48, 40, 19, 86, 27, 90],
+                            backgroundColor: 'rgb(113, 152, 243,1)', // Blue 
+                            borderColor: '#2196F3',
+                            borderWidth: 2,
+                            fill: false
+                        },
+                        {
+                            label: '2024 Users',
+                            data: [38, 58, 50, 29, 96, 37, 100],
+                            backgroundColor: 'rgba(255, 152, 0, 1)', // Orange 
+                            borderColor: '#FF9800', // Orange 
+                            borderWidth: 2,
+                            fill: false
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    plugins: {
+                        legend: {
+                            display: true,
+                            position: 'top',
+                            labels: {
+                                color: '#374151' // Dark gray text for legend
+                            }
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: function (context) {
+                                    const year = context.dataset.label;
+                                    const value = context.raw;
+                                    return `${year}: ${value}`;
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        x: {
+                            beginAtZero: true,
+                            ticks: {
+                                color: '#374151' // Dark gray text for x-axis
+                            }
+                        },
+                        y: {
+                            beginAtZero: true,
+                            ticks: {
+                                color: '#374151' // Dark gray text for y-axis
+                            }
+                        }
+                    }
+                }
+            };
+
+            // Chart instances
+            let barChart, lineChart;
+
+            // Initialize charts
+            function initCharts() {
+                if (barChart) {
+                    barChart.destroy();
+                }
+                if (lineChart) {
+                    lineChart.destroy();
+                }
+                // Create new chart instances
+                barChart = new Chart(document.getElementById('barChart'), barChartConfig);
+                lineChart = new Chart(document.getElementById('lineChart'), lineChartConfig);
+            }
+
+            // Get chart data based on filters
+            function getChartData(year, category) {
+                let filteredData = [];
+                if (year === 'all') {
+                    filteredData = category === 'all' ?
+                        Object.values(data).reduce((acc, curr) => ({
+                            sales: [...acc.sales, ...curr.sales],
+                            users: [...acc.users, ...curr.users]
+                        })) :
+                        Object.values(data).reduce((acc, curr) => curr[category]);
+                } else {
+                    filteredData = category === 'all' ?
+                        data[year] :
+                        data[year][category];
+                }
+
+                return {
+                    labels: months,
+                    datasets: [{
+                        label: category === 'all' ? 'Combined Data' : category,
+                        data: category === 'all' ? filteredData.sales : filteredData,
+                        backgroundColor: 'rgba(0, 123, 255, 0.5)',
+                        borderColor: 'rgba(0, 123, 255, 1)',
+                        borderWidth: 1
+                    }]
+                };
+            }
+
+            // Chart options with drill-down
+            function getChartOptions(title) {
+                return {
+                    responsive: true,
+                    plugins: { title: { display: true, text: title } },
+                    onClick: (e, elements) => {
+                        if (elements.length > 0) {
+                            const index = elements[0].index;
+                            alert(`Details for ${months[index]}: ${e.chart.data.datasets[0].data[index]}`);
+                        }
+                    },
+                    animation: {
+                        duration: 1000,
+                        easing: 'easeInOutQuad'
+                    }
+                };
+            }
+
+            const yearButton = document.getElementById('yearButton');
+            const yearDropdown = document.getElementById('yearDropdown');
+            const selectedYear = document.getElementById('selectedYear');
+            const yearOptions = yearDropdown.querySelectorAll('.select-option');
+
+            // Toggle dropdown
+            yearButton.addEventListener('click', function (e) {
+                e.preventDefault();
+                yearDropdown.classList.toggle('active');
+
+                // Close dropdown when clicking outside
+                function closeDropdown(e) {
+                    if (!yearButton.contains(e.target) && !yearDropdown.contains(e.target)) {
+                        yearDropdown.classList.remove('active');
+                        document.removeEventListener('click', closeDropdown);
+                    }
+                }
+
+                document.addEventListener('click', closeDropdown);
+            });
+
+            // Handle option selection
+            yearOptions.forEach(option => {
+                option.addEventListener('click', function () {
+                    const selectedYearValue = this.dataset.value;
+
+                    // Update selected text
+                    selectedYear.textContent = this.textContent.trim();
+
+                    // Update selected option
+                    yearOptions.forEach(opt => opt.classList.remove('selected'));
+                    this.classList.add('selected');
+
+                    // Close dropdown
+                    yearDropdown.classList.remove('active');
+
+                    const selectedCategoryValue = document.querySelector('#categoryDropdown .select-option.selected')?.dataset.value || 'all';
+
+                    updateCharts(selectedYearValue, selectedCategoryValue);
+                });
+            });
+
+            const categoryButton = document.getElementById('categoryButton');
+            const categoryDropdown = document.getElementById('categoryDropdown');
+            const selectedCatetory = document.getElementById('selectedCatetory');
+            const categoryOptions = categoryDropdown.querySelectorAll('.select-option');
+
+            // Toggle dropdown
+            categoryButton.addEventListener('click', function (e) {
+                e.preventDefault();
+                categoryDropdown.classList.toggle('active');
+
+                // Close dropdown when clicking outside
+                function closeDropdown(e) {
+                    if (!categoryButton.contains(e.target) && !categoryDropdown.contains(e.target)) {
+                        categoryDropdown.classList.remove('active');
+                        document.removeEventListener('click', closeDropdown);
+                    }
+                }
+
+                document.addEventListener('click', closeDropdown);
+            });
+
+
+            categoryOptions.forEach(option => {
+                option.addEventListener('click', function () {
+                    const selectedCategoryValue = this.dataset.value;
+
+                    // Update selected text
+                    selectedCatetory.textContent = this.textContent.trim();
+
+                    // Update selected option
+                    categoryOptions.forEach(opt => opt.classList.remove('selected'));
+                    this.classList.add('selected');
+
+                    // Close dropdown
+                    categoryDropdown.classList.remove('active');
+                    const selectedYearValue = document.querySelector('#yearDropdown .select-option.selected')?.dataset.value || 'all';
+
+                    updateCharts(selectedYearValue, selectedCategoryValue);
+                });
+            });
+
+            // Update charts with animation
+            function updateCharts(selectedYear = 'all', selectedCategory = 'all') {
+                const grid = document.querySelector('.chart-grid');
+                grid.classList.add('fade');
+
+                setTimeout(() => {
+                    // Check if both dropdowns are set to "all"
+                    if (selectedYear === 'all' && selectedCategory === 'all') {
+
+                        initCharts();
+                    } else {
+                        // Update the charts with filtered data
+                        const barChartData = getChartData(selectedYear, selectedCategory);
+                        const lineChartData = getChartData(selectedYear, selectedCategory);
+
+                        // Update bar chart
+                        barChart.data.labels = barChartData.labels;
+                        barChart.data.datasets = barChartData.datasets;
+                        barChart.update();
+
+                        // Update line chart
+                        lineChart.data.labels = lineChartData.labels;
+                        lineChart.data.datasets = lineChartData.datasets;
+                        lineChart.update();
+                    }
+
+                    grid.classList.remove('fade');
+                }, 300);
+            }
+
+            // Export to PDF
+            function exportPDF() {
+                const { jsPDF } = window.jspdf;
+
+                const content = document.querySelector('.container');
+
+                html2canvas(content, { scale: 2 }).then(canvas => {
+                    const imgData = canvas.toDataURL('image/png'); // Convert canvas to image
+                    const pdf = new jsPDF('p', 'mm', 'a4'); // Create a new PDF document        
+
+                    const pdfWidth = pdf.internal.pageSize.getWidth();
+                    const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
+
+                    pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfHeight);
+
+                    pdf.save('data_comparison.pdf');
+                });
+            }
+
+            // Initialize
+            initCharts();
+
+        </script>
+</body>
+
+</html>

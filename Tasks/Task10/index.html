@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Portfolio Tracker</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body {
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            min-height: 100vh;
+            font-size: 0.9rem;
+        }
+
+        .stock-card {
+            transition: all 0.15s ease;
+            cursor: move;
+        }
+
+        .stock-card.dragging {
+            opacity: 0.5;
+            transform: scale(0.98);
+        }
+
+        .alert-flash {
+            animation: flash 0.8s infinite;
+        }
+
+        @keyframes flash {
+            50% {
+                background-color: rgba(239, 68, 68, 0.25);
+            }
+        }
+
+        .tight-card {
+            background-color: rgba(26, 32, 44, 0.9);
+            backdrop-filter: blur(4px);
+        }
+
+        .tight-input {
+            background-color: rgba(30, 41, 59, 0.8);
+        }
+    </style>
+</head>
+
+<body class="text-gray-200">
+    <div class="container mx-auto p-3 max-w-4xl">
+        <header
+            class="bg-gradient-to-r from-blue-900/80 to-indigo-900/90 rounded-lg shadow p-3 mb-3 border border-gray-700">
+            <h1 class="text-xl font-bold">Portfolio Tracker</h1>
+            <div id="portfolioSummary" class="text-sm mt-1">
+                Total: <span class="font-mono text-blue-300">$<span id="totalValue">0.00</span></span>
+            </div>
+        </header>
+
+        <main class="grid gap-3 md:grid-cols-2">
+            <section class="tight-card rounded-lg shadow p-3 border border-gray-700">
+                <h2 class="text-sm font-semibold mb-2 uppercase tracking-wider text-gray-400">My Stocks</h2>
+                <div id="stockList" class="space-y-1.5 max-h-96 overflow-y-auto pr-1"></div>
+                <div class="mt-3 grid grid-cols-5 gap-1.5">
+                    <input id="stockSymbol" class="col-span-3 tight-input border border-gray-600 rounded p-2 text-sm"
+                        placeholder="SYMBOL">
+                    <input id="stockShares" type="number" class="tight-input border border-gray-600 rounded p-2 text-sm"
+                        placeholder="QTY">
+                    <button id="addStock" class="bg-blue-600 hover:bg-blue-700 text-white text-sm p-1.5 rounded">
+                        Add
+                    </button>
+                </div>
+            </section>
+
+            <section class="tight-card rounded-lg shadow p-3 border border-gray-700">
+                <h2 class="text-sm font-semibold mb-2 uppercase tracking-wider text-gray-400">Details</h2>
+                <div id="stockDetails" class="text-xs">
+                    <div class="text-center py-4 text-gray-500">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 mx-auto mb-1" fill="none"
+                            viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
+                                d="M7 12l3-3 3 3 4-4M8 21l4-4 4 4M3 4h18v4H3V4z" />
+                        </svg>
+                        Select stock
+                    </div>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <script>
+        class MockStockAPI {
+            constructor() {
+                this.prices = { 'AAPL': 175.23, 'GOOGL': 2800.45, 'MSFT': 305.67 };
+            }
+            getPrice(symbol) {
+                return this.prices[symbol] || (Math.random() * 1000).toFixed(2);
+            }
+            subscribe(callback) {
+                setInterval(() => {
+                    Object.keys(this.prices).forEach(symbol => {
+                        this.prices[symbol] = (parseFloat(this.prices[symbol]) * (0.98 + Math.random() * 0.04)).toFixed(2);
+                    });
+                    callback(this.prices);
+                }, 5000);
+            }
+        }
+
+        const stockAPI = new MockStockAPI();
+        let portfolio = JSON.parse(localStorage.getItem('portfolio')) || [];
+
+        function updatePortfolio() {
+            const stockList = document.getElementById('stockList');
+            stockList.innerHTML = '';
+            let totalValue = 0;
+
+            portfolio.forEach((stock, index) => {
+                const currentPrice = stockAPI.getPrice(stock.symbol);
+                const value = (currentPrice * stock.shares).toFixed(2);
+                totalValue += parseFloat(value);
+
+                const card = document.createElement('div');
+                card.className = 'stock-card p-2 bg-gray-800/80 rounded border border-gray-700 hover:border-blue-500/50 text-xs';
+                card.draggable = true;
+                card.dataset.index = index;
+                card.innerHTML = `
+                    <div class="flex justify-between">
+                        <span class="font-medium">${stock.symbol}</span>
+                        <span class="font-mono">$${currentPrice}</span>
+                    </div>
+                    <div class="flex justify-between text-gray-400 mt-0.5">
+                        <span>${stock.shares} sh</span>
+                        <span class="font-mono">$${value}</span>
+                    </div>
+                `;
+
+                card.addEventListener('click', () => showDetails(stock, currentPrice));
+                card.addEventListener('dragstart', dragStart);
+                card.addEventListener('dragover', dragOver);
+                card.addEventListener('drop', drop);
+                card.addEventListener('dragend', dragEnd);
+                stockList.appendChild(card);
+            });
+
+            document.getElementById('totalValue').textContent = totalValue.toFixed(2);
+            localStorage.setItem('portfolio', JSON.stringify(portfolio));
+        }
+
+        function showDetails(stock, price) {
+            const details = document.getElementById('stockDetails');
+            details.innerHTML = `
+                <div class="space-y-1.5">
+                    <div class="flex justify-between items-baseline">
+                        <span class="text-sm font-bold">${stock.symbol}</span>
+                        <span class="text-lg font-mono text-blue-400">$${price}</span>
+                    </div>
+                    <div class="grid grid-cols-2 gap-1.5 pt-1">
+                        <div class="bg-gray-700/50 p-1.5 rounded">
+                            <div class="text-gray-400 text-xs">Shares</div>
+                            <div>${stock.shares}</div>
+                        </div>
+                        <div class="bg-gray-700/50 p-1.5 rounded">
+                            <div class="text-gray-400 text-xs">Value</div>
+                            <div class="font-mono">$${(price * stock.shares).toFixed(2)}</div>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        let draggedItem = null;
+        function dragStart(e) {
+            draggedItem = e.target;
+            draggedItem.classList.add('dragging');
+        }
+        function dragOver(e) {
+            e.preventDefault();
+        }
+        function drop(e) {
+            e.preventDefault();
+            const dropTarget = e.target.closest('.stock-card');
+            if (!dropTarget || draggedItem === dropTarget) return;
+            const fromIndex = parseInt(draggedItem.dataset.index);
+            const toIndex = parseInt(dropTarget.dataset.index);
+            [portfolio[fromIndex], portfolio[toIndex]] = [portfolio[toIndex], portfolio[fromIndex]];
+            updatePortfolio();
+        }
+        function dragEnd() {
+            draggedItem.classList.remove('dragging');
+            draggedItem = null;
+        }
+
+        document.getElementById('addStock').addEventListener('click', () => {
+            const symbol = document.getElementById('stockSymbol').value.toUpperCase();
+            const shares = parseInt(document.getElementById('stockShares').value);
+            if (symbol && shares > 0) {
+                portfolio.push({ symbol, shares });
+                updatePortfolio();
+                document.getElementById('stockSymbol').value = '';
+                document.getElementById('stockShares').value = '';
+            }
+        });
+
+        stockAPI.subscribe((prices) => {
+            const oldPrices = portfolio.map(stock => stockAPI.getPrice(stock.symbol));
+            updatePortfolio();
+            portfolio.forEach((stock, index) => {
+                const newPrice = prices[stock.symbol];
+                const oldPrice = oldPrices[index];
+                if (Math.abs(newPrice - oldPrice) / oldPrice > 0.02) {
+                    const card = document.querySelector(`[data-index="${index}"]`);
+                    card.classList.add('alert-flash');
+                    setTimeout(() => card.classList.remove('alert-flash'), 2000);
+                }
+            });
+        });
+
+        updatePortfolio();
+    </script>
+</body>
+
+</html>

@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Student Dashboard</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        /* Smooth transition for expanding/collapsing */
+        [data-card-content] {
+            display: none;
+            transition: all 0.3s ease;
+            overflow: hidden;
+        }
+
+        [data-card-content].active {
+            display: block;
+        }
+    </style>
+</head>
+
+<body class="bg-gray-900 text-gray-100 min-h-screen">
+    <header class="bg-gray-800 shadow-lg">
+        <div class="container mx-auto px-4 py-6">
+            <h1 class="text-2xl font-bold">Student Dashboard - John Doe</h1>
+        </div>
+    </header>
+
+    <main class="container mx-auto px-4 py-8">
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+            <!-- Current Courses Card -->
+            <section class="bg-gray-800 rounded-lg shadow-md overflow-hidden">
+                <button
+                    class="w-full text-left px-6 py-4 text-xl font-semibold bg-gray-700 hover:bg-gray-600 transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 flex justify-between items-center"
+                    data-card-header>
+                    Current Courses
+                    <span class="transform transition-transform duration-300" data-card-arrow>▼</span>
+                </button>
+                <div class="px-6 py-4" data-card-content>
+                    <ul class="divide-y divide-gray-700">
+                        <li class="py-3">Mathematics 101</li>
+                        <li class="py-3">Computer Science 201</li>
+                        <li class="py-3">Chemistry 101</li>
+                    </ul>
+                </div>
+            </section>
+
+            <!-- Grades Card -->
+            <section class="bg-gray-800 rounded-lg shadow-md overflow-hidden">
+                <button
+                    class="w-full text-left px-6 py-4 text-xl font-semibold bg-gray-700 hover:bg-gray-600 transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 flex justify-between items-center"
+                    data-card-header>
+                    Grades
+                    <span class="transform transition-transform duration-300" data-card-arrow>▼</span>
+                </button>
+                <div class="px-6 py-4" data-card-content>
+                    <ul class="divide-y divide-gray-700 mb-4">
+                        <li class="py-3">Mathematics 101: 85%</li>
+                        <li class="py-3">Computer Science 201: 92%</li>
+                        <li class="py-3">Chemistry 101: 78%</li>
+                    </ul>
+                    <p class="font-medium">Average GPA: <span class="text-blue-400">3.1</span></p>
+                </div>
+            </section>
+
+            <!-- Recommendations Card -->
+            <section class="bg-gray-800 rounded-lg shadow-md overflow-hidden">
+                <button
+                    class="w-full text-left px-6 py-4 text-xl font-semibold bg-gray-700 hover:bg-gray-600 transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 flex justify-between items-center"
+                    data-card-header>
+                    Recommendations
+                    <span class="transform transition-transform duration-300" data-card-arrow>▼</span>
+                </button>
+                <div class="px-6 py-4" data-card-content>
+                    <ul class="space-y-3">
+                        <li class="flex items-start">
+                            <span class="text-blue-400 mr-2">•</span>
+                            <span>Consider extra practice in Math</span>
+                        </li>
+                        <li class="flex items-start">
+                            <span class="text-blue-400 mr-2">•</span>
+                            <span>Meet with CS advisor this week</span>
+                        </li>
+                        <li class="flex items-start">
+                            <span class="text-blue-400 mr-2">•</span>
+                            <span>Review Chemistry notes daily</span>
+                        </li>
+                    </ul>
+                </div>
+            </section>
+
+            <!-- Notifications Card -->
+            <section class="bg-gray-800 rounded-lg shadow-md overflow-hidden">
+                <button
+                    class="w-full text-left px-6 py-4 text-xl font-semibold bg-gray-700 hover:bg-gray-600 transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 flex justify-between items-center"
+                    data-card-header>
+                    Notifications
+                    <span class="transform transition-transform duration-300" data-card-arrow>▼</span>
+                </button>
+                <div class="px-6 py-4 space-y-3" data-card-content>
+                    <div class="bg-yellow-900 bg-opacity-30 p-3 rounded-md border border-yellow-800">
+                        Math assignment due tomorrow
+                    </div>
+                    <div class="bg-yellow-900 bg-opacity-30 p-3 rounded-md border border-yellow-800">
+                        CS project presentation next week
+                    </div>
+                    <div class="bg-yellow-900 bg-opacity-30 p-3 rounded-md border border-yellow-800">
+                        Chemistry lab report due Friday
+                    </div>
+                </div>
+            </section>
+        </div>
+    </main>
+
+    <footer class="mt-12 py-6 text-center text-gray-500 border-t border-gray-800">
+        <p>Quick Links:
+            <a href="#" class="text-blue-400 hover:text-blue-300">Resources</a> |
+            <a href="#" class="text-blue-400 hover:text-blue-300">Support</a>
+        </p>
+    </footer>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const headers = document.querySelectorAll('[data-card-header]');
+
+            headers.forEach(header => {
+                const content = header.nextElementSibling;
+                const arrow = header.querySelector('[data-card-arrow]');
+
+                // Toggle content and rotate arrow
+                const toggleCard = () => {
+                    const isActive = content.classList.toggle('active');
+                    arrow.style.transform = isActive ? 'rotate(180deg)' : 'rotate(0)';
+                };
+
+                // Click handler
+                header.addEventListener('click', toggleCard);
+
+                // Keyboard handler
+                header.addEventListener('keydown', (e) => {
+                    if (e.key === 'Enter' || e.key === ' ') {
+                        e.preventDefault();
+                        toggleCard();
+                    }
+                });
+            });
+        });
+    </script>
+</body>
+
+</html>

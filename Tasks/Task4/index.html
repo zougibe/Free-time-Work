@@ -1,0 +1,288 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Zoo Revenue Calculator - April 2025</title>
+    <link rel="preconnect" href="https://cdn.tailwindcss.com">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        .calculator-container {
+            max-width: 800px;
+            margin: 2rem auto;
+            padding: 1.5rem;
+        }
+
+        .result-box {
+            background-color: #f0fdf4;
+            border-radius: 0.5rem;
+            padding: 1rem;
+            margin-top: 1rem;
+        }
+
+        .animated-result {
+            animation: fadeIn 0.5s ease-in;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(-10px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .input-hint {
+            font-size: 0.75rem;
+            color: #6b7280;
+            margin-top: 0.25rem;
+        }
+    </style>
+</head>
+
+<body class="bg-gray-100 font-sans">
+    <div class="calculator-container bg-white shadow-lg rounded-lg">
+        <h1 class="text-3xl font-bold text-center mb-6 text-green-800" aria-label="Zoo Revenue Calculator">
+            Zoo Revenue Calculator - April 2025
+        </h1>
+
+        <!-- Input Form -->
+        <form id="ticketForm" class="space-y-4">
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700" for="children">Children (0-12)</label>
+                    <input type="number" id="children" min="0" value="0"
+                        class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-green-500 focus:ring-green-500"
+                        aria-describedby="childrenHelp">
+                    <p id="childrenHelp" class="input-hint">* Under 13 years</p>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700" for="adults">Adults (13-64)</label>
+                    <input type="number" id="adults" min="0" value="0"
+                        class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-green-500 focus:ring-green-500"
+                        aria-describedby="adultsHelp">
+                    <p id="adultsHelp" class="input-hint">* Ages 13 to 64</p>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700" for="seniors">Seniors (65+)</label>
+                    <input type="number" id="seniors" min="0" value="0"
+                        class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-green-500 focus:ring-green-500"
+                        aria-describedby="seniorsHelp">
+                    <p id="seniorsHelp" class="input-hint">* 65 years and older</p>
+                </div>
+            </div>
+            <div>
+                <label class="block text-sm font-medium text-gray-700" for="day">Day of Month (1-30)</label>
+                <input type="number" id="day" min="1" max="30" value="1"
+                    class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-green-500 focus:ring-green-500"
+                    aria-describedby="dayHelp">
+                <p id="dayHelp" class="input-hint">* Special events on 10th, 15th, 20th</p>
+            </div>
+            <button type="submit" class="w-full bg-green-600 text-white py-2 px-4 rounded-md hover:bg-green-700 transition-colors
+                           focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2">
+                Calculate Cost
+            </button>
+        </form>
+
+        <!-- Results -->
+        <div id="groupResult" class="result-box hidden animated-result" aria-live="polite">
+            <div class="space-y-2">
+                <h2 class="text-xl font-semibold text-green-800 mb-2">Group Cost Breakdown</h2>
+                <div class="flex justify-between">
+                    <span class="font-medium">Base Price:</span>
+                    <span id="basePrice">$0.00</span>
+                </div>
+                <div id="surchargeInfo" class="flex justify-between text-red-600 hidden">
+                    <span class="font-medium">Special Event Surcharge:</span>
+                    <span>+20%</span>
+                </div>
+                <div id="discountInfo" class="flex justify-between text-green-600 hidden">
+                    <span class="font-medium">Discount Applied:</span>
+                    <span id="discountAmount"></span>
+                </div>
+                <div class="flex justify-between border-t pt-2">
+                    <span class="font-bold">Total Cost:</span>
+                    <span id="groupTotal" class="font-bold">$0.00</span>
+                </div>
+            </div>
+        </div>
+
+        <div id="monthlyResult" class="result-box hidden animated-result" aria-live="polite">
+            <div class="space-y-2">
+                <h2 class="text-xl font-semibold text-green-800 mb-2">April 2025 Revenue Summary</h2>
+                <div class="flex justify-between">
+                    <span class="font-medium">Average Daily Revenue:</span>
+                    <span id="avgDailyRevenue">$0.00</span>
+                </div>
+                <div class="flex justify-between">
+                    <span class="font-medium">Projected Monthly Revenue:</span>
+                    <span id="monthlyTotal" class="font-bold">$0.00</span>
+                </div>
+                <p class="text-sm text-gray-600 mt-2">* Based on 20 groups per day with sample visitor distribution</p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Configuration constants
+        const CONFIG = {
+            BASE_PRICES: {
+                child: 10,
+                adult: 20,
+                senior: 15
+            },
+            SPECIAL_DAYS: [10, 15, 20],
+            DAILY_GROUPS: 20,
+            MONTH_DAYS: 30,
+            DISCOUNTS: {
+                small: { threshold: 5, rate: 0.9, text: '10% group discount (5-9 visitors)' },
+                large: { threshold: 10, rate: 0.85, text: '15% group discount (10+ visitors)' }
+            }
+        };
+
+        // Generate realistic sample data with variation
+        function generateSampleData() {
+            return Array.from({ length: CONFIG.MONTH_DAYS }, (_, i) => {
+                const day = i + 1;
+                // Higher attendance on weekends and special days
+                const isWeekend = day % 7 === 0 || day % 7 === 6;
+                const isSpecial = CONFIG.SPECIAL_DAYS.includes(day);
+                const multiplier = isSpecial ? 1.4 : isWeekend ? 1.2 : 1;
+
+                return {
+                    children: Math.floor(15 * multiplier + Math.random() * 10),
+                    adults: Math.floor(35 * multiplier + Math.random() * 15),
+                    seniors: Math.floor(8 * multiplier + Math.random() * 5)
+                };
+            });
+        }
+
+        // Calculate base price before any adjustments
+        function calculateBasePrice(group) {
+            return (group.children * CONFIG.BASE_PRICES.child) +
+                (group.adults * CONFIG.BASE_PRICES.adult) +
+                (group.seniors * CONFIG.BASE_PRICES.senior);
+        }
+
+        // Apply special event surcharge if applicable
+        function applySurcharge(price, day) {
+            const isSpecialDay = CONFIG.SPECIAL_DAYS.includes(day);
+            return {
+                price: isSpecialDay ? price * 1.2 : price,
+                isSpecialDay
+            };
+        }
+
+        // Calculate applicable discount based on group size
+        function calculateDiscount(totalVisitors, price) {
+            if (totalVisitors >= CONFIG.DISCOUNTS.large.threshold) {
+                return {
+                    price: price * CONFIG.DISCOUNTS.large.rate,
+                    text: CONFIG.DISCOUNTS.large.text
+                };
+            }
+            if (totalVisitors >= CONFIG.DISCOUNTS.small.threshold) {
+                return {
+                    price: price * CONFIG.DISCOUNTS.small.rate,
+                    text: CONFIG.DISCOUNTS.small.text
+                };
+            }
+            return { price, text: '' };
+        }
+
+        // Format currency with proper localization
+        function formatCurrency(amount) {
+            return new Intl.NumberFormat('en-US', {
+                style: 'currency',
+                currency: 'USD',
+                minimumFractionDigits: 2,
+                maximumFractionDigits: 2
+            }).format(amount);
+        }
+
+        // Calculate monthly revenue with caching
+        let monthlyRevenueCache = null;
+        function calculateMonthlyRevenue() {
+            if (!monthlyRevenueCache) {
+                const sampleData = generateSampleData();
+                let totalRevenue = 0;
+
+                sampleData.forEach((group, index) => {
+                    const day = index + 1;
+                    let price = calculateBasePrice(group);
+                    const surcharge = applySurcharge(price, day);
+                    const totalVisitors = group.children + group.adults + group.seniors;
+                    const discount = calculateDiscount(totalVisitors, surcharge.price);
+
+                    totalRevenue += discount.price * CONFIG.DAILY_GROUPS;
+                });
+
+                monthlyRevenueCache = {
+                    total: totalRevenue,
+                    dailyAvg: totalRevenue / CONFIG.MONTH_DAYS
+                };
+            }
+            return monthlyRevenueCache;
+        }
+
+        // Handle form submission
+        function handleSubmit(e) {
+            e.preventDefault();
+
+            // Validate and parse inputs
+            function getValidatedInput(id, min = 0, max = Infinity) {
+                const input = document.getElementById(id);
+                let value = parseInt(input.value) || 0;
+                value = Math.max(min, Math.min(max, value));
+                input.value = value; // Update input with validated value
+                return value;
+            }
+
+            const group = {
+                children: getValidatedInput('children'),
+                adults: getValidatedInput('adults'),
+                seniors: getValidatedInput('seniors')
+            };
+            const day = getValidatedInput('day', 1, 30);
+
+            // Perform calculations
+            const totalVisitors = group.children + group.adults + group.seniors;
+            const basePrice = calculateBasePrice(group);
+            const surcharge = applySurcharge(basePrice, day);
+            const discount = calculateDiscount(totalVisitors, surcharge.price);
+
+            // Update group result display
+            document.getElementById('basePrice').textContent = formatCurrency(basePrice);
+            document.getElementById('surchargeInfo').classList.toggle('hidden', !surcharge.isSpecialDay);
+            document.getElementById('discountInfo').classList.toggle('hidden', !discount.text);
+            document.getElementById('discountAmount').textContent = discount.text;
+            document.getElementById('groupTotal').textContent = formatCurrency(discount.price);
+            document.getElementById('groupResult').classList.remove('hidden');
+
+            // Update monthly summary
+            const revenue = calculateMonthlyRevenue();
+            document.getElementById('monthlyTotal').textContent = formatCurrency(revenue.total);
+            document.getElementById('avgDailyRevenue').textContent = formatCurrency(revenue.dailyAvg);
+            document.getElementById('monthlyResult').classList.remove('hidden');
+        }
+
+        // Initialize the calculator
+        document.addEventListener('DOMContentLoaded', () => {
+            // Set up form submission handler
+            document.getElementById('ticketForm').addEventListener('submit', handleSubmit);
+
+            // Calculate and display initial monthly revenue
+            const revenue = calculateMonthlyRevenue();
+            document.getElementById('monthlyTotal').textContent = formatCurrency(revenue.total);
+            document.getElementById('avgDailyRevenue').textContent = formatCurrency(revenue.dailyAvg);
+            document.getElementById('monthlyResult').classList.remove('hidden');
+        });
+    </script>
+</body>
+
+</html>

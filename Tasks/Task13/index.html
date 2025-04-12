@@ -1,0 +1,471 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Electric Field Visualizer | Dark Mode</title>
+    <script src="https://cdn.jsdelivr.net/npm/p5@1.4.2/lib/p5.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        primary: {
+                            400: '#818cf8',
+                            500: '#6366f1',
+                            600: '#4f46e5',
+                        },
+                        dark: {
+                            800: '#1e293b',
+                            900: '#0f172a',
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        #canvas-container canvas {
+            border-radius: 0.5rem;
+            cursor: crosshair;
+        }
+
+        .slider::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 16px;
+            height: 16px;
+            background: #6366f1;
+            cursor: pointer;
+            border-radius: 50%;
+        }
+    </style>
+</head>
+
+<body class="bg-dark-900 text-gray-200 min-h-screen">
+    <div class="container mx-auto px-4 py-8">
+        <!-- Header -->
+        <header class="mb-8 text-center">
+            <h1 class="text-3xl font-bold text-primary-400 mb-2">Electric Field Visualizer</h1>
+            <p class="text-gray-400">Interactive simulation of Coulomb's Law with dynamic field lines</p>
+        </header>
+
+        <div class="flex flex-col lg:flex-row gap-6">
+            <!-- Canvas Container -->
+            <div class="flex-1">
+                <div id="canvas-container" class="bg-dark-800 border border-dark-700 shadow-lg"></div>
+            </div>
+
+            <!-- Controls Panel -->
+            <div class="w-full lg:w-80 bg-dark-800 p-6 rounded-lg border border-dark-700 shadow-lg">
+                <h2 class="text-xl font-semibold text-primary-400 mb-4">Controls</h2>
+
+                <div class="space-y-4">
+                    <!-- Action Buttons -->
+                    <div class="grid grid-cols-2 gap-3">
+                        <button onclick="addCharge()"
+                            class="bg-primary-600 hover:bg-primary-500 text-white py-2 px-4 rounded transition-colors">
+                            Add Charge
+                        </button>
+                        <button id="delete-btn" onclick="deleteSelectedCharge()" disabled
+                            class="bg-rose-600 hover:bg-rose-500 text-white py-2 px-4 rounded transition-colors">
+                            Delete Selected
+                        </button>
+                    </div>
+                    <button onclick="confirmClearAll()"
+                        class="w-full bg-rose-700 hover:bg-rose-600 text-white py-2 px-4 rounded transition-colors">
+                        Clear All Charges
+                    </button>
+
+                    <!-- Charge Magnitude Slider -->
+                    <div>
+                        <label class="block text-sm font-medium text-gray-300 mb-1">
+                            Charge Magnitude: <span id="magnitude-value" class="font-mono">1.0</span>
+                        </label>
+                        <input type="range" id="magnitude" min="-5" max="5" value="1" step="0.1"
+                            class="w-full h-2 bg-dark-700 rounded-lg appearance-none cursor-pointer slider">
+                    </div>
+
+                    <!-- Field Line Controls -->
+                    <div class="space-y-3">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-300 mb-1">
+                                Field Line Density: <span id="density-value" class="font-mono">15</span>
+                            </label>
+                            <input type="range" id="density" min="5" max="40" value="15" step="5"
+                                class="w-full h-2 bg-dark-700 rounded-lg appearance-none cursor-pointer slider">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-300 mb-1">
+                                Line Length: <span id="length-value" class="font-mono">200</span>px
+                            </label>
+                            <input type="range" id="length" min="50" max="500" value="200" step="50"
+                                class="w-full h-2 bg-dark-700 rounded-lg appearance-none cursor-pointer slider">
+                        </div>
+                    </div>
+
+                    <!-- Charge Info Card -->
+                    <div id="charge-info" class="bg-dark-700 p-4 rounded-lg border border-dark-600">
+                        <p class="text-gray-400">No charge selected. Click on a charge to select it.</p>
+                    </div>
+
+                    <!-- Info Button -->
+                    <button onclick="toggleOverlay()"
+                        class="w-full bg-dark-700 hover:bg-dark-600 text-gray-300 py-2 px-4 rounded transition-colors border border-dark-600">
+                        Physics Explanation
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Info Overlay -->
+    <div id="overlay" class="fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center p-4 hidden z-50">
+        <div class="bg-dark-800 rounded-lg border border-dark-700 shadow-xl max-w-2xl w-full p-6 relative">
+            <button onclick="toggleOverlay()" class="absolute top-4 right-4 text-gray-400 hover:text-white">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24"
+                    stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                </svg>
+            </button>
+
+            <h3 class="text-xl font-bold text-primary-400 mb-4">Electric Fields & Coulomb's Law</h3>
+
+            <div class="prose prose-invert max-w-none">
+                <p>The electric field <strong>E</strong> at a point in space is defined as the force <strong>F</strong>
+                    experienced by a small positive test charge <em>q</em> placed at that point:</p>
+                <p class="text-center text-lg my-4"><strong>E = F/q</strong></p>
+                <p>For a point charge <em>Q</em>, the electric field at distance <em>r</em> is:</p>
+                <p class="text-center text-lg my-4"><strong>E = k·Q/r²</strong></p>
+                <p>where <em>k</em> is Coulomb's constant (8.99×10⁹ N·m²/C²).</p>
+
+                <div class="mt-6 space-y-2">
+                    <p class="font-medium">In this simulation:</p>
+                    <ul class="list-disc pl-5 space-y-1">
+                        <li><span class="text-red-400">Red charges</span> are positive (sources of field lines)</li>
+                        <li><span class="text-blue-400">Blue charges</span> are negative (sinks of field lines)</li>
+                        <li>Field lines show the path a positive test charge would follow</li>
+                        <li>Line density represents field strength</li>
+                        <li>Arrows show field direction</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Simulation Code (same as before with minor adjustments for dark mode)
+        let charges = [];
+        let gridSize = 30;
+        let selectedCharge = null;
+        let fieldLineDensity = 15;
+        let maxFieldLineLength = 200;
+        let isDragging = false;
+        let fieldLines = [];
+
+        function setup() {
+            let canvas = createCanvas(1160, 700);
+            canvas.parent('canvas-container');
+            textSize(12);
+            calculateAllFieldLines();
+        }
+
+        function draw() {
+            background(15, 23, 42); // dark-900
+            drawGrid();
+            drawFieldLines();
+            drawCharges();
+            drawSelectionIndicator();
+        }
+
+        function drawGrid() {
+            stroke(30, 41, 59, 100); // dark-800 with alpha
+            for (let x = 0; x < width; x += gridSize) {
+                line(x, 0, x, height);
+            }
+            for (let y = 0; y < height; y += gridSize) {
+                line(0, y, width, y);
+            }
+        }
+
+        function drawCharges() {
+            charges.forEach(charge => {
+                noStroke();
+                fill(charge.magnitude > 0 ? color(239, 68, 68) : color(96, 165, 250)); // red-500 / blue-400
+                ellipse(charge.x, charge.y, 24, 24);
+                fill(255);
+                textAlign(CENTER, CENTER);
+                text(charge.magnitude.toFixed(1), charge.x, charge.y);
+            });
+        }
+
+        function drawSelectionIndicator() {
+            if (selectedCharge) {
+                noFill();
+                stroke(74, 222, 128); // emerald-400
+                strokeWeight(2);
+                ellipse(selectedCharge.x, selectedCharge.y, 30, 30);
+            }
+        }
+
+        function calculateAllFieldLines() {
+            fieldLines = [];
+
+            // Create field lines originating from positive charges
+            charges.forEach(charge => {
+                if (charge.magnitude > 0) {
+                    const linesPerCharge = Math.floor(Math.abs(charge.magnitude) * 3);
+
+                    for (let i = 0; i < linesPerCharge; i++) {
+                        const angle = (TWO_PI / linesPerCharge) * i;
+                        const startX = charge.x + cos(angle) * 15;
+                        const startY = charge.y + sin(angle) * 15;
+
+                        const linePoints = traceFieldLine(startX, startY);
+                        if (linePoints.length > 1) {
+                            fieldLines.push(linePoints);
+                        }
+                    }
+                }
+            });
+
+            // Add uniform grid field indicators
+            for (let x = 0; x < width; x += fieldLineDensity) {
+                for (let y = 0; y < height; y += fieldLineDensity) {
+                    const force = calculateField(x, y);
+                    if (force.mag() > 0.1) {
+                        const endX = x + force.x * 15;
+                        const endY = y + force.y * 15;
+                        fieldLines.push([[x, y], [endX, endY]]);
+                    }
+                }
+            }
+        }
+
+        function traceFieldLine(startX, startY) {
+            const points = [[startX, startY]];
+            let x = startX;
+            let y = startY;
+            let length = 0;
+
+            while (length < maxFieldLineLength) {
+                const force = calculateField(x, y);
+                if (force.mag() < 0.1) break;
+
+                force.normalize().mult(5);
+                x += force.x;
+                y += force.y;
+                length += 5;
+
+                // Check if we've hit a charge
+                for (const charge of charges) {
+                    if (dist(x, y, charge.x, charge.y) < 15) {
+                        if (charge.magnitude < 0) {
+                            points.push([x, y]); // Terminate at negative charge
+                        }
+                        return points;
+                    }
+                }
+
+                // Stop if we go off screen
+                if (x < 0 || x > width || y < 0 || y > height) break;
+
+                points.push([x, y]);
+            }
+
+            return points;
+        }
+
+        function drawFieldLines() {
+            stroke(226, 232, 240, 150); // gray-200 with alpha
+            strokeWeight(1);
+            noFill();
+
+            // Draw the traced field lines
+            fieldLines.forEach(line => {
+                beginShape();
+                for (let i = 0; i < line.length; i++) {
+                    vertex(line[i][0], line[i][1]);
+                }
+                endShape();
+
+                // Draw arrowhead at end
+                if (line.length > 1) {
+                    const last = line.length - 1;
+                    if (last > 0) {
+                        const dx = line[last][0] - line[last - 1][0];
+                        const dy = line[last][1] - line[last - 1][1];
+                        const angle = atan2(dy, dx);
+                        drawArrowHead(line[last][0], line[last][1], angle);
+                    }
+                }
+            });
+        }
+
+        function drawArrowHead(x, y, angle) {
+            push();
+            translate(x, y);
+            rotate(angle);
+            stroke(226, 232, 240); // gray-200
+            line(0, 0, -8, -4);
+            line(0, 0, -8, 4);
+            pop();
+        }
+
+        function calculateField(x, y) {
+            let totalForce = createVector(0, 0);
+            charges.forEach(charge => {
+                const dx = x - charge.x;
+                const dy = y - charge.y;
+                const r = dist(x, y, charge.x, charge.y);
+
+                if (r > 10) { // Ignore self-force
+                    const forceMagnitude = abs(charge.magnitude) / (r * r);
+                    const forceAngle = atan2(dy, dx);
+                    const forceVector = p5.Vector.fromAngle(forceAngle).mult(forceMagnitude);
+
+                    // Like charges repel, opposite attract
+                    totalForce.add(charge.magnitude > 0 ? forceVector : forceVector.mult(-1));
+                }
+            });
+            return totalForce;
+        }
+
+        function mousePressed() {
+            if (mouseX > 0 && mouseX < width && mouseY > 0 && mouseY < height) {
+                // Check if we clicked on an existing charge
+                selectedCharge = null;
+                for (let i = charges.length - 1; i >= 0; i--) {
+                    if (dist(charges[i].x, charges[i].y, mouseX, mouseY) < 15) {
+                        selectedCharge = charges[i];
+                        document.getElementById('magnitude').value = selectedCharge.magnitude;
+                        updateMagnitudeDisplay();
+                        updateChargeInfo();
+                        document.getElementById('delete-btn').disabled = false;
+                        break;
+                    }
+                }
+
+                // If we didn't click on a charge and we're not dragging, add a new one
+                if (!selectedCharge && !isDragging) {
+                    addCharge(mouseX, mouseY);
+                }
+            }
+        }
+
+        function mouseDragged() {
+            if (selectedCharge) {
+                isDragging = true;
+                selectedCharge.x = constrain(Math.round(mouseX / gridSize) * gridSize, 10, width - 10);
+                selectedCharge.y = constrain(Math.round(mouseY / gridSize) * gridSize, 10, height - 10);
+                calculateAllFieldLines(); // Recalculate field lines when dragging
+            }
+        }
+
+        function mouseReleased() {
+            isDragging = false;
+        }
+
+        function addCharge(x = width / 2, y = height / 2) {
+            const magnitude = parseFloat(document.getElementById('magnitude').value);
+            const newCharge = {
+                x: constrain(Math.round(x / gridSize) * gridSize, 10, width - 10),
+                y: constrain(Math.round(y / gridSize) * gridSize, 10, height - 10),
+                magnitude: magnitude
+            };
+            charges.push(newCharge);
+            selectedCharge = newCharge;
+            calculateAllFieldLines();
+            updateChargeInfo();
+            document.getElementById('delete-btn').disabled = false;
+        }
+
+        function deleteSelectedCharge() {
+            if (selectedCharge) {
+                const index = charges.indexOf(selectedCharge);
+                if (index !== -1) {
+                    charges.splice(index, 1);
+                    selectedCharge = null;
+                    calculateAllFieldLines();
+                    updateChargeInfo();
+                    document.getElementById('delete-btn').disabled = true;
+                }
+            }
+        }
+
+        function confirmClearAll() {
+            if (confirm("Are you sure you want to clear all charges?")) {
+                clearCharges();
+            }
+        }
+
+        function clearCharges() {
+            charges = [];
+            selectedCharge = null;
+            calculateAllFieldLines();
+            updateChargeInfo();
+            document.getElementById('delete-btn').disabled = true;
+        }
+
+        function updateMagnitude() {
+            const value = parseFloat(document.getElementById('magnitude').value).toFixed(1);
+            document.getElementById('magnitude-value').textContent = value;
+            if (selectedCharge) {
+                selectedCharge.magnitude = parseFloat(value);
+                calculateAllFieldLines();
+                updateChargeInfo();
+            }
+        }
+
+        function updateMagnitudeDisplay() {
+            document.getElementById('magnitude-value').textContent =
+                parseFloat(document.getElementById('magnitude').value).toFixed(1);
+        }
+
+        function updateDensity() {
+            fieldLineDensity = parseInt(document.getElementById('density').value);
+            document.getElementById('density-value').textContent = fieldLineDensity;
+            calculateAllFieldLines();
+        }
+
+        function updateLength() {
+            maxFieldLineLength = parseInt(document.getElementById('length').value);
+            document.getElementById('length-value').textContent = maxFieldLineLength;
+            calculateAllFieldLines();
+        }
+
+        function updateChargeInfo() {
+            const infoDiv = document.getElementById('charge-info');
+            if (selectedCharge) {
+                infoDiv.innerHTML = `
+                    <p class="text-primary-400 font-medium">Selected Charge</p>
+                    <p class="text-sm">Position: (${selectedCharge.x}, ${selectedCharge.y})</p>
+                    <p class="text-sm">Magnitude: ${selectedCharge.magnitude.toFixed(1)}</p>
+                    <p class="text-xs text-gray-400 mt-1">Adjust magnitude with slider above</p>
+                `;
+            } else {
+                infoDiv.innerHTML = `<p class="text-gray-400">No charge selected. Click on a charge to select it.</p>`;
+            }
+        }
+
+        function toggleOverlay() {
+            const overlay = document.getElementById('overlay');
+            overlay.classList.toggle('hidden');
+        }
+
+        // Initialize UI
+        document.getElementById('magnitude').addEventListener('input', updateMagnitude);
+        document.getElementById('density').addEventListener('input', updateDensity);
+        document.getElementById('length').addEventListener('input', updateLength);
+
+        // Initial display updates
+        updateMagnitudeDisplay();
+        document.getElementById('density-value').textContent = fieldLineDensity;
+        document.getElementById('length-value').textContent = maxFieldLineLength;
+    </script>
+</body>
+
+</html>

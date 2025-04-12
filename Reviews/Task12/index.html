@@ -1,0 +1,748 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Exotic Escapes - Luxury Travel</title>
+    <!-- REQUIREMENT: CSS for styling -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap"
+        rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+    <style>
+        /* REQUIREMENT: Theme class for adaptable colors */
+        :root {
+            --primary: #2a9d8f;
+            --primary-dark: #21867a;
+            --secondary: #e76f51;
+            --secondary-dark: #d45a3d;
+            --accent: #f4a261;
+            --text: #264653;
+            --light: #f8f9fa;
+            --dark: #212529;
+            --transition: all 0.3s ease;
+        }
+
+        body {
+            font-family: 'Poppins', sans-serif;
+            color: var(--text);
+            line-height: 1.6;
+            padding-top: 80px;
+            /* Space for fixed header */
+        }
+
+        /* REQUIREMENT: Smooth scroll effect */
+        html {
+            scroll-behavior: smooth;
+        }
+
+        /* Hero Carousel - REQUIREMENT: Captivating hero image carousel */
+        .hero {
+            height: calc(100vh - 80px);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .carousel {
+            height: 100%;
+            position: relative;
+        }
+
+        .slide {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            opacity: 0;
+            transition: opacity 1s ease;
+            background-size: cover;
+            background-position: center;
+        }
+
+        .slide.active {
+            opacity: 1;
+        }
+
+        .carousel-control {
+            position: absolute;
+            top: 50%;
+            transform: translateY(-50%);
+            background: rgba(0, 0, 0, 0.5);
+            color: white;
+            border: none;
+            padding: 1rem;
+            cursor: pointer;
+            z-index: 10;
+            transition: var(--transition);
+        }
+
+        .carousel-control:hover {
+            background: rgba(0, 0, 0, 0.8);
+        }
+
+        .carousel-control.prev {
+            left: 20px;
+        }
+
+        .carousel-control.next {
+            right: 20px;
+        }
+
+        /* REQUIREMENT: Search bar for package types */
+        .search-bar {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 12px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
+        }
+
+        .search-type-select {
+            border-right: 1px solid #eee;
+        }
+
+        /* REQUIREMENT: Testimonials section */
+        .testimonial-card {
+            transition: var(--transition);
+            transform: translateY(0);
+        }
+
+        .testimonial-card:hover {
+            transform: translateY(-5px);
+        }
+
+        /* REQUIREMENT: User login/signup functionality */
+        .auth-form input {
+            transition: var(--transition);
+        }
+
+        .auth-form input:focus {
+            box-shadow: 0 0 0 3px rgba(42, 157, 143, 0.2);
+        }
+
+        /* REQUIREMENT: Language selector */
+        .language-selector {
+            transition: var(--transition);
+        }
+
+        /* Responsive design - REQUIREMENT: Works on web and mobile */
+        @media (max-width: 768px) {
+            #navMenu {
+                position: fixed;
+                top: 80px;
+                left: 0;
+                width: 100%;
+                background: white;
+                box-shadow: 0 10px 15px rgba(0, 0, 0, 0.1);
+                transform: translateY(-150%);
+                opacity: 0;
+                transition: all 0.4s ease;
+            }
+
+            #navMenu.active {
+                transform: translateY(0);
+                opacity: 1;
+            }
+
+            .search-bar {
+                flex-direction: column;
+            }
+
+            .search-type-select {
+                border-right: none;
+                border-bottom: 1px solid #eee;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <!-- REQUIREMENT: Responsive layout -->
+    <header class="fixed top-0 w-full bg-white shadow-md z-50">
+        <div class="container mx-auto px-4">
+            <div class="flex items-center justify-between h-20">
+                <!-- Logo -->
+                <a href="#" class="flex items-center">
+                    <i class="fas fa-plane text-3xl text-primary mr-2"></i>
+                    <span class="text-2xl font-bold text-primary">Exotic Escapes</span>
+                </a>
+
+                <!-- Mobile menu button - REQUIREMENT: Mobile views -->
+                <button id="menuToggle" class="md:hidden text-primary text-2xl">
+                    <i class="fas fa-bars"></i>
+                </button>
+
+                <!-- Navigation - REQUIREMENT: Main layout structure -->
+                <nav id="navMenu" class="md:flex items-center space-x-1">
+                    <div class="flex flex-col md:flex-row md:items-center md:space-x-6 p-4 md:p-0">
+                        <a href="#about" class="nav-link">About</a>
+                        <a href="#packages" class="nav-link">Packages</a>
+                        <a href="#testimonials" class="nav-link">Testimonials</a>
+                        <a href="#contact" class="nav-link">Contact</a>
+
+                        <!-- REQUIREMENT: Language selection dropdown -->
+                        <div class="relative mt-4 md:mt-0">
+                            <select class="language-selector px-4 py-2 border rounded-lg bg-white">
+                                <option value="en">English</option>
+                                <option value="es">Español</option>
+                                <option value="fr">Français</option>
+                                <option value="de">Deutsch</option>
+                            </select>
+                            <i class="fas fa-chevron-down absolute right-3 top-3 text-gray-400 pointer-events-none"></i>
+                        </div>
+                    </div>
+
+                    <!-- REQUIREMENT: User login/signup functionality -->
+                    <div
+                        class="auth-form flex flex-col md:flex-row items-center space-y-4 md:space-y-0 md:space-x-4 p-4 md:p-0">
+                        <div class="flex flex-col md:flex-row space-y-2 md:space-y-0 md:space-x-2 w-full">
+                            <input type="email" placeholder="Email" class="px-4 py-2 border rounded-lg">
+                            <input type="password" placeholder="Password" class="px-4 py-2 border rounded-lg">
+                        </div>
+                        <div class="flex space-x-2 w-full md:w-auto">
+                            <button
+                                class="bg-indigo-900 text-white px-4 py-2 rounded-lg hover:bg-primary-dark transition w-[100px]">
+                                Login
+                            </button>
+                            <button id="signupBtn"
+                                class="bg-indigo-900 text-white px-4 py-2 rounded-lg hover:bg-secondary-dark transition w-[100px]">
+                                Sign Up
+                            </button>
+                        </div>
+                    </div>
+                </nav>
+            </div>
+        </div>
+    </header>
+
+    <!-- REQUIREMENT: Hero image carousel -->
+    <section class="hero">
+        <div class="carousel">
+            <!-- Slide 1 -->
+            <div class="slide active"
+                style="background-image: url('https://images.unsplash.com/photo-1507525428034-b723cf961d3e?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=2070&q=80')">
+                <div class="absolute inset-0 bg-black bg-opacity-40 flex items-center justify-center">
+                    <div class="text-center text-white px-4">
+                        <h1 class="text-4xl md:text-6xl font-bold mb-4">Discover Tropical Paradises</h1>
+                        <p class="text-xl md:text-2xl mb-8">Experience the most beautiful beaches in the world</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Slide 2 -->
+            <div class="slide"
+                style="background-image: url('https://images.unsplash.com/photo-1506929562872-bb421503ef21?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1685&q=80')">
+                <div class="absolute inset-0 bg-black bg-opacity-40 flex items-center justify-center">
+                    <div class="text-center text-white px-4">
+                        <h1 class="text-4xl md:text-6xl font-bold mb-4">Mountain Adventures</h1>
+                        <p class="text-xl md:text-2xl mb-8">Explore breathtaking landscapes and thrilling trails</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Slide 3 -->
+            <div class="slide"
+                style="background-image: url('https://images.unsplash.com/photo-1464037866556-6812c9d1c72e?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=2070&q=80')">
+                <div class="absolute inset-0 bg-black bg-opacity-40 flex items-center justify-center">
+                    <div class="text-center text-white px-4">
+                        <h1 class="text-4xl md:text-6xl font-bold mb-4">Cultural Journeys</h1>
+                        <p class="text-xl md:text-2xl mb-8">Immerse yourself in rich histories and traditions</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Carousel Controls -->
+            <button class="carousel-control prev">
+                <i class="fas fa-chevron-left"></i>
+            </button>
+            <button class="carousel-control next">
+                <i class="fas fa-chevron-right"></i>
+            </button>
+        </div>
+
+        <!-- REQUIREMENT: Search bar for package types -->
+        <div class="absolute bottom-10 left-0 right-0">
+            <div class="container mx-auto px-4">
+                <div class="search-bar flex flex-col md:flex-row overflow-hidden max-w-4xl mx-auto">
+                    <div class="search-type-select flex-1 p-4 bg-white">
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Package Type</label>
+                        <select class="w-full p-2 border-none focus:ring-0">
+                            <option>All Packages</option>
+                            <option>Beach Vacations</option>
+                            <option>Mountain Retreats</option>
+                            <option>Cultural Tours</option>
+                            <option>Adventure Trips</option>
+                            <option>Luxury Cruises</option>
+                        </select>
+                    </div>
+                    <div class="flex-1 p-4 bg-white">
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Destination</label>
+                        <div class="relative">
+                            <i class="fas fa-map-marker-alt absolute left-3 top-3 text-gray-400"></i>
+                            <input type="text" placeholder="Where to?"
+                                class="w-full pl-10 p-2 border-none focus:ring-0">
+                        </div>
+                    </div>
+                    <div class="flex-1 p-4 bg-white">
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Travel Dates</label>
+                        <input type="date" class="w-full p-2 border-none focus:ring-0">
+                    </div>
+                    <div class="p-4 bg-secondary flex items-center justify-center">
+                        <button class="text-white font-medium">
+                            <i class="fas fa-search mr-2"></i> Search
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- About Section -->
+    <section id="about" class="py-20 bg-gray-50">
+        <div class="container mx-auto px-4">
+            <div class="text-center mb-16">
+                <h2 class="text-3xl md:text-4xl font-bold text-primary mb-4">About Exotic Escapes</h2>
+                <div class="w-20 h-1 bg-secondary mx-auto mb-6"></div>
+                <p class="max-w-3xl mx-auto text-lg text-gray-600">
+                    We specialize in crafting unforgettable travel experiences tailored to your dreams.
+                    Our expert team handpicks the finest destinations and accommodations to ensure
+                    your journey is nothing short of extraordinary.
+                </p>
+            </div>
+        </div>
+    </section>
+
+    <!-- REQUIREMENT: Vacation packages display -->
+    <section id="packages" class="py-20">
+        <div class="container mx-auto px-4">
+            <div class="text-center mb-16">
+                <h2 class="text-3xl md:text-4xl font-bold text-primary mb-4">Our Exclusive Packages</h2>
+                <div class="w-20 h-1 bg-secondary mx-auto mb-6"></div>
+                <p class="max-w-3xl mx-auto text-lg text-gray-600">
+                    Discover our carefully curated selection of luxury vacation packages
+                </p>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                <!-- Package 1 -->
+                <div class="package-card bg-white rounded-xl overflow-hidden shadow-lg transition hover:shadow-xl">
+                    <div class="h-48 bg-cover bg-center"
+                        style="background-image: url('https://images.unsplash.com/photo-1544551763-46a013bb70d5?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=2070&q=80')">
+                    </div>
+                    <div class="p-6">
+                        <div class="flex justify-between items-start mb-2">
+                            <h3 class="text-xl font-bold text-primary">Maldives Paradise</h3>
+                            <span class="bg-primary text-white text-sm px-3 py-1 rounded-full">Bestseller</span>
+                        </div>
+                        <p class="text-gray-600 mb-4">7 days in overwater bungalows with all-inclusive luxury</p>
+                        <div class="flex justify-between items-center">
+                            <span class="text-2xl font-bold text-secondary">$3,299</span>
+                            <button class="bg-primary text-white px-4 py-2 rounded-lg hover:bg-primary-dark transition">
+                                Book Now
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Package 2 -->
+                <div class="package-card bg-white rounded-xl overflow-hidden shadow-lg transition hover:shadow-xl">
+                    <div class="h-48 bg-cover bg-center"
+                        style="background-image: url('https://images.unsplash.com/photo-1520250497591-112f2f40a3f4?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=2070&q=80')">
+                    </div>
+                    <div class="p-6">
+                        <div class="flex justify-between items-start mb-2">
+                            <h3 class="text-xl font-bold text-primary">Italian Dream</h3>
+                            <span class="bg-accent text-white text-sm px-3 py-1 rounded-full">Cultural</span>
+                        </div>
+                        <p class="text-gray-600 mb-4">10 days exploring Rome, Florence and Venice</p>
+                        <div class="flex justify-between items-center">
+                            <span class="text-2xl font-bold text-secondary">$4,199</span>
+                            <button class="bg-primary text-white px-4 py-2 rounded-lg hover:bg-primary-dark transition">
+                                Book Now
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Package 3 -->
+                <div class="package-card bg-white rounded-xl overflow-hidden shadow-lg transition hover:shadow-xl">
+                    <div class="h-48 bg-cover bg-center"
+                        style="background-image: url('https://images.unsplash.com/photo-1533107862482-0e6974b06ec4?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1686&q=80')">
+                    </div>
+                    <div class="p-6">
+                        <div class="flex justify-between items-start mb-2">
+                            <h3 class="text-xl font-bold text-primary">Costa Rica Adventure</h3>
+                            <span class="bg-secondary text-white text-sm px-3 py-1 rounded-full">Adventure</span>
+                        </div>
+                        <p class="text-gray-600 mb-4">5 days of zip-lining, rafting and wildlife tours</p>
+                        <div class="flex justify-between items-center">
+                            <span class="text-2xl font-bold text-secondary">$2,499</span>
+                            <button class="bg-primary text-white px-4 py-2 rounded-lg hover:bg-primary-dark transition">
+                                Book Now
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- REQUIREMENT: Testimonials section -->
+    <section id="testimonials" class="py-20 bg-gray-50">
+        <div class="container mx-auto px-4">
+            <div class="text-center mb-16">
+                <h2 class="text-3xl md:text-4xl font-bold text-primary mb-4">Traveler Testimonials</h2>
+                <div class="w-20 h-1 bg-secondary mx-auto mb-6"></div>
+                <p class="max-w-3xl mx-auto text-lg text-gray-600">
+                    Hear what our clients say about their experiences
+                </p>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+                <!-- Testimonial 1 -->
+                <div class="testimonial-card bg-white p-8 rounded-xl shadow-md">
+                    <div class="flex items-center mb-4">
+                        <div class="w-12 h-12 rounded-full bg-gray-300 overflow-hidden mr-4">
+                            <img src="https://randomuser.me/api/portraits/women/43.jpg" alt="Sarah M."
+                                class="w-full h-full object-cover">
+                        </div>
+                        <div>
+                            <h4 class="font-bold text-primary">Sarah M.</h4>
+                            <div class="flex text-yellow-400">
+                                <i class="fas fa-star"></i>
+                                <i class="fas fa-star"></i>
+                                <i class="fas fa-star"></i>
+                                <i class="fas fa-star"></i>
+                                <i class="fas fa-star"></i>
+                            </div>
+                        </div>
+                    </div>
+                    <p class="text-gray-600 italic">
+                        "The Maldives package exceeded all expectations. The resort was paradise and every detail was
+                        perfectly arranged. Will definitely book with Exotic Escapes again!"
+                    </p>
+                </div>
+
+                <!-- Testimonial 2 -->
+                <div class="testimonial-card bg-white p-8 rounded-xl shadow-md">
+                    <div class="flex items-center mb-4">
+                        <div class="w-12 h-12 rounded-full bg-gray-300 overflow-hidden mr-4">
+                            <img src="https://randomuser.me/api/portraits/men/32.jpg" alt="John D."
+                                class="w-full h-full object-cover">
+                        </div>
+                        <div>
+                            <h4 class="font-bold text-primary">John D.</h4>
+                            <div class="flex text-yellow-400">
+                                <i class="fas fa-star"></i>
+                                <i class="fas fa-star"></i>
+                                <i class="fas fa-star"></i>
+                                <i class="fas fa-star"></i>
+                                <i class="fas fa-star"></i>
+                            </div>
+                        </div>
+                    </div>
+                    <p class="text-gray-600 italic">
+                        "Our Italian tour was flawless. The guides were knowledgeable, hotels were excellent, and the
+                        itinerary was perfectly paced. Worth every penny!"
+                    </p>
+                </div>
+
+                <!-- Testimonial 3 -->
+                <div class="testimonial-card bg-white p-8 rounded-xl shadow-md">
+                    <div class="flex items-center mb-4">
+                        <div class="w-12 h-12 rounded-full bg-gray-300 overflow-hidden mr-4">
+                            <img src="https://randomuser.me/api/portraits/women/65.jpg" alt="Emily L."
+                                class="w-full h-full object-cover">
+                        </div>
+                        <div>
+                            <h4 class="font-bold text-primary">Emily L.</h4>
+                            <div class="flex text-yellow-400">
+                                <i class="fas fa-star"></i>
+                                <i class="fas fa-star"></i>
+                                <i class="fas fa-star"></i>
+                                <i class="fas fa-star"></i>
+                                <i class="fas fa-star-half-alt"></i>
+                            </div>
+                        </div>
+                    </div>
+                    <p class="text-gray-600 italic">
+                        "The Costa Rica adventure was perfect for our family. The activities were thrilling but safe,
+                        and the eco-lodge was beautiful. Kids are already asking to go back!"
+                    </p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Contact Section -->
+    <section id="contact" class="py-20 bg-primary text-white">
+        <div class="container mx-auto px-4">
+            <div class="text-center mb-16">
+                <h2 class="text-3xl md:text-4xl font-bold mb-4">Ready for Your Adventure?</h2>
+                <div class="w-20 h-1 bg-secondary mx-auto mb-6"></div>
+                <p class="max-w-3xl mx-auto text-lg">
+                    Contact our travel specialists to start planning your dream vacation
+                </p>
+            </div>
+
+            <div class="max-w-2xl mx-auto bg-white rounded-xl shadow-xl overflow-hidden">
+                <div class="md:flex">
+                    <div class="md:w-1/2 bg-secondary p-8 flex items-center">
+                        <div>
+                            <h3 class="text-xl font-bold mb-4">Contact Information</h3>
+                            <div class="space-y-4">
+                                <div class="flex items-center">
+                                    <i class="fas fa-phone-alt mr-4"></i>
+                                    <span>+1 (555) 123-4567</span>
+                                </div>
+                                <div class="flex items-center">
+                                    <i class="fas fa-envelope mr-4"></i>
+                                    <span>info@exoticescapes.com</span>
+                                </div>
+                                <div class="flex items-center">
+                                    <i class="fas fa-map-marker-alt mr-4"></i>
+                                    <span>123 Travel Ave, Suite 100<br>Miami, FL 33101</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="md:w-1/2 p-8">
+                        <form>
+                            <div class="mb-4">
+                                <label class="block text-gray-700 text-sm font-medium mb-2">Name</label>
+                                <input type="text"
+                                    class="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary">
+                            </div>
+                            <div class="mb-4">
+                                <label class="block text-gray-700 text-sm font-medium mb-2">Email</label>
+                                <input type="email"
+                                    class="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary">
+                            </div>
+                            <div class="mb-4">
+                                <label class="block text-gray-700 text-sm font-medium mb-2">Message</label>
+                                <textarea rows="3"
+                                    class="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"></textarea>
+                            </div>
+                            <button type="submit"
+                                class="w-full bg-primary text-white py-2 px-4 rounded-lg hover:bg-primary-dark transition">
+                                Send Message
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="bg-dark text-white py-12">
+        <div class="container mx-auto px-4">
+            <div class="flex flex-col md:flex-row justify-between items-center">
+                <div class="mb-6 md:mb-0">
+                    <a href="#" class="flex items-center">
+                        <i class="fas fa-plane text-2xl text-primary mr-2"></i>
+                        <span class="text-xl font-bold">Exotic Escapes</span>
+                    </a>
+                    <p class="mt-2 text-gray-400">Making dream vacations come true since 2010</p>
+                </div>
+                <div class="flex space-x-6">
+                    <a href="#" class="text-gray-400 hover:text-white transition">
+                        <i class="fab fa-facebook-f text-xl"></i>
+                    </a>
+                    <a href="#" class="text-gray-400 hover:text-white transition">
+                        <i class="fab fa-twitter text-xl"></i>
+                    </a>
+                    <a href="#" class="text-gray-400 hover:text-white transition">
+                        <i class="fab fa-instagram text-xl"></i>
+                    </a>
+                    <a href="#" class="text-gray-400 hover:text-white transition">
+                        <i class="fab fa-linkedin-in text-xl"></i>
+                    </a>
+                </div>
+            </div>
+            <div class="border-t border-gray-800 mt-8 pt-8 flex flex-col md:flex-row justify-between items-center">
+                <p class="text-gray-400 mb-4 md:mb-0">© 2023 Exotic Escapes. All rights reserved.</p>
+                <div class="flex space-x-6">
+                    <a href="#" class="text-gray-400 hover:text-white transition">Privacy Policy</a>
+                    <a href="#" class="text-gray-400 hover:text-white transition">Terms of Service</a>
+                    <a href="#" class="text-gray-400 hover:text-white transition">Contact Us</a>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <!-- REQUIREMENT: Signup Modal -->
+    <div id="signupModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 hidden">
+        <div class="bg-white rounded-xl shadow-2xl max-w-md w-full mx-4 overflow-hidden">
+            <div class="p-6">
+                <div class="flex justify-between items-center mb-6">
+                    <h3 class="text-2xl font-bold text-primary">Create Account</h3>
+                    <button id="closeModal" class="text-gray-500 hover:text-gray-700">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+                <form id="signupForm" class="space-y-4">
+                    <div>
+                        <label class="block text-gray-700 text-sm font-medium mb-1">Full Name</label>
+                        <input type="text"
+                            class="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary">
+                    </div>
+                    <div>
+                        <label class="block text-gray-700 text-sm font-medium mb-1">Email Address</label>
+                        <input type="email"
+                            class="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary">
+                    </div>
+                    <div>
+                        <label class="block text-gray-700 text-sm font-medium mb-1">Password</label>
+                        <input type="password"
+                            class="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary">
+                    </div>
+                    <div>
+                        <label class="block text-gray-700 text-sm font-medium mb-1">Confirm Password</label>
+                        <input type="password"
+                            class="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary">
+                    </div>
+                    <button type="submit"
+                        class="w-full bg-primary text-white py-3 px-4 rounded-lg hover:bg-primary-dark transition">
+                        Sign Up
+                    </button>
+                </form>
+                <div class="mt-4 text-center text-sm text-gray-600">
+                    Already have an account? <a href="#" class="text-primary hover:underline">Log in</a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- REQUIREMENT: JavaScript for interactive elements -->
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            // Mobile menu toggle
+            const menuToggle = document.getElementById('menuToggle');
+            const navMenu = document.getElementById('navMenu');
+
+            menuToggle.addEventListener('click', function () {
+                navMenu.classList.toggle('active');
+                menuToggle.innerHTML = navMenu.classList.contains('active')
+                    ? '<i class="fas fa-times"></i>'
+                    : '<i class="fas fa-bars"></i>';
+            });
+
+            // Carousel functionality
+            const slides = document.querySelectorAll('.slide');
+            const prevBtn = document.querySelector('.carousel-control.prev');
+            const nextBtn = document.querySelector('.carousel-control.next');
+            let currentSlide = 0;
+            let slideInterval;
+
+            function showSlide(n) {
+                slides[currentSlide].classList.remove('active');
+                currentSlide = (n + slides.length) % slides.length;
+                slides[currentSlide].classList.add('active');
+            }
+
+            function nextSlide() {
+                showSlide(currentSlide + 1);
+            }
+
+            function prevSlide() {
+                showSlide(currentSlide - 1);
+            }
+
+            function startCarousel() {
+                slideInterval = setInterval(nextSlide, 5000);
+            }
+
+            function stopCarousel() {
+                clearInterval(slideInterval);
+            }
+
+            // Event listeners
+            nextBtn.addEventListener('click', function () {
+                nextSlide();
+                stopCarousel();
+                startCarousel();
+            });
+
+            prevBtn.addEventListener('click', function () {
+                prevSlide();
+                stopCarousel();
+                startCarousel();
+            });
+
+            // Pause carousel on hover
+            const carousel = document.querySelector('.carousel');
+            carousel.addEventListener('mouseenter', stopCarousel);
+            carousel.addEventListener('mouseleave', startCarousel);
+
+            // Start carousel
+            startCarousel();
+
+            // Smooth scrolling for navigation links
+            document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+                anchor.addEventListener('click', function (e) {
+                    e.preventDefault();
+                    const target = document.querySelector(this.getAttribute('href'));
+                    if (target) {
+                        window.scrollTo({
+                            top: target.offsetTop - 80,
+                            behavior: 'smooth'
+                        });
+                    }
+                });
+            });
+
+            // Signup modal functionality
+            const signupBtn = document.getElementById('signupBtn');
+            const signupModal = document.getElementById('signupModal');
+            const closeModal = document.getElementById('closeModal');
+
+            signupBtn.addEventListener('click', function () {
+                signupModal.classList.remove('hidden');
+                document.body.style.overflow = 'hidden';
+            });
+
+            closeModal.addEventListener('click', function () {
+                signupModal.classList.add('hidden');
+                document.body.style.overflow = '';
+            });
+
+            // Close modal when clicking outside
+            signupModal.addEventListener('click', function (e) {
+                if (e.target === signupModal) {
+                    signupModal.classList.add('hidden');
+                    document.body.style.overflow = '';
+                }
+            });
+
+            // Language selector change
+            const languageSelector = document.querySelector('.language-selector');
+            languageSelector.addEventListener('change', function () {
+                console.log('Language changed to:', this.value);
+                // Here you would typically implement language switching logic
+            });
+
+            // Form submission
+            const forms = document.querySelectorAll('form');
+            forms.forEach(form => {
+                form.addEventListener('submit', function (e) {
+                    e.preventDefault();
+                    // Here you would typically handle form submission
+                    console.log('Form submitted');
+                });
+            });
+
+            // Navbar scroll effect
+            const header = document.querySelector('header');
+            window.addEventListener('scroll', function () {
+                if (window.scrollY > 50) {
+                    header.classList.add('shadow-lg');
+                    header.classList.add('bg-white');
+                } else {
+                    header.classList.remove('shadow-lg');
+                    header.classList.remove('bg-white');
+                }
+            });
+        });
+    </script>
+</body>
+
+</html>

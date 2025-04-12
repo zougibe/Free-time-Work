@@ -1,0 +1,579 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description"
+        content="Personalized skincare product recommendations based on your skin type and concerns">
+    <title>Skincare Genius | Personalized Routine Builder</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: {
+                            50: '#f0f9ff',
+                            100: '#e0f2fe',
+                            200: '#bae6fd',
+                            300: '#7dd3fc',
+                            400: '#38bdf8',
+                            500: '#0ea5e9',
+                            600: '#0284c7',
+                            700: '#0369a1',
+                            800: '#075985',
+                            900: '#0c4a6e',
+                        },
+                        secondary: {
+                            400: '#a78bfa',
+                            500: '#8b5cf6',
+                            600: '#7c3aed',
+                        },
+                        skin: {
+                            light: '#f5e6d8',
+                            medium: '#e3c9a5',
+                            dark: '#c9a87c'
+                        }
+                    },
+                    animation: {
+                        'fade-in': 'fadeIn 0.5s ease-in-out',
+                        'slide-up': 'slideUp 0.4s ease-out'
+                    },
+                    keyframes: {
+                        fadeIn: {
+                            '0%': { opacity: '0' },
+                            '100%': { opacity: '1' }
+                        },
+                        slideUp: {
+                            '0%': { transform: 'translateY(20px)', opacity: '0' },
+                            '100%': { transform: 'translateY(0)', opacity: '1' }
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap');
+
+        body {
+            font-family: 'Poppins', sans-serif;
+            background: linear-gradient(135deg, #0c4a6e 0%, #111827 100%);
+        }
+
+        .skin-texture {
+            background-image: url("data:image/svg+xml,%3Csvg width='100' height='100' viewBox='0 0 100 100' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M11 18c3.866 0 7-3.134 7-7s-3.134-7-7-7-7 3.134-7 7 3.134 7 7 7zm48 25c3.866 0 7-3.134 7-7s-3.134-7-7-7-7 3.134-7 7 3.134 7 7 7zm-43-7c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zm63 31c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zM34 90c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zm56-76c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zM12 86c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm28-65c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm23-11c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zm-6 60c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm29 22c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zM32 63c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zm57-13c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zm-9-21c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2zM60 91c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2zM35 41c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2zM12 60c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2z' fill='%23ffffff' fill-opacity='0.05' fill-rule='evenodd'/%3E%3C/svg%3E");
+        }
+
+        .product-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.25);
+        }
+
+        @media (max-width: 640px) {
+            .form-container {
+                padding: 1.5rem;
+            }
+        }
+    </style>
+</head>
+
+<body class="min-h-screen text-gray-100">
+    <!-- Main Container -->
+    <div class="min-h-screen flex flex-col items-center justify-center p-4 skin-texture">
+        <!-- Form Card -->
+        <div
+            class="w-full max-w-2xl bg-gray-800/80 backdrop-blur-md rounded-xl shadow-2xl overflow-hidden border border-gray-700 animate-fade-in">
+            <!-- Header -->
+            <div class="p-6 border-b border-gray-700">
+                <div class="flex items-center justify-center space-x-3">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8 text-primary-400" fill="none"
+                        viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M7 21a4 4 0 01-4-4V5a2 2 0 012-2h4a2 2 0 012 2v12a4 4 0 01-4 4zm0 0h12a2 2 0 002-2v-4a2 2 0 00-2-2h-2.343M11 7.343l1.657-1.657a2 2 0 012.828 0l2.829 2.829a2 2 0 010 2.828l-8.486 8.485M7 17h.01" />
+                    </svg>
+                    <h1
+                        class="text-3xl font-bold bg-gradient-to-r from-primary-400 to-secondary-400 bg-clip-text text-transparent">
+                        Skincare Genius
+                    </h1>
+                </div>
+                <p class="text-center text-gray-400 mt-2">Get your personalized skincare routine in seconds</p>
+            </div>
+
+            <!-- Form Content -->
+            <div class="p-6 md:p-8 form-container">
+                <form id="skinForm" class="space-y-6">
+                    <!-- Skin Type -->
+                    <div class="space-y-2">
+                        <label for="skinType" class="block text-sm font-medium text-gray-300 flex items-center">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24"
+                                stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M14.828 14.828a4 4 0 01-5.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                            </svg>
+                            Skin Type
+                        </label>
+                        <select id="skinType" required
+                            class="w-full px-4 py-3 bg-gray-700/70 border border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all appearance-none">
+                            <option value="" disabled selected>Select your skin type</option>
+                            <option value="oily">Oily</option>
+                            <option value="dry">Dry</option>
+                            <option value="combination">Combination</option>
+                            <option value="sensitive">Sensitive</option>
+                        </select>
+                    </div>
+
+                    <!-- Age Range -->
+                    <div class="space-y-2">
+                        <label for="age" class="block text-sm font-medium text-gray-300 flex items-center">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24"
+                                stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                            </svg>
+                            Age Range
+                        </label>
+                        <select id="age" required
+                            class="w-full px-4 py-3 bg-gray-700/70 border border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all appearance-none">
+                            <option value="" disabled selected>Select your age range</option>
+                            <option value="under20">Under 20</option>
+                            <option value="20-30">20-30</option>
+                            <option value="30-40">30-40</option>
+                            <option value="over40">Over 40</option>
+                        </select>
+                    </div>
+
+                    <!-- Primary Concern -->
+                    <div class="space-y-2">
+                        <label for="concern" class="block text-sm font-medium text-gray-300 flex items-center">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24"
+                                stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M9.172 16.172a4 4 0 015.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                            </svg>
+                            Primary Concern
+                        </label>
+                        <select id="concern" required
+                            class="w-full px-4 py-3 bg-gray-700/70 border border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all appearance-none">
+                            <option value="" disabled selected>Select your main concern</option>
+                            <option value="acne">Acne</option>
+                            <option value="dryness">Dryness</option>
+                            <option value="aging">Aging</option>
+                            <option value="sensitivity">Sensitivity</option>
+                        </select>
+                    </div>
+
+                    <!-- Form Actions -->
+                    <div class="flex space-x-4 pt-2">
+                        <button type="submit"
+                            class="flex-1 bg-gradient-to-r from-primary-600 to-secondary-600 text-white py-3 px-6 rounded-lg font-medium hover:from-primary-700 hover:to-secondary-700 transition-all transform hover:scale-[1.02] active:scale-95 shadow-lg flex items-center justify-center">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24"
+                                stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M13 10V3L4 14h7v7l9-11h-7z" />
+                            </svg>
+                            Get Recommendations
+                        </button>
+                        <button type="button" id="resetBtn"
+                            class="flex-1 bg-gray-700 text-gray-300 py-3 px-6 rounded-lg font-medium hover:bg-gray-600 transition-all flex items-center justify-center">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24"
+                                stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                            </svg>
+                            Reset
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- Footer -->
+        <div class="mt-6 text-gray-400 text-sm flex items-center">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24"
+                stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                    d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+            </svg>
+            Your data is never stored or shared
+        </div>
+    </div>
+
+    <!-- Recommendation Modal -->
+    <div id="recommendationModal" class="fixed inset-0 bg-black/90 z-50 flex items-center justify-center p-4 hidden">
+        <div
+            class="bg-gray-800 rounded-xl max-w-4xl w-full max-h-[90vh] overflow-y-auto border border-gray-700 shadow-2xl animate-slide-up">
+            <!-- Modal Header -->
+            <div
+                class="sticky top-0 bg-gray-800/95 p-6 border-b border-gray-700 flex justify-between items-center backdrop-blur-sm">
+                <div class="flex items-center space-x-3">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8 text-primary-400" fill="none"
+                        viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+                    </svg>
+                    <h2
+                        class="text-2xl font-bold bg-gradient-to-r from-primary-400 to-secondary-400 bg-clip-text text-transparent">
+                        Your Personalized Routine
+                    </h2>
+                </div>
+                <button id="closeModal"
+                    class="text-gray-400 hover:text-white p-1 rounded-full hover:bg-gray-700 transition-colors">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24"
+                        stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                </button>
+            </div>
+
+            <!-- Modal Content -->
+            <div class="p-6">
+                <div class="mb-6 bg-gray-700/50 rounded-lg p-4 border border-gray-600">
+                    <h3 class="font-semibold text-gray-100 flex items-center">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2 text-primary-400" fill="none"
+                            viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                        Based on your profile:
+                    </h3>
+                    <div id="userProfileSummary" class="mt-2 text-sm text-gray-300"></div>
+                </div>
+
+                <div id="recommendations" class="space-y-5"></div>
+
+                <div class="mt-8 pt-6 border-t border-gray-700">
+                    <div class="bg-gray-700/30 rounded-lg p-4 mb-6">
+                        <h3 class="font-semibold text-gray-100 mb-2 flex items-center">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2 text-primary-400" fill="none"
+                                viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                            </svg>
+                            Application Tips
+                        </h3>
+                        <ul class="text-sm text-gray-300 space-y-2 list-disc list-inside">
+                            <li>Apply products from lightest to heaviest consistency</li>
+                            <li>Wait 1-2 minutes between each product layer</li>
+                            <li>Use sunscreen every morning, even on cloudy days</li>
+                            <li>Patch test new products before full application</li>
+                        </ul>
+                    </div>
+
+                    <button id="modalCloseBtn"
+                        class="w-full bg-gradient-to-r from-primary-600 to-secondary-600 text-white py-3 px-6 rounded-lg font-medium hover:from-primary-700 hover:to-secondary-700 transition-all transform hover:scale-[1.02] active:scale-95 shadow-lg">
+                        Close & Start Again
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Product Database - Organized as a proper module
+        const SkincareProducts = (() => {
+            const faceWash = {
+                oilyAcne: {
+                    name: "CeraVe Renewing SA Cleanser",
+                    description: "Oil-free foaming cleanser with salicylic acid, hyaluronic acid, and niacinamide. Gently exfoliates while maintaining skin's natural barrier.",
+                    reason: "The salicylic acid helps unclog pores and reduce acne, while niacinamide calms inflammation - perfect for oily, acne-prone skin.",
+                    ingredients: "Salicylic Acid (0.5%), Niacinamide, Hyaluronic Acid, Ceramides",
+                    priceRange: "$10-$15"
+                },
+                dryDryness: {
+                    name: "La Roche-Posay Toleriane Hydrating Cleanser",
+                    description: "Creamy, non-foaming cleanser with ceramides and niacinamide to cleanse without stripping skin of moisture.",
+                    reason: "Its gentle, hydrating formula helps restore the skin barrier while effectively removing impurities.",
+                    ingredients: "Ceramides, Niacinamide, Glycerin",
+                    priceRange: "$15-$20"
+                },
+                sensitiveSensitivity: {
+                    name: "Vanicream Gentle Facial Cleanser",
+                    description: "Ultra-gentle, fragrance-free cleanser formulated for sensitive skin types. Free of common irritants.",
+                    reason: "Minimal ingredient list reduces risk of irritation while effectively cleansing sensitive skin.",
+                    ingredients: "Purified Water, Glycerin, Cocoyl Glycine",
+                    priceRange: "$8-$12"
+                },
+                default: {
+                    name: "Cetaphil Daily Facial Cleanser",
+                    description: "Mild, non-irritating cleanser suitable for all skin types. Maintains skin's natural pH balance.",
+                    reason: "A dermatologist-recommended basic that works for most skin types without causing dryness or irritation.",
+                    ingredients: "Water, Glycerin, Cetyl Alcohol",
+                    priceRange: "$10-$14"
+                }
+            };
+
+            const serum = {
+                acne: {
+                    name: "The Ordinary Niacinamide 10% + Zinc 1%",
+                    description: "High-strength vitamin and mineral formula that visibly improves skin texture and reduces blemishes.",
+                    reason: "Niacinamide reduces sebum production and inflammation, while zinc provides antibacterial benefits.",
+                    ingredients: "Niacinamide, Zinc PCA",
+                    priceRange: "$6-$10"
+                },
+                agingOver40: {
+                    name: "SkinCeuticals C E Ferulic",
+                    description: "Antioxidant serum with 15% pure vitamin C (L-ascorbic acid) to improve signs of aging and photodamage.",
+                    reason: "Gold-standard vitamin C formulation with clinical studies showing significant anti-aging benefits.",
+                    ingredients: "Vitamin C (15%), Vitamin E, Ferulic Acid",
+                    priceRange: "$150-$170"
+                },
+                dryness: {
+                    name: "Vichy Mineral 89 Hyaluronic Acid Serum",
+                    description: "Lightweight hydrating booster with hyaluronic acid and Vichy's mineralizing water to plump and hydrate.",
+                    reason: "Hyaluronic acid molecules of different weights provide multi-level hydration for dry skin.",
+                    ingredients: "Hyaluronic Acid, Vichy Volcanic Water",
+                    priceRange: "$25-$30"
+                },
+                default: {
+                    name: "Paula's Choice 10% Azelaic Acid Booster",
+                    description: "Multi-tasking treatment with azelaic acid to brighten, calm redness, and improve texture.",
+                    reason: "Azelaic acid is well-tolerated by most skin types and addresses multiple concerns simultaneously.",
+                    ingredients: "Azelaic Acid (10%), Salicylic Acid, Licorice Root Extract",
+                    priceRange: "$35-$40"
+                }
+            };
+
+            const moisturizer = {
+                oily: {
+                    name: "Neutrogena Hydro Boost Water Gel",
+                    description: "Oil-free, non-comedogenic gel-cream that provides long-lasting hydration without greasiness.",
+                    reason: "The hyaluronic acid gel formula hydrates oily skin without adding shine or clogging pores.",
+                    ingredients: "Hyaluronic Acid, Glycerin",
+                    priceRange: "$15-$20"
+                },
+                dry: {
+                    name: "CeraVe Moisturizing Cream",
+                    description: "Rich, non-greasy cream with essential ceramides and hyaluronic acid to restore protective barrier.",
+                    reason: "Ceramides help repair the skin barrier while hyaluronic acid provides intense hydration for dry skin.",
+                    ingredients: "Ceramides, Hyaluronic Acid, Cholesterol",
+                    priceRange: "$12-$18"
+                },
+                sensitive: {
+                    name: "Avene Tolerance Extreme Emulsion",
+                    description: "Sterile, ultra-minimalist formula with just 7 ingredients to soothe and protect sensitive skin.",
+                    reason: "Extremely gentle formulation reduces risk of irritation while providing essential hydration.",
+                    ingredients: "Avene Thermal Spring Water, Squalane",
+                    priceRange: "$30-$35"
+                },
+                default: {
+                    name: "EltaMD UV Clear Broad-Spectrum SPF 46",
+                    description: "Oil-free facial sunscreen that moisturizes while protecting against UVA/UVB rays and calming irritation.",
+                    reason: "Provides essential sun protection while also moisturizing and helping to calm common skin concerns.",
+                    ingredients: "Zinc Oxide, Niacinamide, Hyaluronic Acid",
+                    priceRange: "$35-$40"
+                }
+            };
+
+            return {
+                faceWash,
+                serum,
+                moisturizer
+            };
+        })();
+
+        // DOM Elements
+        const DOM = {
+            skinForm: document.getElementById('skinForm'),
+            skinType: document.getElementById('skinType'),
+            age: document.getElementById('age'),
+            concern: document.getElementById('concern'),
+            resetBtn: document.getElementById('resetBtn'),
+            recommendationModal: document.getElementById('recommendationModal'),
+            recommendations: document.getElementById('recommendations'),
+            closeModal: document.getElementById('closeModal'),
+            modalCloseBtn: document.getElementById('modalCloseBtn'),
+            userProfileSummary: document.getElementById('userProfileSummary')
+        };
+
+        // Event Listeners
+        const setupEventListeners = () => {
+            DOM.skinForm.addEventListener('submit', handleFormSubmit);
+            DOM.resetBtn.addEventListener('click', resetForm);
+            DOM.closeModal.addEventListener('click', closeModal);
+            DOM.modalCloseBtn.addEventListener('click', closeModal);
+        };
+
+        // Form Submission Handler
+        const handleFormSubmit = (e) => {
+            e.preventDefault();
+
+            const skinType = DOM.skinType.value;
+            const age = DOM.age.value;
+            const concern = DOM.concern.value;
+
+            if (!validateInputs(skinType, age, concern)) {
+                return;
+            }
+
+            const recommendations = getRecommendations(skinType, age, concern);
+            displayResults(recommendations, skinType, age, concern);
+        };
+
+        // Input Validation
+        const validateInputs = (skinType, age, concern) => {
+            if (!skinType || !age || !concern) {
+                showError('Please complete all fields to get recommendations.');
+                return false;
+            }
+            return true;
+        };
+
+        // Error Display
+        const showError = (message) => {
+            const existingError = DOM.skinForm.querySelector('.error-message');
+            if (existingError) existingError.remove();
+
+            const errorDiv = document.createElement('div');
+            errorDiv.className = 'error-message bg-red-900/70 text-red-100 p-3 rounded-lg mb-4 text-sm border border-red-800 flex items-center animate__animated animate__headShake';
+            errorDiv.innerHTML = `
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+                ${message}
+            `;
+
+            DOM.skinForm.prepend(errorDiv);
+
+            setTimeout(() => {
+                errorDiv.classList.add('opacity-0', 'transition-opacity', 'duration-300');
+                setTimeout(() => errorDiv.remove(), 300);
+            }, 5000);
+        };
+
+        // Recommendation Logic
+        const getRecommendations = (skinType, age, concern) => {
+            return {
+                faceWash: getFaceWash(skinType, concern),
+                serum: getSerum(concern, age),
+                moisturizer: getMoisturizer(skinType)
+            };
+        };
+
+        const getFaceWash = (skinType, concern) => {
+            if (skinType === 'oily' && concern === 'acne') return SkincareProducts.faceWash.oilyAcne;
+            if (skinType === 'dry' && concern === 'dryness') return SkincareProducts.faceWash.dryDryness;
+            if (skinType === 'sensitive' && concern === 'sensitivity') return SkincareProducts.faceWash.sensitiveSensitivity;
+            return SkincareProducts.faceWash.default;
+        };
+
+        const getSerum = (concern, age) => {
+            if (concern === 'acne') return SkincareProducts.serum.acne;
+            if (concern === 'aging' && age === 'over40') return SkincareProducts.serum.agingOver40;
+            if (concern === 'dryness') return SkincareProducts.serum.dryness;
+            return SkincareProducts.serum.default;
+        };
+
+        const getMoisturizer = (skinType) => {
+            if (skinType === 'oily') return SkincareProducts.moisturizer.oily;
+            if (skinType === 'dry') return SkincareProducts.moisturizer.dry;
+            if (skinType === 'sensitive') return SkincareProducts.moisturizer.sensitive;
+            return SkincareProducts.moisturizer.default;
+        };
+
+        // Display Results
+        const displayResults = (recommendations, skinType, age, concern) => {
+            DOM.recommendations.innerHTML = '';
+
+            // Create user profile summary
+            const skinTypeMap = {
+                oily: 'Oily',
+                dry: 'Dry',
+                combination: 'Combination',
+                sensitive: 'Sensitive'
+            };
+
+            const ageMap = {
+                under20: 'Under 20',
+                '20-30': '20-30',
+                '30-40': '30-40',
+                over40: 'Over 40'
+            };
+
+            const concernMap = {
+                acne: 'Acne',
+                dryness: 'Dryness',
+                aging: 'Aging',
+                sensitivity: 'Sensitivity'
+            };
+
+            DOM.userProfileSummary.innerHTML = `
+                <div class="grid grid-cols-1 sm:grid-cols-3 gap-2 mt-2">
+                    <div class="bg-gray-800/50 rounded p-2 text-center">
+                        <div class="text-xs text-gray-400">Skin Type</div>
+                        <div class="font-medium">${skinTypeMap[skinType]}</div>
+                    </div>
+                    <div class="bg-gray-800/50 rounded p-2 text-center">
+                        <div class="text-xs text-gray-400">Age Range</div>
+                        <div class="font-medium">${ageMap[age]}</div>
+                    </div>
+                    <div class="bg-gray-800/50 rounded p-2 text-center">
+                        <div class="text-xs text-gray-400">Primary Concern</div>
+                        <div class="font-medium">${concernMap[concern]}</div>
+                    </div>
+                </div>
+            `;
+
+            // Display each recommendation
+            for (const [category, product] of Object.entries(recommendations)) {
+                const productDiv = document.createElement('div');
+                productDiv.className = 'product-card bg-gray-700/50 p-5 rounded-xl border border-gray-600 hover:border-primary-500/30 transition-all duration-300 cursor-default';
+                productDiv.innerHTML = `
+                    <div class="flex flex-col sm:flex-row items-start space-y-4 sm:space-y-0 sm:space-x-4">
+                        <div class="flex-shrink-0 h-16 w-16 rounded-lg bg-primary-900/30 flex items-center justify-center">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8 text-primary-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z" />
+                            </svg>
+                        </div>
+                        <div class="flex-1">
+                            <div class="flex justify-between items-start">
+                                <div>
+                                    <h3 class="font-semibold text-gray-100 capitalize text-lg">${category.replace(/([A-Z])/g, ' $1')}</h3>
+                                    <p class="text-primary-300 font-medium mt-1">${product.name}</p>
+                                    <p class="text-gray-300 text-sm mt-2">${product.description}</p>
+                                </div>
+                                <span class="bg-gray-800 text-xs px-2 py-1 rounded text-primary-300">${product.priceRange}</span>
+                            </div>
+                            <div class="mt-3 bg-gray-800/50 rounded p-3">
+                                <p class="text-xs text-primary-400/80 font-medium mb-1">Why this product:</p>
+                                <p class="text-xs text-gray-300">${product.reason}</p>
+                            </div>
+                            <div class="mt-3">
+                                <p class="text-xs text-gray-400 font-medium">Key Ingredients: <span class="text-gray-300">${product.ingredients}</span></p>
+                            </div>
+                        </div>
+                    </div>
+                `;
+                DOM.recommendations.appendChild(productDiv);
+            }
+
+            // Show modal
+            DOM.recommendationModal.classList.remove('hidden');
+            document.body.style.overflow = 'hidden';
+        };
+
+        // Reset Form
+        const resetForm = () => {
+            DOM.skinForm.reset();
+        };
+
+        // Close Modal
+        const closeModal = () => {
+            DOM.recommendationModal.classList.add('hidden');
+            document.body.style.overflow = 'auto';
+            resetForm();
+        };
+
+        // Initialize
+        const init = () => {
+            setupEventListeners();
+        };
+
+        init();
+    </script>
+</body>
+
+</html>

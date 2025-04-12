@@ -1,0 +1,808 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Adventure Trails - Epic Journeys Await</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap"
+        rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.1.1/css/all.min.css">
+    <style>
+        :root {
+            --primary: #1e3a8a;
+            --secondary: #065f46;
+            --accent: #d97706;
+            --light: #f0fdf4;
+        }
+
+        body {
+            font-family: 'Poppins', sans-serif;
+            margin: 0;
+            background: var(--light);
+            scroll-behavior: smooth;
+        }
+
+        .gradient-bg {
+            background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
+        }
+
+        .hero-gradient {
+            background: linear-gradient(rgba(0, 0, 0, 0.6), rgba(0, 0, 0, 0.3)),
+                url('https://i.postimg.cc/bJ3bnkgj/autumn-6690466-1280.jpg');
+            background-size: cover;
+            background-position: center;
+            background-attachment: fixed;
+        }
+
+        .card-hover {
+            transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+        }
+
+        .card-hover:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 12px 20px -10px rgba(0, 0, 0, 0.2);
+        }
+
+        .filter-btn {
+            transition: all 0.3s ease;
+        }
+
+        .filter-btn.active {
+            background: var(--primary);
+            color: white;
+            transform: scale(1.05);
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+
+        .tab-button {
+            transition: all 0.3s ease;
+        }
+
+        .tab-button.active {
+            color: var(--primary);
+            border-bottom: 3px solid var(--accent);
+            transform: scale(1.02);
+        }
+
+        .testimonial-card {
+            background: white;
+            position: relative;
+        }
+
+        .mobile-menu {
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.5s ease-out;
+        }
+
+        .mobile-menu.open {
+            max-height: 500px;
+        }
+
+        .parallax {
+            background-attachment: fixed;
+            background-position: center;
+            background-repeat: no-repeat;
+            background-size: cover;
+        }
+
+        .btn-primary {
+            background: var(--primary);
+            transition: all 0.3s ease;
+        }
+
+        .btn-primary:hover {
+            background: #1e40af;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+        }
+
+        .btn-accent {
+            background: var(--accent);
+            transition: all 0.3s ease;
+        }
+
+        .btn-accent:hover {
+            background: #b45309;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+        }
+
+        @media (max-width: 768px) {
+            .hero-gradient {
+                background-attachment: scroll;
+            }
+
+            .parallax {
+                background-attachment: scroll;
+            }
+
+            .mobile-menu {
+                width: 100%;
+            }
+        }
+
+        /* Animation classes */
+        .fade-in {
+            animation: fadeIn 0.8s ease-in;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .delay-1 {
+            animation-delay: 0.2s;
+        }
+
+        .delay-2 {
+            animation-delay: 0.4s;
+        }
+
+        .delay-3 {
+            animation-delay: 0.6s;
+        }
+    </style>
+</head>
+
+<body class="bg-gray-50">
+    <!-- Navigation -->
+    <nav class="gradient-bg text-white sticky top-0 z-50 shadow-lg">
+        <div class="container mx-auto px-6 py-4">
+            <div class="flex justify-between items-center">
+                <div class="flex items-center">
+                    <i class="fas fa-route text-3xl text-yellow-500 mr-3"></i>
+                    <h1 class="text-3xl font-bold tracking-tight">Adventure<span class="text-yellow-400">Trails</span>
+                    </h1>
+                </div>
+
+                <div class="hidden md:flex space-x-8 items-center">
+                    <a href="#activities"
+                        class="hover:text-yellow-300 transition duration-300 font-medium flex items-center">
+                        <i class="fas fa-mountain mr-2"></i> Activities
+                    </a>
+                    <a href="#destinations"
+                        class="hover:text-yellow-300 transition duration-300 font-medium flex items-center">
+                        <i class="fas fa-map-marked-alt mr-2"></i> Destinations
+                    </a>
+                    <a href="#testimonials"
+                        class="hover:text-yellow-300 transition duration-300 font-medium flex items-center">
+                        <i class="fas fa-comment-dots mr-2"></i> Stories
+                    </a>
+                    <a href="#blog" class="hover:text-yellow-300 transition duration-300 font-medium flex items-center">
+                        <i class="fas fa-newspaper mr-2"></i> Blog
+                    </a>
+                    <button class="btn-accent px-6 py-2 rounded-full font-medium ml-4">
+                        Book Now
+                    </button>
+                </div>
+
+                <button class="md:hidden text-2xl focus:outline-none" onclick="toggleMenu()">
+                    ☰
+                </button>
+            </div>
+
+            <!-- Mobile Menu -->
+            <div class="mobile-menu md:hidden bg-blue-900 mt-2 rounded-lg">
+                <div class="flex flex-col space-y-3 p-4">
+                    <a href="#activities"
+                        class="hover:text-yellow-300 transition duration-300 py-2 border-b border-blue-800 flex items-center">
+                        <i class="fas fa-mountain mr-3"></i> Activities
+                    </a>
+                    <a href="#destinations"
+                        class="hover:text-yellow-300 transition duration-300 py-2 border-b border-blue-800 flex items-center">
+                        <i class="fas fa-map-marked-alt mr-3"></i> Destinations
+                    </a>
+                    <a href="#testimonials"
+                        class="hover:text-yellow-300 transition duration-300 py-2 border-b border-blue-800 flex items-center">
+                        <i class="fas fa-comment-dots mr-3"></i> Stories
+                    </a>
+                    <a href="#blog" class="hover:text-yellow-300 transition duration-300 py-2 flex items-center">
+                        <i class="fas fa-newspaper mr-3"></i> Blog
+                    </a>
+                    <button class="btn-accent px-6 py-2 rounded-full font-medium mt-2 w-full">
+                        Book Now
+                    </button>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Hero Section -->
+    <header class="hero-gradient h-screen flex items-center justify-center text-center text-white">
+        <div class="container mx-auto px-6">
+            <div class="max-w-3xl mx-auto fade-in">
+                <h1 class="text-5xl md:text-6xl font-bold mb-6 leading-tight">
+                    <span class="text-yellow-400">Discover</span> Your Next Adventure
+                </h1>
+                <p class="text-xl md:text-2xl mb-10 opacity-90">
+                    Explore the world's most breathtaking trails with expert guides and unforgettable experiences
+                </p>
+                <div class="flex flex-col sm:flex-row justify-center gap-4">
+                    <button onclick="scrollToSection('activities')"
+                        class="btn-primary px-8 py-3 rounded-full text-lg font-semibold">
+                        Explore Activities
+                    </button>
+                    <button onclick="scrollToSection('destinations')"
+                        class="bg-white text-blue-900 px-8 py-3 rounded-full text-lg font-semibold hover:bg-gray-100 transition">
+                        View Destinations
+                    </button>
+                </div>
+            </div>
+
+            <div class="absolute bottom-10 left-0 right-0 flex justify-center">
+                <a href="#activities" class="animate-bounce bg-white text-blue-900 p-3 rounded-full shadow-lg">
+                    <i class="fas fa-chevron-down"></i>
+                </a>
+            </div>
+        </div>
+    </header>
+
+    <!-- Stats Bar -->
+    <section class="bg-white py-8 shadow-md">
+        <div class="container mx-auto">
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-4 text-center">
+                <div class="p-4 fade-in delay-1">
+                    <div class="text-4xl font-bold text-blue-900 mb-2">250+</div>
+                    <div class="text-gray-600">Adventure Tours</div>
+                </div>
+                <div class="p-4 fade-in delay-2">
+                    <div class="text-4xl font-bold text-blue-900 mb-2">98%</div>
+                    <div class="text-gray-600">Happy Customers</div>
+                </div>
+                <div class="p-4 fade-in delay-1">
+                    <div class="text-4xl font-bold text-blue-900 mb-2">45</div>
+                    <div class="text-gray-600">Countries</div>
+                </div>
+                <div class="p-4 fade-in delay-2">
+                    <div class="text-4xl font-bold text-blue-900 mb-2">15K+</div>
+                    <div class="text-gray-600">Adventurers</div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Activity Catalog -->
+    <section id="activities" class="py-20 bg-gray-50">
+        <div class="container mx-auto px-6">
+            <div class="text-center mb-16 fade-in">
+                <h2 class="text-4xl font-bold text-gray-900 mb-4">
+                    <i class="fas fa-mountain text-yellow-500 mr-3"></i>
+                    Adventure Activities
+                </h2>
+                <p class="text-xl text-gray-600 max-w-2xl mx-auto">
+                    Choose from our wide range of thrilling activities tailored for every adventurer
+                </p>
+            </div>
+
+            <!-- Activity Tabs -->
+            <div class="bg-white rounded-xl shadow-lg overflow-hidden mb-12 fade-in delay-1">
+                <div class="flex flex-wrap border-b border-gray-200">
+                    <button class="tab-button active px-6 py-4 font-medium text-lg flex items-center" data-tab="all">
+                        <i class="fas fa-globe text-blue-600 mr-3"></i> All Adventures
+                    </button>
+                    <button class="tab-button px-6 py-4 font-medium text-lg flex items-center" data-tab="hiking">
+                        <i class="fas fa-hiking text-green-600 mr-3"></i> Hiking
+                    </button>
+                    <button class="tab-button px-6 py-4 font-medium text-lg flex items-center" data-tab="diving">
+                        <i class="fas fa-water text-blue-400 mr-3"></i> Water Sports
+                    </button>
+                    <button class="tab-button px-6 py-4 font-medium text-lg flex items-center" data-tab="skiing">
+                        <i class="fas fa-snowflake text-indigo-400 mr-3"></i> Winter Sports
+                    </button>
+                </div>
+
+                <div id="activity-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 p-8">
+                    <!-- Activities will be populated by JS -->
+                </div>
+            </div>
+
+            <div class="text-center fade-in delay-2">
+                <button class="btn-primary px-8 py-3 rounded-full text-lg font-semibold">
+                    View All Activities <i class="fas fa-arrow-right ml-2"></i>
+                </button>
+            </div>
+        </div>
+    </section>
+
+    <!-- Parallax Section -->
+    <section class="parallax py-32 text-white"
+        style="background-image: url('https://i.postimg.cc/4yycQy2H/trees-1850902-1280.jpg')">
+        <div class="container mx-auto px-6 text-center">
+            <div class="max-w-2xl mx-auto bg-black bg-opacity-50 p-10 rounded-xl backdrop-blur-sm">
+                <h3 class="text-3xl font-bold mb-6">Ready for Your Next Adventure?</h3>
+                <p class="text-xl mb-8">Join our community of explorers and get exclusive access to premium trips</p>
+                <div class="flex flex-col sm:flex-row gap-4 justify-center">
+                    <button class="btn-accent px-8 py-3 rounded-full text-lg font-semibold">
+                        Book Now
+                    </button>
+                    <button
+                        class="bg-transparent border-2 border-white px-8 py-3 rounded-full text-lg font-semibold hover:bg-white hover:text-blue-900 transition">
+                        Learn More
+                    </button>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Featured Destinations -->
+    <section id="destinations" class="py-20 bg-white">
+        <div class="container mx-auto px-6">
+            <div class="text-center mb-16 fade-in">
+                <h2 class="text-4xl font-bold text-gray-900 mb-4">
+                    <i class="fas fa-map-marked-alt text-yellow-500 mr-3"></i>
+                    Featured Destinations
+                </h2>
+                <p class="text-xl text-gray-600 max-w-2xl mx-auto">
+                    Explore our most popular adventure destinations around the globe
+                </p>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8" id="destination-grid">
+                <!-- Destinations will be populated by JS -->
+            </div>
+
+            <div class="text-center mt-12 fade-in delay-1">
+                <button class="btn-primary px-8 py-3 rounded-full text-lg font-semibold">
+                    Explore All Destinations <i class="fas fa-arrow-right ml-2"></i>
+                </button>
+            </div>
+        </div>
+    </section>
+
+    <!-- Testimonials -->
+    <section id="testimonials" class="py-20 bg-gray-50">
+        <div class="container mx-auto px-6">
+            <div class="text-center mb-16 fade-in">
+                <h2 class="text-4xl font-bold text-gray-900 mb-4">
+                    <i class="fas fa-comment-dots text-yellow-500 mr-3"></i>
+                    Adventure Stories
+                </h2>
+                <p class="text-xl text-gray-600 max-w-2xl mx-auto">
+                    Hear what our adventurers have to say about their experiences
+                </p>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8" id="testimonial-grid">
+                <!-- Testimonials will be populated by JS -->
+            </div>
+        </div>
+    </section>
+
+    <!-- Blog Section -->
+    <section id="blog" class="py-20 bg-white">
+        <div class="container mx-auto px-6">
+            <div class="text-center mb-16 fade-in">
+                <h2 class="text-4xl font-bold text-gray-900 mb-4">
+                    <i class="fas fa-newspaper text-yellow-500 mr-3"></i>
+                    Adventure Journal
+                </h2>
+                <p class="text-xl text-gray-600 max-w-2xl mx-auto">
+                    Latest news, tips and stories from the world of adventure travel
+                </p>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8" id="blog-grid">
+                <!-- Blog posts will be populated by JS -->
+            </div>
+
+            <div class="text-center mt-12 fade-in delay-1">
+                <button class="btn-primary px-8 py-3 rounded-full text-lg font-semibold">
+                    Read Our Blog <i class="fas fa-arrow-right ml-2"></i>
+                </button>
+            </div>
+        </div>
+    </section>
+
+    <!-- Newsletter -->
+    <section class="py-16 gradient-bg text-white">
+        <div class="container mx-auto px-6">
+            <div class="max-w-4xl mx-auto text-center">
+                <h3 class="text-3xl font-bold mb-6">Join Our Adventure Community</h3>
+                <p class="text-xl mb-8 max-w-2xl mx-auto">
+                    Get exclusive offers, adventure tips, and early access to new trips
+                </p>
+
+                <div class="flex flex-col sm:flex-row gap-4 justify-center max-w-xl mx-auto">
+                    <input type="email" placeholder="Your email address"
+                        class="flex-grow px-6 py-3 rounded-full text-gray-900 focus:outline-none focus:ring-2 focus:ring-yellow-400">
+                    <button class="btn-accent px-8 py-3 rounded-full text-lg font-semibold whitespace-nowrap">
+                        Subscribe Now
+                    </button>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="bg-gray-900 text-white pt-16 pb-8">
+        <div class="container mx-auto px-6">
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-12 mb-12">
+                <div>
+                    <div class="flex items-center mb-4">
+                        <i class="fas fa-route text-2xl text-yellow-500 mr-3"></i>
+                        <h3 class="text-2xl font-bold">Adventure<span class="text-yellow-400">Trails</span></h3>
+                    </div>
+                    <p class="text-gray-400 mb-4">
+                        Creating unforgettable adventure experiences since 2010
+                    </p>
+                    <div class="flex space-x-4">
+                        <a href="#" class="text-gray-400 hover:text-white transition"><i
+                                class="fab fa-facebook-f"></i></a>
+                        <a href="#" class="text-gray-400 hover:text-white transition"><i
+                                class="fab fa-instagram"></i></a>
+                        <a href="#" class="text-gray-400 hover:text-white transition"><i class="fab fa-twitter"></i></a>
+                        <a href="#" class="text-gray-400 hover:text-white transition"><i class="fab fa-youtube"></i></a>
+                    </div>
+                </div>
+
+                <div>
+                    <h4 class="text-lg font-semibold mb-4">Explore</h4>
+                    <ul class="space-y-2">
+                        <li><a href="#" class="text-gray-400 hover:text-white transition">All Adventures</a></li>
+                        <li><a href="#" class="text-gray-400 hover:text-white transition">Popular Trips</a></li>
+                        <li><a href="#" class="text-gray-400 hover:text-white transition">New Arrivals</a></li>
+                        <li><a href="#" class="text-gray-400 hover:text-white transition">Featured Destinations</a></li>
+                    </ul>
+                </div>
+
+                <div>
+                    <h4 class="text-lg font-semibold mb-4">Company</h4>
+                    <ul class="space-y-2">
+                        <li><a href="#" class="text-gray-400 hover:text-white transition">About Us</a></li>
+                        <li><a href="#" class="text-gray-400 hover:text-white transition">Our Guides</a></li>
+                        <li><a href="#" class="text-gray-400 hover:text-white transition">Careers</a></li>
+                        <li><a href="#" class="text-gray-400 hover:text-white transition">Contact</a></li>
+                    </ul>
+                </div>
+
+                <div>
+                    <h4 class="text-lg font-semibold mb-4">Support</h4>
+                    <ul class="space-y-2">
+                        <li><a href="#" class="text-gray-400 hover:text-white transition">FAQ</a></li>
+                        <li><a href="#" class="text-gray-400 hover:text-white transition">Booking Policy</a></li>
+                        <li><a href="#" class="text-gray-400 hover:text-white transition">Safety Guidelines</a></li>
+                        <li><a href="#" class="text-gray-400 hover:text-white transition">Privacy Policy</a></li>
+                    </ul>
+                </div>
+            </div>
+
+            <div class="border-t border-gray-800 pt-8 text-center text-gray-500">
+                <p>&copy; 2025 AdventureTrails. All rights reserved. | Designed with <i
+                        class="fas fa-heart text-red-500"></i> for adventurers</p>
+            </div>
+        </div>
+    </footer>
+
+    <script>
+        // Enhanced data
+        const activities = [
+            {
+                type: 'hiking',
+                name: 'Mountain Summit Challenge',
+                desc: 'Conquer breathtaking peaks with our expert guides',
+                img: 'https://i.postimg.cc/CMshKR9N/avenue-815297-1280.jpg',
+                duration: '3-5 days',
+                difficulty: 'Advanced'
+            },
+            {
+                type: 'diving',
+                name: 'Coral Reef Explorer',
+                desc: 'Discover vibrant marine life in crystal clear waters',
+                img: 'https://i.postimg.cc/0yvG9XQx/Screenshot-2025-04-05-at-6-35-27-PM.png',
+                duration: '2 days',
+                difficulty: 'Beginner'
+            },
+            {
+                type: 'skiing',
+                name: 'Alpine Powder Adventure',
+                desc: 'Experience untouched powder on majestic slopes',
+                img: 'https://i.postimg.cc/NMsRRKXn/Screenshot-2025-04-05-at-6-34-45-PM.png',
+                duration: '5-7 days',
+                difficulty: 'Intermediate'
+            },
+            {
+                type: 'hiking',
+                name: 'Coastal Cliff Trek',
+                desc: 'Dramatic ocean views from towering cliffs',
+                img: 'https://source.unsplash.com/600x400/?cliff,hiking',
+                duration: '1 day',
+                difficulty: 'Moderate'
+            },
+            {
+                type: 'diving',
+                name: 'Shipwreck Discovery',
+                desc: 'Explore historic wrecks with our diving specialists',
+                img: 'https://source.unsplash.com/600x400/?shipwreck,diving',
+                duration: '3 days',
+                difficulty: 'Advanced'
+            },
+            {
+                type: 'skiing',
+                name: 'Backcountry Expedition',
+                desc: 'Heli-skiing in remote mountain ranges',
+                img: 'https://source.unsplash.com/600x400/?backcountry,skiing',
+                duration: '7 days',
+                difficulty: 'Expert'
+            }
+        ];
+
+        const destinations = [
+            {
+                name: 'Patagonia, Argentina',
+                desc: 'Trek through some of the most dramatic landscapes on Earth',
+                img: 'https://i.postimg.cc/bJ3bnkgj/autumn-6690466-1280.jpg',
+                rating: '4.9',
+                tours: '15+ tours'
+            },
+            {
+                name: 'Great Barrier Reef, Australia',
+                desc: 'The world\'s largest coral reef system teeming with marine life',
+                img: 'https://i.postimg.cc/4yycQy2H/trees-1850902-1280.jpg',
+                rating: '4.8',
+                tours: '12+ tours'
+            },
+            {
+                name: 'Swiss Alps, Switzerland',
+                desc: 'Iconic mountain adventures in the heart of Europe',
+                img: 'https://i.postimg.cc/NMsRRKXn/Screenshot-2025-04-05-at-6-34-45-PM.png',
+                rating: '4.7',
+                tours: '20+ tours'
+            },
+            {
+                name: 'Banff National Park, Canada',
+                desc: 'Pristine wilderness with stunning glacial lakes',
+                img: 'https://source.unsplash.com/600x400/?banff',
+                rating: '4.9',
+                tours: '18+ tours'
+            },
+            {
+                name: 'Kilimanjaro, Tanzania',
+                desc: 'Challenge yourself with Africa\'s highest peak',
+                img: 'https://source.unsplash.com/600x400/?kilimanjaro',
+                rating: '4.8',
+                tours: '5+ tours'
+            },
+            {
+                name: 'Fiordland, New Zealand',
+                desc: 'Dramatic fiords and untouched wilderness',
+                img: 'https://source.unsplash.com/600x400/?fiordland',
+                rating: '4.7',
+                tours: '8+ tours'
+            }
+        ];
+
+        const testimonials = [
+            {
+                quote: 'The Patagonia trek was the most incredible experience of my life. The guides were knowledgeable and the scenery was beyond breathtaking.',
+                name: 'Sarah J.',
+                location: 'New York, USA',
+                rating: '5',
+                img: 'https://randomuser.me/api/portraits/women/44.jpg'
+            },
+            {
+                quote: 'As a beginner diver, I was nervous but the team made me feel completely safe. Swimming with turtles was a dream come true!',
+                name: 'Michael T.',
+                location: 'London, UK',
+                rating: '5',
+                img: 'https://randomuser.me/api/portraits/men/32.jpg'
+            },
+            {
+                quote: 'The Swiss Alps ski trip exceeded all expectations. Perfect powder, amazing guides, and cozy mountain huts. Can\'t wait to go back!',
+                name: 'Emma L.',
+                location: 'Sydney, Australia',
+                rating: '5',
+                img: 'https://randomuser.me/api/portraits/women/68.jpg'
+            }
+        ];
+
+        const blogPosts = [
+            {
+                title: '10 Essential Items for Your Next Hiking Adventure',
+                date: 'March 15, 2025',
+                excerpt: 'Packing the right gear can make or break your outdoor experience. Here are our top picks...',
+                img: 'https://source.unsplash.com/600x400/?hiking,gear',
+                readTime: '5 min read'
+            },
+            {
+                title: 'The Best Hidden Dive Spots in Southeast Asia',
+                date: 'April 2, 2025',
+                excerpt: 'Skip the crowded dive sites and explore these incredible underwater locations...',
+                img: 'https://source.unsplash.com/600x400/?diving,asia',
+                readTime: '7 min read'
+            },
+            {
+                title: 'Winter Adventure Guide: From Skiing to Ice Climbing',
+                date: 'December 10, 2024',
+                excerpt: 'Make the most of the cold season with these thrilling winter activities...',
+                img: 'https://source.unsplash.com/600x400/?winter,sports',
+                readTime: '8 min read'
+            }
+        ];
+
+        // Initialize the page
+        document.addEventListener('DOMContentLoaded', function () {
+            showActivities('all');
+            populateDestinations();
+            populateTestimonials();
+            populateBlog();
+            setupTabButtons();
+            setupAnimations();
+        });
+
+        // Enhanced activity display
+        function showActivities(filter = 'all') {
+            const activityGrid = document.getElementById('activity-grid');
+            activityGrid.innerHTML = '';
+
+            const filteredActivities = filter === 'all'
+                ? activities.slice(0, 6)
+                : activities.filter(activity => activity.type === filter).slice(0, 3);
+
+            filteredActivities.forEach(activity => {
+                activityGrid.innerHTML += `
+                    <div class="bg-white rounded-xl overflow-hidden shadow-md card-hover">
+                        <div class="relative h-48 overflow-hidden">
+                            <img src="${activity.img}" alt="${activity.name}" class="w-full h-full object-cover">
+                            <div class="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black to-transparent p-4">
+                                <span class="inline-block px-3 py-1 bg-yellow-500 text-white text-sm font-semibold rounded-full">
+                                    ${activity.difficulty}
+                                </span>
+                            </div>
+                        </div>
+                        <div class="p-6">
+                            <h3 class="text-xl font-bold mb-2">${activity.name}</h3>
+                            <p class="text-gray-600 mb-4">${activity.desc}</p>
+                            <div class="flex justify-between items-center">
+                                <span class="text-gray-500"><i class="far fa-clock mr-1"></i> ${activity.duration}</span>
+                                <button class="btn-primary px-4 py-2 rounded-full text-sm">
+                                    Book Now <i class="fas fa-arrow-right ml-1"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            });
+        }
+
+        // Enhanced destination display
+        function populateDestinations() {
+            const grid = document.getElementById('destination-grid');
+            grid.innerHTML = '';
+
+            destinations.forEach(dest => {
+                grid.innerHTML += `
+                    <div class="bg-white rounded-xl overflow-hidden shadow-md card-hover">
+                        <div class="relative h-64 overflow-hidden">
+                            <img src="${dest.img}" alt="${dest.name}" class="w-full h-full object-cover">
+                            <div class="absolute inset-0 bg-gradient-to-t from-black via-transparent to-transparent opacity-70"></div>
+                            <div class="absolute bottom-0 left-0 right-0 p-6 text-white">
+                                <h3 class="text-xl font-bold">${dest.name}</h3>
+                                <div class="flex items-center mt-2">
+                                    <div class="flex text-yellow-400 mr-2">
+                                        ${'★'.repeat(parseInt(dest.rating))}${'☆'.repeat(5 - parseInt(dest.rating))}
+                                    </div>
+                                    <span class="text-sm">${dest.rating}</span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="p-6">
+                            <p class="text-gray-600 mb-4">${dest.desc}</p>
+                            <div class="flex justify-between items-center">
+                                <span class="text-gray-500"><i class="fas fa-route mr-1"></i> ${dest.tours}</span>
+                                <button class="btn-primary px-4 py-2 rounded-full text-sm">
+                                    Explore <i class="fas fa-arrow-right ml-1"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            });
+        }
+
+        // Enhanced testimonial display
+        function populateTestimonials() {
+            const grid = document.getElementById('testimonial-grid');
+            grid.innerHTML = '';
+
+            testimonials.forEach(test => {
+                grid.innerHTML += `
+                    <div class="testimonial-card rounded-lg p-8 shadow-md">
+                        <div class="flex items-center mb-6">
+                            <img src="${test.img}" alt="${test.name}" class="w-12 h-12 rounded-full object-cover mr-4">
+                            <div>
+                                <h4 class="font-bold">${test.name}</h4>
+                                <p class="text-gray-600 text-sm">${test.location}</p>
+                            </div>
+                        </div>
+                        <p class="text-gray-700 italic mb-4">"${test.quote}"</p>
+                        <div class="flex text-yellow-400">
+                            ${'★'.repeat(parseInt(test.rating))}
+                        </div>
+                    </div>
+                `;
+            });
+        }
+
+        // Enhanced blog display
+        function populateBlog() {
+            const grid = document.getElementById('blog-grid');
+            grid.innerHTML = '';
+
+            blogPosts.forEach(post => {
+                grid.innerHTML += `
+                    <div class="bg-white rounded-xl overflow-hidden shadow-md card-hover">
+                        <div class="h-48 overflow-hidden">
+                            <img src="${post.img}" alt="${post.title}" class="w-full h-full object-cover">
+                        </div>
+                        <div class="p-6">
+                            <span class="text-gray-500 text-sm">${post.date} • ${post.readTime}</span>
+                            <h3 class="text-xl font-bold my-3">${post.title}</h3>
+                            <p class="text-gray-600 mb-4">${post.excerpt}</p>
+                            <a href="#" class="text-blue-600 font-medium hover:text-blue-800 transition">
+                                Read More <i class="fas fa-arrow-right ml-1"></i>
+                            </a>
+                        </div>
+                    </div>
+                `;
+            });
+        }
+
+        // Tab functionality
+        function setupTabButtons() {
+            const tabButtons = document.querySelectorAll('.tab-button');
+
+            tabButtons.forEach(button => {
+                button.addEventListener('click', () => {
+                    const filter = button.getAttribute('data-tab');
+
+                    tabButtons.forEach(btn => btn.classList.remove('active'));
+                    button.classList.add('active');
+
+                    showActivities(filter);
+                });
+            });
+        }
+
+        // Animation setup
+        function setupAnimations() {
+            const observer = new IntersectionObserver((entries) => {
+                entries.forEach(entry => {
+                    if (entry.isIntersecting) {
+                        entry.target.classList.add('fade-in');
+                        observer.unobserve(entry.target);
+                    }
+                });
+            }, { threshold: 0.1 });
+
+            document.querySelectorAll('section').forEach(section => {
+                observer.observe(section);
+            });
+        }
+
+        // Mobile menu toggle
+        function toggleMenu() {
+            const menu = document.querySelector('.mobile-menu');
+            menu.classList.toggle('open');
+        }
+
+        // Smooth scrolling
+        function scrollToSection(id) {
+            document.getElementById(id).scrollIntoView({
+                behavior: 'smooth'
+            });
+        }
+    </script>
+</body>
+
+</html>

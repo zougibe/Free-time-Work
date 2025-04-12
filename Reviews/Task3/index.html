@@ -1,0 +1,344 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Recommended Books</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        indigo: {
+                            950: '#1e1b4b'
+                        }
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif']
+                    }
+                }
+            }
+        }
+    </script>
+    <style type="text/tailwindcss">
+        @layer utilities {
+            .scrollbar-hide::-webkit-scrollbar {
+                display: none;
+            }
+            .scrollbar-hide {
+                -ms-overflow-style: none;
+                scrollbar-width: none;
+            }
+        }
+    </style>
+</head>
+
+<body class="bg-slate-950 min-h-screen text-slate-100">
+    <div class="container mx-auto px-4 py-12">
+        <!-- Header -->
+        <header class="mb-12 text-center">
+            <div class="inline-flex items-center justify-center w-16 h-16 rounded-full bg-indigo-900/50 mb-6">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5"
+                    stroke="currentColor" class="w-8 h-8 text-indigo-400">
+                    <path stroke-linecap="round" stroke-linejoin="round"
+                        d="M12 6.042A8.967 8.967 0 006 3.75c-1.052 0-2.062.18-3 .512v14.25A8.987 8.987 0 016 18c2.305 0 4.408.867 6 2.292m0-14.25a8.966 8.966 0 016-2.292c1.052 0 2.062.18 3 .512v14.25A8.987 8.987 0 0018 18a8.967 8.967 0 00-6 2.292m0-14.25v14.25" />
+                </svg>
+            </div>
+            <h1
+                class="text-4xl font-bold mb-3 bg-gradient-to-r from-indigo-400 to-indigo-600 bg-clip-text text-transparent">
+                Recommended Books</h1>
+            <p class="text-slate-400 max-w-2xl mx-auto">Discover your next favorite read from our curated collection</p>
+        </header>
+
+        <!-- Books Grid -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+            <!-- Book Card 1 -->
+            <div
+                class="group relative overflow-hidden rounded-xl bg-slate-900 border border-slate-800 hover:border-indigo-500 transition-all duration-300 hover:shadow-lg hover:shadow-indigo-500/10">
+                <div class="h-48 overflow-hidden">
+                    <img src="https://covers.openlibrary.org/b/id/10590366-L.jpg" alt="The Great Gatsby"
+                        class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500">
+                </div>
+                <div class="p-5">
+                    <h3 class="text-xl font-semibold mb-1 text-slate-100">The Great Gatsby</h3>
+                    <p class="text-sm text-indigo-400 mb-3">F. Scott Fitzgerald</p>
+                    <p class="text-slate-400 text-sm mb-4 line-clamp-2">A story of the fabulously wealthy Jay Gatsby and
+                        his love for the beautiful Daisy Buchanan.</p>
+                    <div class="flex items-center justify-between">
+                        <a href="#"
+                            class="inline-flex items-center px-4 py-2 bg-indigo-600 hover:bg-indigo-700 rounded-lg text-sm font-medium transition-colors">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-2" fill="none" viewBox="0 0 24 24"
+                                stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
+                            </svg>
+                            Read More
+                        </a>
+                        <a href="#"
+                            class="inline-flex items-center px-4 py-2 bg-indigo-100 hover:bg-indigo-200 rounded-lg text-sm font-medium transition-colors text-black">
+                            <svg class="h-4 w-4" mr-2 viewBox=" 0 0 120 40" fill="none"
+                                xmlns="http://www.w3.org/2000/svg">
+                                <!-- Button background with gradient and rounded corners -->
+                                <rect width="120" height="40" rx="8" fill="url(#paint0_linear)" />
+
+                                <!-- Shopping cart icon -->
+                                <path d="M30 16H38L42 24H78L88 12H34" stroke="white" stroke-width="2"
+                                    stroke-linecap="round" stroke-linejoin="round" />
+                                <path
+                                    d="M42 30C42 30.5304 41.7893 31.0391 41.4142 31.4142C41.0391 31.7893 40.5304 32 40 32C39.4696 32 38.9609 31.7893 38.5858 31.4142C38.2107 31.0391 38 30.5304 38 30"
+                                    stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+                                <path
+                                    d="M74 30C74 30.5304 73.7893 31.0391 73.4142 31.4142C73.0391 31.7893 72.5304 32 72 32C71.4696 32 70.9609 31.7893 70.5858 31.4142C70.2107 31.0391 70 30.5304 70 30"
+                                    stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+                            </svg>
+                            Buy Now
+                        </a>
+                        <span class="text-xs text-slate-500">Classic</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Book Card 2 -->
+            <div
+                class="group relative overflow-hidden rounded-xl bg-slate-900 border border-slate-800 hover:border-indigo-500 transition-all duration-300 hover:shadow-lg hover:shadow-indigo-500/10">
+                <div class="h-48 overflow-hidden">
+                    <img src="https://covers.openlibrary.org/b/id/12606502-L.jpg" alt="To Kill a Mockingbird"
+                        class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500">
+                </div>
+                <div class="p-5">
+                    <h3 class="text-xl font-semibold mb-1 text-slate-100">To Kill a Mockingbird</h3>
+                    <p class="text-sm text-indigo-400 mb-3">Harper Lee</p>
+                    <p class="text-slate-400 text-sm mb-4 line-clamp-2">An unforgettable novel of childhood in a sleepy
+                        Southern town and the crisis of conscience.</p>
+                    <div class="flex items-center justify-between">
+                        <a href="#"
+                            class="inline-flex items-center px-4 py-2 bg-indigo-600 hover:bg-indigo-700 rounded-lg text-sm font-medium transition-colors">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-2" fill="none" viewBox="0 0 24 24"
+                                stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
+                            </svg>
+                            Read More
+                        </a>
+                        <a href="#"
+                            class="inline-flex items-center px-4 py-2 bg-indigo-100 hover:bg-indigo-200 rounded-lg text-sm font-medium transition-colors text-black">
+                            <svg class="h-4 w-4" mr-2 viewBox=" 0 0 120 40" fill="none"
+                                xmlns="http://www.w3.org/2000/svg">
+                                <!-- Button background with gradient and rounded corners -->
+                                <rect width="120" height="40" rx="8" fill="url(#paint0_linear)" />
+
+                                <!-- Shopping cart icon -->
+                                <path d="M30 16H38L42 24H78L88 12H34" stroke="white" stroke-width="2"
+                                    stroke-linecap="round" stroke-linejoin="round" />
+                                <path
+                                    d="M42 30C42 30.5304 41.7893 31.0391 41.4142 31.4142C41.0391 31.7893 40.5304 32 40 32C39.4696 32 38.9609 31.7893 38.5858 31.4142C38.2107 31.0391 38 30.5304 38 30"
+                                    stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+                                <path
+                                    d="M74 30C74 30.5304 73.7893 31.0391 73.4142 31.4142C73.0391 31.7893 72.5304 32 72 32C71.4696 32 70.9609 31.7893 70.5858 31.4142C70.2107 31.0391 70 30.5304 70 30"
+                                    stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+                            </svg>
+                            Buy Now
+                        </a>
+                        <span class="text-xs text-slate-500">Classic</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Book Card 3 -->
+            <div
+                class="group relative overflow-hidden rounded-xl bg-slate-900 border border-slate-800 hover:border-indigo-500 transition-all duration-300 hover:shadow-lg hover:shadow-indigo-500/10">
+                <div class="h-48 overflow-hidden">
+                    <img src="https://covers.openlibrary.org/b/id/8745958-L.jpg" alt="1984"
+                        class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500">
+                </div>
+                <div class="p-5">
+                    <h3 class="text-xl font-semibold mb-1 text-slate-100">1984</h3>
+                    <p class="text-sm text-indigo-400 mb-3">George Orwell</p>
+                    <p class="text-slate-400 text-sm mb-4 line-clamp-2">A dystopian novel set in a totalitarian society
+                        where independent thinking is a crime.</p>
+                    <div class="flex items-center justify-between">
+                        <a href="#"
+                            class="inline-flex items-center px-4 py-2 bg-indigo-600 hover:bg-indigo-700 rounded-lg text-sm font-medium transition-colors">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-2" fill="none" viewBox="0 0 24 24"
+                                stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
+                            </svg>
+                            Read More
+                        </a>
+                        <a href="#"
+                            class="inline-flex items-center px-4 py-2 bg-indigo-100 hover:bg-indigo-200 rounded-lg text-sm font-medium transition-colors text-black">
+                            <svg class="h-4 w-4" mr-2 viewBox=" 0 0 120 40" fill="none"
+                                xmlns="http://www.w3.org/2000/svg">
+                                <!-- Button background with gradient and rounded corners -->
+                                <rect width="120" height="40" rx="8" fill="url(#paint0_linear)" />
+
+                                <!-- Shopping cart icon -->
+                                <path d="M30 16H38L42 24H78L88 12H34" stroke="white" stroke-width="2"
+                                    stroke-linecap="round" stroke-linejoin="round" />
+                                <path
+                                    d="M42 30C42 30.5304 41.7893 31.0391 41.4142 31.4142C41.0391 31.7893 40.5304 32 40 32C39.4696 32 38.9609 31.7893 38.5858 31.4142C38.2107 31.0391 38 30.5304 38 30"
+                                    stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+                                <path
+                                    d="M74 30C74 30.5304 73.7893 31.0391 73.4142 31.4142C73.0391 31.7893 72.5304 32 72 32C71.4696 32 70.9609 31.7893 70.5858 31.4142C70.2107 31.0391 70 30.5304 70 30"
+                                    stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+                            </svg>
+                            Buy Now
+                        </a>
+                        <span class="text-xs text-slate-500">Dystopian</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Book Card 4 -->
+            <div
+                class="group relative overflow-hidden rounded-xl bg-slate-900 border border-slate-800 hover:border-indigo-500 transition-all duration-300 hover:shadow-lg hover:shadow-indigo-500/10">
+                <div class="h-48 overflow-hidden">
+                    <img src="https://covers.openlibrary.org/b/id/14348537-L.jpg" alt="Pride and Prejudice"
+                        class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500">
+                </div>
+                <div class="p-5">
+                    <h3 class="text-xl font-semibold mb-1 text-slate-100">Pride and Prejudice</h3>
+                    <p class="text-sm text-indigo-400 mb-3">Jane Austen</p>
+                    <p class="text-slate-400 text-sm mb-4 line-clamp-2">A romantic novel that also critiques the British
+                        landed gentry at the end of the 18th century.</p>
+                    <div class="flex items-center justify-between">
+                        <a href="#"
+                            class="inline-flex items-center px-4 py-2 bg-indigo-600 hover:bg-indigo-700 rounded-lg text-sm font-medium transition-colors">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-2" fill="none" viewBox="0 0 24 24"
+                                stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
+                            </svg>
+                            Read More
+                        </a>
+                        <a href="#"
+                            class="inline-flex items-center px-4 py-2 bg-indigo-100 hover:bg-indigo-200 rounded-lg text-sm font-medium transition-colors text-black">
+                            <svg class="h-4 w-4" mr-2 viewBox=" 0 0 120 40" fill="none"
+                                xmlns="http://www.w3.org/2000/svg">
+                                <!-- Button background with gradient and rounded corners -->
+                                <rect width="120" height="40" rx="8" fill="url(#paint0_linear)" />
+
+                                <!-- Shopping cart icon -->
+                                <path d="M30 16H38L42 24H78L88 12H34" stroke="white" stroke-width="2"
+                                    stroke-linecap="round" stroke-linejoin="round" />
+                                <path
+                                    d="M42 30C42 30.5304 41.7893 31.0391 41.4142 31.4142C41.0391 31.7893 40.5304 32 40 32C39.4696 32 38.9609 31.7893 38.5858 31.4142C38.2107 31.0391 38 30.5304 38 30"
+                                    stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+                                <path
+                                    d="M74 30C74 30.5304 73.7893 31.0391 73.4142 31.4142C73.0391 31.7893 72.5304 32 72 32C71.4696 32 70.9609 31.7893 70.5858 31.4142C70.2107 31.0391 70 30.5304 70 30"
+                                    stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+                            </svg>
+                            Buy Now
+                        </a>
+                        <span class="text-xs text-slate-500">Romance</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Book Card 5 -->
+            <div
+                class="group relative overflow-hidden rounded-xl bg-slate-900 border border-slate-800 hover:border-indigo-500 transition-all duration-300 hover:shadow-lg hover:shadow-indigo-500/10">
+                <div class="h-48 overflow-hidden">
+                    <img src="https://covers.openlibrary.org/b/id/9273490-L.jpg" alt="The Catcher in the Rye"
+                        class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500">
+                </div>
+                <div class="p-5">
+                    <h3 class="text-xl font-semibold mb-1 text-slate-100">The Catcher in the Rye</h3>
+                    <p class="text-sm text-indigo-400 mb-3">J.D. Salinger</p>
+                    <p class="text-slate-400 text-sm mb-4 line-clamp-2">A story about adolescent Holden Caulfield's
+                        disillusionment with the adult world.</p>
+                    <div class="flex items-center justify-between">
+                        <a href="#"
+                            class="inline-flex items-center px-4 py-2 bg-indigo-600 hover:bg-indigo-700 rounded-lg text-sm font-medium transition-colors">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-2" fill="none" viewBox="0 0 24 24"
+                                stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
+                            </svg>
+                            Read More
+                        </a>
+                        <a href="#"
+                            class="inline-flex items-center px-4 py-2 bg-indigo-100 hover:bg-indigo-200 rounded-lg text-sm font-medium transition-colors text-black">
+                            <svg class="h-4 w-4" mr-2 viewBox=" 0 0 120 40" fill="none"
+                                xmlns="http://www.w3.org/2000/svg">
+                                <!-- Button background with gradient and rounded corners -->
+                                <rect width="120" height="40" rx="8" fill="url(#paint0_linear)" />
+
+                                <!-- Shopping cart icon -->
+                                <path d="M30 16H38L42 24H78L88 12H34" stroke="white" stroke-width="2"
+                                    stroke-linecap="round" stroke-linejoin="round" />
+                                <path
+                                    d="M42 30C42 30.5304 41.7893 31.0391 41.4142 31.4142C41.0391 31.7893 40.5304 32 40 32C39.4696 32 38.9609 31.7893 38.5858 31.4142C38.2107 31.0391 38 30.5304 38 30"
+                                    stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+                                <path
+                                    d="M74 30C74 30.5304 73.7893 31.0391 73.4142 31.4142C73.0391 31.7893 72.5304 32 72 32C71.4696 32 70.9609 31.7893 70.5858 31.4142C70.2107 31.0391 70 30.5304 70 30"
+                                    stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+                            </svg>
+                            Buy Now
+                        </a>
+                        <span class="text-xs text-slate-500">Coming-of-age</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Book Card 6 -->
+            <div
+                class="group relative overflow-hidden rounded-xl bg-slate-900 border border-slate-800 hover:border-indigo-500 transition-all duration-300 hover:shadow-lg hover:shadow-indigo-500/10">
+                <div class="h-48 overflow-hidden">
+                    <div
+                        class="w-full h-full bg-gradient-to-br from-indigo-900/50 to-slate-800 flex items-center justify-center">
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5"
+                            stroke="currentColor" class="w-12 h-12 text-indigo-500">
+                            <path stroke-linecap="round" stroke-linejoin="round"
+                                d="M12 6.042A8.967 8.967 0 006 3.75c-1.052 0-2.062.18-3 .512v14.25A8.987 8.987 0 016 18c2.305 0 4.408.867 6 2.292m0-14.25a8.966 8.966 0 016-2.292c1.052 0 2.062.18 3 .512v14.25A8.987 8.987 0 0018 18a8.967 8.967 0 00-6 2.292m0-14.25v14.25" />
+                        </svg>
+                    </div>
+                </div>
+                <div class="p-5">
+                    <h3 class="text-xl font-semibold mb-1 text-slate-100">Crime and Punishment</h3>
+                    <p class="text-sm text-indigo-400 mb-3">Fyodor Dostoevsky</p>
+                    <p class="text-slate-400 text-sm mb-4 line-clamp-2">The story of a poor student who murders a
+                        pawnbroker and wrestles with guilt and redemption.</p>
+                    <div class="flex items-center justify-between">
+                        <a href="#"
+                            class="inline-flex items-center px-4 py-2 bg-indigo-600 hover:bg-indigo-700 rounded-lg text-sm font-medium transition-colors">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-2" fill="none" viewBox="0 0 24 24"
+                                stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
+                            </svg>
+                            Read More
+                        </a>
+                        <a href="#"
+                            class="inline-flex items-center px-4 py-2 bg-indigo-100 hover:bg-indigo-200 rounded-lg text-sm font-medium transition-colors text-black">
+                            <svg class="h-4 w-4" mr-2 viewBox=" 0 0 120 40" fill="none"
+                                xmlns="http://www.w3.org/2000/svg">
+                                <!-- Button background with gradient and rounded corners -->
+                                <rect width="120" height="40" rx="8" fill="url(#paint0_linear)" />
+
+                                <!-- Shopping cart icon -->
+                                <path d="M30 16H38L42 24H78L88 12H34" stroke="white" stroke-width="2"
+                                    stroke-linecap="round" stroke-linejoin="round" />
+                                <path
+                                    d="M42 30C42 30.5304 41.7893 31.0391 41.4142 31.4142C41.0391 31.7893 40.5304 32 40 32C39.4696 32 38.9609 31.7893 38.5858 31.4142C38.2107 31.0391 38 30.5304 38 30"
+                                    stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+                                <path
+                                    d="M74 30C74 30.5304 73.7893 31.0391 73.4142 31.4142C73.0391 31.7893 72.5304 32 72 32C71.4696 32 70.9609 31.7893 70.5858 31.4142C70.2107 31.0391 70 30.5304 70 30"
+                                    stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+                            </svg>
+                            Buy Now
+                        </a>
+                        <span class="text-xs text-slate-500">Philosophical</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+
+</html>

@@ -1,0 +1,572 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Portfolio - John Doe</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Playfair+Display:wght@400;500;600;700&display=swap"
+        rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#3b82f6',
+                        secondary: '#10b981',
+                        accent: '#f97316',
+                        dark: '#1f2937',
+                        light: '#f9fafb'
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                        display: ['"Playfair Display"', 'serif']
+                    },
+                    backgroundImage: {
+                        'dot-pattern': "url('data:image/svg+xml,%3Csvg width=\'60\' height=\'60\' viewBox=\'0 0 60 60\' xmlns=\'http://www.w3.org/2000/svg\'%3E%3Cg fill=\'none\' fill-rule=\'evenodd\'%3E%3Cg fill=\'%239C92AC\' fill-opacity=\'0.4\'%3E%3Cpath d=\'M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z\'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E')",
+                        'grid-pattern': "url('data:image/svg+xml,%3Csvg width=\'40\' height=\'40\' viewBox=\'0 0 40 40\' xmlns=\'http://www.w3.org/2000/svg\'%3E%3Cg fill=\'%23000000\' fill-opacity=\'0.03\' fill-rule=\'evenodd\'%3E%3Cpath d=\'M0 40L40 0H20L0 20M40 40V20L20 40\'/%3E%3C/g%3E%3C/svg%3E')"
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        @keyframes float {
+            0% {
+                transform: translateY(0px);
+            }
+
+            50% {
+                transform: translateY(-10px);
+            }
+
+            100% {
+                transform: translateY(0px);
+            }
+        }
+
+        .floating {
+            animation: float 3s ease-in-out infinite;
+        }
+
+        .gradient-text {
+            background-clip: text;
+            -webkit-background-clip: text;
+            color: transparent;
+            background-image: linear-gradient(to right, #3b82f6, #10b981);
+        }
+
+        .accent-gradient {
+            background-image: linear-gradient(135deg, #3b82f6, #10b981, #f97316);
+        }
+
+        /* Fancy border animation */
+        .animated-border::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            border: 2px solid transparent;
+            border-radius: 0.5rem;
+        }
+
+        .animated-border:hover::before {
+            animation: border-dance 1s linear infinite;
+            border-image: linear-gradient(45deg, #3b82f6, #10b981, #f97316, #3b82f6) 1;
+            border-image-slice: 1;
+        }
+
+        @keyframes border-dance {
+            0% {
+                border-image-source: linear-gradient(45deg, #3b82f6, #10b981, #f97316, #3b82f6);
+            }
+
+            25% {
+                border-image-source: linear-gradient(45deg, #10b981, #f97316, #3b82f6, #10b981);
+            }
+
+            50% {
+                border-image-source: linear-gradient(45deg, #f97316, #3b82f6, #10b981, #f97316);
+            }
+
+            75% {
+                border-image-source: linear-gradient(45deg, #3b82f6, #10b981, #f97316, #3b82f6);
+            }
+
+            100% {
+                border-image-source: linear-gradient(45deg, #3b82f6, #10b981, #f97316, #3b82f6);
+            }
+        }
+    </style>
+</head>
+
+<body class="font-sans text-gray-800 bg-gray-50 bg-dot-pattern">
+    <nav class="fixed w-full bg-white/95 shadow-sm py-4 px-6 z-50">
+        <div class="max-w-6xl mx-auto">
+            <ul class="flex justify-end space-x-8 items-center">
+                <li class="mr-auto">
+                    <a href="#home" class="font-display text-xl text-primary font-semibold">John Doe</a>
+                </li>
+                <li><a href="#home" class="hover:text-primary transition-colors font-medium">Home</a></li>
+                <li><a href="#projects" class="hover:text-primary transition-colors font-medium">Projects</a></li>
+                <li><a href="#about" class="hover:text-primary transition-colors font-medium">About</a></li>
+                <li><a href="#contact" class="hover:text-primary transition-colors font-medium">Contact</a></li>
+            </ul>
+        </div>
+    </nav>
+
+    <section id="home" class="h-[70vh] flex items-center justify-center relative overflow-hidden">
+        <div class="absolute inset-0 bg-gradient-to-br from-primary/5 to-secondary/5 z-0">
+            <div class="absolute inset-0 opacity-10"
+                style="background-image: url('data:image/svg+xml,%3Csvg width=\'60\' height=\'60\' viewBox=\'0 0 60 60\' xmlns=\'http://www.w3.org/2000/svg\'%3E%3Cg fill=\'none\' fill-rule=\'evenodd\'%3E%3Cg fill=\'%239C92AC\' fill-opacity=\'0.4\'%3E%3Cpath d=\'M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z\'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E')">
+            </div>
+        </div>
+        <div
+            class="absolute top-1/2 left-0 w-full h-px bg-gradient-to-r from-transparent via-primary/20 to-transparent">
+        </div>
+
+
+        <div class="absolute top-1/4 left-1/4 w-8 h-8 border-2 border-primary/20 rounded-full floating"
+            style="animation-delay: 0.5s"></div>
+        <div class="absolute bottom-1/3 right-1/4 w-12 h-12 border-2 border-secondary/20 rounded-full floating"
+            style="animation-delay: 1.2s"></div>
+        <div class="absolute bottom-1/4 left-1/3 w-6 h-6 border-2 border-accent/20 rounded-full floating"
+            style="animation-delay: 0.8s"></div>
+
+        <div class="text-center z-10 px-6">
+            <div class="max-w-3xl mx-auto relative">
+                <div class="absolute -top-12 -left-12 w-24 h-24 border border-primary/20 rounded-full"></div>
+                <div class="absolute -bottom-8 -right-8 w-16 h-16 border border-secondary/20 rounded-full"></div>
+                <h1 class="font-display text-5xl md:text-6xl font-bold mb-4 opacity-0 transform translate-y-10"
+                    id="hero-title">
+                    Welcome! I'm <span class="gradient-text">John Doe</span>
+                </h1>
+                <p class="text-xl md:text-2xl text-gray-600 mb-8 opacity-0 transform translate-y-10" id="hero-subtitle">
+                    Creative Web Developer & Designer
+                </p>
+                <div class="opacity-0" id="hero-cta">
+                    <a href="#projects"
+                        class="px-8 py-3 bg-primary text-white rounded-full font-medium hover:bg-primary/90 transition-all hover:shadow-lg hover:shadow-primary/20 inline-block relative animated-border">
+                        View My Work
+                    </a>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section id="projects" class="py-24 px-6 relative">
+        <div class="absolute inset-0 bg-grid-pattern opacity-5 pointer-events-none"></div>
+        <div class="max-w-6xl mx-auto">
+            <div class="flex flex-col md:flex-row md:items-end md:justify-between mb-16">
+                <div class="relative">
+                    <h2 class="font-display text-3xl md:text-4xl font-bold relative z-10">
+                        Projects
+                    </h2>
+                    <div class="absolute -bottom-3 left-0 h-3 w-24 bg-primary/10 rounded-full"></div>
+                </div>
+                <p class="text-gray-500 mt-2 md:mt-0">Recent work I've completed</p>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+                <div
+                    class="group bg-white rounded-xl overflow-hidden shadow-sm hover:shadow-lg transition-all duration-300 transform hover:-translate-y-2 border border-gray-100 relative">
+                    <div
+                        class="absolute top-0 left-0 w-full h-1 bg-primary scale-x-0 group-hover:scale-x-100 transition-transform origin-left">
+                    </div>
+                    <div class="overflow-hidden">
+                        <img src="https://images.unsplash.com/photo-1486312338219-ce68d2c6f44d?ixlib=rb-1.2.1&auto=format&fit=crop&w=600&h=400&q=80"
+                            alt="Project 1"
+                            class="w-full h-56 object-cover transform group-hover:scale-105 transition-transform duration-500">
+                    </div>
+                    <div class="p-6">
+                        <h3 class="font-display text-xl font-bold mb-3">Project One</h3>
+                        <p class="text-gray-600 mb-4">A responsive web application built with React and Firebase.</p>
+                        <div class="flex space-x-2">
+                            <span class="px-3 py-1 bg-primary/10 text-primary text-sm rounded-full">React</span>
+                            <span class="px-3 py-1 bg-primary/10 text-primary text-sm rounded-full">Firebase</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div
+                    class="group bg-white rounded-xl overflow-hidden shadow-sm hover:shadow-lg transition-all duration-300 transform hover:-translate-y-2 border border-gray-100 relative">
+                    <div
+                        class="absolute top-0 left-0 w-full h-1 bg-secondary scale-x-0 group-hover:scale-x-100 transition-transform origin-left">
+                    </div>
+                    <div class="overflow-hidden">
+                        <img src="https://images.unsplash.com/photo-1498050108023-c5249f4df085?ixlib=rb-1.2.1&auto=format&fit=crop&w=600&h=400&q=80"
+                            alt="Project 2"
+                            class="w-full h-56 object-cover transform group-hover:scale-105 transition-transform duration-500">
+                    </div>
+                    <div class="p-6">
+                        <h3 class="font-display text-xl font-bold mb-3">Project Two</h3>
+                        <p class="text-gray-600 mb-4">An e-commerce platform with integrated payment processing.</p>
+                        <div class="flex space-x-2">
+                            <span class="px-3 py-1 bg-secondary/10 text-secondary text-sm rounded-full">Node.js</span>
+                            <span class="px-3 py-1 bg-secondary/10 text-secondary text-sm rounded-full">Stripe</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div
+                    class="group bg-white rounded-xl overflow-hidden shadow-sm hover:shadow-lg transition-all duration-300 transform hover:-translate-y-2 border border-gray-100 relative">
+                    <div
+                        class="absolute top-0 left-0 w-full h-1 bg-accent scale-x-0 group-hover:scale-x-100 transition-transform origin-left">
+                    </div>
+                    <div class="overflow-hidden">
+                        <img src="https://images.unsplash.com/photo-1547658719-da2b51169166?ixlib=rb-1.2.1&auto=format&fit=crop&w=600&h=400&q=80"
+                            alt="Project 3"
+                            class="w-full h-56 object-cover transform group-hover:scale-105 transition-transform duration-500">
+                    </div>
+                    <div class="p-6">
+                        <h3 class="font-display text-xl font-bold mb-3">Project Three</h3>
+                        <p class="text-gray-600 mb-4">A mobile app for tracking personal fitness goals.</p>
+                        <div class="flex space-x-2">
+                            <span class="px-3 py-1 bg-accent/10 text-accent text-sm rounded-full">Flutter</span>
+                            <span class="px-3 py-1 bg-accent/10 text-accent text-sm rounded-full">Firebase</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section id="about" class="py-24 px-6 relative">
+        <div class="absolute inset-0 bg-white"></div>
+        <div class="absolute left-0 top-0 w-full h-24 bg-gradient-to-b from-gray-50 to-white"></div>
+        <div class="absolute right-0 bottom-0 w-1/3 h-1/3 bg-secondary/5 -z-10 rounded-tl-full"></div>
+        <div class="max-w-6xl mx-auto relative">
+            <div class="flex flex-col md:flex-row md:items-end md:justify-between mb-16">
+                <div class="relative">
+                    <h2 class="font-display text-3xl md:text-4xl font-bold relative z-10">
+                        About Me
+                    </h2>
+                    <div class="absolute -bottom-3 left-0 h-3 w-24 bg-secondary/10 rounded-full"></div>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-12 gap-12 items-center">
+                <div class="md:col-span-4 flex justify-center">
+                    <div class="relative">
+                        <div class="absolute -top-4 -left-4 w-24 h-24 border-t-2 border-l-2 border-primary/40"></div>
+                        <div class="absolute -bottom-4 -right-4 w-24 h-24 border-b-2 border-r-2 border-secondary/40">
+                        </div>
+                        <div
+                            class="absolute inset-0 bg-gradient-to-br from-primary/10 to-secondary/10 rounded-md translate-x-2 translate-y-2">
+                        </div>
+                        <img src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?ixlib=rb-1.2.1&auto=format&fit=crop&w=300&h=300&q=80"
+                            alt="Profile" class="w-64 h-64 object-cover rounded-md relative z-10">
+                    </div>
+                </div>
+                <div class="md:col-span-8">
+                    <p class="text-lg text-gray-700 leading-relaxed mb-6">
+                        I'm a passionate web developer with 5+ years of experience creating beautiful and functional
+                        websites.
+                        I specialize in front-end development and have a keen eye for design and user experience.
+                    </p>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div
+                            class="bg-gray-50 p-5 rounded-lg border border-gray-100 transform transition-transform hover:scale-105">
+                            <div class="flex items-center mb-3">
+                                <div class="w-8 h-8 rounded-full flex items-center justify-center bg-primary/10 mr-3">
+                                    <i class="fas fa-code text-primary"></i>
+                                </div>
+                                <h3 class="font-bold text-gray-800">Skills</h3>
+                            </div>
+                            <div class="flex flex-wrap gap-2">
+                                <span class="px-3 py-1 bg-primary/10 text-primary text-sm rounded-full">HTML/CSS</span>
+                                <span
+                                    class="px-3 py-1 bg-primary/10 text-primary text-sm rounded-full">JavaScript</span>
+                                <span class="px-3 py-1 bg-primary/10 text-primary text-sm rounded-full">React</span>
+                                <span class="px-3 py-1 bg-primary/10 text-primary text-sm rounded-full">Node.js</span>
+                                <span class="px-3 py-1 bg-primary/10 text-primary text-sm rounded-full">UI/UX
+                                    Design</span>
+                            </div>
+                        </div>
+                        <div
+                            class="bg-gray-50 p-5 rounded-lg border border-gray-100 transform transition-transform hover:scale-105">
+                            <div class="flex items-center mb-3">
+                                <div class="w-8 h-8 rounded-full flex items-center justify-center bg-secondary/10 mr-3">
+                                    <i class="fas fa-graduation-cap text-secondary"></i>
+                                </div>
+                                <h3 class="font-bold text-gray-800">Education</h3>
+                            </div>
+                            <p class="text-gray-600 text-sm">Bachelor of Science in Computer Science</p>
+                            <p class="text-gray-500 text-sm">University of Technology, 2018</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section id="contact" class="py-24 px-6 relative bg-dark">
+        <div class="absolute inset-0 opacity-10 bg-grid-pattern"></div>
+        <div class="absolute left-0 right-0 top-0 h-24 bg-accent-gradient opacity-10"></div>
+
+        <div class="max-w-6xl mx-auto relative">
+            <div class="flex flex-col md:flex-row md:items-end md:justify-between mb-16">
+                <div class="relative">
+                    <h2 class="font-display text-3xl md:text-4xl font-bold text-white relative z-10">
+                        Contact Me
+                    </h2>
+                    <div class="absolute -bottom-3 left-0 h-3 w-24 bg-accent/30 rounded-full"></div>
+                </div>
+                <p class="text-gray-400 mt-2 md:mt-0">Let's work together</p>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-12">
+                <div class="relative">
+                    <div class="p-6 bg-gray-800 rounded-lg border border-gray-700 text-gray-200 h-full">
+                        <h3 class="font-display text-2xl font-bold mb-6 text-white">Get In Touch</h3>
+                        <div class="space-y-6">
+                            <div class="flex items-start">
+                                <div
+                                    class="w-10 h-10 rounded-full flex items-center justify-center bg-primary/20 mr-4 mt-1">
+                                    <i class="fas fa-envelope text-primary"></i>
+                                </div>
+                                <div>
+                                    <h4 class="text-white font-medium mb-1">Email</h4>
+                                    <p class="text-gray-400">johndoe@example.com</p>
+                                </div>
+                            </div>
+
+                            <div class="flex items-start">
+                                <div
+                                    class="w-10 h-10 rounded-full flex items-center justify-center bg-secondary/20 mr-4 mt-1">
+                                    <i class="fas fa-map-marker-alt text-secondary"></i>
+                                </div>
+                                <div>
+                                    <h4 class="text-white font-medium mb-1">Location</h4>
+                                    <p class="text-gray-400">San Francisco, CA</p>
+                                </div>
+                            </div>
+
+                            <div class="flex items-start">
+                                <div
+                                    class="w-10 h-10 rounded-full flex items-center justify-center bg-accent/20 mr-4 mt-1">
+                                    <i class="fas fa-clock text-accent"></i>
+                                </div>
+                                <div>
+                                    <h4 class="text-white font-medium mb-1">Working Hours</h4>
+                                    <p class="text-gray-400">Monday-Friday, 9:00 - 17:00</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="mt-12 pt-6 border-t border-gray-700">
+                            <h4 class="text-white font-medium mb-4">Connect with me</h4>
+                            <div class="flex space-x-4">
+                                <a href="#"
+                                    class="w-10 h-10 rounded-full flex items-center justify-center bg-gray-700 hover:bg-primary transition-colors">
+                                    <i class="fab fa-github text-white"></i>
+                                </a>
+                                <a href="#"
+                                    class="w-10 h-10 rounded-full flex items-center justify-center bg-gray-700 hover:bg-primary transition-colors">
+                                    <i class="fab fa-linkedin-in text-white"></i>
+                                </a>
+                                <a href="#"
+                                    class="w-10 h-10 rounded-full flex items-center justify-center bg-gray-700 hover:bg-primary transition-colors">
+                                    <i class="fab fa-twitter text-white"></i>
+                                </a>
+                                <a href="#"
+                                    class="w-10 h-10 rounded-full flex items-center justify-center bg-gray-700 hover:bg-primary transition-colors">
+                                    <i class="fab fa-dribbble text-white"></i>
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="relative">
+                    <div
+                        class="absolute -inset-1.5 bg-gradient-to-r from-primary to-secondary rounded-xl opacity-50 blur">
+                    </div>
+                    <div class="relative bg-white rounded-lg shadow-sm overflow-hidden border border-gray-100 z-10">
+                        <div class="p-8">
+                            <form id="contact-form" class="space-y-4">
+                                <div>
+                                    <label for="name" class="block text-sm font-medium text-gray-700 mb-1">Name</label>
+                                    <div class="relative">
+                                        <div
+                                            class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                            <i class="fas fa-user text-gray-400"></i>
+                                        </div>
+                                        <input type="text" id="name" placeholder="Your Name" required
+                                            class="w-full pl-10 px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary transition-all outline-none">
+                                    </div>
+                                </div>
+                                <div>
+                                    <label for="email"
+                                        class="block text-sm font-medium text-gray-700 mb-1">Email</label>
+                                    <div class="relative">
+                                        <div
+                                            class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                            <i class="fas fa-envelope text-gray-400"></i>
+                                        </div>
+                                        <input type="email" id="email" placeholder="Your Email" required
+                                            class="w-full pl-10 px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary transition-all outline-none">
+                                    </div>
+                                </div>
+                                <div>
+                                    <label for="subject"
+                                        class="block text-sm font-medium text-gray-700 mb-1">Subject</label>
+                                    <div class="relative">
+                                        <div
+                                            class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                            <i class="fas fa-briefcase text-gray-400"></i>
+                                        </div>
+                                        <input type="text" id="subject" placeholder="Subject" required
+                                            class="w-full pl-10 px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary transition-all outline-none">
+                                    </div>
+                                </div>
+                                <div>
+                                    <label for="message"
+                                        class="block text-sm font-medium text-gray-700 mb-1">Message</label>
+                                    <div class="relative">
+                                        <div class="absolute top-3 left-0 pl-3 flex items-start pointer-events-none">
+                                            <i class="fas fa-comment text-gray-400"></i>
+                                        </div>
+                                        <textarea id="message" placeholder="Your Message" rows="5" required
+                                            class="w-full pl-10 px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary transition-all outline-none"></textarea>
+                                    </div>
+                                </div>
+                                <button type="submit"
+                                    class="w-full py-3 bg-primary text-white rounded-lg font-medium hover:bg-primary/90 transition-all transform hover:-translate-y-1 hover:shadow-lg relative overflow-hidden group">
+                                    <span
+                                        class="absolute inset-0 w-0 bg-gradient-to-r from-primary to-secondary transition-all group-hover:w-full"></span>
+                                    <span class="relative">Send Message</span>
+                                </button>
+                                <div id="form-message" class="text-center"></div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <footer class="bg-dark text-white pt-0 pb-10">
+        <div class="max-w-6xl mx-auto px-6">
+            <div class="border-t border-gray-800 pt-8 text-center text-gray-400 text-sm">
+                <p>&copy; 2023 John Doe. All rights reserved.</p>
+            </div>
+        </div>
+    </footer>
+
+    <script>
+
+        document.addEventListener('DOMContentLoaded', () => {
+            const heroTitle = document.getElementById('hero-title');
+            const heroSubtitle = document.getElementById('hero-subtitle');
+            const heroCta = document.getElementById('hero-cta');
+
+            setTimeout(() => {
+                heroTitle.classList.add('opacity-100');
+                heroTitle.classList.remove('translate-y-10');
+                heroTitle.style.transition = 'all 0.8s ease-out';
+            }, 300);
+
+            setTimeout(() => {
+                heroSubtitle.classList.add('opacity-100');
+                heroSubtitle.classList.remove('translate-y-10');
+                heroSubtitle.style.transition = 'all 0.8s ease-out';
+            }, 600);
+
+            setTimeout(() => {
+                heroCta.classList.add('opacity-100');
+                heroCta.style.transition = 'all 0.8s ease-out';
+            }, 900);
+        });
+
+
+        document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+            anchor.addEventListener('click', function (e) {
+                e.preventDefault();
+                document.querySelector(this.getAttribute('href')).scrollIntoView({
+                    behavior: 'smooth'
+                });
+            });
+        });
+
+
+        const observerOptions = {
+            threshold: 0.1,
+            rootMargin: '0px 0px -100px 0px'
+        };
+
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.classList.add('animate-section');
+                    observer.unobserve(entry.target);
+                }
+            });
+        }, observerOptions);
+
+        document.querySelectorAll('section').forEach(section => {
+            section.classList.add('opacity-0', 'transform', 'translate-y-10');
+            section.style.transition = 'all 0.8s ease-out';
+            observer.observe(section);
+        });
+
+
+        function animateSection(section) {
+            section.classList.remove('opacity-0', 'translate-y-10');
+            section.classList.add('opacity-100', 'translate-y-0');
+        }
+
+        document.addEventListener('scroll', () => {
+            document.querySelectorAll('.animate-section').forEach(animateSection);
+        });
+
+
+        const form = document.getElementById('contact-form');
+        const formMessage = document.getElementById('form-message');
+
+        form.addEventListener('submit', (e) => {
+            e.preventDefault();
+
+            const name = document.getElementById('name').value;
+            const email = document.getElementById('email').value;
+            const message = document.getElementById('message').value;
+
+            if (name && email && message) {
+                const submitBtn = form.querySelector('button[type="submit"]');
+                const originalBtnText = submitBtn.textContent;
+                submitBtn.innerHTML = '<span class="inline-block animate-spin mr-2">⚙️</span> Sending...';
+                submitBtn.disabled = true;
+
+                setTimeout(() => {
+                    formMessage.classList.add('text-primary', 'font-medium', 'my-4');
+                    formMessage.textContent = 'Message sent successfully!';
+                    form.reset();
+
+                    submitBtn.innerHTML = '✅ Sent!';
+
+                    setTimeout(() => {
+                        submitBtn.textContent = originalBtnText;
+                        submitBtn.disabled = false;
+                        formMessage.textContent = '';
+                    }, 3000);
+                }, 1500);
+            } else {
+                formMessage.classList.add('text-red-500', 'font-medium', 'my-4');
+                formMessage.textContent = 'Please fill all fields';
+
+                setTimeout(() => {
+                    formMessage.textContent = '';
+                }, 3000);
+            }
+        });
+    </script>
+</body>
+
+</html>
+
+</html>

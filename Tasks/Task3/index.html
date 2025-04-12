@@ -1,0 +1,301 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Task Manager</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;500;600;700&display=swap"
+        rel="stylesheet">
+</head>
+
+<body class="bg-[#121212] font-montserrat text-[#e0e0e0] h-screen overflow-hidden">
+    <div class="flex h-full">
+        <!-- Mobile Menu Button -->
+        <button class="md:hidden fixed top-4 left-4 z-50 p-2 bg-[#1e1e1e] rounded-lg border border-[#333] shadow-lg">
+            ☰
+        </button>
+
+        <!-- Sidebar -->
+        <div
+            class="w-[280px] bg-[#1e1e1e] border-r border-[#333] p-6 transition-transform fixed md:relative h-full z-40">
+            <h2 class="text-2xl font-bold mb-8">Task Manager</h2>
+            <div class="space-y-6">
+                <div>
+                    <h3 class="font-semibold mb-3">Filters</h3>
+                    <select
+                        class="w-full bg-[#121212] border border-[#333] rounded-lg px-4 py-2 mb-3 focus:ring-2 focus:ring-purple-500">
+                        <option>All Status</option>
+                        <option>Pending</option>
+                        <option>Completed</option>
+                    </select>
+                    <select
+                        class="w-full bg-[#121212] border border-[#333] rounded-lg px-4 py-2 focus:ring-2 focus:ring-purple-500">
+                        <option>All Priorities</option>
+                        <option>Low</option>
+                        <option>Medium</option>
+                        <option>High</option>
+                    </select>
+                </div>
+                <button class="w-full bg-gradient-to-r from-[#8a63d2] to-[#6d28d9] text-white py-3 rounded-lg font-semibold 
+                        hover:opacity-90 active:scale-[98%] transition-all">
+                    New Task
+                </button>
+            </div>
+        </div>
+
+        <!-- Main Content -->
+        <div class="flex-1 flex flex-col md:flex-row overflow-hidden">
+            <!-- Task List -->
+            <div class="flex-1 p-6 overflow-y-auto space-y-4">
+                <!-- Task Items -->
+                <div class="task-item bg-[#1e1e1e] border border-[#333] rounded-xl p-4 
+                        hover:-translate-y-1 hover:shadow-xl transition-all cursor-pointer">
+                    <h3 class="font-semibold text-lg mb-2">Example Task</h3>
+                    <p class="text-[#b3b3b3] text-sm mb-3">Task description goes here...</p>
+                    <div class="flex gap-3 items-center">
+                        <span
+                            class="priority-low px-2 py-1 rounded-full text-xs font-bold bg-green-800/30 text-green-400">
+                            HIGH
+                        </span>
+                        <span class="text-purple-400 text-sm">● Completed</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Task Details -->
+            <div class="md:w-[400px] bg-[#1e1e1e] border-t md:border-l border-[#333] p-6 overflow-y-auto">
+                <h2 class="text-xl font-bold mb-6">Task Details</h2>
+                <div class="space-y-5">
+                    <input class="w-full bg-[#121212] border border-[#333] rounded-lg px-4 py-2 
+                            focus:ring-2 focus:ring-purple-500" placeholder="Task Title">
+                    <textarea class="w-full bg-[#121212] border border-[#333] rounded-lg px-4 py-2 
+                              h-32 focus:ring-2 focus:ring-purple-500" placeholder="Description"></textarea>
+                    <div class="space-y-4">
+                        <select class="w-full bg-[#121212] border border-[#333] rounded-lg px-4 py-2 
+                                focus:ring-2 focus:ring-purple-500">
+                            <option>Pending</option>
+                            <option>Completed</option>
+                        </select>
+                        <select class="w-full bg-[#121212] border border-[#333] rounded-lg px-4 py-2 
+                                focus:ring-2 focus:ring-purple-500">
+                            <option>Low</option>
+                            <option>Medium</option>
+                            <option>High</option>
+                        </select>
+                    </div>
+                    <div class="flex gap-3">
+                        <button class="flex-1 bg-gradient-to-r from-[#8a63d2] to-[#6d28d9] py-2 rounded-lg
+                                 hover:opacity-90 transition-opacity">
+                            Save
+                        </button>
+                        <button class="flex-1 bg-red-500/30 border border-red-500/50 text-red-400 py-2 rounded-lg
+                                 hover:bg-red-500/40 transition-colors">
+                            Delete
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <style>
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar {
+            width: 8px;
+            background: #1a1a1a;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: #333;
+            border-radius: 4px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: #444;
+        }
+
+        .priority-low {
+            background-color: #2e7d3220;
+            color: #4CAF50;
+        }
+
+        .priority-medium {
+            background-color: #f9a82520;
+            color: #FFC107;
+        }
+
+        .priority-high {
+            background-color: #c6282820;
+            color: #EF5350;
+        }
+    </style>
+
+    <script>
+        // Mobile Menu Toggle
+        document.querySelector('.mobile-menu-btn').addEventListener('click', () => {
+            document.querySelector('.sidebar').classList.toggle('hidden');
+        });
+
+        // Task Manager Logic (Same as previous version)
+        class TaskManager {
+            constructor() {
+                this.tasks = JSON.parse(localStorage.getItem('tasks')) || [];
+                this.selectedTask = null;
+                this.taskListEl = document.getElementById('taskList');
+                this.detailsEl = document.getElementById('detailsContent');
+                this.initEventListeners();
+                this.renderTasks();
+            }
+
+            initEventListeners() {
+                document.getElementById('newTaskBtn').addEventListener('click', () => this.createTask());
+                document.getElementById('statusFilter').addEventListener('change', () => this.renderTasks());
+                document.getElementById('priorityFilter').addEventListener('change', () => this.renderTasks());
+
+                document.querySelector('.mobile-menu-btn').addEventListener('click', () => {
+                    document.querySelector('.sidebar').classList.toggle('active');
+                });
+
+                this.taskListEl.addEventListener('click', (e) => {
+                    const taskEl = e.target.closest('.task-item');
+                    if (!taskEl) return;
+                    const taskId = parseInt(taskEl.dataset.id, 10);
+                    const task = this.tasks.find(t => t.id === taskId);
+                    if (task) this.showTaskDetails(task);
+                    document.querySelector('.sidebar').classList.remove('active');
+                });
+            }
+
+            createTask() {
+                const task = {
+                    id: Date.now(),
+                    title: 'New Task',
+                    description: '',
+                    status: 'pending',
+                    priority: 'medium',
+                    date: new Date().toISOString().split('T')[0]
+                };
+                this.tasks.push(task);
+                this.saveTasks();
+                this.renderTasks();
+                this.showTaskDetails(task);
+            }
+
+            updateTask(id, updates) {
+                const taskIndex = this.tasks.findIndex(t => t.id === id);
+                if (taskIndex === -1) return;
+                this.tasks[taskIndex] = { ...this.tasks[taskIndex], ...updates };
+                this.saveTasks();
+                this.renderTasks();
+                this.showTaskDetails(this.tasks[taskIndex]);
+            }
+
+            deleteTask(id) {
+                this.tasks = this.tasks.filter(t => t.id !== id);
+                this.saveTasks();
+                this.renderTasks();
+                this.selectedTask = null;
+                this.showTaskDetails(null);
+            }
+
+            saveTasks() {
+                localStorage.setItem('tasks', JSON.stringify(this.tasks));
+            }
+
+            renderTasks() {
+                const taskList = document.getElementById('taskList');
+                const statusFilter = document.getElementById('statusFilter').value;
+                const priorityFilter = document.getElementById('priorityFilter').value;
+
+                const filteredTasks = this.tasks.filter(task =>
+                    (statusFilter === 'all' || task.status === statusFilter) &&
+                    (priorityFilter === 'all' || task.priority === priorityFilter)
+                );
+
+                taskList.innerHTML = '';
+                filteredTasks.forEach(task => {
+                    const taskItem = document.createElement('div');
+                    taskItem.className = 'task-item';
+                    taskItem.innerHTML = `
+                        <h3>${task.title}</h3>
+                        <p>${task.description || '<em>No description</em>'}</p>
+                        <div style="display: flex; gap: 12px; align-items: center; margin-top: 8px;">
+                            <span class="priority-indicator priority-${task.priority}">
+                                ${task.priority.toUpperCase()}
+                            </span>
+                            <span style="color: ${task.status === 'completed' ? '#4caf50' : '#f44336'}">
+                                ● ${task.status.charAt(0).toUpperCase() + task.status.slice(1)}
+                            </span>
+                        </div>
+                    `;
+                    taskItem.addEventListener('click', () => this.showTaskDetails(task));
+                    taskList.appendChild(taskItem);
+                });
+            }
+
+            showTaskDetails(task) {
+                this.selectedTask = task;
+                this.detailsEl.innerHTML = '';
+
+                if (!task) {
+                    this.detailsEl.innerHTML = '<p>Select a task to view details</p>';
+                    return;
+                }
+
+                const titleInput = document.createElement('input');
+                titleInput.value = task.title;
+                titleInput.id = 'taskTitle';
+
+                const descInput = document.createElement('textarea');
+                descInput.value = task.description;
+                descInput.id = 'taskDesc';
+
+                const statusSelect = document.createElement('select');
+                statusSelect.id = 'taskStatus';
+                ['pending', 'completed'].forEach(status => {
+                    const option = document.createElement('option');
+                    option.value = status;
+                    option.textContent = status.charAt(0).toUpperCase() + status.slice(1);
+                    if (task.status === status) option.selected = true;
+                    statusSelect.appendChild(option);
+                });
+
+                const prioritySelect = document.createElement('select');
+                prioritySelect.id = 'taskPriority';
+                ['low', 'medium', 'high'].forEach(p => {
+                    const option = document.createElement('option');
+                    option.value = p;
+                    option.textContent = p.charAt(0).toUpperCase() + p.slice(1);
+                    if (task.priority === p) option.selected = true;
+                    prioritySelect.appendChild(option);
+                });
+
+                const saveBtn = document.createElement('button');
+                saveBtn.textContent = 'Save';
+                saveBtn.onclick = () => this.updateTask(task.id, {
+                    title: titleInput.value,
+                    description: descInput.value,
+                    status: statusSelect.value,
+                    priority: prioritySelect.value
+                });
+
+                const deleteBtn = document.createElement('button');
+                deleteBtn.textContent = 'Delete';
+                deleteBtn.style.background = '#dc3545';
+                deleteBtn.onclick = () => this.deleteTask(task.id);
+
+                this.detailsEl.appendChild(titleInput);
+                this.detailsEl.appendChild(descInput);
+                this.detailsEl.appendChild(statusSelect);
+                this.detailsEl.appendChild(prioritySelect);
+                this.detailsEl.appendChild(saveBtn);
+                this.detailsEl.appendChild(deleteBtn);
+            }
+        }
+        const taskManager = new TaskManager();
+    </script>
+</body>
+
+</html>

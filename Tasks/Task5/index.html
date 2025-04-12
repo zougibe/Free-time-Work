@@ -1,0 +1,371 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Health Survey</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style type="text/tailwindcss">
+        @layer components {
+            .question {
+                @apply hidden transition-all duration-500 ease-out;
+            }
+            .question.active {
+                @apply block animate-fadeIn;
+            }
+            .radio-option {
+                @apply flex-1 cursor-pointer transition-all duration-200;
+            }
+            .radio-option input:checked + span {
+                @apply bg-indigo-600 border-indigo-600 text-white shadow-lg;
+            }
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .animate-fadeIn {
+            animation: fadeIn 0.4s ease-out forwards;
+        }
+        
+        .glow {
+            box-shadow: 0 0 15px rgba(99, 102, 241, 0.3);
+        }
+    </style>
+</head>
+
+<body class="bg-gray-900 min-h-screen flex items-center justify-center p-4 font-sans">
+    <div class="w-full max-w-2xl bg-gray-800 rounded-xl shadow-xl overflow-hidden glow border border-gray-700">
+        <!-- Gradient Progress bar -->
+        <div class="h-1.5 bg-gray-700">
+            <div id="progress"
+                class="h-full bg-gradient-to-r from-purple-600 to-indigo-600 transition-all duration-500 ease-out">
+            </div>
+        </div>
+
+        <div class="p-6 md:p-8">
+            <!-- Survey Form -->
+            <form id="surveyForm" class="space-y-8">
+                <div id="questions">
+                    <!-- Question 1 -->
+                    <div class="question active" data-id="1">
+                        <h3 class="text-2xl font-bold text-white mb-6">How old are you?</h3>
+                        <input type="number" name="age" min="1" max="120" required
+                            class="w-full px-5 py-3 bg-gray-700 border border-gray-600 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 text-white placeholder-gray-400 transition-all">
+                        <p class="error-message mt-2 text-sm text-red-400 hidden">Please enter a valid age (1-120)</p>
+                    </div>
+
+                    <!-- Question 2 -->
+                    <div class="question" data-id="2">
+                        <h3 class="text-2xl font-bold text-white mb-6">Do you exercise regularly?</h3>
+                        <select name="exercise" required
+                            class="w-full px-5 py-3 bg-gray-700 border border-gray-600 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 text-white appearance-none transition-all">
+                            <option value="" class="bg-gray-800">Select an option</option>
+                            <option value="yes" class="bg-gray-800">Yes</option>
+                            <option value="no" class="bg-gray-800">No</option>
+                        </select>
+                        <p class="error-message mt-2 text-sm text-red-400 hidden">Please select an option</p>
+                    </div>
+
+                    <!-- Question 3 (conditional) -->
+                    <div class="question" data-id="3" data-depends="exercise=yes">
+                        <h3 class="text-2xl font-bold text-white mb-6">How many times per week do you exercise?</h3>
+                        <input type="number" name="exerciseFreq" min="1" max="7"
+                            class="w-full px-5 py-3 bg-gray-700 border border-gray-600 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 text-white placeholder-gray-400 transition-all"
+                            placeholder="Enter number">
+                        <p class="error-message mt-2 text-sm text-red-400 hidden">Please enter a number between 1-7</p>
+                    </div>
+
+                    <!-- Question 4 -->
+                    <div class="question" data-id="4">
+                        <h3 class="text-2xl font-bold text-white mb-6">Rate your overall health</h3>
+                        <div class="grid grid-cols-5 gap-3">
+                            <label class="radio-option">
+                                <input type="radio" name="healthRating" value="1" required class="hidden">
+                                <span
+                                    class="block text-center py-3 bg-gray-700 border border-gray-600 rounded-lg hover:bg-gray-600 transition-all">1</span>
+                            </label>
+                            <label class="radio-option">
+                                <input type="radio" name="healthRating" value="2" required class="hidden">
+                                <span
+                                    class="block text-center py-3 bg-gray-700 border border-gray-600 rounded-lg hover:bg-gray-600 transition-all">2</span>
+                            </label>
+                            <label class="radio-option">
+                                <input type="radio" name="healthRating" value="3" required class="hidden">
+                                <span
+                                    class="block text-center py-3 bg-gray-700 border border-gray-600 rounded-lg hover:bg-gray-600 transition-all">3</span>
+                            </label>
+                            <label class="radio-option">
+                                <input type="radio" name="healthRating" value="4" required class="hidden">
+                                <span
+                                    class="block text-center py-3 bg-gray-700 border border-gray-600 rounded-lg hover:bg-gray-600 transition-all">4</span>
+                            </label>
+                            <label class="radio-option">
+                                <input type="radio" name="healthRating" value="5" required class="hidden">
+                                <span
+                                    class="block text-center py-3 bg-gray-700 border border-gray-600 rounded-lg hover:bg-gray-600 transition-all">5</span>
+                            </label>
+                        </div>
+                        <p class="error-message mt-2 text-sm text-red-400 hidden">Please select a rating</p>
+                    </div>
+                </div>
+
+                <!-- Navigation Buttons -->
+                <div class="flex justify-between pt-6">
+                    <button type="button" id="prevBtn" disabled
+                        class="px-6 py-3 bg-gray-700 text-gray-300 rounded-xl hover:bg-gray-600 transition-all disabled:opacity-40 disabled:cursor-not-allowed flex items-center">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" viewBox="0 0 20 20"
+                            fill="currentColor">
+                            <path fill-rule="evenodd"
+                                d="M12.707 5.293a1 1 0 010 1.414L9.414 10l3.293 3.293a1 1 0 01-1.414 1.414l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 0z"
+                                clip-rule="evenodd" />
+                        </svg>
+                        Previous
+                    </button>
+                    <button type="button" id="nextBtn"
+                        class="px-6 py-3 bg-gradient-to-r from-purple-600 to-indigo-600 text-white rounded-xl hover:from-purple-700 hover:to-indigo-700 transition-all shadow-lg flex items-center">
+                        Next
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 ml-2" viewBox="0 0 20 20"
+                            fill="currentColor">
+                            <path fill-rule="evenodd"
+                                d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z"
+                                clip-rule="evenodd" />
+                        </svg>
+                    </button>
+                </div>
+            </form>
+
+            <!-- Summary Section -->
+            <div id="summary" class="hidden space-y-8">
+                <div class="text-center">
+                    <div class="w-16 h-16 bg-indigo-600 rounded-full flex items-center justify-center mx-auto mb-4">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8 text-white" viewBox="0 0 20 20"
+                            fill="currentColor">
+                            <path fill-rule="evenodd"
+                                d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
+                                clip-rule="evenodd" />
+                        </svg>
+                    </div>
+                    <h2 class="text-3xl font-bold text-white mb-2">Survey Complete!</h2>
+                    <p class="text-gray-400">Here's your health profile</p>
+                </div>
+
+                <div id="summaryContent" class="bg-gray-700 p-6 rounded-xl space-y-4"></div>
+
+                <button onclick="location.reload()"
+                    class="w-full px-6 py-4 bg-gradient-to-r from-purple-600 to-indigo-600 text-white rounded-xl hover:from-purple-700 hover:to-indigo-700 transition-all shadow-lg flex items-center justify-center">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" viewBox="0 0 20 20"
+                        fill="currentColor">
+                        <path fill-rule="evenodd"
+                            d="M4 2a1 1 0 011 1v2.101a7.002 7.002 0 0111.601 2.566 1 1 0 11-1.885.666A5.002 5.002 0 005.999 7H9a1 1 0 010 2H4a1 1 0 01-1-1V3a1 1 0 011-1zm.008 9.057a1 1 0 011.276.61A5.002 5.002 0 0014.001 13H11a1 1 0 110-2h5a1 1 0 011 1v5a1 1 0 11-2 0v-2.101a7.002 7.002 0 01-11.601-2.566 1 1 0 01.61-1.276z"
+                            clip-rule="evenodd" />
+                    </svg>
+                    Start New Survey
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            // DOM Elements
+            const form = document.getElementById('surveyForm');
+            const questions = Array.from(document.querySelectorAll('.question'));
+            const progressFill = document.getElementById('progress');
+            const prevBtn = document.getElementById('prevBtn');
+            const nextBtn = document.getElementById('nextBtn');
+            const summary = document.getElementById('summary');
+            const summaryContent = document.getElementById('summaryContent');
+
+            // State variables
+            let currentQuestion = 0;
+            let responses = {};
+            let activeQuestions = [];
+
+            // Initialize the survey
+            function initSurvey() {
+                activeQuestions = getActiveQuestions();
+                showQuestion(currentQuestion);
+                setupEventListeners();
+            }
+
+            // Get only relevant questions based on dependencies
+            function getActiveQuestions() {
+                return questions.filter(q => {
+                    const depends = q.dataset.depends?.split('=');
+                    if (!depends) return true;
+                    const [field, value] = depends;
+                    return responses[field] === value;
+                });
+            }
+
+            // Show current question with animation
+            function showQuestion(index) {
+                // Update active questions in case dependencies changed
+                activeQuestions = getActiveQuestions();
+
+                // Hide all questions
+                questions.forEach(q => {
+                    q.classList.remove('active');
+                });
+
+                // Show current question
+                activeQuestions[index].classList.add('active');
+
+                // Update button states
+                prevBtn.disabled = index === 0;
+                nextBtn.textContent = index === activeQuestions.length - 1 ? 'Submit' : 'Next';
+                updateProgress();
+            }
+
+            // Update progress bar
+            function updateProgress() {
+                const progress = (currentQuestion / (activeQuestions.length - 1)) * 100;
+                progressFill.style.width = `${progress}%`;
+            }
+
+            // Validate current input
+            function validateInput(input) {
+                const question = input.closest('.question');
+                const errorMsg = question.querySelector('.error-message');
+
+                // Reset state
+                if (input.type !== 'radio') {
+                    input.classList.remove('border-red-500');
+                }
+                errorMsg.classList.add('hidden');
+
+                // Check required fields
+                if (input.required) {
+                    if (input.type === 'radio') {
+                        const checked = question.querySelector('input[name="' + input.name + '"]:checked');
+                        if (!checked) {
+                            errorMsg.classList.remove('hidden');
+                            return false;
+                        }
+                    } else if (!input.value) {
+                        input.classList.add('border-red-500');
+                        errorMsg.classList.remove('hidden');
+                        return false;
+                    }
+                }
+
+                // Check number ranges
+                if (input.type === 'number' && input.value) {
+                    const min = parseInt(input.min);
+                    const max = parseInt(input.max);
+                    const value = parseInt(input.value);
+                    if (value < min || value > max) {
+                        input.classList.add('border-red-500');
+                        errorMsg.classList.remove('hidden');
+                        return false;
+                    }
+                }
+
+                return true;
+            }
+
+            // Save current response
+            function saveResponse() {
+                const currentQ = activeQuestions[currentQuestion];
+                const inputs = currentQ.querySelectorAll('input, select');
+
+                let isValid = true;
+
+                inputs.forEach(input => {
+                    if (!validateInput(input)) {
+                        isValid = false;
+                    }
+
+                    // Save radio button value
+                    if (input.type === 'radio' && input.checked) {
+                        responses[input.name] = input.value;
+                    }
+                    // Save other inputs
+                    else if (input.type !== 'radio') {
+                        responses[input.name] = input.value;
+                    }
+                });
+
+                return isValid;
+            }
+
+            // Show summary of responses
+            function showSummary() {
+                form.style.display = 'none';
+                summary.classList.remove('hidden');
+
+                let html = '<div class="space-y-4">';
+                const questionLabels = {
+                    age: 'Age',
+                    exercise: 'Exercises Regularly',
+                    exerciseFreq: 'Exercise Frequency',
+                    healthRating: 'Health Rating'
+                };
+
+                const formattedResponses = {
+                    age: responses.age,
+                    exercise: responses.exercise === 'yes' ? 'Yes' : 'No',
+                    exerciseFreq: responses.exerciseFreq ? `${responses.exerciseFreq} times/week` : 'N/A',
+                    healthRating: `${responses.healthRating}/5`
+                };
+
+                for (let [key, value] of Object.entries(formattedResponses)) {
+                    const label = questionLabels[key] || key;
+                    html += `
+                        <div class="flex justify-between items-center py-3 border-b border-gray-600 last:border-0">
+                            <span class="font-medium text-gray-300">${label}</span>
+                            <span class="font-semibold text-white">${value}</span>
+                        </div>
+                    `;
+                }
+                html += '</div>';
+                summaryContent.innerHTML = html;
+            }
+
+            // Event Listeners
+            function setupEventListeners() {
+                // Next button click
+                nextBtn.addEventListener('click', () => {
+                    if (!saveResponse()) return;
+
+                    if (currentQuestion < activeQuestions.length - 1) {
+                        currentQuestion++;
+                        showQuestion(currentQuestion);
+                    } else {
+                        showSummary();
+                    }
+                });
+
+                // Previous button click
+                prevBtn.addEventListener('click', () => {
+                    if (currentQuestion > 0) {
+                        currentQuestion--;
+                        showQuestion(currentQuestion);
+                    }
+                });
+
+                // Real-time validation for inputs
+                form.addEventListener('input', (e) => {
+                    if (e.target.tagName === 'INPUT' || e.target.tagName === 'SELECT') {
+                        validateInput(e.target);
+                    }
+                });
+
+                // Radio button validation on change
+                form.addEventListener('change', (e) => {
+                    if (e.target.type === 'radio') {
+                        validateInput(e.target);
+                    }
+                });
+            }
+
+            // Initialize the survey
+            initSurvey();
+        });
+    </script>
+</body>
+
+</html>

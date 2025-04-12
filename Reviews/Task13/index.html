@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Music Festival Attendance</title>
+
+    <!-- Bootstrap 5 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" />
+
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap" rel="stylesheet" />
+
+    <!-- Plotly -->
+    <script src="https://cdn.plot.ly/plotly-2.30.0.min.js"></script>
+
+    <style>
+        body {
+            font-family: 'Poppins', sans-serif;
+            background-color: #f5f7fa;
+            padding: 2rem;
+        }
+
+        .chart-card {
+            background: #fff;
+            border-radius: 1rem;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+            padding: 2rem;
+        }
+
+        h1 {
+            font-weight: 600;
+            text-align: center;
+            margin-bottom: 2rem;
+        }
+
+        select {
+            margin-bottom: 1rem;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <div class="chart-card">
+            <h1>🎵 Music Festival Attendance Over Time</h1>
+            <div class="mb-3 text-center">
+                <label for="genreFilter" class="form-label">Filter by Genre</label>
+                <select id="genreFilter" class="form-select w-auto d-inline-block">
+                    <option value="All">All</option>
+                    <option value="Rock">Rock</option>
+                    <option value="EDM">EDM</option>
+                    <option value="Hip-Hop">Hip-Hop</option>
+                </select>
+            </div>
+            <div id="attendanceChart"></div>
+        </div>
+    </div>
+
+    <script>
+        const festivals = [
+            { name: "Coachella", genre: "EDM", color: "deeppink", location: "California, USA", headliner: "Beyoncé", data: [75000, 80000, 85000, 90000, 100000, 0, 110000, 120000] },
+            { name: "Glastonbury", genre: "Rock", color: "mediumvioletred", location: "Somerset, UK", headliner: "Coldplay", data: [90000, 95000, 100000, 102000, 103000, 0, 105000, 107000] },
+            { name: "Tomorrowland", genre: "EDM", color: "electricpurple", location: "Boom, Belgium", headliner: "Martin Garrix", data: [60000, 65000, 70000, 80000, 90000, 0, 100000, 110000] },
+            { name: "Lollapalooza", genre: "Hip-Hop", color: "gold", location: "Chicago, USA", headliner: "Kendrick Lamar", data: [50000, 52000, 54000, 60000, 65000, 0, 70000, 75000] },
+            { name: "Rolling Loud", genre: "Hip-Hop", color: "darkorange", location: "Miami, USA", headliner: "Travis Scott", data: [40000, 45000, 47000, 49000, 51000, 0, 53000, 55000] },
+            { name: "Reading Festival", genre: "Rock", color: "blueviolet", location: "Reading, UK", headliner: "Foo Fighters", data: [48000, 50000, 52000, 54000, 56000, 0, 58000, 60000] },
+        ];
+
+        const years = [2010, 2012, 2014, 2016, 2018, 2020, 2022, 2025];
+
+        function createTraces(selectedGenre) {
+            return festivals
+                .filter(f => selectedGenre === "All" || f.genre === selectedGenre)
+                .map(f => ({
+                    x: years,
+                    y: f.data,
+                    name: f.name,
+                    mode: "lines+markers",
+                    hovertemplate:
+                        `<b>%{text}</b><br>` +
+                        `Attendance: %{y:,}<br>` +
+                        `Headliner: ${f.headliner}<br>` +
+                        `Location: ${f.location}<extra></extra>`,
+                    text: f.name,
+                    line: { color: f.color, width: 3 }
+                }));
+        }
+
+        function plotChart(genre = "All") {
+            const data = createTraces(genre);
+            const layout = {
+                title: { text: "Music Festival Attendance Over Time", font: { size: 24 } },
+                xaxis: { title: "Year", gridcolor: '#e0e0e0' },
+                yaxis: { title: "Attendance", tickformat: ",d", gridcolor: '#e0e0e0' },
+                legend: { orientation: "h", y: -0.3 },
+                margin: { t: 60, b: 80, l: 60, r: 30 },
+                transition: { duration: 500, easing: "cubic-in-out" }
+            };
+
+            Plotly.newPlot("attendanceChart", data, layout, { responsive: true });
+        }
+
+        document.getElementById("genreFilter").addEventListener("change", e => {
+            plotChart(e.target.value);
+        });
+
+        // Initial plot
+        plotChart();
+    </script>
+</body>
+
+</html>

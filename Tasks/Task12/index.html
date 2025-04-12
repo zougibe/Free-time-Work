@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lucky Numbers Generator</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    fontFamily: {
+                        orbitron: ['Orbitron', 'sans-serif'],
+                    },
+                    animation: {
+                        'spin-ball': 'spin 0.6s ease-in-out',
+                        'pulse-glow': 'pulse-glow 2s cubic-bezier(0.4, 0, 0.6, 1) infinite',
+                    },
+                    keyframes: {
+                        'spin-ball': {
+                            '0%, 100%': { transform: 'rotate(0deg) scale(1)' },
+                            '50%': { transform: 'rotate(180deg) scale(1.2)' },
+                        },
+                        'pulse-glow': {
+                            '0%, 100%': { opacity: '1' },
+                            '50%': { opacity: '0.7', boxShadow: '0 0 15px 3px rgba(124, 58, 237, 0.5)' },
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;500;600;700&display=swap" rel="stylesheet">
+</head>
+
+<body
+    class="bg-gradient-to-br from-gray-900 to-gray-950 min-h-screen flex items-center justify-center p-4 font-orbitron">
+    <div class="bg-gray-800/80 backdrop-blur-sm rounded-2xl shadow-2xl p-6 w-full max-w-md border border-gray-700/50">
+        <div class="text-center mb-8">
+            <h1
+                class="text-3xl font-bold bg-gradient-to-r from-purple-400 to-blue-400 bg-clip-text text-transparent mb-2">
+                LUCKY NUMBERS</h1>
+            <p class="text-gray-400 text-sm">Generate your winning combination</p>
+        </div>
+
+        <div id="numbers" class="grid grid-cols-3 gap-4 mb-8 justify-items-center">
+            <!-- Numbers will be generated here -->
+            <div
+                class="w-14 h-14 rounded-full bg-gray-700/50 border border-gray-600/50 flex items-center justify-center text-gray-500 text-xl font-bold">
+                ?</div>
+            <div
+                class="w-14 h-14 rounded-full bg-gray-700/50 border border-gray-600/50 flex items-center justify-center text-gray-500 text-xl font-bold">
+                ?</div>
+            <div
+                class="w-14 h-14 rounded-full bg-gray-700/50 border border-gray-600/50 flex items-center justify-center text-gray-500 text-xl font-bold">
+                ?</div>
+            <div
+                class="w-14 h-14 rounded-full bg-gray-700/50 border border-gray-600/50 flex items-center justify-center text-gray-500 text-xl font-bold">
+                ?</div>
+            <div
+                class="w-14 h-14 rounded-full bg-gray-700/50 border border-gray-600/50 flex items-center justify-center text-gray-500 text-xl font-bold">
+                ?</div>
+            <div
+                class="w-14 h-14 rounded-full bg-gray-700/50 border border-gray-600/50 flex items-center justify-center text-gray-500 text-xl font-bold">
+                ?</div>
+        </div>
+
+        <div class="flex flex-col gap-4 mb-8">
+            <div class="flex gap-3">
+                <input id="minRange" type="number" placeholder="Min (1-99)"
+                    class="w-1/2 p-3 bg-gray-700/50 border border-gray-600/30 rounded-lg text-gray-200 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-purple-500/50 focus:border-transparent transition-all">
+                <input id="maxRange" type="number" placeholder="Max (2-100)"
+                    class="w-1/2 p-3 bg-gray-700/50 border border-gray-600/30 rounded-lg text-gray-200 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-purple-500/50 focus:border-transparent transition-all">
+            </div>
+            <p id="error" class="text-red-400 text-sm hidden font-medium animate-pulse">Invalid range! Min must be less
+                than Max.</p>
+        </div>
+
+        <div class="flex flex-col sm:flex-row gap-3 justify-center">
+            <button id="generateBtn"
+                class="flex-1 bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-500 hover:to-blue-500 text-white px-6 py-3 rounded-lg font-semibold transition-all duration-200 shadow-lg hover:shadow-purple-500/20 active:scale-95">
+                Generate
+            </button>
+            <button id="resetBtn"
+                class="flex-1 bg-gray-700 hover:bg-gray-600 text-white px-6 py-3 rounded-lg font-semibold transition-all duration-200 shadow-lg hover:shadow-gray-500/10 active:scale-95">
+                Reset
+            </button>
+            <button id="sortBtn"
+                class="flex-1 bg-gray-700 hover:bg-gray-600 text-white px-6 py-3 rounded-lg font-semibold transition-all duration-200 shadow-lg hover:shadow-gray-500/10 active:scale-95">
+                Sort: OFF
+            </button>
+        </div>
+    </div>
+
+    <script>
+        const numbersDiv = document.getElementById('numbers');
+        const generateBtn = document.getElementById('generateBtn');
+        const resetBtn = document.getElementById('resetBtn');
+        const sortBtn = document.getElementById('sortBtn');
+        const minRange = document.getElementById('minRange');
+        const maxRange = document.getElementById('maxRange');
+        const errorMsg = document.getElementById('error');
+        let isSorted = false;
+
+        function generateNumbers(min, max) {
+            const numbers = new Set();
+            while (numbers.size < 6) {
+                numbers.add(Math.floor(Math.random() * (max - min + 1)) + min);
+            }
+            return Array.from(numbers);
+        }
+
+        function displayNumbers(numbers) {
+            numbersDiv.innerHTML = '';
+            numbers.forEach(num => {
+                const ball = document.createElement('div');
+                ball.className = `w-14 h-14 rounded-full flex items-center justify-center text-white text-xl font-bold shadow-lg border-2 border-purple-500/30 bg-gradient-to-br from-purple-600/90 to-purple-800/90 animate-spin-ball`;
+                ball.textContent = num;
+                numbersDiv.appendChild(ball);
+
+                // Add glow effect after animation
+                setTimeout(() => {
+                    ball.classList.add('animate-pulse-glow');
+                }, 600);
+            });
+        }
+
+        function validateRange() {
+            const min = parseInt(minRange.value) || 1;
+            const max = parseInt(maxRange.value) || 49;
+
+            if (min >= max || min < 1 || max > 100) {
+                errorMsg.classList.remove('hidden');
+                return null;
+            }
+            errorMsg.classList.add('hidden');
+            return { min, max };
+        }
+
+        generateBtn.addEventListener('click', () => {
+            const range = validateRange();
+            if (!range) return;
+
+            generateBtn.disabled = true;
+            generateBtn.classList.remove('from-purple-600', 'to-blue-600');
+            generateBtn.classList.add('bg-gray-600', 'cursor-not-allowed');
+
+            let numbers = generateNumbers(range.min, range.max);
+            if (isSorted) numbers.sort((a, b) => a - b);
+            displayNumbers(numbers);
+
+            setTimeout(() => {
+                generateBtn.disabled = false;
+                generateBtn.classList.add('from-purple-600', 'to-blue-600');
+                generateBtn.classList.remove('bg-gray-600', 'cursor-not-allowed');
+            }, 1000);
+        });
+
+        resetBtn.addEventListener('click', () => {
+            numbersDiv.innerHTML = '';
+            minRange.value = '';
+            maxRange.value = '';
+            errorMsg.classList.add('hidden');
+
+            // Reset placeholders
+            for (let i = 0; i < 6; i++) {
+                const ball = document.createElement('div');
+                ball.className = 'w-14 h-14 rounded-full bg-gray-700/50 border border-gray-600/50 flex items-center justify-center text-gray-500 text-xl font-bold';
+                ball.textContent = '?';
+                numbersDiv.appendChild(ball);
+            }
+        });
+
+        sortBtn.addEventListener('click', () => {
+            isSorted = !isSorted;
+            sortBtn.textContent = `Sort: ${isSorted ? 'ON' : 'OFF'}`;
+            sortBtn.classList.toggle('bg-blue-600', isSorted);
+            sortBtn.classList.toggle('hover:bg-blue-500', isSorted);
+            sortBtn.classList.toggle('bg-gray-700', !isSorted);
+            sortBtn.classList.toggle('hover:bg-gray-600', !isSorted);
+
+            if (numbersDiv.children.length > 0 && !numbersDiv.children[0].textContent.includes('?')) {
+                let numbers = Array.from(numbersDiv.children).map(ball => parseInt(ball.textContent));
+                numbers = isSorted ? numbers.sort((a, b) => a - b) : generateNumbers(
+                    parseInt(minRange.value) || 1,
+                    parseInt(maxRange.value) || 49
+                );
+                displayNumbers(numbers);
+            }
+        });
+    </script>
+</body>
+
+</html>

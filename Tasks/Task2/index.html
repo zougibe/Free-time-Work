@@ -1,0 +1,271 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Data Science Dashboard</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        .chart-container {
+            position: relative;
+            height: 300px;
+            width: 100%;
+        }
+
+        .sidebar {
+            transition: transform 0.3s ease-in-out;
+        }
+
+        @media (max-width: 768px) {
+            .sidebar-hidden {
+                transform: translateX(-100%);
+            }
+        }
+
+        .card {
+            background-color: #ffffff;
+            border-radius: 12px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+        }
+
+        .card-header {
+            font-size: 1.125rem;
+            font-weight: 600;
+            color: #2d3748;
+            margin-bottom: 16px;
+        }
+
+        .input,
+        .select {
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            padding: 8px 12px;
+            font-size: 1rem;
+            transition: border-color 0.3s;
+        }
+
+        .input:focus,
+        .select:focus {
+            border-color: #3182ce;
+            outline: none;
+        }
+
+        .btn {
+            padding: 8px 16px;
+            background-color: #3182ce;
+            color: white;
+            font-weight: 600;
+            border-radius: 8px;
+            transition: background-color 0.3s;
+        }
+
+        .btn:hover {
+            background-color: #2b6cb0;
+        }
+
+        .sidebar-header {
+            font-size: 1.25rem;
+            font-weight: 600;
+            color: #2d3748;
+        }
+    </style>
+</head>
+
+<body class="bg-gray-50 font-sans">
+
+    <div class="min-h-screen flex flex-col">
+        <!-- Header -->
+        <header
+            class="bg-gradient-to-r from-blue-600 to-blue-800 text-white p-4 flex justify-between items-center shadow-lg">
+            <h1 class="text-2xl font-bold">Data Science Dashboard</h1>
+            <button id="exportBtn" class="btn">Export Report</button>
+        </header>
+
+        <div class="flex-1 flex relative">
+            <!-- Sidebar -->
+            <aside id="sidebar"
+                class="sidebar fixed md:static left-0 top-0 h-full w-64 md:w-72 bg-white p-6 shadow-lg z-20 md:z-auto sidebar-hidden md:transform-none">
+                <h2 class="sidebar-header mb-6">Filters</h2>
+                <div class="space-y-6">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-600">Year</label>
+                        <select id="yearFilter" class="select w-full">
+                            <option value="all">All Years</option>
+                            <option value="2023">2023</option>
+                            <option value="2024">2024</option>
+                            <option value="2025">2025</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-600">Category</label>
+                        <select id="categoryFilter" class="select w-full">
+                            <option value="all">All Categories</option>
+                            <option value="sales">Sales</option>
+                            <option value="marketing">Marketing</option>
+                            <option value="research">Research</option>
+                        </select>
+                    </div>
+                </div>
+            </aside>
+
+            <!-- Main Content -->
+            <main class="flex-1 p-6 md:ml-64 md:ml-72">
+                <button id="toggleSidebar"
+                    class="md:hidden mb-4 p-2 bg-blue-600 text-white rounded hover:bg-blue-700 transition">☰
+                    Filters</button>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div class="card p-6">
+                        <h3 class="card-header">Project Progress</h3>
+                        <div class="chart-container">
+                            <canvas id="barChart"></canvas>
+                        </div>
+                    </div>
+                    <div class="card p-6">
+                        <h3 class="card-header">Resource Allocation</h3>
+                        <div class="chart-container">
+                            <canvas id="pieChart"></canvas>
+                        </div>
+                    </div>
+                    <div class="card p-6 md:col-span-2">
+                        <h3 class="card-header">Performance Trend</h3>
+                        <div class="chart-container">
+                            <canvas id="lineChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </main>
+        </div>
+    </div>
+
+    <script>
+        // Sample data
+        const baseData = {
+            years: ['2023', '2024', '2025'],
+            categories: ['sales', 'marketing', 'research'],
+            progress: [75, 82, 91],
+            resources: [35, 40, 25],
+            trend: [
+                [65, 68, 70, 72, 75],
+                [78, 80, 81, 82, 84],
+                [85, 87, 89, 90, 91]
+            ]
+        };
+
+        // Chart configurations
+        const chartOptions = {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                tooltip: {
+                    backgroundColor: 'rgba(0, 0, 0, 0.8)',
+                    padding: 10,
+                    cornerRadius: 4
+                }
+            }
+        };
+
+        // Initialize charts
+        const barChart = new Chart(document.getElementById('barChart'), {
+            type: 'bar',
+            data: {
+                labels: baseData.years,
+                datasets: [{
+                    label: 'Completion %',
+                    data: baseData.progress,
+                    backgroundColor: ['#3182ce', '#38b2ac', '#ed8936']
+                }]
+            },
+            options: chartOptions
+        });
+
+        const pieChart = new Chart(document.getElementById('pieChart'), {
+            type: 'pie',
+            data: {
+                labels: baseData.categories,
+                datasets: [{
+                    data: baseData.resources,
+                    backgroundColor: ['#3182ce', '#38b2ac', '#ed8936']
+                }]
+            },
+            options: chartOptions
+        });
+
+        const lineChart = new Chart(document.getElementById('lineChart'), {
+            type: 'line',
+            data: {
+                labels: ['Q1', 'Q2', 'Q3', 'Q4', 'Q5'],
+                datasets: baseData.years.map((year, i) => ({
+                    label: year,
+                    data: baseData.trend[i],
+                    borderColor: ['#3182ce', '#38b2ac', '#ed8936'][i],
+                    fill: false
+                }))
+            },
+            options: chartOptions
+        });
+
+        // Filter functionality
+        function updateCharts(year, category) {
+            let filteredProgress = [...baseData.progress];
+            let filteredResources = [...baseData.resources];
+            let filteredTrend = [...baseData.trend];
+
+            if (year !== 'all') {
+                const index = baseData.years.indexOf(year);
+                filteredProgress = [baseData.progress[index]];
+                filteredTrend = [baseData.trend[index]];
+            }
+
+            if (category !== 'all') {
+                const index = baseData.categories.indexOf(category);
+                filteredResources = [baseData.resources[index]];
+            }
+
+            barChart.data.datasets[0].data = filteredProgress;
+            barChart.data.labels = year === 'all' ? baseData.years : [year];
+            barChart.update();
+
+            pieChart.data.datasets[0].data = filteredResources;
+            pieChart.data.labels = category === 'all' ? baseData.categories : [category];
+            pieChart.update();
+
+            lineChart.data.datasets = filteredTrend.map((data, i) => ({
+                label: year === 'all' ? baseData.years[i] : year,
+                data: data,
+                borderColor: ['#3182ce', '#38b2ac', '#ed8936'][i],
+                fill: false
+            }));
+            lineChart.update();
+        }
+
+        // Event listeners
+        document.getElementById('yearFilter').addEventListener('change', (e) => {
+            updateCharts(e.target.value, document.getElementById('categoryFilter').value);
+        });
+
+        document.getElementById('categoryFilter').addEventListener('change', (e) => {
+            updateCharts(document.getElementById('yearFilter').value, e.target.value);
+        });
+
+        document.getElementById('toggleSidebar').addEventListener('click', () => {
+            document.getElementById('sidebar').classList.toggle('sidebar-hidden');
+        });
+
+        document.getElementById('exportBtn').addEventListener('click', () => {
+            const dataStr = JSON.stringify({
+                progress: barChart.data,
+                resources: pieChart.data,
+                trend: lineChart.data
+            });
+            const dataUri = 'data:text/json;charset=utf-8,' + encodeURIComponent(dataStr);
+            const downloadAnchor = document.createElement('a');
+            downloadAnchor.setAttribute('href', dataUri);
+            downloadAnchor.setAttribute('download', 'report.json');
+            downloadAnchor.click();
+        });
+    </script>
+</body>
+
+</html>

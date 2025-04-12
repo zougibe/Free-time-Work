@@ -1,0 +1,526 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Temperature Monitoring System</title>
+    <script src="https://cdn.plot.ly/plotly-2.35.2.min.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(-10px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .fade-in {
+            animation: fadeIn 0.3s ease-out;
+        }
+
+        /* Custom scrollbar */
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 4px;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 4px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: rgba(255, 255, 255, 0.2);
+        }
+
+        /* Glassmorphism effect */
+        .glass-card {
+            background: rgba(32, 32, 35, 0.7);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.36);
+        }
+
+        /* Smooth transitions */
+        .transition-slow {
+            transition: all 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+    </style>
+</head>
+
+<body class="bg-gray-950 text-gray-100 font-sans min-h-screen">
+    <div class="absolute inset-0 bg-gradient-to-br from-gray-900 via-gray-950 to-gray-900 -z-10"></div>
+
+    <header class="p-6 text-center">
+        <h1 class="text-4xl font-bold bg-gradient-to-r from-amber-400 to-orange-500 bg-clip-text text-transparent">
+            Temperature Monitoring System
+        </h1>
+        <p class="mt-2 text-gray-400">Real-time industrial temperature surveillance</p>
+    </header>
+
+    <main class="container mx-auto px-4 pb-8">
+        <!-- Control Panel -->
+        <div class="glass-card rounded-xl p-6 mb-6 transition-slow hover:border-orange-400/30">
+            <div class="flex flex-wrap items-center justify-between gap-4">
+                <div class="flex-1 min-w-[250px]">
+                    <label class="block text-sm font-medium text-gray-300 mb-1">Sensor Selection</label>
+                    <select id="sensor-select"
+                        class="w-full p-3 rounded-lg bg-gray-800/50 border border-gray-700 text-gray-100 focus:outline-none focus:ring-2 focus:ring-orange-500/50 focus:border-orange-500 transition-slow">
+                        <option value="all">All Sensors</option>
+                        <option value="1">Sensor 1: Warehouse</option>
+                        <option value="2">Sensor 2: Factory Floor</option>
+                        <option value="3">Sensor 3: Cold Storage</option>
+                    </select>
+                </div>
+
+                <div class="flex-1 min-w-[250px]">
+                    <div class="flex items-center gap-4">
+                        <div class="flex-1">
+                            <label class="block text-sm font-medium text-gray-300 mb-1">
+                                High Threshold: <span id="high-threshold-value" class="font-mono">50</span>°C
+                            </label>
+                            <input type="range" id="high-threshold" min="40" max="60" value="50"
+                                class="w-full h-2 bg-gray-700 rounded-lg appearance-none cursor-pointer accent-orange-500">
+                        </div>
+
+                        <div class="flex-1">
+                            <label class="block text-sm font-medium text-gray-300 mb-1">
+                                Low Threshold: <span id="low-threshold-value" class="font-mono">0</span>°C
+                            </label>
+                            <input type="range" id="low-threshold" min="-10" max="10" value="0"
+                                class="w-full h-2 bg-gray-700 rounded-lg appearance-none cursor-pointer accent-blue-500">
+                        </div>
+                    </div>
+                </div>
+
+                <button id="toggle-monitoring"
+                    class="px-6 py-3 rounded-lg bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600 text-white font-medium shadow-lg hover:shadow-orange-500/20 transition-slow focus:outline-none focus:ring-2 focus:ring-orange-500/50">
+                    <span class="flex items-center gap-2">
+                        <svg id="monitoring-icon" xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20"
+                            fill="currentColor">
+                            <path fill-rule="evenodd"
+                                d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zM7 8a1 1 0 012 0v4a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v4a1 1 0 102 0V8a1 1 0 00-1-1z"
+                                clip-rule="evenodd" />
+                        </svg>
+                        <span>Pause Monitoring</span>
+                    </span>
+                </button>
+            </div>
+        </div>
+
+        <!-- Dashboard Grid -->
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <!-- Line Chart -->
+            <div class="glass-card rounded-xl p-4 h-96 transition-slow hover:border-orange-400/30">
+                <div id="line-chart" class="w-full h-full"></div>
+            </div>
+
+            <!-- Bar Chart -->
+            <div class="glass-card rounded-xl p-4 h-96 transition-slow hover:border-blue-400/30">
+                <div id="bar-chart" class="w-full h-full"></div>
+            </div>
+
+            <!-- Gauge Chart -->
+            <div class="glass-card rounded-xl p-4 h-80 transition-slow hover:border-amber-400/30">
+                <div id="gauge-chart" class="w-full h-full"></div>
+            </div>
+
+            <!-- Alert Log -->
+            <div class="glass-card rounded-xl p-4 h-80 flex flex-col transition-slow hover:border-red-400/30">
+                <div class="flex items-center justify-between mb-4">
+                    <h2 class="text-xl font-semibold text-gray-100">Anomaly Alerts</h2>
+                    <span id="alert-count"
+                        class="px-2 py-1 rounded-full bg-red-500/20 text-red-400 text-xs font-medium">0 alerts</span>
+                </div>
+                <div id="alert-log" class="flex-1 overflow-y-auto space-y-3 pr-2"></div>
+            </div>
+        </div>
+    </main>
+
+    <script>
+        const sensors = [
+            { id: 1, location: 'Warehouse', baseTemp: 30, range: 10, color: '#f97316' },
+            { id: 2, location: 'Factory Floor', baseTemp: 40, range: 15, color: '#0ea5e9' },
+            { id: 3, location: 'Cold Storage', baseTemp: 0, range: 10, color: '#22c55e' }
+        ];
+
+        let sensorData = sensors.map(() => []);
+        let isMonitoring = true;
+        let highThreshold = 50;
+        let lowThreshold = 0;
+        let alertCount = 0;
+
+        const sensorSelect = document.getElementById('sensor-select');
+        const highThresholdSlider = document.getElementById('high-threshold');
+        const lowThresholdSlider = document.getElementById('low-threshold');
+        const highThresholdValue = document.getElementById('high-threshold-value');
+        const lowThresholdValue = document.getElementById('low-threshold-value');
+        const toggleButton = document.getElementById('toggle-monitoring');
+        const monitoringIcon = document.getElementById('monitoring-icon');
+        const alertLog = document.getElementById('alert-log');
+        const alertCountEl = document.getElementById('alert-count');
+
+        function generateReading(sensor) {
+            const variation = (Math.random() - 0.5) * sensor.range;
+            const temp = sensor.baseTemp + variation;
+            return {
+                sensorId: sensor.id,
+                location: sensor.location,
+                timestamp: new Date().toISOString(),
+                temperature: Number(temp.toFixed(2))
+            };
+        }
+
+        function checkAnomaly(reading) {
+            if (reading.temperature > highThreshold || reading.temperature < lowThreshold) {
+                alertCount++;
+                alertCountEl.textContent = `${alertCount} alert${alertCount !== 1 ? 's' : ''}`;
+
+                const alertEl = document.createElement('div');
+                alertEl.className = 'fade-in p-3 rounded-lg bg-gradient-to-r from-gray-800/50 to-gray-900/50 border-l-4 border-red-500 flex items-start gap-3';
+
+                const icon = document.createElement('div');
+                icon.className = 'mt-0.5 flex-shrink-0';
+                icon.innerHTML = `
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 ${reading.temperature > highThreshold ? 'text-orange-400' : 'text-blue-400'}" viewBox="0 0 20 20" fill="currentColor">
+            <path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd" />
+          </svg>
+        `;
+
+                const content = document.createElement('div');
+                content.className = 'flex-1';
+
+                const header = document.createElement('div');
+                header.className = 'flex items-center justify-between';
+                header.innerHTML = `
+          <span class="font-medium text-gray-100">${reading.location}</span>
+          <span class="text-xs font-mono text-gray-400">${new Date(reading.timestamp).toLocaleTimeString()}</span>
+        `;
+
+                const message = document.createElement('div');
+                message.className = 'mt-1 text-sm';
+                message.innerHTML = `
+          <span class="${reading.temperature > highThreshold ? 'text-orange-400' : 'text-blue-400'} font-medium">
+            ${reading.temperature > highThreshold ? 'High' : 'Low'} Temperature Alert
+          </span>
+          <span class="text-gray-300"> detected on Sensor ${reading.sensorId}</span>
+        `;
+
+                const temp = document.createElement('div');
+                temp.className = 'mt-1 font-mono text-lg font-bold';
+                temp.textContent = `${reading.temperature}°C`;
+
+                content.appendChild(header);
+                content.appendChild(message);
+                content.appendChild(temp);
+
+                alertEl.appendChild(icon);
+                alertEl.appendChild(content);
+
+                alertLog.prepend(alertEl);
+
+                // Keep only the last 20 alerts
+                if (alertLog.children.length > 20) {
+                    alertLog.removeChild(alertLog.lastChild);
+                }
+
+                return true;
+            }
+            return false;
+        }
+
+        function calculateRisk(temperature) {
+            const highRisk = Math.max(0, (temperature - (highThreshold - 10)) / 10);
+            const lowRisk = Math.max(0, ((lowThreshold + 10) - temperature) / 10);
+            return Math.min(100, Math.max(highRisk, lowRisk) * 100);
+        }
+
+        function updateLineChart() {
+            const selectedSensor = sensorSelect.value;
+            let traces = [];
+
+            if (selectedSensor === 'all') {
+                sensors.forEach((sensor, idx) => {
+                    const data = sensorData[idx];
+                    traces.push({
+                        x: data.map(d => d.timestamp),
+                        y: data.map(d => d.temperature),
+                        name: `${sensor.location}`,
+                        type: 'scatter',
+                        mode: 'lines+markers',
+                        line: {
+                            color: sensor.color,
+                            width: 2,
+                            shape: 'spline',
+                            smoothing: 0.5
+                        },
+                        marker: {
+                            color: sensor.color,
+                            size: 5,
+                            line: {
+                                width: 1,
+                                color: 'rgba(255,255,255,0.5)'
+                            }
+                        },
+                        hovertemplate: '%{y:.1f}°C<extra>%{x|%H:%M:%S}</extra>'
+                    });
+                });
+            } else {
+                const idx = sensors.findIndex(s => s.id == selectedSensor);
+                const data = sensorData[idx];
+                traces.push({
+                    x: data.map(d => d.timestamp),
+                    y: data.map(d => d.temperature),
+                    name: `${sensors[idx].location}`,
+                    type: 'scatter',
+                    mode: 'lines+markers',
+                    line: {
+                        color: sensors[idx].color,
+                        width: 3,
+                        shape: 'spline',
+                        smoothing: 0.5
+                    },
+                    marker: {
+                        color: sensors[idx].color,
+                        size: 6,
+                        line: {
+                            width: 1,
+                            color: 'rgba(255,255,255,0.5)'
+                        }
+                    },
+                    hovertemplate: '%{y:.1f}°C<extra>%{x|%H:%M:%S}</extra>'
+                });
+            }
+
+            const layout = {
+                title: {
+                    text: 'Temperature Trend',
+                    font: {
+                        size: 16,
+                        color: '#f3f4f6'
+                    }
+                },
+                xaxis: {
+                    title: 'Time',
+                    type: 'date',
+                    gridcolor: 'rgba(255,255,255,0.05)',
+                    linecolor: 'rgba(255,255,255,0.1)',
+                    tickfont: {
+                        color: 'rgba(255,255,255,0.6)'
+                    }
+                },
+                yaxis: {
+                    title: 'Temperature (°C)',
+                    gridcolor: 'rgba(255,255,255,0.05)',
+                    linecolor: 'rgba(255,255,255,0.1)',
+                    tickfont: {
+                        color: 'rgba(255,255,255,0.6)'
+                    }
+                },
+                legend: {
+                    font: {
+                        color: 'rgba(255,255,255,0.8)'
+                    },
+                    orientation: 'h',
+                    y: 1.1
+                },
+                paper_bgcolor: 'rgba(0,0,0,0)',
+                plot_bgcolor: 'rgba(0,0,0,0)',
+                margin: { t: 40, l: 50, r: 30, b: 50 },
+                hovermode: 'x unified',
+                transition: { duration: 500, easing: 'cubic-in-out' }
+            };
+
+            Plotly.react('line-chart', traces, layout, { responsive: true });
+        }
+
+        function updateBarChart() {
+            const averages = sensors.map((sensor, idx) => {
+                const data = sensorData[idx];
+                const avg = data.length ? data.reduce((sum, d) => sum + d.temperature, 0) / data.length : 0;
+                return Number(avg.toFixed(2));
+            });
+
+            const trace = {
+                x: sensors.map(s => s.location),
+                y: averages,
+                type: 'bar',
+                marker: {
+                    color: sensors.map(s => s.color),
+                    line: {
+                        width: 1,
+                        color: 'rgba(255,255,255,0.3)'
+                    }
+                },
+                hovertemplate: 'Avg: %{y:.1f}°C<extra></extra>'
+            };
+
+            const layout = {
+                title: {
+                    text: 'Average Temperature',
+                    font: {
+                        size: 16,
+                        color: '#f3f4f6'
+                    }
+                },
+                xaxis: {
+                    title: 'Location',
+                    gridcolor: 'rgba(255,255,255,0.05)',
+                    linecolor: 'rgba(255,255,255,0.1)',
+                    tickfont: {
+                        color: 'rgba(255,255,255,0.6)'
+                    }
+                },
+                yaxis: {
+                    title: 'Temperature (°C)',
+                    gridcolor: 'rgba(255,255,255,0.05)',
+                    linecolor: 'rgba(255,255,255,0.1)',
+                    tickfont: {
+                        color: 'rgba(255,255,255,0.6)'
+                    }
+                },
+                paper_bgcolor: 'rgba(0,0,0,0)',
+                plot_bgcolor: 'rgba(0,0,0,0)',
+                margin: { t: 40, l: 50, r: 30, b: 50 },
+                transition: { duration: 500, easing: 'cubic-in-out' }
+            };
+
+            Plotly.react('bar-chart', [trace], layout, { responsive: true });
+        }
+
+        function updateGaugeChart() {
+            let risk = 0;
+            if (sensorSelect.value === 'all') {
+                const risks = sensors.map((sensor, idx) => {
+                    const data = sensorData[idx];
+                    return data.length ? calculateRisk(data[data.length - 1].temperature) : 0;
+                });
+                risk = risks.reduce((sum, r) => sum + r, 0) / risks.length;
+            } else {
+                const idx = sensors.findIndex(s => s.id == sensorSelect.value);
+                const latest = sensorData[idx].slice(-1)[0];
+                risk = latest ? calculateRisk(latest.temperature) : 0;
+            }
+
+            const trace = {
+                type: 'indicator',
+                mode: 'gauge+number+delta',
+                value: risk,
+                number: { suffix: '%', font: { size: 28 } },
+                delta: {
+                    reference: risk * 0.8,
+                    increasing: { color: '#ef4444' },
+                    decreasing: { color: '#22c55e' }
+                },
+                title: {
+                    text: 'Anomaly Risk Level',
+                    font: {
+                        size: 16,
+                        color: '#f3f4f6'
+                    }
+                },
+                gauge: {
+                    axis: {
+                        range: [0, 100],
+                        tickwidth: 1,
+                        tickcolor: 'rgba(255,255,255,0.5)',
+                        tickfont: { color: 'rgba(255,255,255,0.8)' }
+                    },
+                    bar: {
+                        color: '#f97316',
+                        thickness: 0.25
+                    },
+                    bgcolor: 'rgba(0,0,0,0)',
+                    borderwidth: 2,
+                    bordercolor: 'rgba(255,255,255,0.1)',
+                    steps: [
+                        { range: [0, 33], color: '#22c55e' },
+                        { range: [33, 66], color: '#eab308' },
+                        { range: [66, 100], color: '#ef4444' }
+                    ],
+                    threshold: {
+                        line: { color: 'white', width: 3 },
+                        thickness: 0.75,
+                        value: 80
+                    }
+                }
+            };
+
+            const layout = {
+                paper_bgcolor: 'rgba(0,0,0,0)',
+                font: { color: '#f3f4f6' },
+                margin: { t: 50, b: 30, l: 50, r: 50 },
+                transition: { duration: 500, easing: 'cubic-in-out' }
+            };
+
+            Plotly.react('gauge-chart', [trace], layout, { responsive: true });
+        }
+
+        function update() {
+            if (!isMonitoring) return;
+
+            sensors.forEach((sensor, idx) => {
+                const reading = generateReading(sensor);
+                sensorData[idx].push(reading);
+                if (sensorData[idx].length > 100) sensorData[idx].shift();
+                checkAnomaly(reading);
+            });
+
+            updateLineChart();
+            updateBarChart();
+            updateGaugeChart();
+        }
+
+        sensorSelect.addEventListener('change', () => {
+            updateLineChart();
+            updateBarChart();
+            updateGaugeChart();
+        });
+
+        highThresholdSlider.addEventListener('input', () => {
+            highThreshold = Number(highThresholdSlider.value);
+            highThresholdValue.textContent = highThreshold;
+        });
+
+        lowThresholdSlider.addEventListener('input', () => {
+            lowThreshold = Number(lowThresholdSlider.value);
+            lowThresholdValue.textContent = lowThreshold;
+        });
+
+        toggleButton.addEventListener('click', () => {
+            isMonitoring = !isMonitoring;
+            toggleButton.innerHTML = `
+        <span class="flex items-center gap-2">
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+            ${isMonitoring ?
+                    '<path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zM7 8a1 1 0 012 0v4a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v4a1 1 0 102 0V8a1 1 0 00-1-1z" clip-rule="evenodd" />' :
+                    '<path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM9.555 7.168A1 1 0 008 8v4a1 1 0 001.555.832l3-2a1 1 0 000-1.664l-3-2z" clip-rule="evenodd" />'}
+          </svg>
+          <span>${isMonitoring ? 'Pause Monitoring' : 'Resume Monitoring'}</span>
+        </span>
+      `;
+        });
+
+        // Initialize charts
+        updateLineChart();
+        updateBarChart();
+        updateGaugeChart();
+
+        // Start updates
+        setInterval(update, 2000);
+    </script>
+</body>
+
+</html>

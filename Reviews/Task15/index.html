@@ -1,0 +1,1722 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>NutriTrack - Diet & Nutrition App</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        dark: {
+                            50: '#f8fafc',
+                            100: '#1a1a1a',
+                            200: '#2d2d2d',
+                            300: '#404040',
+                            400: '#525252',
+                            500: '#666666',
+                            600: '#7a7a7a',
+                            700: '#8f8f8f',
+                            800: '#a3a3a3',
+                            900: '#b8b8b8',
+                        },
+                        primary: {
+                            DEFAULT: '#10b981',
+                            dark: '#0d9f6e',
+                        },
+                        secondary: {
+                            DEFAULT: '#3b82f6',
+                            dark: '#2563eb',
+                        }
+                    },
+                    animation: {
+                        'fade-in': 'fadeIn 0.3s ease-in-out',
+                        'pulse-slow': 'pulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite',
+                    },
+                    keyframes: {
+                        fadeIn: {
+                            'from': { opacity: '0', transform: 'translateY(10px)' },
+                            'to': { opacity: '1', transform: 'translateY(0)' }
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        .nutrition-label {
+            background: linear-gradient(135deg, #2d2d2d 0%, #1a1a1a 100%);
+            border-left: 4px solid #10b981;
+        }
+
+        .progress-bar {
+            height: 8px;
+            border-radius: 4px;
+            background-color: #2d2d2d;
+        }
+
+        .progress-fill {
+            height: 100%;
+            border-radius: 4px;
+            transition: width 0.5s ease;
+        }
+
+        @media (max-width: 640px) {
+            .nutrition-card {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+
+<body class="bg-dark-100 text-gray-200 min-h-screen font-sans">
+    <header class="bg-primary-dark text-white p-4 shadow-md sticky top-0 z-10">
+        <div class="container mx-auto flex justify-between items-center">
+            <div class="flex items-center space-x-2">
+                <i class="fas fa-utensils text-2xl"></i>
+                <h1 class="text-2xl font-bold">NutriTrack</h1>
+            </div>
+            <nav class="hidden md:flex space-x-6">
+                <button onclick="scrollToSection('dashboard')"
+                    class="hover:text-primary transition-colors flex items-center">
+                    <i class="fas fa-tachometer-alt mr-2"></i> Dashboard
+                </button>
+                <button onclick="scrollToSection('planner')"
+                    class="hover:text-primary transition-colors flex items-center">
+                    <i class="fas fa-calendar-alt mr-2"></i> Meal Planner
+                </button>
+                <button onclick="scrollToSection('diary')"
+                    class="hover:text-primary transition-colors flex items-center">
+                    <i class="fas fa-book mr-2"></i> Food Diary
+                </button>
+                <button onclick="scrollToSection('resources')"
+                    class="hover:text-primary transition-colors flex items-center">
+                    <i class="fas fa-graduation-cap mr-2"></i> Resources
+                </button>
+            </nav>
+            <button id="mobileMenuButton" class="md:hidden text-xl">
+                <i class="fas fa-bars"></i>
+            </button>
+        </div>
+        <div id="mobileMenu" class="md:hidden hidden mt-2 space-y-2">
+            <button onclick="scrollToSection('dashboard')" class="block w-full text-left p-2 hover:bg-dark-200 rounded">
+                <i class="fas fa-tachometer-alt mr-2"></i> Dashboard
+            </button>
+            <button onclick="scrollToSection('planner')" class="block w-full text-left p-2 hover:bg-dark-200 rounded">
+                <i class="fas fa-calendar-alt mr-2"></i> Meal Planner
+            </button>
+            <button onclick="scrollToSection('diary')" class="block w-full text-left p-2 hover:bg-dark-200 rounded">
+                <i class="fas fa-book mr-2"></i> Food Diary
+            </button>
+            <button onclick="scrollToSection('resources')" class="block w-full text-left p-2 hover:bg-dark-200 rounded">
+                <i class="fas fa-graduation-cap mr-2"></i> Resources
+            </button>
+        </div>
+    </header>
+
+    <main class="container mx-auto p-4 md:p-6 space-y-10 pb-20">
+        <!-- Dashboard -->
+        <section id="dashboard" class="bg-dark-200 p-6 rounded-lg shadow">
+            <h2 class="text-xl font-semibold text-primary mb-4 flex items-center">
+                <i class="fas fa-tachometer-alt mr-2"></i> Today's Nutrition Dashboard
+            </h2>
+
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
+                <!-- Daily Goals Card -->
+                <div class="bg-dark-300 p-4 rounded-lg shadow">
+                    <h3 class="font-semibold text-primary mb-2">Daily Goals</h3>
+                    <div class="space-y-3">
+                        <div>
+                            <div class="flex justify-between mb-1">
+                                <span>Calories</span>
+                                <span><span id="currentCalories">0</span>/<span id="goalCalories">2000</span>
+                                    kcal</span>
+                            </div>
+                            <div class="progress-bar">
+                                <div id="caloriesProgress" class="progress-fill bg-red-500" style="width: 0%"></div>
+                            </div>
+                        </div>
+                        <div>
+                            <div class="flex justify-between mb-1">
+                                <span>Protein</span>
+                                <span><span id="currentProtein">0</span>/<span id="goalProtein">50</span>g</span>
+                            </div>
+                            <div class="progress-bar">
+                                <div id="proteinProgress" class="progress-fill bg-blue-500" style="width: 0%"></div>
+                            </div>
+                        </div>
+                        <div>
+                            <div class="flex justify-between mb-1">
+                                <span>Carbs</span>
+                                <span><span id="currentCarbs">0</span>/<span id="goalCarbs">300</span>g</span>
+                            </div>
+                            <div class="progress-bar">
+                                <div id="carbsProgress" class="progress-fill bg-yellow-500" style="width: 0%"></div>
+                            </div>
+                        </div>
+                        <div>
+                            <div class="flex justify-between mb-1">
+                                <span>Fats</span>
+                                <span><span id="currentFats">0</span>/<span id="goalFats">65</span>g</span>
+                            </div>
+                            <div class="progress-bar">
+                                <div id="fatsProgress" class="progress-fill bg-green-500" style="width: 0%"></div>
+                            </div>
+                        </div>
+                    </div>
+                    <button onclick="toggleGoalsModal(true)"
+                        class="mt-3 w-full py-2 bg-primary text-white rounded hover:bg-primary-dark transition-colors">
+                        Adjust Goals
+                    </button>
+                </div>
+
+                <!-- Quick Actions -->
+                <div class="bg-dark-300 p-4 rounded-lg shadow">
+                    <h3 class="font-semibold text-primary mb-4">Quick Actions</h3>
+                    <div class="grid grid-cols-2 gap-3">
+                        <button onclick="scrollToSection('planner')"
+                            class="p-3 bg-dark-400 rounded hover:bg-primary transition-colors flex flex-col items-center">
+                            <i class="fas fa-plus-circle text-xl mb-1"></i>
+                            <span class="text-sm">Add Meal</span>
+                        </button>
+                        <button onclick="scrollToSection('diary')"
+                            class="p-3 bg-dark-400 rounded hover:bg-primary transition-colors flex flex-col items-center">
+                            <i class="fas fa-utensils text-xl mb-1"></i>
+                            <span class="text-sm">Log Food</span>
+                        </button>
+                        <button onclick="toggleWaterModal(true)"
+                            class="p-3 bg-dark-400 rounded hover:bg-primary transition-colors flex flex-col items-center">
+                            <i class="fas fa-tint text-xl mb-1"></i>
+                            <span class="text-sm">Water Intake</span>
+                        </button>
+                        <button onclick="toggleModal(true, 'exercise')"
+                            class="p-3 bg-dark-400 rounded hover:bg-primary transition-colors flex flex-col items-center">
+                            <i class="fas fa-running text-xl mb-1"></i>
+                            <span class="text-sm">Add Exercise</span>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Water Tracker -->
+                <div class="bg-dark-300 p-4 rounded-lg shadow">
+                    <h3 class="font-semibold text-primary mb-4">Water Intake</h3>
+                    <div class="flex flex-col items-center">
+                        <div class="relative w-32 h-32 mb-4">
+                            <svg class="w-full h-full" viewBox="0 0 100 100">
+                                <circle cx="50" cy="50" r="45" fill="none" stroke="#2d2d2d" stroke-width="8" />
+                                <circle id="waterProgressCircle" cx="50" cy="50" r="45" fill="none" stroke="#3b82f6"
+                                    stroke-width="8" stroke-dasharray="283" stroke-dashoffset="283"
+                                    transform="rotate(-90 50 50)" stroke-linecap="round" />
+                            </svg>
+                            <div class="absolute inset-0 flex flex-col items-center justify-center">
+                                <span id="waterConsumed" class="text-2xl font-bold">0</span>
+                                <span class="text-sm">/ <span id="waterGoal">8</span> cups</span>
+                            </div>
+                        </div>
+                        <div class="flex space-x-2">
+                            <button onclick="updateWaterIntake(-1)"
+                                class="p-2 bg-dark-400 rounded-full hover:bg-blue-500 transition-colors">
+                                <i class="fas fa-minus"></i>
+                            </button>
+                            <button onclick="updateWaterIntake(1)"
+                                class="p-2 bg-blue-500 rounded-full hover:bg-blue-600 transition-colors">
+                                <i class="fas fa-plus"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="bg-dark-300 p-4 rounded-lg shadow">
+                <h3 class="font-semibold text-primary mb-4">Recent Meals</h3>
+                <div id="recentMeals" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    <div class="text-center p-4 text-gray-400">
+                        <i class="fas fa-utensils text-3xl mb-2"></i>
+                        <p>No recent meals logged</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Meal Planner -->
+        <section id="planner" class="bg-dark-200 p-6 rounded-lg shadow">
+            <div class="flex justify-between items-center mb-4">
+                <h2 class="text-xl font-semibold text-primary flex items-center">
+                    <i class="fas fa-calendar-alt mr-2"></i> Meal Planner
+                </h2>
+                <div class="flex space-x-2">
+                    <select id="mealPlanDay"
+                        class="bg-dark-300 border border-dark-400 rounded p-2 focus:outline-none focus:ring-2 focus:ring-primary">
+                        <option value="monday">Monday</option>
+                        <option value="tuesday">Tuesday</option>
+                        <option value="wednesday">Wednesday</option>
+                        <option value="thursday">Thursday</option>
+                        <option value="friday">Friday</option>
+                        <option value="saturday">Saturday</option>
+                        <option value="sunday">Sunday</option>
+                    </select>
+                    <button onclick="generateMealPlan()"
+                        class="px-4 py-2 bg-secondary text-white rounded hover:bg-secondary-dark transition-colors">
+                        Generate Plan
+                    </button>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+                <div class="bg-dark-300 p-4 rounded-lg">
+                    <h3 class="font-semibold text-primary mb-2 flex items-center">
+                        <i class="fas fa-sun mr-2"></i> Breakfast
+                    </h3>
+                    <div class="space-y-2">
+                        <input id="breakfastInput" type="text" placeholder="E.g., Oatmeal with berries"
+                            class="p-2 border border-dark-400 rounded w-full bg-dark-100 focus:outline-none focus:ring-2 focus:ring-primary" />
+                        <div class="flex space-x-2">
+                            <input id="breakfastCalories" type="number" placeholder="Calories"
+                                class="p-2 border border-dark-400 rounded w-1/3 bg-dark-100 focus:outline-none focus:ring-2 focus:ring-primary" />
+                            <input id="breakfastProtein" type="number" placeholder="Protein (g)"
+                                class="p-2 border border-dark-400 rounded w-1/3 bg-dark-100 focus:outline-none focus:ring-2 focus:ring-primary" />
+                            <button onclick="searchFood('breakfast')"
+                                class="p-2 bg-dark-400 rounded hover:bg-primary transition-colors">
+                                <i class="fas fa-search"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="bg-dark-300 p-4 rounded-lg">
+                    <h3 class="font-semibold text-primary mb-2 flex items-center">
+                        <i class="fas fa-sun mr-2"></i> Lunch
+                    </h3>
+                    <div class="space-y-2">
+                        <input id="lunchInput" type="text" placeholder="E.g., Grilled chicken salad"
+                            class="p-2 border border-dark-400 rounded w-full bg-dark-100 focus:outline-none focus:ring-2 focus:ring-primary" />
+                        <div class="flex space-x-2">
+                            <input id="lunchCalories" type="number" placeholder="Calories"
+                                class="p-2 border border-dark-400 rounded w-1/3 bg-dark-100 focus:outline-none focus:ring-2 focus:ring-primary" />
+                            <input id="lunchProtein" type="number" placeholder="Protein (g)"
+                                class="p-2 border border-dark-400 rounded w-1/3 bg-dark-100 focus:outline-none focus:ring-2 focus:ring-primary" />
+                            <button onclick="searchFood('lunch')"
+                                class="p-2 bg-dark-400 rounded hover:bg-primary transition-colors">
+                                <i class="fas fa-search"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="bg-dark-300 p-4 rounded-lg">
+                    <h3 class="font-semibold text-primary mb-2 flex items-center">
+                        <i class="fas fa-moon mr-2"></i> Dinner
+                    </h3>
+                    <div class="space-y-2">
+                        <input id="dinnerInput" type="text" placeholder="E.g., Salmon with quinoa"
+                            class="p-2 border border-dark-400 rounded w-full bg-dark-100 focus:outline-none focus:ring-2 focus:ring-primary" />
+                        <div class="flex space-x-2">
+                            <input id="dinnerCalories" type="number" placeholder="Calories"
+                                class="p-2 border border-dark-400 rounded w-1/3 bg-dark-100 focus:outline-none focus:ring-2 focus:ring-primary" />
+                            <input id="dinnerProtein" type="number" placeholder="Protein (g)"
+                                class="p-2 border border-dark-400 rounded w-1/3 bg-dark-100 focus:outline-none focus:ring-2 focus:ring-primary" />
+                            <button onclick="searchFood('dinner')"
+                                class="p-2 bg-dark-400 rounded hover:bg-primary transition-colors">
+                                <i class="fas fa-search"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="flex justify-between">
+                <button onclick="addMealPlan()"
+                    class="px-4 py-2 bg-primary text-white rounded hover:bg-primary-dark transition-colors">
+                    <i class="fas fa-plus mr-2"></i> Add Meal Plan
+                </button>
+                <button onclick="clearMealInputs()"
+                    class="px-4 py-2 bg-dark-400 text-white rounded hover:bg-dark-500 transition-colors">
+                    <i class="fas fa-trash-alt mr-2"></i> Clear
+                </button>
+            </div>
+
+            <div class="mt-6">
+                <h3 class="font-semibold text-primary mb-4">This Week's Meal Plans</h3>
+                <div id="mealPlanTabs" class="flex overflow-x-auto pb-2 mb-4">
+                    <!-- Tabs will be generated by JavaScript -->
+                </div>
+                <div id="mealPlanContent" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    <!-- Meal cards will be loaded here based on selected day -->
+                </div>
+            </div>
+        </section>
+
+        <!-- Food Diary -->
+        <section id="diary" class="bg-dark-200 p-6 rounded-lg shadow">
+            <h2 class="text-xl font-semibold text-primary mb-4 flex items-center">
+                <i class="fas fa-book mr-2"></i> Food Diary & Nutrition Tracker
+            </h2>
+
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
+                <!-- Food Entry -->
+                <div class="bg-dark-300 p-4 rounded-lg shadow">
+                    <h3 class="font-semibold text-primary mb-2">Add Food Entry</h3>
+                    <div class="space-y-3">
+                        <select id="mealType"
+                            class="w-full p-2 border border-dark-400 rounded bg-dark-100 focus:outline-none focus:ring-2 focus:ring-primary">
+                            <option value="breakfast">Breakfast</option>
+                            <option value="lunch">Lunch</option>
+                            <option value="dinner">Dinner</option>
+                            <option value="snack">Snack</option>
+                        </select>
+                        <input id="foodName" type="text" placeholder="Food name"
+                            class="w-full p-2 border border-dark-400 rounded bg-dark-100 focus:outline-none focus:ring-2 focus:ring-primary" />
+                        <div class="grid grid-cols-3 gap-2">
+                            <input id="foodCalories" type="number" placeholder="Calories"
+                                class="p-2 border border-dark-400 rounded bg-dark-100 focus:outline-none focus:ring-2 focus:ring-primary" />
+                            <input id="foodProtein" type="number" placeholder="Protein (g)"
+                                class="p-2 border border-dark-400 rounded bg-dark-100 focus:outline-none focus:ring-2 focus:ring-primary" />
+                            <input id="foodCarbs" type="number" placeholder="Carbs (g)"
+                                class="p-2 border border-dark-400 rounded bg-dark-100 focus:outline-none focus:ring-2 focus:ring-primary" />
+                        </div>
+                        <div class="grid grid-cols-2 gap-2">
+                            <input id="foodFats" type="number" placeholder="Fats (g)"
+                                class="p-2 border border-dark-400 rounded bg-dark-100 focus:outline-none focus:ring-2 focus:ring-primary" />
+                            <input id="foodQuantity" type="number" placeholder="Quantity"
+                                class="p-2 border border-dark-400 rounded bg-dark-100 focus:outline-none focus:ring-2 focus:ring-primary"
+                                value="1" min="1" />
+                        </div>
+                        <button onclick="addDiaryEntry()"
+                            class="w-full py-2 bg-primary text-white rounded hover:bg-primary-dark transition-colors">
+                            <i class="fas fa-plus mr-2"></i> Add Entry
+                        </button>
+                        <button onclick="searchFoodDatabase()"
+                            class="w-full py-2 bg-secondary text-white rounded hover:bg-secondary-dark transition-colors">
+                            <i class="fas fa-search mr-2"></i> Search Food Database
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Today's Summary -->
+                <div class="bg-dark-300 p-4 rounded-lg shadow">
+                    <h3 class="font-semibold text-primary mb-2">Today's Nutrition</h3>
+                    <div class="nutrition-label p-4 rounded mb-3">
+                        <div class="flex justify-between border-b border-dark-400 pb-2 mb-2">
+                            <span class="font-medium">Calories</span>
+                            <span><span id="diaryCalories">0</span> kcal</span>
+                        </div>
+                        <div class="grid grid-cols-3 gap-2 text-sm">
+                            <div>
+                                <div class="font-medium text-blue-400">Protein</div>
+                                <div id="diaryProtein">0g</div>
+                            </div>
+                            <div>
+                                <div class="font-medium text-yellow-400">Carbs</div>
+                                <div id="diaryCarbs">0g</div>
+                            </div>
+                            <div>
+                                <div class="font-medium text-green-400">Fats</div>
+                                <div id="diaryFats">0g</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <h4 class="font-semibold text-primary mb-2">Macronutrient Distribution</h4>
+                    <div class="relative h-40 w-40 mx-auto mb-4">
+                        <canvas id="macrosChart"></canvas>
+                    </div>
+
+                    <div class="space-y-2">
+                        <div class="flex justify-between">
+                            <span>Remaining Calories</span>
+                            <span id="remainingCalories">2000</span>
+                        </div>
+                        <div class="progress-bar">
+                            <div id="remainingCaloriesProgress" class="progress-fill bg-primary" style="width: 100%">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Recent Foods -->
+                <div class="bg-dark-300 p-4 rounded-lg shadow">
+                    <h3 class="font-semibold text-primary mb-2">Recent Foods</h3>
+                    <div id="recentFoods" class="space-y-2 max-h-60 overflow-y-auto">
+                        <div class="p-2 bg-dark-400 rounded cursor-pointer hover:bg-dark-500 transition-colors"
+                            onclick="fillFoodEntry('Apple', 95, 0.5, 25, 0.3)">
+                            <div class="flex justify-between">
+                                <span>Apple</span>
+                                <span class="text-primary">95 kcal</span>
+                            </div>
+                            <div class="text-xs text-gray-400">Protein: 0.5g | Carbs: 25g | Fats: 0.3g</div>
+                        </div>
+                        <div class="p-2 bg-dark-400 rounded cursor-pointer hover:bg-dark-500 transition-colors"
+                            onclick="fillFoodEntry('Grilled Chicken Breast', 165, 31, 0, 3.6)">
+                            <div class="flex justify-between">
+                                <span>Grilled Chicken Breast</span>
+                                <span class="text-primary">165 kcal</span>
+                            </div>
+                            <div class="text-xs text-gray-400">Protein: 31g | Carbs: 0g | Fats: 3.6g</div>
+                        </div>
+                        <div class="p-2 bg-dark-400 rounded cursor-pointer hover:bg-dark-500 transition-colors"
+                            onclick="fillFoodEntry('Brown Rice (cooked)', 215, 5, 45, 1.8)">
+                            <div class="flex justify-between">
+                                <span>Brown Rice (cooked)</span>
+                                <span class="text-primary">215 kcal</span>
+                            </div>
+                            <div class="text-xs text-gray-400">Protein: 5g | Carbs: 45g | Fats: 1.8g</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="bg-dark-300 p-4 rounded-lg shadow">
+                <h3 class="font-semibold text-primary mb-2">Today's Food Log</h3>
+                <div class="overflow-x-auto">
+                    <table class="w-full">
+                        <thead>
+                            <tr class="border-b border-dark-400">
+                                <th class="text-left p-2">Meal</th>
+                                <th class="text-left p-2">Food</th>
+                                <th class="text-right p-2">Calories</th>
+                                <th class="text-right p-2">Protein</th>
+                                <th class="text-right p-2">Carbs</th>
+                                <th class="text-right p-2">Fats</th>
+                                <th class="p-2"></th>
+                            </tr>
+                        </thead>
+                        <tbody id="diaryEntries">
+                            <!-- Entries will be added here -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+
+        <!-- Educational Resources -->
+        <section id="resources" class="bg-dark-200 p-6 rounded-lg shadow">
+            <h2 class="text-xl font-semibold text-primary mb-4 flex items-center">
+                <i class="fas fa-graduation-cap mr-2"></i> Educational Resources
+            </h2>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                <!-- Nutrition Basics -->
+                <div class="bg-dark-300 p-4 rounded-lg shadow hover:shadow-lg transition-shadow cursor-pointer"
+                    onclick="toggleModal(true, 'nutrition')">
+                    <div class="flex items-center mb-3">
+                        <div class="bg-primary rounded-full p-3 mr-3">
+                            <i class="fas fa-apple-alt text-white"></i>
+                        </div>
+                        <h3 class="font-semibold">Nutrition Basics</h3>
+                    </div>
+                    <p class="text-gray-400 text-sm">Learn about macronutrients, micronutrients, and how to build a
+                        balanced diet for optimal health.</p>
+                </div>
+
+                <!-- Diet Guides -->
+                <div class="bg-dark-300 p-4 rounded-lg shadow hover:shadow-lg transition-shadow cursor-pointer"
+                    onclick="toggleModal(true, 'diets')">
+                    <div class="flex items-center mb-3">
+                        <div class="bg-secondary rounded-full p-3 mr-3">
+                            <i class="fas fa-clipboard-list text-white"></i>
+                        </div>
+                        <h3 class="font-semibold">Diet Guides</h3>
+                    </div>
+                    <p class="text-gray-400 text-sm">Explore different dietary approaches like Keto, Mediterranean,
+                        Vegetarian, and more.</p>
+                </div>
+
+                <!-- Healthy Recipes -->
+                <div class="bg-dark-300 p-4 rounded-lg shadow hover:shadow-lg transition-shadow cursor-pointer"
+                    onclick="toggleModal(true, 'recipes')">
+                    <div class="flex items-center mb-3">
+                        <div class="bg-yellow-500 rounded-full p-3 mr-3">
+                            <i class="fas fa-utensils text-white"></i>
+                        </div>
+                        <h3 class="font-semibold">Healthy Recipes</h3>
+                    </div>
+                    <p class="text-gray-400 text-sm">Discover delicious, nutritious recipes for every meal of the day.
+                    </p>
+                </div>
+
+                <!-- Weight Management -->
+                <div class="bg-dark-300 p-4 rounded-lg shadow hover:shadow-lg transition-shadow cursor-pointer"
+                    onclick="toggleModal(true, 'weight')">
+                    <div class="flex items-center mb-3">
+                        <div class="bg-red-500 rounded-full p-3 mr-3">
+                            <i class="fas fa-weight text-white"></i>
+                        </div>
+                        <h3 class="font-semibold">Weight Management</h3>
+                    </div>
+                    <p class="text-gray-400 text-sm">Understand the science behind weight loss, maintenance, and healthy
+                        gain.</p>
+                </div>
+
+                <!-- Supplement Guide -->
+                <div class="bg-dark-300 p-4 rounded-lg shadow hover:shadow-lg transition-shadow cursor-pointer"
+                    onclick="toggleModal(true, 'supplements')">
+                    <div class="flex items-center mb-3">
+                        <div class="bg-purple-500 rounded-full p-3 mr-3">
+                            <i class="fas fa-pills text-white"></i>
+                        </div>
+                        <h3 class="font-semibold">Supplement Guide</h3>
+                    </div>
+                    <p class="text-gray-400 text-sm">Learn which supplements might be beneficial for your health goals.
+                    </p>
+                </div>
+
+                <!-- Fitness Nutrition -->
+                <div class="bg-dark-300 p-4 rounded-lg shadow hover:shadow-lg transition-shadow cursor-pointer"
+                    onclick="toggleModal(true, 'fitness')">
+                    <div class="flex items-center mb-3">
+                        <div class="bg-green-500 rounded-full p-3 mr-3">
+                            <i class="fas fa-dumbbell text-white"></i>
+                        </div>
+                        <h3 class="font-semibold">Fitness Nutrition</h3>
+                    </div>
+                    <p class="text-gray-400 text-sm">Optimize your nutrition for exercise performance and recovery.</p>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <!-- Floating Action Button -->
+    <button id="fab"
+        class="fixed bottom-6 right-6 bg-primary text-white rounded-full w-14 h-14 flex items-center justify-center shadow-lg hover:bg-primary-dark transition-colors z-20">
+        <i class="fas fa-plus text-xl"></i>
+    </button>
+
+    <!-- Quick Actions Menu -->
+    <div id="quickActions" class="fixed bottom-20 right-6 hidden space-y-2 z-20">
+        <button onclick="scrollToSection('diary')"
+            class="bg-secondary text-white rounded-full w-12 h-12 flex items-center justify-center shadow-lg hover:bg-secondary-dark transition-colors"
+            title="Add Food">
+            <i class="fas fa-utensils"></i>
+        </button>
+        <button onclick="toggleWaterModal(true)"
+            class="bg-blue-500 text-white rounded-full w-12 h-12 flex items-center justify-center shadow-lg hover:bg-blue-600 transition-colors"
+            title="Log Water">
+            <i class="fas fa-tint"></i>
+        </button>
+        <button onclick="toggleModal(true, 'exercise')"
+            class="bg-red-500 text-white rounded-full w-12 h-12 flex items-center justify-center shadow-lg hover:bg-red-600 transition-colors"
+            title="Add Exercise">
+            <i class="fas fa-running"></i>
+        </button>
+    </div>
+
+    <!-- Modals -->
+    <div id="modal" class="fixed inset-0 bg-black bg-opacity-70 hidden flex items-center justify-center z-50">
+        <div class="bg-dark-200 rounded-lg p-6 max-w-2xl w-full relative max-h-[90vh] overflow-y-auto fade-in">
+            <button onclick="toggleModal(false)"
+                class="absolute top-2 right-2 text-gray-400 hover:text-white transition-colors">
+                &times;
+            </button>
+            <div id="modalContent">
+                <!-- Content will be loaded here -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Water Intake Modal -->
+    <div id="waterModal" class="fixed inset-0 bg-black bg-opacity-70 hidden flex items-center justify-center z-50">
+        <div class="bg-dark-200 rounded-lg p-6 max-w-md w-full relative fade-in">
+            <button onclick="toggleWaterModal(false)"
+                class="absolute top-2 right-2 text-gray-400 hover:text-white transition-colors">
+                &times;
+            </button>
+            <h3 class="text-lg font-bold mb-4 text-primary">Water Intake Tracker</h3>
+            <div class="flex flex-col items-center mb-6">
+                <div class="relative w-40 h-40 mb-4">
+                    <svg class="w-full h-full" viewBox="0 0 100 100">
+                        <circle cx="50" cy="50" r="45" fill="none" stroke="#2d2d2d" stroke-width="8" />
+                        <circle id="waterModalCircle" cx="50" cy="50" r="45" fill="none" stroke="#3b82f6"
+                            stroke-width="8" stroke-dasharray="283" stroke-dashoffset="283"
+                            transform="rotate(-90 50 50)" stroke-linecap="round" />
+                    </svg>
+                    <div class="absolute inset-0 flex flex-col items-center justify-center">
+                        <span id="waterModalConsumed" class="text-3xl font-bold">0</span>
+                        <span class="text-sm">/ <span id="waterModalGoal">8</span> cups</span>
+                    </div>
+                </div>
+                <div class="flex space-x-4">
+                    <button onclick="updateWaterModalIntake(-1)"
+                        class="p-3 bg-dark-400 rounded-full hover:bg-blue-500 transition-colors">
+                        <i class="fas fa-minus"></i>
+                    </button>
+                    <button onclick="updateWaterModalIntake(1)"
+                        class="p-3 bg-blue-500 rounded-full hover:bg-blue-600 transition-colors">
+                        <i class="fas fa-plus"></i>
+                    </button>
+                </div>
+            </div>
+            <div class="mb-4">
+                <label for="waterGoalInput" class="block mb-2">Daily Water Goal (cups)</label>
+                <input id="waterGoalInput" type="number" min="1" max="20" value="8"
+                    class="w-full p-2 border border-dark-400 rounded bg-dark-100 focus:outline-none focus:ring-2 focus:ring-primary" />
+            </div>
+            <button onclick="saveWaterSettings()"
+                class="w-full py-2 bg-primary text-white rounded hover:bg-primary-dark transition-colors">
+                Save Settings
+            </button>
+        </div>
+    </div>
+
+    <!-- Goals Modal -->
+    <div id="goalsModal" class="fixed inset-0 bg-black bg-opacity-70 hidden flex items-center justify-center z-50">
+        <div class="bg-dark-200 rounded-lg p-6 max-w-md w-full relative fade-in">
+            <button onclick="toggleGoalsModal(false)"
+                class="absolute top-2 right-2 text-gray-400 hover:text-white transition-colors">
+                &times;
+            </button>
+            <h3 class="text-lg font-bold mb-4 text-primary">Daily Nutrition Goals</h3>
+            <div class="space-y-4">
+                <div>
+                    <label for="caloriesGoal" class="block mb-1">Calories (kcal)</label>
+                    <input id="caloriesGoal" type="number" min="1000" max="5000" value="2000"
+                        class="w-full p-2 border border-dark-400 rounded bg-dark-100 focus:outline-none focus:ring-2 focus:ring-primary" />
+                </div>
+                <div>
+                    <label for="proteinGoal" class="block mb-1">Protein (g)</label>
+                    <input id="proteinGoal" type="number" min="20" max="300" value="50"
+                        class="w-full p-2 border border-dark-400 rounded bg-dark-100 focus:outline-none focus:ring-2 focus:ring-primary" />
+                </div>
+                <div>
+                    <label for="carbsGoal" class="block mb-1">Carbohydrates (g)</label>
+                    <input id="carbsGoal" type="number" min="20" max="500" value="300"
+                        class="w-full p-2 border border-dark-400 rounded bg-dark-100 focus:outline-none focus:ring-2 focus:ring-primary" />
+                </div>
+                <div>
+                    <label for="fatsGoal" class="block mb-1">Fats (g)</label>
+                    <input id="fatsGoal" type="number" min="20" max="200" value="65"
+                        class="w-full p-2 border border-dark-400 rounded bg-dark-100 focus:outline-none focus:ring-2 focus:ring-primary" />
+                </div>
+            </div>
+            <button onclick="saveNutritionGoals()"
+                class="w-full mt-6 py-2 bg-primary text-white rounded hover:bg-primary-dark transition-colors">
+                Save Goals
+            </button>
+        </div>
+    </div>
+
+    <footer class="bg-primary-dark text-white text-center p-4">
+        <div class="container mx-auto">
+            <div class="flex flex-col md:flex-row justify-between items-center">
+                <div class="mb-4 md:mb-0">
+                    &copy; 2025 NutriTrack - All rights reserved
+                </div>
+                <div class="flex space-x-4">
+                    <a href="#" class="hover:text-primary transition-colors">Privacy Policy</a>
+                    <a href="#" class="hover:text-primary transition-colors">Terms of Service</a>
+                    <a href="#" class="hover:text-primary transition-colors">Contact Us</a>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script>
+        // DOM Elements
+        const mobileMenuButton = document.getElementById('mobileMenuButton');
+        const mobileMenu = document.getElementById('mobileMenu');
+        const fab = document.getElementById('fab');
+        const quickActions = document.getElementById('quickActions');
+
+        // State
+        let waterIntake = 0;
+        let waterGoal = 8;
+        let nutritionGoals = {
+            calories: 2000,
+            protein: 50,
+            carbs: 300,
+            fats: 65
+        };
+        let nutritionData = {
+            calories: 0,
+            protein: 0,
+            carbs: 0,
+            fats: 0
+        };
+        let mealPlans = {};
+        let diaryEntries = [];
+        let macrosChart = null;
+
+        // Initialize the app
+        document.addEventListener('DOMContentLoaded', function () {
+            // Load saved data from localStorage
+            loadSavedData();
+
+            // Initialize meal plan tabs
+            initializeMealPlanTabs();
+
+            // Initialize macros chart
+            initializeMacrosChart();
+
+            // Event listeners
+            mobileMenuButton.addEventListener('click', toggleMobileMenu);
+            fab.addEventListener('click', toggleQuickActions);
+
+            // Update UI with loaded data
+            updateDashboard();
+            updateDiarySummary();
+        });
+
+        // Toggle mobile menu
+        function toggleMobileMenu() {
+            mobileMenu.classList.toggle('hidden');
+        }
+
+        // Toggle quick actions menu
+        function toggleQuickActions() {
+            quickActions.classList.toggle('hidden');
+            fab.innerHTML = quickActions.classList.contains('hidden') ? '<i class="fas fa-plus text-xl"></i>' : '<i class="fas fa-times text-xl"></i>';
+        }
+
+        // Scroll to section
+        function scrollToSection(id) {
+            document.getElementById(id).scrollIntoView({ behavior: "smooth" });
+            mobileMenu.classList.add('hidden');
+            quickActions.classList.add('hidden');
+            fab.innerHTML = '<i class="fas fa-plus text-xl"></i>';
+        }
+
+        // Toggle modal
+        function toggleModal(show, type = 'nutrition') {
+            const modal = document.getElementById('modal');
+            const modalContent = document.getElementById('modalContent');
+
+            if (show) {
+                let content = '';
+
+                switch (type) {
+                    case 'nutrition':
+                        content = `
+                            <h3 class="text-lg font-bold mb-4 text-primary">Nutrition Basics</h3>
+                            <div class="space-y-4 text-gray-300">
+                                <p>Understanding nutrition is the foundation of a healthy lifestyle. The food you eat provides the energy and nutrients your body needs to function properly.</p>
+                                
+                                <h4 class="font-semibold text-primary mt-4">Macronutrients</h4>
+                                <div class="space-y-3">
+                                    <div class="flex items-start">
+                                        <span class="w-3 h-3 bg-blue-500 rounded-full mt-1 mr-2 flex-shrink-0"></span>
+                                        <div>
+                                            <strong>Proteins</strong> - Essential for building and repairing tissues, making enzymes and hormones. 
+                                            Found in meat, fish, eggs, dairy, legumes, and nuts.
+                                        </div>
+                                    </div>
+                                    <div class="flex items-start">
+                                        <span class="w-3 h-3 bg-yellow-500 rounded-full mt-1 mr-2 flex-shrink-0"></span>
+                                        <div>
+                                            <strong>Carbohydrates</strong> - The body's main energy source. Choose complex carbs like whole grains, 
+                                            fruits, and vegetables over simple sugars.
+                                        </div>
+                                    </div>
+                                    <div class="flex items-start">
+                                        <span class="w-3 h-3 bg-green-500 rounded-full mt-1 mr-2 flex-shrink-0"></span>
+                                        <div>
+                                            <strong>Fats</strong> - Important for brain health, energy, and absorbing vitamins. Focus on 
+                                            healthy fats from avocados, nuts, seeds, and olive oil.
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <h4 class="font-semibold text-primary mt-4">Micronutrients</h4>
+                                <p>Vitamins and minerals that support various bodily functions. Eat a colorful variety of fruits and vegetables to get a full spectrum.</p>
+                                
+                                <h4 class="font-semibold text-primary mt-4">Hydration</h4>
+                                <p>Water is essential for every cell in your body. Aim for 8-10 cups daily, more if you're active.</p>
+                            </div>
+                        `;
+                        break;
+
+                    case 'diets':
+                        content = `
+                            <h3 class="text-lg font-bold mb-4 text-primary">Dietary Approaches</h3>
+                            <div class="space-y-4 text-gray-300">
+                                <div class="p-4 bg-dark-300 rounded-lg">
+                                    <h4 class="font-semibold text-secondary">Mediterranean Diet</h4>
+                                    <p class="mt-2">Focuses on fruits, vegetables, whole grains, olive oil, and lean proteins like fish. Associated with heart health and longevity.</p>
+                                </div>
+                                
+                                <div class="p-4 bg-dark-300 rounded-lg">
+                                    <h4 class="font-semibold text-yellow-400">Ketogenic Diet</h4>
+                                    <p class="mt-2">High-fat, moderate-protein, very low-carb diet that puts the body into ketosis. May help with weight loss and blood sugar control.</p>
+                                </div>
+                                
+                                <div class="p-4 bg-dark-300 rounded-lg">
+                                    <h4 class="font-semibold text-green-400">Plant-Based Diet</h4>
+                                    <p class="mt-2">Emphasizes foods from plant sources with minimal animal products. Can reduce risk of chronic diseases when well-planned.</p>
+                                </div>
+                                
+                                <div class="p-4 bg-dark-300 rounded-lg">
+                                    <h4 class="font-semibold text-red-400">Intermittent Fasting</h4>
+                                    <p class="mt-2">Cycling between periods of eating and fasting. Common methods include 16:8 (fast for 16 hours, eat during 8-hour window).</p>
+                                </div>
+                            </div>
+                        `;
+                        break;
+
+                    case 'recipes':
+                        content = `
+                            <h3 class="text-lg font-bold mb-4 text-primary">Healthy Recipes</h3>
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-gray-300">
+                                <div class="p-4 bg-dark-300 rounded-lg">
+                                    <h4 class="font-semibold text-primary">Breakfast: Oatmeal Power Bowl</h4>
+                                    <p class="mt-2 text-sm">1/2 cup oats, 1 cup almond milk, 1 tbsp chia seeds, 1/2 banana, 1 tbsp almond butter, 1 tsp honey. Cook oats with milk, top with other ingredients.</p>
+                                </div>
+                                
+                                <div class="p-4 bg-dark-300 rounded-lg">
+                                    <h4 class="font-semibold text-primary">Lunch: Quinoa Salad</h4>
+                                    <p class="mt-2 text-sm">1 cup cooked quinoa, 1/2 cup chickpeas, 1/4 avocado, cherry tomatoes, cucumber, lemon-tahini dressing. Mix all ingredients.</p>
+                                </div>
+                                
+                                <div class="p-4 bg-dark-300 rounded-lg">
+                                    <h4 class="font-semibold text-primary">Dinner: Baked Salmon</h4>
+                                    <p class="mt-2 text-sm">Salmon fillet, olive oil, lemon, garlic, asparagus. Bake at 400°F for 12-15 minutes. Serve with roasted asparagus.</p>
+                                </div>
+                                
+                                <div class="p-4 bg-dark-300 rounded-lg">
+                                    <h4 class="font-semibold text-primary">Snack: Energy Balls</h4>
+                                    <p class="mt-2 text-sm">1 cup dates, 1/2 cup almonds, 2 tbsp cocoa powder, 1 tbsp chia seeds. Blend in food processor, roll into balls.</p>
+                                </div>
+                            </div>
+                        `;
+                        break;
+
+                    case 'weight':
+                        content = `
+                            <h3 class="text-lg font-bold mb-4 text-primary">Weight Management</h3>
+                            <div class="space-y-4 text-gray-300">
+                                <div class="p-4 bg-dark-300 rounded-lg">
+                                    <h4 class="font-semibold text-primary">Weight Loss</h4>
+                                    <p class="mt-2">To lose weight, you need to consume fewer calories than you burn. A deficit of 500 calories per day typically leads to about 1 pound of weight loss per week.</p>
+                                </div>
+                                
+                                <div class="p-4 bg-dark-300 rounded-lg">
+                                    <h4 class="font-semibold text-primary">Weight Maintenance</h4>
+                                    <p class="mt-2">Balance calorie intake with expenditure. Focus on nutrient-dense foods and regular physical activity.</p>
+                                </div>
+                                
+                                <div class="p-4 bg-dark-300 rounded-lg">
+                                    <h4 class="font-semibold text-primary">Healthy Weight Gain</h4>
+                                    <p class="mt-2">For muscle gain, aim for a slight calorie surplus with adequate protein (0.7-1g per pound of body weight) and strength training.</p>
+                                </div>
+                                
+                                <div class="p-4 bg-dark-300 rounded-lg">
+                                    <h4 class="font-semibold text-primary">Body Composition</h4>
+                                    <p class="mt-2">Focus on body fat percentage and muscle mass rather than just weight. Muscle is denser than fat, so you might gain weight while looking leaner.</p>
+                                </div>
+                            </div>
+                        `;
+                        break;
+
+                    case 'supplements':
+                        content = `
+                            <h3 class="text-lg font-bold mb-4 text-primary">Supplement Guide</h3>
+                            <div class="space-y-4 text-gray-300">
+                                <div class="p-4 bg-dark-300 rounded-lg">
+                                    <h4 class="font-semibold text-primary">Multivitamin</h4>
+                                    <p class="mt-2">Can help fill nutritional gaps, especially for those with restricted diets. Choose a high-quality brand with bioavailable forms.</p>
+                                </div>
+                                
+                                <div class="p-4 bg-dark-300 rounded-lg">
+                                    <h4 class="font-semibold text-primary">Omega-3s</h4>
+                                    <p class="mt-2">EPA and DHA support heart and brain health. Important if you don't eat fatty fish regularly.</p>
+                                </div>
+                                
+                                <div class="p-4 bg-dark-300 rounded-lg">
+                                    <h4 class="font-semibold text-primary">Vitamin D</h4>
+                                    <p class="mt-2">Many people are deficient, especially in winter months. Supports immune function and bone health.</p>
+                                </div>
+                                
+                                <div class="p-4 bg-dark-300 rounded-lg">
+                                    <h4 class="font-semibold text-primary">Probiotics</h4>
+                                    <p class="mt-2">Support gut health, which impacts digestion, immunity, and even mental health. Look for diverse strains.</p>
+                                </div>
+                                
+                                <div class="p-4 bg-dark-300 rounded-lg">
+                                    <h4 class="font-semibold text-primary">Protein Powder</h4>
+                                    <p class="mt-2">Convenient way to increase protein intake. Whey, casein, or plant-based options available.</p>
+                                </div>
+                            </div>
+                        `;
+                        break;
+
+                    case 'fitness':
+                        content = `
+                            <h3 class="text-lg font-bold mb-4 text-primary">Fitness Nutrition</h3>
+                            <div class="space-y-4 text-gray-300">
+                                <div class="p-4 bg-dark-300 rounded-lg">
+                                    <h4 class="font-semibold text-primary">Pre-Workout</h4>
+                                    <p class="mt-2">Eat a meal with carbs and protein 2-3 hours before exercise, or a small snack 30-60 minutes before. Stay hydrated.</p>
+                                </div>
+                                
+                                <div class="p-4 bg-dark-300 rounded-lg">
+                                    <h4 class="font-semibold text-primary">Post-Workout</h4>
+                                    <p class="mt-2">Within 30-60 minutes after exercise, consume protein (20-40g) and carbs to replenish glycogen and support muscle repair.</p>
+                                </div>
+                                
+                                <div class="p-4 bg-dark-300 rounded-lg">
+                                    <h4 class="font-semibold text-primary">Hydration</h4>
+                                    <p class="mt-2">Drink water before, during, and after exercise. For intense/long sessions, consider electrolyte replacement.</p>
+                                </div>
+                                
+                                <div class="p-4 bg-dark-300 rounded-lg">
+                                    <h4 class="font-semibold text-primary">Endurance Training</h4>
+                                    <p class="mt-2">Higher carb intake may be needed to fuel long sessions. Practice fueling during training for race day.</p>
+                                </div>
+                                
+                                <div class="p-4 bg-dark-300 rounded-lg">
+                                    <h4 class="font-semibold text-primary">Strength Training</h4>
+                                    <p class="mt-2">Adequate protein (0.7-1g per pound of body weight) supports muscle growth when combined with progressive overload.</p>
+                                </div>
+                            </div>
+                        `;
+                        break;
+
+                    case 'exercise':
+                        content = `
+                            <h3 class="text-lg font-bold mb-4 text-primary">Log Exercise</h3>
+                            <div class="space-y-4 text-gray-300">
+                                <div>
+                                    <label for="exerciseType" class="block mb-1">Exercise Type</label>
+                                    <select id="exerciseType" class="w-full p-2 border border-dark-400 rounded bg-dark-100 focus:outline-none focus:ring-2 focus:ring-primary">
+                                        <option value="cardio">Cardio</option>
+                                        <option value="strength">Strength Training</option>
+                                        <option value="flexibility">Flexibility</option>
+                                        <option value="sports">Sports</option>
+                                    </select>
+                                </div>
+                                
+                                <div>
+                                    <label for="exerciseName" class="block mb-1">Exercise Name</label>
+                                    <input id="exerciseName" type="text" placeholder="E.g., Running, Weight Lifting" class="w-full p-2 border border-dark-400 rounded bg-dark-100 focus:outline-none focus:ring-2 focus:ring-primary" />
+                                </div>
+                                
+                                <div class="grid grid-cols-2 gap-4">
+                                    <div>
+                                        <label for="exerciseDuration" class="block mb-1">Duration (minutes)</label>
+                                        <input id="exerciseDuration" type="number" min="1" class="w-full p-2 border border-dark-400 rounded bg-dark-100 focus:outline-none focus:ring-2 focus:ring-primary" />
+                                    </div>
+                                    <div>
+                                        <label for="exerciseCalories" class="block mb-1">Calories Burned</label>
+                                        <input id="exerciseCalories" type="number" min="1" class="w-full p-2 border border-dark-400 rounded bg-dark-100 focus:outline-none focus:ring-2 focus:ring-primary" />
+                                    </div>
+                                </div>
+                                
+                                <div>
+                                    <label for="exerciseNotes" class="block mb-1">Notes</label>
+                                    <textarea id="exerciseNotes" rows="3" class="w-full p-2 border border-dark-400 rounded bg-dark-100 focus:outline-none focus:ring-2 focus:ring-primary"></textarea>
+                                </div>
+                                
+                                <button onclick="logExercise()" class="w-full py-2 bg-primary text-white rounded hover:bg-primary-dark transition-colors">
+                                    Log Exercise
+                                </button>
+                            </div>
+                        `;
+                        break;
+                }
+
+                modalContent.innerHTML = content;
+                modal.classList.remove('hidden');
+            } else {
+                modal.classList.add('hidden');
+            }
+        }
+
+        // Toggle water modal
+        function toggleWaterModal(show) {
+            const modal = document.getElementById('waterModal');
+
+            if (show) {
+                document.getElementById('waterModalConsumed').textContent = waterIntake;
+                document.getElementById('waterModalGoal').textContent = waterGoal;
+                document.getElementById('waterGoalInput').value = waterGoal;
+
+                // Update circle progress
+                const circumference = 283; // 2 * π * r (where r is 45)
+                const offset = circumference - (waterIntake / waterGoal) * circumference;
+                document.getElementById('waterModalCircle').style.strokeDashoffset = offset;
+
+                modal.classList.remove('hidden');
+            } else {
+                modal.classList.add('hidden');
+            }
+        }
+
+        // Toggle goals modal
+        function toggleGoalsModal(show) {
+            const modal = document.getElementById('goalsModal');
+
+            if (show) {
+                document.getElementById('caloriesGoal').value = nutritionGoals.calories;
+                document.getElementById('proteinGoal').value = nutritionGoals.protein;
+                document.getElementById('carbsGoal').value = nutritionGoals.carbs;
+                document.getElementById('fatsGoal').value = nutritionGoals.fats;
+
+                modal.classList.remove('hidden');
+            } else {
+                modal.classList.add('hidden');
+            }
+        }
+
+        // Update water intake
+        function updateWaterIntake(change) {
+            waterIntake = Math.max(0, waterIntake + change);
+            document.getElementById('waterConsumed').textContent = waterIntake;
+
+            // Update circle progress
+            const circumference = 283; // 2 * π * r (where r is 45)
+            const offset = circumference - (waterIntake / waterGoal) * circumference;
+            document.getElementById('waterProgressCircle').style.strokeDashoffset = offset;
+
+            saveToLocalStorage();
+        }
+
+        // Update water intake in modal
+        function updateWaterModalIntake(change) {
+            waterIntake = Math.max(0, waterIntake + change);
+            document.getElementById('waterModalConsumed').textContent = waterIntake;
+
+            // Update circle progress in modal
+            const circumference = 283;
+            const offset = circumference - (waterIntake / waterGoal) * circumference;
+            document.getElementById('waterModalCircle').style.strokeDashoffset = offset;
+
+            // Also update the main display
+            document.getElementById('waterConsumed').textContent = waterIntake;
+            document.getElementById('waterProgressCircle').style.strokeDashoffset = offset;
+
+            saveToLocalStorage();
+        }
+
+        // Save water settings
+        function saveWaterSettings() {
+            const newGoal = parseInt(document.getElementById('waterGoalInput').value);
+            if (!isNaN(newGoal)) {
+                waterGoal = Math.max(1, Math.min(20, newGoal));
+                document.getElementById('waterGoal').textContent = waterGoal;
+                document.getElementById('waterModalGoal').textContent = waterGoal;
+
+                // Update circle progress with new goal
+                const circumference = 283;
+                const offset = circumference - (waterIntake / waterGoal) * circumference;
+                document.getElementById('waterProgressCircle').style.strokeDashoffset = offset;
+                document.getElementById('waterModalCircle').style.strokeDashoffset = offset;
+
+                toggleWaterModal(false);
+                saveToLocalStorage();
+            }
+        }
+
+        // Save nutrition goals
+        function saveNutritionGoals() {
+            nutritionGoals = {
+                calories: parseInt(document.getElementById('caloriesGoal').value) || 2000,
+                protein: parseInt(document.getElementById('proteinGoal').value) || 50,
+                carbs: parseInt(document.getElementById('carbsGoal').value) || 300,
+                fats: parseInt(document.getElementById('fatsGoal').value) || 65
+            };
+
+            document.getElementById('goalCalories').textContent = nutritionGoals.calories;
+            document.getElementById('goalProtein').textContent = nutritionGoals.protein;
+            document.getElementById('goalCarbs').textContent = nutritionGoals.carbs;
+            document.getElementById('goalFats').textContent = nutritionGoals.fats;
+
+            updateDashboard();
+            toggleGoalsModal(false);
+            saveToLocalStorage();
+        }
+
+        // Initialize meal plan tabs
+        function initializeMealPlanTabs() {
+            const days = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
+            const tabsContainer = document.getElementById('mealPlanTabs');
+
+            tabsContainer.innerHTML = '';
+
+            days.forEach(day => {
+                const button = document.createElement('button');
+                button.className = 'px-4 py-2 bg-dark-400 rounded-t-lg mr-2 whitespace-nowrap';
+                button.textContent = day;
+                button.onclick = () => loadMealPlan(day.toLowerCase());
+
+                tabsContainer.appendChild(button);
+            });
+
+            // Load Monday by default
+            loadMealPlan('monday');
+        }
+
+        // Load meal plan for a specific day
+        function loadMealPlan(day) {
+            const contentContainer = document.getElementById('mealPlanContent');
+
+            // Update active tab
+            const tabs = document.querySelectorAll('#mealPlanTabs button');
+            tabs.forEach(tab => {
+                if (tab.textContent.toLowerCase() === day) {
+                    tab.classList.add('bg-primary', 'text-white');
+                    tab.classList.remove('bg-dark-400');
+                } else {
+                    tab.classList.remove('bg-primary', 'text-white');
+                    tab.classList.add('bg-dark-400');
+                }
+            });
+
+            // Set the select dropdown to match
+            document.getElementById('mealPlanDay').value = day;
+
+            // Load content
+            if (mealPlans[day] && mealPlans[day].length > 0) {
+                contentContainer.innerHTML = '';
+
+                mealPlans[day].forEach((meal, index) => {
+                    const card = document.createElement('div');
+                    card.className = 'bg-dark-300 p-4 rounded-lg shadow fade-in';
+                    card.innerHTML = `
+                        <h4 class="text-primary font-bold mb-2">${meal.mealType}</h4>
+                        <p class="text-gray-300"><strong class="text-gray-200">Food:</strong> ${meal.food || "N/A"}</p>
+                        <p class="text-gray-300"><strong class="text-gray-200">Calories:</strong> ${meal.calories || "0"} kcal</p>
+                        <p class="text-gray-300"><strong class="text-gray-200">Protein:</strong> ${meal.protein || "0"}g</p>
+                        <div class="flex justify-between mt-3">
+                            <button onclick="addMealToDiary('${meal.food}', ${meal.calories}, ${meal.protein})" class="px-3 py-1 bg-secondary text-white rounded text-sm hover:bg-secondary-dark transition-colors">
+                                <i class="fas fa-utensils mr-1"></i> Log
+                            </button>
+                            <button onclick="removeMealPlan('${day}', ${index})" class="px-3 py-1 bg-red-500 text-white rounded text-sm hover:bg-red-600 transition-colors">
+                                <i class="fas fa-trash-alt mr-1"></i> Remove
+                            </button>
+                        </div>
+                    `;
+
+                    contentContainer.appendChild(card);
+                });
+            } else {
+                contentContainer.innerHTML = `
+                    <div class="col-span-3 text-center p-8 text-gray-400">
+                        <i class="fas fa-utensils text-4xl mb-4"></i>
+                        <p>No meals planned for ${day.charAt(0).toUpperCase() + day.slice(1)}</p>
+                        <button onclick="generateMealPlan()" class="mt-4 px-4 py-2 bg-primary text-white rounded hover:bg-primary-dark transition-colors">
+                            Generate Meal Plan
+                        </button>
+                    </div>
+                `;
+            }
+        }
+
+        // Add meal plan
+        function addMealPlan() {
+            const day = document.getElementById('mealPlanDay').value;
+            const breakfast = document.getElementById('breakfastInput').value;
+            const lunch = document.getElementById('lunchInput').value;
+            const dinner = document.getElementById('dinnerInput').value;
+
+            const breakfastCalories = parseInt(document.getElementById('breakfastCalories').value) || 0;
+            const lunchCalories = parseInt(document.getElementById('lunchCalories').value) || 0;
+            const dinnerCalories = parseInt(document.getElementById('dinnerCalories').value) || 0;
+
+            const breakfastProtein = parseInt(document.getElementById('breakfastProtein').value) || 0;
+            const lunchProtein = parseInt(document.getElementById('lunchProtein').value) || 0;
+            const dinnerProtein = parseInt(document.getElementById('dinnerProtein').value) || 0;
+
+            if (!mealPlans[day]) {
+                mealPlans[day] = [];
+            }
+
+            if (breakfast) {
+                mealPlans[day].push({
+                    mealType: 'Breakfast',
+                    food: breakfast,
+                    calories: breakfastCalories,
+                    protein: breakfastProtein
+                });
+            }
+
+            if (lunch) {
+                mealPlans[day].push({
+                    mealType: 'Lunch',
+                    food: lunch,
+                    calories: lunchCalories,
+                    protein: lunchProtein
+                });
+            }
+
+            if (dinner) {
+                mealPlans[day].push({
+                    mealType: 'Dinner',
+                    food: dinner,
+                    calories: dinnerCalories,
+                    protein: dinnerProtein
+                });
+            }
+
+            // Clear inputs
+            clearMealInputs();
+
+            // Reload the meal plan
+            loadMealPlan(day);
+            saveToLocalStorage();
+
+            // Update recent meals in dashboard
+            updateRecentMeals();
+        }
+
+        // Remove meal plan
+        function removeMealPlan(day, index) {
+            if (mealPlans[day] && mealPlans[day][index]) {
+                mealPlans[day].splice(index, 1);
+                loadMealPlan(day);
+                saveToLocalStorage();
+                updateRecentMeals();
+            }
+        }
+
+        // Clear meal inputs
+        function clearMealInputs() {
+            document.getElementById('breakfastInput').value = '';
+            document.getElementById('lunchInput').value = '';
+            document.getElementById('dinnerInput').value = '';
+            document.getElementById('breakfastCalories').value = '';
+            document.getElementById('lunchCalories').value = '';
+            document.getElementById('dinnerCalories').value = '';
+            document.getElementById('breakfastProtein').value = '';
+            document.getElementById('lunchProtein').value = '';
+            document.getElementById('dinnerProtein').value = '';
+        }
+
+        // Generate meal plan
+        function generateMealPlan() {
+            const day = document.getElementById('mealPlanDay').value;
+
+            // Sample meal plan data - in a real app, this would be more sophisticated
+            const sampleMeals = {
+                breakfast: {
+                    food: 'Oatmeal with berries and nuts',
+                    calories: 350,
+                    protein: 12
+                },
+                lunch: {
+                    food: 'Grilled chicken salad with quinoa',
+                    calories: 450,
+                    protein: 35
+                },
+                dinner: {
+                    food: 'Baked salmon with roasted vegetables',
+                    calories: 500,
+                    protein: 40
+                }
+            };
+
+            // Fill the inputs with sample data
+            document.getElementById('breakfastInput').value = sampleMeals.breakfast.food;
+            document.getElementById('breakfastCalories').value = sampleMeals.breakfast.calories;
+            document.getElementById('breakfastProtein').value = sampleMeals.breakfast.protein;
+
+            document.getElementById('lunchInput').value = sampleMeals.lunch.food;
+            document.getElementById('lunchCalories').value = sampleMeals.lunch.calories;
+            document.getElementById('lunchProtein').value = sampleMeals.lunch.protein;
+
+            document.getElementById('dinnerInput').value = sampleMeals.dinner.food;
+            document.getElementById('dinnerCalories').value = sampleMeals.dinner.calories;
+            document.getElementById('dinnerProtein').value = sampleMeals.dinner.protein;
+
+            // Show a toast notification
+            showToast('Sample meal plan generated. Click "Add Meal Plan" to save it.');
+        }
+
+        // Add meal to diary
+        function addMealToDiary(food, calories, protein) {
+            document.getElementById('foodName').value = food;
+            document.getElementById('foodCalories').value = calories;
+            document.getElementById('foodProtein').value = protein;
+
+            // Focus on the food name field
+            document.getElementById('foodName').focus();
+
+            // Show a toast notification
+            showToast('Meal added to diary form. Fill in remaining details and click "Add Entry".');
+        }
+
+        // Search food (placeholder function)
+        function searchFood(mealType) {
+            // In a real app, this would search a food database
+            // For now, we'll just show a toast
+            showToast('Food search would connect to a nutrition database in a full implementation.');
+        }
+
+        // Search food database (placeholder function)
+        function searchFoodDatabase() {
+            showToast('This would open a comprehensive food database search in a full implementation.');
+        }
+
+        // Initialize macros chart
+        function initializeMacrosChart() {
+            const ctx = document.getElementById('macrosChart').getContext('2d');
+
+            macrosChart = new Chart(ctx, {
+                type: 'doughnut',
+                data: {
+                    labels: ['Protein', 'Carbs', 'Fats'],
+                    datasets: [{
+                        data: [0, 0, 0],
+                        backgroundColor: [
+                            'rgba(59, 130, 246, 0.7)',
+                            'rgba(234, 179, 8, 0.7)',
+                            'rgba(34, 197, 94, 0.7)'
+                        ],
+                        borderColor: [
+                            'rgba(59, 130, 246, 1)',
+                            'rgba(234, 179, 8, 1)',
+                            'rgba(34, 197, 94, 1)'
+                        ],
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    cutout: '70%',
+                    plugins: {
+                        legend: {
+                            position: 'bottom',
+                            labels: {
+                                color: '#e2e8f0',
+                                font: {
+                                    family: "'Inter', sans-serif"
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        // Update macros chart
+        function updateMacrosChart() {
+            if (macrosChart) {
+                macrosChart.data.datasets[0].data = [
+                    nutritionData.protein,
+                    nutritionData.carbs,
+                    nutritionData.fats
+                ];
+                macrosChart.update();
+            }
+        }
+
+        // Add diary entry
+        function addDiaryEntry() {
+            const mealType = document.getElementById('mealType').value;
+            const foodName = document.getElementById('foodName').value;
+            const calories = parseInt(document.getElementById('foodCalories').value) || 0;
+            const protein = parseInt(document.getElementById('foodProtein').value) || 0;
+            const carbs = parseInt(document.getElementById('foodCarbs').value) || 0;
+            const fats = parseInt(document.getElementById('foodFats').value) || 0;
+            const quantity = parseInt(document.getElementById('foodQuantity').value) || 1;
+
+            if (!foodName) {
+                showToast('Please enter a food name');
+                return;
+            }
+
+            const entry = {
+                id: Date.now(),
+                mealType,
+                foodName,
+                calories: calories * quantity,
+                protein: protein * quantity,
+                carbs: carbs * quantity,
+                fats: fats * quantity,
+                quantity,
+                date: new Date().toISOString()
+            };
+
+            diaryEntries.push(entry);
+
+            // Update nutrition data
+            nutritionData.calories += entry.calories;
+            nutritionData.protein += entry.protein;
+            nutritionData.carbs += entry.carbs;
+            nutritionData.fats += entry.fats;
+
+            // Update UI
+            updateDiarySummary();
+            updateDashboard();
+            renderDiaryEntries();
+
+            // Clear form
+            document.getElementById('foodName').value = '';
+            document.getElementById('foodCalories').value = '';
+            document.getElementById('foodProtein').value = '';
+            document.getElementById('foodCarbs').value = '';
+            document.getElementById('foodFats').value = '';
+            document.getElementById('foodQuantity').value = '1';
+
+            saveToLocalStorage();
+
+            // Show success message
+            showToast('Food entry added successfully');
+        }
+
+        // Fill food entry from recent foods
+        function fillFoodEntry(name, calories, protein, carbs, fats) {
+            document.getElementById('foodName').value = name;
+            document.getElementById('foodCalories').value = calories;
+            document.getElementById('foodProtein').value = protein;
+            document.getElementById('foodCarbs').value = carbs;
+            document.getElementById('foodFats').value = fats;
+
+            // Focus on the quantity field
+            document.getElementById('foodQuantity').focus();
+        }
+
+        // Remove diary entry
+        function removeDiaryEntry(id) {
+            const index = diaryEntries.findIndex(entry => entry.id === id);
+            if (index !== -1) {
+                // Subtract the entry's nutrition from totals
+                nutritionData.calories -= diaryEntries[index].calories;
+                nutritionData.protein -= diaryEntries[index].protein;
+                nutritionData.carbs -= diaryEntries[index].carbs;
+                nutritionData.fats -= diaryEntries[index].fats;
+
+                // Remove the entry
+                diaryEntries.splice(index, 1);
+
+                // Update UI
+                updateDiarySummary();
+                updateDashboard();
+                renderDiaryEntries();
+
+                saveToLocalStorage();
+
+                showToast('Entry removed');
+            }
+        }
+
+        // Render diary entries
+        function renderDiaryEntries() {
+            const container = document.getElementById('diaryEntries');
+            container.innerHTML = '';
+
+            if (diaryEntries.length === 0) {
+                container.innerHTML = `
+                    <tr>
+                        <td colspan="7" class="text-center py-4 text-gray-400">
+                            No entries yet. Add your first food entry above.
+                        </td>
+                    </tr>
+                `;
+                return;
+            }
+
+            // Group entries by meal type
+            const groupedEntries = {
+                breakfast: [],
+                lunch: [],
+                dinner: [],
+                snack: []
+            };
+
+            diaryEntries.forEach(entry => {
+                groupedEntries[entry.mealType].push(entry);
+            });
+
+            // Render each group
+            Object.entries(groupedEntries).forEach(([mealType, entries]) => {
+                if (entries.length > 0) {
+                    // Add meal type header
+                    const headerRow = document.createElement('tr');
+                    headerRow.className = 'bg-dark-400';
+                    headerRow.innerHTML = `
+                        <td colspan="7" class="p-2 font-semibold">
+                            ${mealType.charAt(0).toUpperCase() + mealType.slice(1)}
+                        </td>
+                    `;
+                    container.appendChild(headerRow);
+
+                    // Add entries
+                    entries.forEach(entry => {
+                        const row = document.createElement('tr');
+                        row.className = 'border-b border-dark-400';
+                        row.innerHTML = `
+                            <td class="p-2"></td>
+                            <td class="p-2">${entry.foodName}</td>
+                            <td class="p-2 text-right">${entry.calories}</td>
+                            <td class="p-2 text-right">${entry.protein}g</td>
+                            <td class="p-2 text-right">${entry.carbs}g</td>
+                            <td class="p-2 text-right">${entry.fats}g</td>
+                            <td class="p-2 text-center">
+                                <button onclick="removeDiaryEntry(${entry.id})" class="text-red-400 hover:text-red-300 transition-colors">
+                                    <i class="fas fa-trash-alt"></i>
+                                </button>
+                            </td>
+                        `;
+                        container.appendChild(row);
+                    });
+                }
+            });
+        }
+
+        // Update diary summary
+        function updateDiarySummary() {
+            document.getElementById('diaryCalories').textContent = nutritionData.calories;
+            document.getElementById('diaryProtein').textContent = nutritionData.protein;
+            document.getElementById('diaryCarbs').textContent = nutritionData.carbs;
+            document.getElementById('diaryFats').textContent = nutritionData.fats;
+
+            // Update remaining calories
+            const remaining = Math.max(0, nutritionGoals.calories - nutritionData.calories);
+            document.getElementById('remainingCalories').textContent = remaining;
+
+            // Update progress bar
+            const percentage = Math.min(100, (nutritionData.calories / nutritionGoals.calories) * 100);
+            document.getElementById('remainingCaloriesProgress').style.width = `${percentage}%`;
+
+            // Update macros chart
+            updateMacrosChart();
+        }
+
+        // Update dashboard
+        function updateDashboard() {
+            // Update progress bars
+            document.getElementById('currentCalories').textContent = nutritionData.calories;
+            document.getElementById('currentProtein').textContent = nutritionData.protein;
+            document.getElementById('currentCarbs').textContent = nutritionData.carbs;
+            document.getElementById('currentFats').textContent = nutritionData.fats;
+
+            document.getElementById('goalCalories').textContent = nutritionGoals.calories;
+            document.getElementById('goalProtein').textContent = nutritionGoals.protein;
+            document.getElementById('goalCarbs').textContent = nutritionGoals.carbs;
+            document.getElementById('goalFats').textContent = nutritionGoals.fats;
+
+            // Update progress bars
+            document.getElementById('caloriesProgress').style.width = `${Math.min(100, (nutritionData.calories / nutritionGoals.calories) * 100)}%`;
+            document.getElementById('proteinProgress').style.width = `${Math.min(100, (nutritionData.protein / nutritionGoals.protein) * 100)}%`;
+            document.getElementById('carbsProgress').style.width = `${Math.min(100, (nutritionData.carbs / nutritionGoals.carbs) * 100)}%`;
+            document.getElementById('fatsProgress').style.width = `${Math.min(100, (nutritionData.fats / nutritionGoals.fats) * 100)}%`;
+
+            // Update recent meals
+            updateRecentMeals();
+        }
+
+        // Update recent meals
+        function updateRecentMeals() {
+            const container = document.getElementById('recentMeals');
+            container.innerHTML = '';
+
+            // Get all meals from all days
+            const allMeals = [];
+            Object.values(mealPlans).forEach(dayMeals => {
+                allMeals.push(...dayMeals);
+            });
+
+            // Sort by most recent (simple implementation - in real app would use actual dates)
+            const recentMeals = allMeals.slice(-3).reverse();
+
+            if (recentMeals.length === 0) {
+                container.innerHTML = `
+                    <div class="text-center p-4 text-gray-400 col-span-3">
+                        <i class="fas fa-utensils text-3xl mb-2"></i>
+                        <p>No recent meals planned</p>
+                    </div>
+                `;
+                return;
+            }
+
+            recentMeals.forEach(meal => {
+                const card = document.createElement('div');
+                card.className = 'bg-dark-400 p-4 rounded-lg shadow fade-in';
+                card.innerHTML = `
+                    <h4 class="text-primary font-bold mb-1">${meal.mealType}</h4>
+                    <p class="text-gray-300 mb-2">${meal.food}</p>
+                    <div class="flex justify-between text-sm">
+                        <span>${meal.calories} kcal</span>
+                        <span>${meal.protein}g protein</span>
+                    </div>
+                `;
+                container.appendChild(card);
+            });
+        }
+
+        // Log exercise (placeholder function)
+        function logExercise() {
+            const type = document.getElementById('exerciseType').value;
+            const name = document.getElementById('exerciseName').value;
+            const duration = document.getElementById('exerciseDuration').value;
+            const calories = document.getElementById('exerciseCalories').value;
+            const notes = document.getElementById('exerciseNotes').value;
+
+            if (!name || !duration || !calories) {
+                showToast('Please fill in all required fields');
+                return;
+            }
+
+            // In a real app, this would save the exercise data
+            showToast('Exercise logged successfully!');
+            toggleModal(false);
+        }
+
+        // Show toast notification
+        function showToast(message) {
+            const toast = document.createElement('div');
+            toast.className = 'fixed bottom-4 left-1/2 transform -translate-x-1/2 bg-dark-300 text-white px-4 py-2 rounded shadow-lg flex items-center fade-in';
+            toast.innerHTML = `
+                <span>${message}</span>
+            `;
+
+            document.body.appendChild(toast);
+
+            setTimeout(() => {
+                toast.classList.add('opacity-0', 'transition-opacity', 'duration-300');
+                setTimeout(() => toast.remove(), 300);
+            }, 3000);
+        }
+
+        // Save data to localStorage
+        function saveToLocalStorage() {
+            const data = {
+                waterIntake,
+                waterGoal,
+                nutritionGoals,
+                nutritionData,
+                mealPlans,
+                diaryEntries
+            };
+
+            localStorage.setItem('nutritrackData', JSON.stringify(data));
+        }
+
+        // Load saved data from localStorage
+        function loadSavedData() {
+            const savedData = localStorage.getItem('nutritrackData');
+            if (savedData) {
+                const data = JSON.parse(savedData);
+
+                waterIntake = data.waterIntake || 0;
+                waterGoal = data.waterGoal || 8;
+                nutritionGoals = data.nutritionGoals || {
+                    calories: 2000,
+                    protein: 50,
+                    carbs: 300,
+                    fats: 65
+                };
+                nutritionData = data.nutritionData || {
+                    calories: 0,
+                    protein: 0,
+                    carbs: 0,
+                    fats: 0
+                };
+                mealPlans = data.mealPlans || {};
+                diaryEntries = data.diaryEntries || [];
+
+                // Update water display
+                document.getElementById('waterConsumed').textContent = waterIntake;
+                document.getElementById('waterGoal').textContent = waterGoal;
+
+                const circumference = 283;
+                const offset = circumference - (waterIntake / waterGoal) * circumference;
+                document.getElementById('waterProgressCircle').style.strokeDashoffset = offset;
+            }
+        }
+    </script>
+</body>
+
+</html>

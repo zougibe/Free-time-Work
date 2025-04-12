@@ -1,0 +1,276 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Task Manager</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;500;600;700&display=swap"
+        rel="stylesheet">
+</head>
+
+<body class="bg-[#121212] font-montserrat text-[#e0e0e0] h-screen overflow-hidden">
+    <div class="flex h-full">
+        <!-- Mobile Menu Button -->
+        <button class="md:hidden fixed top-4 left-4 z-50 p-2 bg-[#1e1e1e] rounded-lg border border-[#333] shadow-lg">
+            ☰
+        </button>
+
+        <!-- Sidebar -->
+        <div
+            class="w-[280px] bg-[#1e1e1e] border-r border-[#333] p-6 transition-transform fixed md:relative h-full z-40">
+            <h2 class="text-2xl font-bold mb-8">Task Manager</h2>
+            <div class="space-y-6">
+                <!-- Filter Toggle -->
+                <button id="filterToggle"
+                    class="w-full flex justify-between items-center bg-[#121212] px-4 py-2 rounded-lg hover:bg-[#1a1a1a] transition-colors">
+                    <span>Filters</span>
+                    <svg id="filterChevron" class="w-5 h-5 transform transition-transform" fill="none"
+                        stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+                    </svg>
+                </button>
+
+                <!-- Filter Group -->
+                <div id="filterGroup" class="hidden space-y-4">
+                    <select id="statusFilter"
+                        class="w-full bg-[#121212] border border-[#333] rounded-lg px-4 py-2 focus:ring-2 focus:ring-purple-500">
+                        <option value="all">All Status</option>
+                        <option value="pending">Pending</option>
+                        <option value="completed">Completed</option>
+                    </select>
+                    <select id="priorityFilter"
+                        class="w-full bg-[#121212] border border-[#333] rounded-lg px-4 py-2 focus:ring-2 focus:ring-purple-500">
+                        <option value="all">All Priorities</option>
+                        <option value="low">Low</option>
+                        <option value="medium">Medium</option>
+                        <option value="high">High</option>
+                    </select>
+                </div>
+
+                <button id="newTaskBtn"
+                    class="w-full bg-gradient-to-r from-[#8a63d2] to-[#6d28d9] text-white py-3 rounded-lg font-semibold hover:opacity-90 active:scale-[98%] transition-all">
+                    New Task
+                </button>
+            </div>
+        </div>
+
+        <!-- Main Content -->
+        <div class="flex-1 flex flex-col md:flex-row overflow-hidden">
+            <!-- Task List -->
+            <div class="flex-1 p-6 overflow-y-auto space-y-4" id="taskList"></div>
+
+            <!-- Task Details -->
+            <div class="md:w-[400px] bg-[#1e1e1e] border-t md:border-l border-[#333] p-6 overflow-y-auto"
+                id="taskDetails">
+                <h2 class="text-xl font-bold mb-6">Task Details</h2>
+                <div class="space-y-5" id="detailsContent"></div>
+            </div>
+        </div>
+    </div>
+
+    <style>
+        ::-webkit-scrollbar {
+            width: 8px;
+            background: #1a1a1a;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: #333;
+            border-radius: 4px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: #444;
+        }
+    </style>
+
+    <script>
+        // Toggle Filters
+        const filterToggle = document.getElementById('filterToggle');
+        const filterGroup = document.getElementById('filterGroup');
+        const filterChevron = document.getElementById('filterChevron');
+        let filtersVisible = false;
+
+        filterToggle.addEventListener('click', () => {
+            filtersVisible = !filtersVisible;
+            filterGroup.classList.toggle('hidden');
+            filterChevron.classList.toggle('rotate-180');
+        });
+
+        // Task Manager Class
+        class TaskManager {
+            constructor() {
+                this.tasks = JSON.parse(localStorage.getItem('tasks')) || [];
+                this.selectedTask = null;
+                this.initEventListeners();
+                this.renderTasks();
+            }
+
+            initEventListeners() {
+                document.getElementById('newTaskBtn').addEventListener('click', () => this.createTask());
+                document.getElementById('statusFilter').addEventListener('change', () => this.renderTasks());
+                document.getElementById('priorityFilter').addEventListener('change', () => this.renderTasks());
+                document.querySelector('.mobile-menu-btn').addEventListener('click', () => {
+                    document.querySelector('.sidebar').classList.toggle('hidden');
+                });
+            }
+
+            createTask() {
+                const task = {
+                    id: Date.now(),
+                    title: 'New Task',
+                    description: '',
+                    status: 'pending',
+                    priority: 'medium',
+                    date: new Date().toISOString().split('T')[0]
+                };
+                this.tasks.push(task);
+                this.saveTasks();
+                this.renderTasks();
+                this.showTaskDetails(task);
+            }
+
+            updateTask(id, updates) {
+                const taskIndex = this.tasks.findIndex(t => t.id === id);
+                if (taskIndex !== -1) {
+                    this.tasks[taskIndex] = { ...this.tasks[taskIndex], ...updates };
+                    this.saveTasks();
+                    this.renderTasks();
+                    this.showTaskDetails(this.tasks[taskIndex]);
+                }
+            }
+
+            deleteTask(id) {
+                this.tasks = this.tasks.filter(t => t.id !== id);
+                this.saveTasks();
+                this.renderTasks();
+                this.selectedTask = null;
+                this.showTaskDetails(null);
+            }
+
+            saveTasks() {
+                localStorage.setItem('tasks', JSON.stringify(this.tasks));
+            }
+
+            renderTasks() {
+                const taskList = document.getElementById('taskList');
+                const statusFilter = document.getElementById('statusFilter').value;
+                const priorityFilter = document.getElementById('priorityFilter').value;
+
+                const filteredTasks = this.tasks.filter(task =>
+                    (statusFilter === 'all' || task.status === statusFilter) &&
+                    (priorityFilter === 'all' || task.priority === priorityFilter)
+                );
+
+                taskList.innerHTML = '';
+                filteredTasks.forEach(task => {
+                    const taskItem = document.createElement('div');
+                    taskItem.className = 'task-item bg-[#1e1e1e] border border-[#333] rounded-xl p-4 hover:-translate-y-1 hover:shadow-xl transition-all cursor-pointer';
+                    taskItem.innerHTML = `
+                        <h3 class="font-semibold text-lg mb-2">${task.title}</h3>
+                        <p class="text-[#b3b3b3] text-sm mb-3">${task.description || '<em>No description</em>'}</p>
+                        <div class="flex gap-3 items-center">
+                            <span class="px-2 py-1 rounded-full text-xs font-bold ${this.getPriorityClass(task.priority)}">
+                                ${task.priority.toUpperCase()}
+                            </span>
+                            <span class="text-sm ${task.status === 'completed' ? 'text-green-400' : 'text-red-400'}">
+                                ● ${task.status.charAt(0).toUpperCase() + task.status.slice(1)}
+                            </span>
+                        </div>
+                    `;
+                    taskItem.addEventListener('click', () => this.showTaskDetails(task));
+                    taskList.appendChild(taskItem);
+                });
+            }
+
+            getPriorityClass(priority) {
+                return {
+                    low: 'bg-green-800/30 text-green-400',
+                    medium: 'bg-yellow-800/30 text-yellow-400',
+                    high: 'bg-red-800/30 text-red-400'
+                }[priority];
+            }
+
+            showTaskDetails(task) {
+                this.selectedTask = task;
+                const details = document.getElementById('detailsContent');
+                details.innerHTML = '';
+
+                if (!task) {
+                    details.innerHTML = '<p class="text-[#b3b3b3]">Select a task to view details</p>';
+                    return;
+                }
+
+                // Title Input
+                const titleInput = document.createElement('input');
+                titleInput.value = task.title;
+                titleInput.className = 'w-full bg-[#121212] border border-[#333] rounded-lg px-4 py-2 focus:ring-2 focus:ring-purple-500';
+
+                // Description Input
+                const descInput = document.createElement('textarea');
+                descInput.value = task.description;
+                descInput.className = 'w-full bg-[#121212] border border-[#333] rounded-lg px-4 py-2 h-32 focus:ring-2 focus:ring-purple-500';
+
+                // Status Select
+                const statusSelect = document.createElement('select');
+                statusSelect.className = 'w-full bg-[#121212] border border-[#333] rounded-lg px-4 py-2 focus:ring-2 focus:ring-purple-500';
+                ['pending', 'completed'].forEach(optionValue => {
+                    const opt = document.createElement('option');
+                    opt.value = optionValue;
+                    opt.textContent = optionValue.charAt(0).toUpperCase() + optionValue.slice(1);
+                    if (task.status === optionValue) opt.selected = true;
+                    statusSelect.appendChild(opt);
+                });
+
+                // Priority Select
+                const prioritySelect = document.createElement('select');
+                prioritySelect.className = 'w-full bg-[#121212] border border-[#333] rounded-lg px-4 py-2 focus:ring-2 focus:ring-purple-500';
+                ['low', 'medium', 'high'].forEach(optionValue => {
+                    const opt = document.createElement('option');
+                    opt.value = optionValue;
+                    opt.textContent = optionValue.charAt(0).toUpperCase() + optionValue.slice(1);
+                    if (task.priority === optionValue) opt.selected = true;
+                    prioritySelect.appendChild(opt);
+                });
+
+                // Save Button
+                const saveBtn = document.createElement('button');
+                saveBtn.className = 'flex-1 bg-gradient-to-r from-[#8a63d2] to-[#6d28d9] py-2 rounded-lg hover:opacity-90 transition-opacity';
+                saveBtn.textContent = 'Save';
+                saveBtn.onclick = () => {
+                    this.updateTask(task.id, {
+                        title: titleInput.value,
+                        description: descInput.value,
+                        status: statusSelect.value,
+                        priority: prioritySelect.value
+                    });
+                };
+
+                // Delete Button
+                const deleteBtn = document.createElement('button');
+                deleteBtn.className = 'flex-1 bg-red-500/30 border border-red-500/50 text-red-400 py-2 rounded-lg hover:bg-red-500/40 transition-colors';
+                deleteBtn.textContent = 'Delete';
+                deleteBtn.onclick = () => this.deleteTask(task.id);
+
+                // Button Container
+                const buttonContainer = document.createElement('div');
+                buttonContainer.className = 'flex gap-3';
+                buttonContainer.appendChild(saveBtn);
+                buttonContainer.appendChild(deleteBtn);
+
+                // Assemble Form
+                details.appendChild(titleInput);
+                details.appendChild(descInput);
+                details.appendChild(statusSelect);
+                details.appendChild(prioritySelect);
+                details.appendChild(buttonContainer);
+            }
+        }
+
+        const taskManager = new TaskManager();
+    </script>
+</body>
+
+</html>

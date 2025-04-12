@@ -1,0 +1,338 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Recipe Suggester</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+
+        .recipe-card {
+            transition: all 0.2s ease-in-out;
+        }
+
+        .recipe-card:hover {
+            transform: translateY(-2px);
+        }
+    </style>
+</head>
+
+<body class="bg-gray-50 min-h-screen">
+    <div class="container mx-auto px-4">
+        <header class="bg-gradient-to-r from-or-400 to-yellow-400 py-6 shadow-md mb-8 rounded-b-lg">
+            <h1 class="text-3xl font-bold text-gray-800 text-center">Recipe Suggester</h1>
+        </header>
+
+        <div class="flex flex-col lg:flex-row gap-6 mb-8">
+            <!-- Left Column -->
+            <div class="w-full lg:w-1/2 flex flex-col gap-6">
+                <!-- Ingredients Input -->
+                <div class="bg-white p-6 rounded-lg shadow-md">
+                    <h2 class="text-xl font-semibold text-gray-800 mb-4">Available Ingredients</h2>
+                    <label for="ingredients" class="block text-sm font-medium text-gray-700 mb-2">
+                        Enter your ingredients (one per line or comma separated):
+                    </label>
+                    <textarea id="ingredients"
+                        class="w-full h-40 p-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-yellow-400 focus:border-transparent"
+                        placeholder="e.g.
+chicken
+rice
+tomatoes
+onions
+or: chicken, rice, tomatoes, onions"></textarea>
+                    <button onclick="suggestRecipes()"
+                        class="mt-4 bg-yellow-500 hover:bg-yellow-600 text-white font-medium py-2 px-6 rounded-md transition duration-200 transform hover:scale-105 shadow-md">
+                        Get Recipe Suggestions
+                    </button>
+                </div>
+
+                <!-- Notes Section -->
+                <div class="bg-white p-6 rounded-lg shadow-md flex flex-col">
+                    <div class="flex justify-between items-center mb-2">
+                        <h2 class="text-xl font-semibold text-gray-800">My Recipe Notes</h2>
+                        <button onclick="saveNotes()"
+                            class="text-sm bg-gray-100 hover:bg-gray-200 text-gray-700 py-1 px-3 rounded transition">
+                            Save Notes
+                        </button>
+                    </div>
+                    <div class="flex gap-2 mb-3">
+                        <button onclick="addNoteTag('Substitution')"
+                            class="text-xs bg-blue-100 text-blue-700 px-2 py-1 rounded">Substitution</button>
+                        <button onclick="addNoteTag('Modification')"
+                            class="text-xs bg-green-100 text-green-700 px-2 py-1 rounded">Modification</button>
+                        <button onclick="addNoteTag('Idea')"
+                            class="text-xs bg-purple-100 text-purple-700 px-2 py-1 rounded">Idea</button>
+                        <button onclick="addNoteTag('Question')"
+                            class="text-xs bg-red-100 text-red-700 px-2 py-1 rounded">Question</button>
+                    </div>
+                    <textarea id="notes"
+                        class="flex-grow w-full p-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-yellow-400 focus:border-transparent"
+                        placeholder="Add your notes, substitutions, or modifications here..."></textarea>
+                    <div class="mt-2 text-sm text-gray-500">
+                        <span id="lastSaved" class="text-gray-400"></span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Recipes Section -->
+            <div class="w-full lg:w-1/2 bg-white p-6 rounded-lg shadow-md">
+                <h2 class="text-xl font-semibold text-gray-800 mb-4">Suggested Recipes</h2>
+                <div id="recipes"
+                    class="grid grid-cols-1 md:grid-cols-2 gap-4 overflow-y-auto max-h-[calc(100vh-250px)]">
+                    <div class="text-center py-10 text-gray-500">
+                        Enter your ingredients and click "Get Recipe Suggestions" to see recipes
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const recipeDatabase = [
+            {
+                name: "Chicken Fried Rice",
+                ingredients: ["chicken", "rice", "eggs", "soy sauce", "onions"],
+                time: "30 minutes",
+                difficulty: "Easy",
+                steps: [
+                    "Cook rice according to package instructions",
+                    "Dice chicken and sauté with onions until cooked",
+                    "Scramble eggs and mix with chicken",
+                    "Add cooked rice and soy sauce, stir-fry for 5 minutes"
+                ]
+            },
+            {
+                name: "Chicken Tomato Stew",
+                ingredients: ["chicken", "tomatoes", "onions", "garlic"],
+                time: "45 minutes",
+                difficulty: "Medium",
+                steps: [
+                    "Brown chicken pieces in a pot",
+                    "Add chopped onions and garlic, sauté until fragrant",
+                    "Add diced tomatoes and simmer for 30 minutes",
+                    "Season to taste with salt and pepper"
+                ]
+            },
+            {
+                name: "Simple Tomato Rice",
+                ingredients: ["rice", "tomatoes", "onions"],
+                time: "25 minutes",
+                difficulty: "Easy",
+                steps: [
+                    "Sauté onions until translucent",
+                    "Add chopped tomatoes and cook until soft",
+                    "Mix in rice and water, cook until rice is tender"
+                ]
+            },
+            {
+                name: "Vegetable Stir Fry",
+                ingredients: ["bell peppers", "broccoli", "carrots", "soy sauce"],
+                time: "20 minutes",
+                difficulty: "Easy",
+                steps: [
+                    "Chop all vegetables into bite-sized pieces",
+                    "Heat oil in a wok or large pan",
+                    "Stir-fry vegetables for 5-7 minutes until crisp-tender",
+                    "Add soy sauce and toss to coat"
+                ]
+            },
+            {
+                name: "Pasta Primavera",
+                ingredients: ["pasta", "zucchini", "bell peppers", "tomatoes"],
+                time: "25 minutes",
+                difficulty: "Easy",
+                steps: [
+                    "Cook pasta according to package instructions",
+                    "Sauté chopped vegetables in olive oil",
+                    "Combine cooked pasta with vegetables",
+                    "Season with salt, pepper, and herbs"
+                ]
+            },
+            {
+                name: "Egg Fried Rice",
+                ingredients: ["rice", "eggs", "peas", "carrots"],
+                time: "20 minutes",
+                difficulty: "Easy",
+                steps: [
+                    "Scramble eggs in a pan and set aside",
+                    "Sauté chopped vegetables",
+                    "Add cooked rice and eggs back to the pan",
+                    "Season with soy sauce and stir-fry for 3-5 minutes"
+                ]
+            }
+        ];
+
+        function suggestRecipes() {
+            const input = document.getElementById("ingredients").value;
+            // Handle both comma-separated and line-separated inputs
+            const userIngredients = input.toLowerCase()
+                .split(/[\n,]/)
+                .map(item => item.trim())
+                .filter(item => item.length > 0);
+
+            if (userIngredients.length === 0) {
+                alert("Please enter at least one ingredient");
+                return;
+            }
+
+            // Score recipes based on how many ingredients match
+            const scoredRecipes = recipeDatabase.map(recipe => {
+                const matchedIngredients = recipe.ingredients.filter(ingredient =>
+                    userIngredients.includes(ingredient)
+                );
+                return {
+                    ...recipe,
+                    score: matchedIngredients.length / recipe.ingredients.length,
+                    matchedCount: matchedIngredients.length
+                };
+            });
+
+            // Filter recipes with at least one matching ingredient and sort by best match
+            const matchingRecipes = scoredRecipes
+                .filter(recipe => recipe.matchedCount > 0)
+                .sort((a, b) => b.score - a.score);
+
+            displayRecipes(matchingRecipes);
+        }
+
+        function displayRecipes(recipes) {
+            const recipesDiv = document.getElementById("recipes");
+            recipesDiv.innerHTML = "";
+
+            if (recipes.length === 0) {
+                recipesDiv.innerHTML = `
+          <div class="col-span-2 text-center py-10 text-gray-500">
+            No recipes found with those ingredients. Try adding more ingredients.
+          </div>
+        `;
+                return;
+            }
+
+            recipes.forEach(recipe => {
+                const card = document.createElement("div");
+                card.className = "recipe-card bg-white rounded-lg overflow-hidden shadow-md hover:shadow-lg";
+
+                const stepsList = recipe.steps.map((step, i) =>
+                    `<li class="mb-1">${step}</li>`
+                ).join("");
+
+                card.innerHTML = `
+          <div class="h-40 bg-gray-200 flex items-center justify-center">
+            <span class="text-gray-500">${recipe.name}</span>
+          </div>
+          <div class="p-4">
+            <div class="flex justify-between items-start mb-2">
+              <h3 class="text-lg font-semibold text-gray-800">${recipe.name}</h3>
+              <span class="text-xs px-2 py-1 rounded-full ${getDifficultyColor(recipe.difficulty)}">
+                ${recipe.difficulty}
+              </span>
+            </div>
+            <div class="flex justify-between text-sm text-gray-600 mb-3">
+              <span>⏱ ${recipe.time}</span>
+              <span>${recipe.matchedCount}/${recipe.ingredients.length} ingredients</span>
+            </div>
+            <div class="text-sm mb-3">
+              <p class="font-medium text-gray-700">Ingredients:</p>
+              <p class="text-gray-600">${recipe.ingredients.join(", ")}</p>
+            </div>
+            <details class="mb-2">
+              <summary class="font-medium text-gray-700 cursor-pointer">Steps</summary>
+              <ol class="list-decimal list-inside text-sm text-gray-600 mt-2 pl-2">${stepsList}</ol>
+            </details>
+            <button 
+              onclick="addRecipeNote('${recipe.name}')"
+              class="mt-2 text-xs bg-gray-100 hover:bg-gray-200 text-gray-700 py-1 px-2 rounded transition w-full"
+            >
+              Add Note for This Recipe
+            </button>
+          </div>
+        `;
+
+                recipesDiv.appendChild(card);
+            });
+        }
+
+        function getDifficultyColor(difficulty) {
+            switch (difficulty.toLowerCase()) {
+                case 'easy': return 'bg-green-100 text-green-800';
+                case 'medium': return 'bg-yellow-100 text-yellow-800';
+                case 'hard': return 'bg-red-100 text-red-800';
+                default: return 'bg-gray-100 text-gray-800';
+            }
+        }
+
+        // Notes functionality
+        function saveNotes() {
+            const notes = document.getElementById("notes").value;
+            localStorage.setItem("recipeNotes", notes);
+            updateLastSavedTime();
+        }
+
+        function loadNotes() {
+            const notes = localStorage.getItem("recipeNotes") || "";
+            document.getElementById("notes").value = notes;
+            updateLastSavedTime();
+        }
+
+        function updateLastSavedTime() {
+            const lastSaved = localStorage.getItem("recipeNotesLastSaved");
+            const element = document.getElementById("lastSaved");
+
+            if (lastSaved) {
+                element.textContent = `Last saved: ${new Date(lastSaved).toLocaleString()}`;
+            } else {
+                element.textContent = "";
+            }
+        }
+
+        function addNoteTag(tag) {
+            const notes = document.getElementById("notes");
+            const cursorPos = notes.selectionStart;
+            const textBefore = notes.value.substring(0, cursorPos);
+            const textAfter = notes.value.substring(cursorPos);
+
+            notes.value = `${textBefore}[${tag}] ${textAfter}`;
+            notes.focus();
+            notes.selectionStart = notes.selectionEnd = cursorPos + tag.length + 3;
+        }
+
+        function addRecipeNote(recipeName) {
+            const notes = document.getElementById("notes");
+            const cursorPos = notes.selectionStart;
+            const textBefore = notes.value.substring(0, cursorPos);
+            const textAfter = notes.value.substring(cursorPos);
+
+            const noteHeader = `\n\n=== ${recipeName} ===\n`;
+
+            notes.value = `${textBefore}${noteHeader}${textAfter}`;
+            notes.focus();
+            notes.selectionStart = notes.selectionEnd = cursorPos + noteHeader.length;
+        }
+
+        // Initialize
+        document.addEventListener("DOMContentLoaded", () => {
+            loadNotes();
+
+            // Auto-save notes every 30 seconds
+            setInterval(() => {
+                if (document.getElementById("notes").value) {
+                    saveNotes();
+                }
+            }, 30000);
+
+            // Also save on page unload
+            window.addEventListener("beforeunload", () => {
+                if (document.getElementById("notes").value) {
+                    saveNotes();
+                }
+            });
+        });
+    </script>
+</body>
+
+</html>

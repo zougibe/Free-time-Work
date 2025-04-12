@@ -1,0 +1,613 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Data Science Report Generator</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        primary: {
+                            900: '#0f172a',
+                            800: '#1e293b',
+                            700: '#334155',
+                        },
+                        accent: {
+                            500: '#3b82f6',
+                            600: '#2563eb',
+                        },
+                        success: {
+                            500: '#10b981',
+                            600: '#059669',
+                        },
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'system-ui', 'sans-serif'],
+                    },
+                }
+            }
+        }
+    </script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+</head>
+
+<body class="bg-primary-900 text-gray-200 min-h-screen p-4 font-sans">
+    <div class="max-w-7xl mx-auto space-y-6">
+        <!-- Header -->
+        <header
+            class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 p-6 bg-primary-800 rounded-xl shadow-lg border border-primary-700">
+            <div class="flex items-center space-x-3">
+                <div class="p-3 bg-accent-600 rounded-lg">
+                    <i class="fa-solid fa-flask text-white text-xl"></i>
+                </div>
+                <div>
+                    <h1
+                        class="text-2xl font-bold bg-gradient-to-r from-accent-400 to-accent-600 bg-clip-text text-transparent">
+                        Data Science Report Generator</h1>
+                    <p class="text-sm text-gray-400">Create professional reports with ease</p>
+                </div>
+            </div>
+            <div class="flex flex-wrap gap-2">
+                <button onclick="exportPDF()"
+                    class="px-4 py-2 bg-success-500 hover:bg-success-600 transition-all rounded-lg flex items-center gap-2 shadow hover:shadow-lg">
+                    <i class="fa-solid fa-file-pdf"></i>
+                    <span>Export PDF</span>
+                </button>
+                <button onclick="saveReport()"
+                    class="px-4 py-2 bg-primary-700 hover:bg-primary-600 border border-primary-600 transition-all rounded-lg flex items-center gap-2">
+                    <i class="fa-solid fa-save"></i>
+                    <span>Save</span>
+                </button>
+                <button onclick="loadReport()"
+                    class="px-4 py-2 bg-primary-700 hover:bg-primary-600 border border-primary-600 transition-all rounded-lg flex items-center gap-2">
+                    <i class="fa-solid fa-folder-open"></i>
+                    <span>Load</span>
+                </button>
+                <button onclick="showShareModal()"
+                    class="px-4 py-2 bg-accent-600 hover:bg-accent-500 transition-all rounded-lg flex items-center gap-2">
+                    <i class="fa-solid fa-share-alt"></i>
+                    <span>Share</span>
+                </button>
+            </div>
+        </header>
+
+        <!-- Main Content -->
+        <div class="grid grid-cols-1 lg:grid-cols-4 gap-6">
+            <!-- Report Sections -->
+            <main class="lg:col-span-3 space-y-6" id="reportSections">
+                <div class="group relative bg-primary-800 p-6 rounded-xl border border-primary-700 hover:border-accent-500 transition-all shadow-lg"
+                    draggable="true" data-title="Introduction">
+                    <div class="drag-handle"></div>
+                    <h2 class="text-xl font-semibold text-accent-500 mb-4 flex items-center gap-2">
+                        <i class="fa-solid fa-paragraph text-gray-400"></i>
+                        Introduction
+                    </h2>
+                    <div class="section-content" contenteditable="true">
+                        <p>Describe the purpose and objectives of your analysis. What questions are you trying to
+                            answer?</p>
+                    </div>
+                </div>
+
+                <div class="group relative bg-primary-800 p-6 rounded-xl border border-primary-700 hover:border-accent-500 transition-all shadow-lg"
+                    draggable="true" data-title="Data">
+                    <div class="drag-handle"></div>
+                    <h2 class="text-xl font-semibold text-accent-500 mb-4 flex items-center gap-2">
+                        <i class="fa-solid fa-database text-gray-400"></i>
+                        Data
+                    </h2>
+                    <div class="section-content" contenteditable="true">
+                        <p>Describe your data sources, collection methods, and any preprocessing steps.</p>
+                    </div>
+                </div>
+
+                <div class="group relative bg-primary-800 p-6 rounded-xl border border-primary-700 hover:border-accent-500 transition-all shadow-lg"
+                    draggable="true" data-title="Analysis">
+                    <div class="drag-handle"></div>
+                    <h2 class="text-xl font-semibold text-accent-500 mb-4 flex items-center gap-2">
+                        <i class="fa-solid fa-chart-line text-gray-400"></i>
+                        Analysis
+                    </h2>
+                    <div class="section-content" contenteditable="true">
+                        <p>Present your findings, visualizations, and statistical analyses.</p>
+                        <p class="mt-2 text-gray-400 italic">Tip: Use code blocks for equations and algorithms:</p>
+                        <pre class="bg-primary-900 p-3 rounded-md mt-2 text-sm"><code>def linear_regression(X, y):
+    # Calculate coefficients
+    beta = np.linalg.inv(X.T @ X) @ X.T @ y
+    return beta</code></pre>
+                    </div>
+                </div>
+
+                <div class="group relative bg-primary-800 p-6 rounded-xl border border-primary-700 hover:border-accent-500 transition-all shadow-lg"
+                    draggable="true" data-title="Conclusion">
+                    <div class="drag-handle"></div>
+                    <h2 class="text-xl font-semibold text-accent-500 mb-4 flex items-center gap-2">
+                        <i class="fa-solid fa-flag-checkered text-gray-400"></i>
+                        Conclusion
+                    </h2>
+                    <div class="section-content" contenteditable="true">
+                        <p>Summarize your key findings and discuss their implications.</p>
+                    </div>
+                </div>
+            </main>
+
+            <!-- Sidebar -->
+            <aside class="bg-primary-800 p-6 rounded-xl border border-primary-700 shadow-lg h-fit sticky top-6">
+                <h3 class="text-lg font-semibold text-accent-500 mb-6 flex items-center gap-2">
+                    <i class="fa-solid fa-sliders"></i>
+                    Customization
+                </h3>
+
+                <div class="space-y-6">
+                    <!-- Add New Section -->
+                    <div>
+                        <label class="block text-sm font-medium text-gray-300 mb-2">Add Section</label>
+                        <div class="flex gap-2">
+                            <input type="text" id="newSectionName" placeholder="Section name"
+                                class="flex-1 bg-primary-700 border border-primary-600 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-accent-500 focus:border-transparent">
+                            <button onclick="addSection()"
+                                class="px-3 py-2 bg-accent-600 hover:bg-accent-500 rounded-lg text-sm">
+                                <i class="fa-solid fa-plus"></i>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Font Size -->
+                    <div>
+                        <label for="fontSize"
+                            class="block text-sm font-medium text-gray-300 mb-2 flex items-center gap-2">
+                            <i class="fa-solid fa-text-height text-gray-400"></i>
+                            Font Size
+                        </label>
+                        <input type="range" id="fontSize" min="12" max="24" value="16"
+                            class="w-full h-2 bg-primary-700 rounded-lg appearance-none cursor-pointer accent-accent-500">
+                        <div class="flex justify-between text-xs text-gray-400 mt-1">
+                            <span>Small</span>
+                            <span>Large</span>
+                        </div>
+                    </div>
+
+                    <!-- Color Theme -->
+                    <div>
+                        <label class="block text-sm font-medium text-gray-300 mb-2 flex items-center gap-2">
+                            <i class="fa-solid fa-palette text-gray-400"></i>
+                            Color Theme
+                        </label>
+                        <div class="grid grid-cols-3 gap-2">
+                            <button onclick="setTheme('blue')"
+                                class="h-8 rounded-lg bg-gradient-to-r from-blue-500 to-blue-600 border-2 border-transparent hover:border-white transition-all"></button>
+                            <button onclick="setTheme('emerald')"
+                                class="h-8 rounded-lg bg-gradient-to-r from-emerald-500 to-emerald-600 border-2 border-transparent hover:border-white transition-all"></button>
+                            <button onclick="setTheme('purple')"
+                                class="h-8 rounded-lg bg-gradient-to-r from-purple-500 to-purple-600 border-2 border-transparent hover:border-white transition-all"></button>
+                        </div>
+                    </div>
+
+                    <!-- Upload Files -->
+                    <div>
+                        <label class="block text-sm font-medium text-gray-300 mb-2 flex items-center gap-2">
+                            <i class="fa-solid fa-upload text-gray-400"></i>
+                            Upload Files
+                        </label>
+                        <div class="flex items-center justify-center w-full">
+                            <label for="fileInput"
+                                class="flex flex-col items-center justify-center w-full h-32 border-2 border-dashed border-primary-600 rounded-lg cursor-pointer bg-primary-700 hover:bg-primary-700/50 transition-all">
+                                <div class="flex flex-col items-center justify-center pt-5 pb-6">
+                                    <i class="fa-solid fa-cloud-arrow-up text-2xl text-gray-400 mb-2"></i>
+                                    <p class="text-sm text-gray-400">Drag & drop or click to browse</p>
+                                </div>
+                                <input id="fileInput" type="file" class="hidden" accept="image/*,.csv,.json,.xlsx">
+                            </label>
+                        </div>
+                    </div>
+                </div>
+            </aside>
+        </div>
+    </div>
+
+    <!-- Share Modal -->
+    <div id="shareModal"
+        class="fixed inset-0 bg-black/70 flex items-center justify-center p-4 z-50 opacity-0 pointer-events-none transition-opacity duration-300">
+        <div
+            class="bg-primary-800 rounded-xl border border-primary-700 p-6 w-full max-w-md shadow-2xl transform transition-all duration-300 scale-95">
+            <div class="flex justify-between items-center mb-4">
+                <h3 class="text-xl font-semibold text-accent-500">Share Report</h3>
+                <button onclick="hideShareModal()" class="text-gray-400 hover:text-white">
+                    <i class="fa-solid fa-xmark text-xl"></i>
+                </button>
+            </div>
+
+            <div class="space-y-4">
+                <div>
+                    <label class="block text-sm font-medium text-gray-300 mb-1">Email</label>
+                    <input type="email" id="emailInput" placeholder="recipient@example.com"
+                        class="w-full bg-primary-700 border border-primary-600 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-accent-500 focus:border-transparent">
+                </div>
+
+                <div>
+                    <label class="block text-sm font-medium text-gray-300 mb-1">Share Link</label>
+                    <div class="flex gap-2">
+                        <input type="text" id="shareLink" value="https://report.example.com/123" readonly
+                            class="flex-1 bg-primary-700 border border-primary-600 rounded-lg px-3 py-2 text-sm truncate">
+                        <button onclick="copyLink()"
+                            class="px-3 py-2 bg-accent-600 hover:bg-accent-500 rounded-lg text-sm">
+                            <i class="fa-solid fa-copy"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <div class="flex justify-end gap-3 pt-4">
+                    <button onclick="hideShareModal()"
+                        class="px-4 py-2 text-gray-300 hover:text-white transition-all">Cancel</button>
+                    <button onclick="sendEmail()"
+                        class="px-4 py-2 bg-accent-600 hover:bg-accent-500 rounded-lg transition-all">
+                        Send Email
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Initialize with better typography
+        document.querySelectorAll('.section-content').forEach(el => {
+            el.style.fontSize = '16px';
+        });
+
+        // Drag and Drop with improved UX
+        let draggedItem = null;
+        const reportSections = document.getElementById('reportSections');
+
+        reportSections.addEventListener('dragstart', e => {
+            if (e.target.classList.contains('group')) {
+                draggedItem = e.target;
+                e.target.style.opacity = '0.5';
+                e.target.classList.add('dragging');
+                document.body.classList.add('cursor-grabbing');
+            }
+        });
+
+        reportSections.addEventListener('dragend', () => {
+            if (draggedItem) {
+                draggedItem.style.opacity = '1';
+                draggedItem.classList.remove('dragging');
+                draggedItem = null;
+                document.body.classList.remove('cursor-grabbing');
+            }
+        });
+
+        reportSections.addEventListener('dragover', e => {
+            e.preventDefault();
+            const afterElement = getDragAfterElement(reportSections, e.clientY);
+            if (afterElement) {
+                reportSections.insertBefore(draggedItem, afterElement);
+            } else {
+                reportSections.appendChild(draggedItem);
+            }
+        });
+
+        function getDragAfterElement(container, y) {
+            const draggableElements = [...container.querySelectorAll('.group:not(.dragging)')];
+
+            return draggableElements.reduce((closest, child) => {
+                const box = child.getBoundingClientRect();
+                const offset = y - box.top - box.height / 2;
+
+                if (offset < 0 && offset > closest.offset) {
+                    return { offset: offset, element: child };
+                } else {
+                    return closest;
+                }
+            }, { offset: Number.NEGATIVE_INFINITY }).element;
+        }
+
+        // Section Management
+        function addSection() {
+            const name = document.getElementById('newSectionName').value.trim();
+            if (!name) {
+                showToast('Please enter a section name', 'error');
+                return;
+            }
+
+            const newSection = document.createElement('div');
+            newSection.className = 'group relative bg-primary-800 p-6 rounded-xl border border-primary-700 hover:border-accent-500 transition-all shadow-lg';
+            newSection.setAttribute('draggable', 'true');
+            newSection.setAttribute('data-title', name);
+
+            newSection.innerHTML = `
+                <div class="drag-handle"></div>
+                <h2 class="text-xl font-semibold text-accent-500 mb-4 flex items-center gap-2">
+                    <i class="fa-solid fa-plus-circle text-gray-400"></i>
+                    ${name}
+                </h2>
+                <div class="section-content" contenteditable="true">
+                    <p>Start writing your ${name.toLowerCase()} content here...</p>
+                </div>
+            `;
+
+            reportSections.appendChild(newSection);
+            document.getElementById('newSectionName').value = '';
+            showToast(`Section "${name}" added successfully`);
+        }
+
+        // Customization
+        document.getElementById('fontSize').addEventListener('input', e => {
+            const size = e.target.value;
+            document.querySelectorAll('.section-content').forEach(el => {
+                el.style.fontSize = `${size}px`;
+            });
+        });
+
+        function setTheme(theme) {
+            const colors = {
+                blue: { from: '#3b82f6', to: '#2563eb' },
+                emerald: { from: '#10b981', to: '#059669' },
+                purple: { from: '#8b5cf6', to: '#7c3aed' }
+            };
+
+            // Update accent color variables
+            document.documentElement.style.setProperty('--tw-gradient-from', colors[theme].from);
+            document.documentElement.style.setProperty('--tw-gradient-to', colors[theme].to);
+
+            // Update all accent-colored elements
+            document.querySelectorAll('.bg-accent-600').forEach(el => {
+                el.classList.remove('bg-accent-600');
+                el.classList.add(`bg-${theme}-600`);
+            });
+
+            document.querySelectorAll('.hover\\:bg-accent-500').forEach(el => {
+                el.classList.remove('hover:bg-accent-500');
+                el.classList.add(`hover:bg-${theme}-500`);
+            });
+
+            document.querySelectorAll('.text-accent-500').forEach(el => {
+                el.classList.remove('text-accent-500');
+                el.classList.add(`text-${theme}-500`);
+            });
+
+            document.querySelectorAll('.accent-accent-500').forEach(el => {
+                el.classList.remove('accent-accent-500');
+                el.classList.add(`accent-${theme}-500`);
+            });
+
+            showToast(`Theme changed to ${theme}`);
+        }
+
+        // File Upload with preview
+        document.getElementById('fileInput').addEventListener('change', e => {
+            const files = e.target.files;
+            if (!files.length) return;
+
+            const section = document.querySelector('[data-title="Data"] .section-content');
+            Array.from(files).forEach(file => {
+                const reader = new FileReader();
+
+                reader.onload = () => {
+                    if (file.type.startsWith('image/')) {
+                        const imgContainer = document.createElement('div');
+                        imgContainer.className = 'mt-4 relative group';
+
+                        const img = document.createElement('img');
+                        img.src = reader.result;
+                        img.className = 'max-w-full rounded-lg border border-primary-700';
+                        img.alt = file.name;
+
+                        const deleteBtn = document.createElement('button');
+                        deleteBtn.className = 'absolute top-2 right-2 bg-red-500 hover:bg-red-600 text-white p-1 rounded-full opacity-0 group-hover:opacity-100 transition-opacity';
+                        deleteBtn.innerHTML = '<i class="fa-solid fa-trash text-xs"></i>';
+                        deleteBtn.onclick = () => imgContainer.remove();
+
+                        imgContainer.appendChild(img);
+                        imgContainer.appendChild(deleteBtn);
+                        section.appendChild(imgContainer);
+                    } else {
+                        const fileContainer = document.createElement('div');
+                        fileContainer.className = 'mt-4 relative group bg-primary-900 p-3 rounded-lg';
+
+                        const fileName = document.createElement('div');
+                        fileName.className = 'text-sm font-medium text-gray-300 mb-1';
+                        fileName.textContent = file.name;
+
+                        const fileContent = document.createElement('pre');
+                        fileContent.className = 'text-sm overflow-x-auto max-h-40 overflow-y-auto';
+                        fileContent.textContent = reader.result.slice(0, 1000) + (reader.result.length > 1000 ? '...' : '');
+
+                        const deleteBtn = document.createElement('button');
+                        deleteBtn.className = 'absolute top-2 right-2 bg-red-500 hover:bg-red-600 text-white p-1 rounded-full opacity-0 group-hover:opacity-100 transition-opacity';
+                        deleteBtn.innerHTML = '<i class="fa-solid fa-trash text-xs"></i>';
+                        deleteBtn.onclick = () => fileContainer.remove();
+
+                        fileContainer.appendChild(fileName);
+                        fileContainer.appendChild(fileContent);
+                        fileContainer.appendChild(deleteBtn);
+                        section.appendChild(fileContainer);
+                    }
+                };
+
+                if (file.type.startsWith('image/')) {
+                    reader.readAsDataURL(file);
+                } else {
+                    reader.readAsText(file);
+                }
+            });
+
+            showToast(`${files.length} file(s) uploaded successfully`);
+            e.target.value = ''; // Reset file input
+        });
+
+        // PDF Export
+        function exportPDF() {
+            if (!window.jspdf || !window.jspdf.jsPDF) {
+                showToast("jsPDF is not loaded. Please try again later.", "error");
+                return;
+            }
+
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF();
+            let yPos = 20;
+
+            // Add title
+            doc.setFont('helvetica', 'bold');
+            doc.setTextColor(59, 130, 246);
+            doc.setFontSize(20);
+            doc.text('Data Science Report', 105, yPos, { align: 'center' });
+            yPos += 10;
+
+            // Add divider
+            doc.setDrawColor(59, 130, 246);
+            doc.setLineWidth(0.5);
+            doc.line(20, yPos, 190, yPos);
+            yPos += 20;
+
+            // Add sections
+            document.querySelectorAll('.group').forEach(section => {
+                // Section title
+                doc.setFont('helvetica', 'bold');
+                doc.setTextColor(59, 130, 246);
+                doc.setFontSize(16);
+                doc.text(section.dataset.title, 20, yPos);
+                yPos += 10;
+
+                // Section content
+                doc.setFont('helvetica', 'normal');
+                doc.setTextColor(0, 0, 0);
+                doc.setFontSize(12);
+
+                const content = section.querySelector('.section-content').textContent;
+                const lines = doc.splitTextToSize(content, 170);
+                doc.text(lines, 20, yPos);
+                yPos += lines.length * 7 + 15;
+
+                // Add new page if needed
+                if (yPos > 270) {
+                    doc.addPage();
+                    yPos = 20;
+                }
+            });
+
+            // Save PDF
+            doc.save('data-science-report.pdf');
+            showToast('PDF exported successfully');
+        }
+
+        // Save/Load with better feedback
+        function saveReport() {
+            const report = {};
+            document.querySelectorAll('.group').forEach(section => {
+                report[section.dataset.title] = section.querySelector('.section-content').innerHTML;
+            });
+
+            try {
+                localStorage.setItem('savedReport', JSON.stringify(report));
+                showToast('Report saved successfully!');
+            } catch (e) {
+                showToast('Failed to save report: ' + e.message, 'error');
+            }
+        }
+
+        function loadReport() {
+            try {
+                const saved = localStorage.getItem('savedReport');
+                if (saved) {
+                    const report = JSON.parse(saved);
+                    document.querySelectorAll('.group').forEach(section => {
+                        if (report[section.dataset.title]) {
+                            section.querySelector('.section-content').innerHTML = report[section.dataset.title];
+                        }
+                    });
+                    showToast('Report loaded successfully!');
+                } else {
+                    showToast('No saved report found', 'error');
+                }
+            } catch (e) {
+                showToast('Failed to load report: ' + e.message, 'error');
+            }
+        }
+
+        // Share Modal with animations
+        function showShareModal() {
+            const modal = document.getElementById('shareModal');
+            modal.style.pointerEvents = 'auto';
+            modal.style.opacity = '1';
+
+            setTimeout(() => {
+                modal.querySelector('div').style.transform = 'scale(1)';
+                document.getElementById('emailInput').focus();
+            }, 10);
+        }
+
+        function hideShareModal() {
+            const modal = document.getElementById('shareModal');
+            modal.querySelector('div').style.transform = 'scale(0.95)';
+            modal.style.opacity = '0';
+
+            setTimeout(() => {
+                modal.style.pointerEvents = 'none';
+            }, 300);
+        }
+
+        function sendEmail() {
+            const email = document.getElementById('emailInput').value;
+            if (!email || !email.includes('@') || !email.includes('.')) {
+                showToast('Please enter a valid email address', 'error');
+                return;
+            }
+
+            // In a real app, you would send the email here
+            showToast(`Report shared with ${email}`);
+            hideShareModal();
+        }
+
+        function copyLink() {
+            const linkInput = document.getElementById('shareLink');
+            linkInput.select();
+            linkInput.setSelectionRange(0, 99999); // For mobile devices
+
+            try {
+                navigator.clipboard.writeText(linkInput.value);
+                showToast('Link copied to clipboard!');
+            } catch (e) {
+                showToast('Failed to copy link: ' + e.message, 'error');
+            }
+        }
+
+        // Toast notifications
+        function showToast(message, type = 'success') {
+            const toast = document.createElement('div');
+            toast.className = `fixed bottom-4 right-4 px-4 py-2 rounded-lg shadow-lg text-white flex items-center ${type === 'success' ? 'bg-success-500' : 'bg-red-500'
+                } transform translate-y-10 opacity-0 transition-all duration-300`;
+
+            const icon = document.createElement('i');
+            icon.className = type === 'success' ? 'fa-solid fa-check mr-2' : 'fa-solid fa-exclamation mr-2';
+            toast.appendChild(icon);
+
+            const text = document.createElement('span');
+            text.textContent = message;
+            toast.appendChild(text);
+
+            document.body.appendChild(toast);
+
+            setTimeout(() => {
+                toast.style.transform = 'translateY(0)';
+                toast.style.opacity = '1';
+            }, 10);
+
+            setTimeout(() => {
+                toast.style.transform = 'translateY(10px)';
+                toast.style.opacity = '0';
+                setTimeout(() => toast.remove(), 300);
+            }, 3000);
+        }
+
+        // Initialize theme
+        setTheme('blue');
+    </script>
+</body>
+
+</html>

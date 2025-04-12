@@ -1,0 +1,628 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Nutrition Tracker</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        dark: {
+                            800: '#1e293b',
+                            900: '#0f172a',
+                            700: '#334155',
+                            600: '#475569',
+                        },
+                        input: {
+                            bg: '#1e293b',
+                            border: '#475569',
+                            focus: '#6366f1',
+                            text: '#f1f5f9',
+                            placeholder: '#94a3b8',
+                            error: '#fca5a5'
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #0f172a;
+            color: #e2e8f0;
+        }
+
+        /* Custom scrollbar */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: #1e293b;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: #4f46e5;
+            border-radius: 4px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: #6366f1;
+        }
+
+        /* Chart container */
+        .chart-container {
+            position: relative;
+            height: 300px;
+            width: 100%;
+        }
+
+        /* Enhanced input styling */
+        input {
+            background-color: #1e293b !important;
+            border-color: #475569 !important;
+            color: #f1f5f9 !important;
+        }
+
+        input::placeholder {
+            color: #94a3b8 !important;
+        }
+
+        input:focus {
+            border-color: #6366f1 !important;
+            box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.25) !important;
+        }
+
+        /* Error styling */
+        .input-error {
+            border-color: #fca5a5 !important;
+        }
+
+        /* Smooth transitions */
+        .transition-smooth {
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        /* Glow effect */
+        .glow:hover {
+            box-shadow: 0 0 15px rgba(79, 70, 229, 0.5);
+        }
+
+        /* Shake animation */
+        @keyframes shake {
+
+            0%,
+            100% {
+                transform: translateX(0);
+            }
+
+            20%,
+            60% {
+                transform: translateX(-5px);
+            }
+
+            40%,
+            80% {
+                transform: translateX(5px);
+            }
+        }
+
+        .animate-shake {
+            animation: shake 0.5s cubic-bezier(.36, .07, .19, .97) both;
+        }
+    </style>
+</head>
+
+<body class="bg-dark-900 text-gray-200 min-h-screen">
+    <div class="max-w-7xl mx-40 px-4 py-8">
+        <!-- Header -->
+        <div class="mb-8">
+            <h1
+                class="text-4xl font-bold bg-gradient-to-r from-indigo-500 to-purple-500 bg-clip-text text-transparent mb-2">
+                Nutrition Tracker</h1>
+            <p class="text-gray-400">Track your daily nutrition goals with ease</p>
+        </div>
+
+        <!-- Main Content Grid -->
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <!-- Left Column (3 sections) -->
+            <div class="lg:col-span-2 space-y-6">
+                <!-- Goals Section -->
+                <div class="bg-dark-800 p-6 rounded-xl shadow-lg glow transition-smooth">
+                    <h2 class="text-xl font-semibold mb-4 text-gray-100 border-b border-gray-700 pb-2">Daily Goals</h2>
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-300 mb-1">Calories (kcal)</label>
+                            <input type="number" id="calorieGoal" value="2000" min="0"
+                                class="w-full px-4 py-2 rounded-lg border border-input-border bg-input-bg text-input-text placeholder-input-placeholder focus:border-input-focus focus:ring-2 focus:ring-input-focus transition">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-300 mb-1">Protein (g)</label>
+                            <input type="number" id="proteinGoal" value="150" min="0"
+                                class="w-full px-4 py-2 rounded-lg border border-input-border bg-input-bg text-input-text placeholder-input-placeholder focus:border-input-focus focus:ring-2 focus:ring-input-focus transition">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-300 mb-1">Carbs (g)</label>
+                            <input type="number" id="carbGoal" value="250" min="0"
+                                class="w-full px-4 py-2 rounded-lg border border-input-border bg-input-bg text-input-text placeholder-input-placeholder focus:border-input-focus focus:ring-2 focus:ring-input-focus transition">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Meal Entry -->
+                <div class="bg-dark-800 p-6 rounded-xl shadow-lg glow transition-smooth">
+                    <h2 class="text-xl font-semibold mb-4 text-gray-100 border-b border-gray-700 pb-2">Add Meal</h2>
+                    <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-4">
+                        <div>
+                            <input type="text" id="mealName" placeholder="Meal Name"
+                                class="w-full px-4 py-2 rounded-lg border border-input-border bg-input-bg text-input-text placeholder-input-placeholder focus:border-input-focus focus:ring-2 focus:ring-input-focus transition">
+                            <p id="mealNameError" class="text-red-400 text-xs mt-1 hidden">Please enter a meal name</p>
+                        </div>
+                        <div>
+                            <input type="number" id="calories" placeholder="Calories" min="0"
+                                class="w-full px-4 py-2 rounded-lg border border-input-border bg-input-bg text-input-text placeholder-input-placeholder focus:border-input-focus focus:ring-2 focus:ring-input-focus transition">
+                            <p id="caloriesError" class="text-red-400 text-xs mt-1 hidden">Please enter valid calories
+                            </p>
+                        </div>
+                        <div>
+                            <input type="number" id="protein" placeholder="Protein (g)" min="0"
+                                class="w-full px-4 py-2 rounded-lg border border-input-border bg-input-bg text-input-text placeholder-input-placeholder focus:border-input-focus focus:ring-2 focus:ring-input-focus transition">
+                            <p id="proteinError" class="text-red-400 text-xs mt-1 hidden">Please enter valid protein</p>
+                        </div>
+                        <div>
+                            <input type="number" id="carbs" placeholder="Carbs (g)" min="0"
+                                class="w-full px-4 py-2 rounded-lg border border-input-border bg-input-bg text-input-text placeholder-input-placeholder focus:border-input-focus focus:ring-2 focus:ring-input-focus transition">
+                            <p id="carbsError" class="text-red-400 text-xs mt-1 hidden">Please enter valid carbs</p>
+                        </div>
+                    </div>
+                    <button onclick="validateAndAddMeal()"
+                        class="w-full md:w-auto px-6 py-3 bg-indigo-600 hover:bg-indigo-700 text-white font-medium rounded-lg transition-colors shadow-md hover:shadow-lg transform hover:-translate-y-0.5 active:translate-y-0 glow transition-smooth">
+                        Add Meal
+                    </button>
+                </div>
+
+                <!-- Summary -->
+                <div class="bg-dark-800 p-6 rounded-xl shadow-lg glow transition-smooth">
+                    <div class="flex justify-between items-center mb-4 border-b border-gray-700 pb-2">
+                        <h2 class="text-xl font-semibold text-gray-100">Daily Summary</h2>
+                        <button onclick="clearData()"
+                            class="px-4 py-2 bg-red-600 hover:bg-red-700 text-white font-medium rounded-lg transition-colors text-sm glow transition-smooth">
+                            Clear All
+                        </button>
+                    </div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                        <div class="bg-dark-700 p-4 rounded-lg transition-smooth hover:bg-dark-600">
+                            <div class="flex justify-between mb-1">
+                                <span class="text-sm font-medium text-gray-300">Calories</span>
+                                <span class="text-sm font-medium"><span id="totalCalories">0</span>/<span
+                                        id="calorieGoalDisplay">2000</span> kcal</span>
+                            </div>
+                            <div class="w-full bg-gray-600 rounded-full h-2.5">
+                                <div id="calorieProgress"
+                                    class="bg-blue-500 h-2.5 rounded-full transition-all duration-500"
+                                    style="width: 0%"></div>
+                            </div>
+                        </div>
+
+                        <div class="bg-dark-700 p-4 rounded-lg transition-smooth hover:bg-dark-600">
+                            <div class="flex justify-between mb-1">
+                                <span class="text-sm font-medium text-gray-300">Protein</span>
+                                <span class="text-sm font-medium"><span id="totalProtein">0</span>/<span
+                                        id="proteinGoalDisplay">150</span> g</span>
+                            </div>
+                            <div class="w-full bg-gray-600 rounded-full h-2.5">
+                                <div id="proteinProgress"
+                                    class="bg-green-500 h-2.5 rounded-full transition-all duration-500"
+                                    style="width: 0%"></div>
+                            </div>
+                        </div>
+
+                        <div class="bg-dark-700 p-4 rounded-lg transition-smooth hover:bg-dark-600">
+                            <div class="flex justify-between mb-1">
+                                <span class="text-sm font-medium text-gray-300">Carbs</span>
+                                <span class="text-sm font-medium"><span id="totalCarbs">0</span>/<span
+                                        id="carbGoalDisplay">250</span> g</span>
+                            </div>
+                            <div class="w-full bg-gray-600 rounded-full h-2.5">
+                                <div id="carbProgress"
+                                    class="bg-purple-500 h-2.5 rounded-full transition-all duration-500"
+                                    style="width: 0%"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Right Column (2 sections) -->
+            <div class="flex gap-2">
+                <!-- Chart -->
+                <div class="bg-dark-800 p-6 rounded-xl shadow-lg h-full glow transition-smooth">
+                    <h2 class="text-xl font-semibold mb-4 text-gray-100 border-b border-gray-700 pb-2">Nutrition
+                        Overview</h2>
+                    <div class="chart-container">
+                        <canvas id="nutritionChart"></canvas>
+                    </div>
+                </div>
+
+                <!-- Recent Meals -->
+                <div class="bg-dark-800 p-6 rounded-xl shadow-lg h-full glow transition-smooth" id="mealsListContainer">
+                    <h2 class="text-xl font-semibold mb-4 text-gray-100 border-b border-gray-700 pb-2">Recent Meals</h2>
+                    <div class="overflow-x-auto">
+                        <table class="min-w-full divide-y divide-gray-700">
+                            <thead class="bg-dark-700">
+                                <tr>
+                                    <th scope="col"
+                                        class="px-4 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">
+                                        Meal</th>
+                                    <th scope="col"
+                                        class="px-4 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">
+                                        Calories</th>
+                                    <th scope="col"
+                                        class="px-4 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">
+                                        Carbs</th>
+                                    <th scope="col"
+                                        class="px-4 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">
+                                        Action</th>
+                                </tr>
+                            </thead>
+                            <tbody id="mealsList" class="bg-dark-800 divide-y divide-gray-700">
+                                <tr id="noMealsMessage">
+                                    <td colspan="4" class="px-4 py-4 text-center text-sm text-gray-400">No meals added
+                                        yet</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let meals = [];
+        let myChart;
+
+        // Initialize chart
+        function initChart() {
+            const ctx = document.getElementById('nutritionChart').getContext('2d');
+
+            if (myChart) {
+                myChart.destroy();
+            }
+
+            myChart = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: ['Calories', 'Protein', 'Carbs'],
+                    datasets: [{
+                        label: 'Current Intake',
+                        data: [0, 0, 0],
+                        backgroundColor: ['#3b82f6', '#10b981', '#8b5cf6'],
+                        borderRadius: 6,
+                        barThickness: 30
+                    }, {
+                        label: 'Goal',
+                        data: [2000, 150, 250],
+                        backgroundColor: ['#93c5fd', '#6ee7b7', '#c4b5fd'],
+                        borderRadius: 6,
+                        barThickness: 30
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            grid: {
+                                color: 'rgba(226, 232, 240, 0.1)'
+                            },
+                            ticks: {
+                                color: '#e2e8f0',
+                                callback: function (value) {
+                                    return value.toLocaleString();
+                                }
+                            }
+                        },
+                        x: {
+                            grid: {
+                                display: false
+                            },
+                            ticks: {
+                                color: '#e2e8f0'
+                            }
+                        }
+                    },
+                    plugins: {
+                        legend: {
+                            labels: {
+                                color: '#e2e8f0',
+                                boxWidth: 12,
+                                padding: 20
+                            },
+                            position: 'top',
+                            align: 'start'
+                        },
+                        tooltip: {
+                            backgroundColor: '#1e293b',
+                            titleColor: '#ffffff',
+                            bodyColor: '#e2e8f0',
+                            borderColor: '#334155',
+                            borderWidth: 1,
+                            padding: 12,
+                            usePointStyle: true,
+                            callbacks: {
+                                label: function (context) {
+                                    let label = context.dataset.label || '';
+                                    if (label) {
+                                        label += ': ';
+                                    }
+                                    if (context.parsed.y !== null) {
+                                        label += context.parsed.y.toLocaleString();
+                                        if (context.dataIndex === 0) {
+                                            label += ' kcal';
+                                        } else {
+                                            label += ' g';
+                                        }
+                                    }
+                                    return label;
+                                }
+                            }
+                        }
+                    },
+                    layout: {
+                        padding: {
+                            top: 20,
+                            right: 20,
+                            bottom: 20,
+                            left: 20
+                        }
+                    }
+                }
+            });
+        }
+
+        // Initialize chart on load
+        initChart();
+
+        function validateAndAddMeal() {
+            // Reset error states
+            resetErrors();
+
+            // Get input values
+            const name = document.getElementById('mealName').value.trim();
+            const calories = document.getElementById('calories').value;
+            const protein = document.getElementById('protein').value;
+            const carbs = document.getElementById('carbs').value;
+
+            // Validate inputs
+            let isValid = true;
+
+            if (!name) {
+                document.getElementById('mealName').classList.add('input-error');
+                document.getElementById('mealNameError').classList.remove('hidden');
+                isValid = false;
+            }
+
+            if (!calories || isNaN(calories) || parseFloat(calories) < 0) {
+                document.getElementById('calories').classList.add('input-error');
+                document.getElementById('caloriesError').textContent =
+                    parseFloat(calories) < 0 ? 'Calories cannot be negative' : 'Please enter valid calories';
+                document.getElementById('caloriesError').classList.remove('hidden');
+                isValid = false;
+            }
+
+            if (!protein || isNaN(protein) || parseFloat(protein) < 0) {
+                document.getElementById('protein').classList.add('input-error');
+                document.getElementById('proteinError').textContent =
+                    parseFloat(protein) < 0 ? 'Protein cannot be negative' : 'Please enter valid protein';
+                document.getElementById('proteinError').classList.remove('hidden');
+                isValid = false;
+            }
+
+            if (!carbs || isNaN(carbs) || parseFloat(carbs) < 0) {
+                document.getElementById('carbs').classList.add('input-error');
+                document.getElementById('carbsError').textContent =
+                    parseFloat(carbs) < 0 ? 'Carbs cannot be negative' : 'Please enter valid carbs';
+                document.getElementById('carbsError').classList.remove('hidden');
+                isValid = false;
+            }
+
+            if (isValid) {
+                addMeal();
+            } else {
+                // Shake animation for visual feedback
+                const addButton = document.querySelector('button[onclick="validateAndAddMeal()"]');
+                addButton.classList.add('animate-shake');
+                setTimeout(() => {
+                    addButton.classList.remove('animate-shake');
+                }, 500);
+            }
+        }
+
+        function resetErrors() {
+            document.getElementById('mealName').classList.remove('input-error');
+            document.getElementById('calories').classList.remove('input-error');
+            document.getElementById('protein').classList.remove('input-error');
+            document.getElementById('carbs').classList.remove('input-error');
+
+            document.getElementById('mealNameError').classList.add('hidden');
+            document.getElementById('caloriesError').classList.add('hidden');
+            document.getElementById('proteinError').classList.add('hidden');
+            document.getElementById('carbsError').classList.add('hidden');
+        }
+
+        function addMeal() {
+            const meal = {
+                name: document.getElementById('mealName').value.trim() || 'Unnamed Meal',
+                calories: parseFloat(document.getElementById('calories').value) || 0,
+                protein: parseFloat(document.getElementById('protein').value) || 0,
+                carbs: parseFloat(document.getElementById('carbs').value) || 0,
+                id: Date.now()
+            };
+
+            meals.push(meal);
+            updateSummary();
+            updateMealsList();
+
+            // Clear inputs
+            document.getElementById('mealName').value = '';
+            document.getElementById('calories').value = '';
+            document.getElementById('protein').value = '';
+            document.getElementById('carbs').value = '';
+
+            // Show success animation
+            const addButton = document.querySelector('button[onclick="validateAndAddMeal()"]');
+            addButton.classList.add('animate-pulse');
+            setTimeout(() => {
+                addButton.classList.remove('animate-pulse');
+            }, 300);
+        }
+
+        // Event delegation for remove buttons
+        document.getElementById('mealsList').addEventListener('click', function (e) {
+            if (e.target.closest('button') && e.target.closest('button').textContent.includes('Remove')) {
+                const mealId = parseInt(e.target.closest('tr').getAttribute('data-meal-id'));
+                removeMeal(mealId);
+            }
+        });
+
+        function removeMeal(id) {
+            // Find the index of the meal with the given id
+            const index = meals.findIndex(meal => meal.id === id);
+
+            if (index !== -1) {
+                // Remove the meal from the array
+                meals.splice(index, 1);
+
+                // Update the UI
+                updateSummary();
+                updateMealsList();
+
+                // Visual feedback
+                const row = document.querySelector(`tr[data-meal-id="${id}"]`);
+                if (row) {
+                    row.classList.add('opacity-0', 'translate-x-4', 'transition-smooth');
+                    setTimeout(() => {
+                        row.remove();
+                        if (meals.length === 0) {
+                            document.getElementById('noMealsMessage').style.display = '';
+                        }
+                    }, 300);
+                }
+            }
+        }
+
+        function updateMealsList() {
+            const mealsList = document.getElementById('mealsList');
+            const noMealsMessage = document.getElementById('noMealsMessage');
+
+            if (meals.length === 0) {
+                noMealsMessage.style.display = '';
+                mealsList.innerHTML = '';
+                mealsList.appendChild(noMealsMessage);
+                return;
+            }
+
+            noMealsMessage.style.display = 'none';
+
+            // Sort meals by most recent first
+            const sortedMeals = [...meals].sort((a, b) => b.id - a.id);
+
+            mealsList.innerHTML = sortedMeals.map(meal => `
+                <tr class="hover:bg-dark-700 transition-smooth" data-meal-id="${meal.id}">
+                    <td class="px-4 py-3 whitespace-nowrap text-sm font-medium text-gray-100">${meal.name}</td>
+                    <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-400">${meal.calories.toLocaleString()}</td>
+                    <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-400">${meal.carbs.toLocaleString()}</td>
+                    <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-400">
+                        <button class="text-red-400 hover:text-red-300 transition-colors flex items-center">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                            </svg>
+                            Remove
+                        </button>
+                    </td>
+                </tr>
+            `).join('');
+        }
+
+        function updateSummary() {
+            const totals = meals.reduce((acc, meal) => ({
+                calories: acc.calories + meal.calories,
+                protein: acc.protein + meal.protein,
+                carbs: acc.carbs + meal.carbs
+            }), { calories: 0, protein: 0, carbs: 0 });
+
+            const goals = {
+                calories: parseFloat(document.getElementById('calorieGoal').value) || 0,
+                protein: parseFloat(document.getElementById('proteinGoal').value) || 0,
+                carbs: parseFloat(document.getElementById('carbGoal').value) || 0
+            };
+
+            // Update text
+            document.getElementById('totalCalories').textContent = Math.round(totals.calories).toLocaleString();
+            document.getElementById('totalProtein').textContent = Math.round(totals.protein).toLocaleString();
+            document.getElementById('totalCarbs').textContent = Math.round(totals.carbs).toLocaleString();
+
+            document.getElementById('calorieGoalDisplay').textContent = Math.round(goals.calories).toLocaleString();
+            document.getElementById('proteinGoalDisplay').textContent = Math.round(goals.protein).toLocaleString();
+            document.getElementById('carbGoalDisplay').textContent = Math.round(goals.carbs).toLocaleString();
+
+            // Update progress bars
+            const caloriePercent = goals.calories > 0 ? Math.min((totals.calories / goals.calories) * 100, 100) : 0;
+            const proteinPercent = goals.protein > 0 ? Math.min((totals.protein / goals.protein) * 100, 100) : 0;
+            const carbPercent = goals.carbs > 0 ? Math.min((totals.carbs / goals.carbs) * 100, 100) : 0;
+
+            document.getElementById('calorieProgress').style.width = `${caloriePercent}%`;
+            document.getElementById('proteinProgress').style.width = `${proteinPercent}%`;
+            document.getElementById('carbProgress').style.width = `${carbPercent}%`;
+
+            // Change progress bar color if over 100%
+            document.getElementById('calorieProgress').className = caloriePercent >= 100 ?
+                'bg-red-500 h-2.5 rounded-full transition-all duration-500' : 'bg-blue-500 h-2.5 rounded-full transition-all duration-500';
+            document.getElementById('proteinProgress').className = proteinPercent >= 100 ?
+                'bg-red-500 h-2.5 rounded-full transition-all duration-500' : 'bg-green-500 h-2.5 rounded-full transition-all duration-500';
+            document.getElementById('carbProgress').className = carbPercent >= 100 ?
+                'bg-red-500 h-2.5 rounded-full transition-all duration-500' : 'bg-purple-500 h-2.5 rounded-full transition-all duration-500';
+
+            // Update chart
+            if (myChart) {
+                myChart.data.datasets[0].data = [totals.calories, totals.protein, totals.carbs];
+                myChart.data.datasets[1].data = [goals.calories, goals.protein, goals.carbs];
+                myChart.update();
+            }
+        }
+
+        function clearData() {
+            if (confirm('Are you sure you want to clear all data?')) {
+                meals = [];
+                updateSummary();
+                updateMealsList();
+            }
+        }
+
+        // Update summary when goals change
+        document.getElementById('calorieGoal').addEventListener('change', updateSummary);
+        document.getElementById('proteinGoal').addEventListener('change', updateSummary);
+        document.getElementById('carbGoal').addEventListener('change', updateSummary);
+
+        // Initialize meals list
+        updateMealsList();
+
+        // Handle window resize
+        window.addEventListener('resize', function () {
+            if (myChart) {
+                myChart.resize();
+            }
+        });
+    </script>
+</body>
+
+</html>

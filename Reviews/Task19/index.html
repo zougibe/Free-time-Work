@@ -1,0 +1,309 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>DineSmart - Restaurant Finder</title>
+    <meta name="description" content="Find restaurants based on location and dietary preferences" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap" rel="stylesheet" />
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
+        crossorigin="anonymous" referrerpolicy="no-referrer" />
+    <link href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" rel="stylesheet" />
+    <style>
+        html,
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: 'Poppins', sans-serif;
+            background: url('https://images.unsplash.com/photo-1541542684-8a1d8d12e861?ixlib=rb-1.2.1&auto=format&fit=crop&w=800&q=80') no-repeat center center fixed;
+            background-size: cover;
+        }
+
+        #app {
+            background-color: rgba(255, 255, 255, 0.9);
+            backdrop-filter: blur(5px);
+            display: grid;
+            grid-template-rows: auto 1fr auto;
+            min-height: 100vh;
+        }
+
+        header {
+            background: #4A90E2;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+        }
+
+        header h1 {
+            font-size: 1.75rem;
+        }
+
+        #map {
+            height: 60vh;
+            border-radius: 8px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+
+        @media (min-width: 768px) {
+            #map {
+                height: 70vh;
+            }
+        }
+
+        .restaurant-card {
+            transition: transform 0.3s, box-shadow 0.3s;
+        }
+
+        .restaurant-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 15px rgba(0, 0, 0, 0.1);
+        }
+
+        .favorite-btn {
+            transition: background-color 0.3s, color 0.3s;
+        }
+
+        /* Accessibility improvements */
+        .sr-only {
+            position: absolute;
+            width: 1px;
+            height: 1px;
+            padding: 0;
+            margin: -1px;
+            overflow: hidden;
+            clip: rect(0, 0, 0, 0);
+            white-space: nowrap;
+            border-width: 0;
+        }
+    </style>
+</head>
+
+<body>
+    <div id="app" class="container mx-auto">
+        <!-- Header with logo and view toggle -->
+        <header class="p-4 flex flex-col md:flex-row md:items-center md:justify-between">
+            <div class="flex items-center gap-2">
+                <i class="fas fa-utensils fa-2x text-white" aria-hidden="true"></i>
+                <h1 class="text-white font-semibold">DineSmart</h1>
+            </div>
+            <div class="mt-4 md:mt-0">
+                <button id="viewToggle"
+                    class="bg-white w-48 text-blue-600 px-4 py-2 rounded shadow hover:bg-blue-100 transition"
+                    aria-label="Toggle between map and list view">
+                    <i class="fas fa-list"></i> <span class="sr-only">Toggle View</span> List View
+                </button>
+            </div>
+        </header>
+
+        <!-- Main content area with map and list containers -->
+        <main id="content" class="p-4">
+            <div id="mapContainer" class="mt-2">
+                <div id="map"></div>
+            </div>
+            <div id="listContainer" class="hidden space-y-4 mt-4">
+                <!-- Dietary filter moved to list view -->
+                <div class="relative">
+                    <label for="dietary" class="sr-only">Filter by dietary preference</label>
+                    <select id="dietary"
+                        class="w-48 appearance-none p-2 rounded text-black border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-400"
+                        aria-label="Select dietary preference">
+                        <option value="all">All Preferences</option>
+                        <option value="vegan">Vegan</option>
+                        <option value="vegetarian">Vegetarian</option>
+                        <option value="gluten-free">Gluten-Free</option>
+                    </select>
+                    <i class="fas fa-chevron-down absolute top-1/2 right-3 transform -translate-y-1/2 text-gray-600"
+                        aria-hidden="true"></i>
+                </div>
+                <!-- Restaurant list -->
+                <div id="restaurantList" class="space-y-4"></div>
+            </div>
+        </main>
+
+        <!-- Footer -->
+        <footer class="p-4 text-center text-white" style="background: #4A90E2;">
+            <p>&copy; 2025 DineSmart. Find your perfect meal!</p>
+        </footer>
+    </div>
+
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script>
+        const restaurants = [
+            {
+                id: 1,
+                name: "Green Bites",
+                lat: 51.505,
+                lon: -0.09,
+                rating: 4.5,
+                dietary: "vegan",
+                desc: "Fresh vegan cuisine",
+            },
+            {
+                id: 2,
+                name: "Pasta Palace",
+                lat: 51.51,
+                lon: -0.08,
+                rating: 4.2,
+                dietary: "vegetarian",
+                desc: "Italian delights with a modern twist",
+            },
+            {
+                id: 3,
+                name: "Gluten-Free Grill",
+                lat: 51.50,
+                lon: -0.07,
+                rating: 4.8,
+                dietary: "gluten-free",
+                desc: "Safe and tasty dining experience",
+            },
+        ];
+
+        // Load favorites from localStorage (or create an empty set)
+        let favorites = new Set(JSON.parse(localStorage.getItem("favorites")) || []);
+
+        function saveFavorites() {
+            localStorage.setItem("favorites", JSON.stringify([...favorites]));
+        }
+
+        let map, userMarker;
+
+        // Initialize map with user location if available
+        function initMap(userLat, userLon) {
+            map = L.map("map").setView([userLat, userLon], 13);
+            L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+                attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
+            }).addTo(map);
+
+            userMarker = L.marker([userLat, userLon])
+                .addTo(map)
+                .bindPopup("You are here!")
+                .openPopup();
+
+            updateRestaurants(restaurants);
+        }
+
+        // Update restaurant markers on map and list view
+        function updateRestaurants(filteredRestaurants) {
+            // Remove old markers except userMarker
+            map.eachLayer((layer) => {
+                if (layer !== userMarker && layer instanceof L.Marker) {
+                    map.removeLayer(layer);
+                }
+            });
+
+            // Add restaurant markers to the map
+            filteredRestaurants.forEach((r) => {
+                L.marker([r.lat, r.lon])
+                    .addTo(map)
+                    .bindPopup(`
+            <strong>${r.name}</strong><br>
+            <i class="fas fa-star" aria-hidden="true"></i> ${r.rating}/5
+          `);
+            });
+
+            // Update the list view with restaurant cards
+            const list = document.getElementById("restaurantList");
+            list.innerHTML = filteredRestaurants
+                .map(
+                    (r) => `
+        <div class="restaurant-card bg-white p-4 rounded shadow">
+          <h3 class="font-bold text-lg flex items-center gap-2">
+            ${r.name} 
+            <span class="text-yellow-500"><i class="fas fa-star" aria-hidden="true"></i> ${r.rating}</span>
+          </h3>
+          <p class="text-gray-700">${r.desc}</p>
+          <button class="favorite-btn mt-2 px-4 py-2 rounded border border-transparent ${favorites.has(r.id)
+                            ? "bg-red-500 text-white"
+                            : "bg-gray-200 text-gray-800"
+                        }" data-id="${r.id}" aria-label="${favorites.has(r.id) ? 'Remove from favorites' : 'Add to favorites'}">
+            ${favorites.has(r.id)
+                            ? '<i class="fas fa-heart" aria-hidden="true"></i> Favorited'
+                            : '<i class="far fa-heart" aria-hidden="true"></i> Favorite'
+                        }
+          </button>
+        </div>
+      `
+                )
+                .join("");
+        }
+
+        // Handle geolocation with error feedback
+        function handleGeolocation() {
+            const loadingMsg = document.createElement('div');
+            loadingMsg.className = 'text-center p-4';
+            loadingMsg.innerHTML = '<p>Loading your location...</p>';
+            document.getElementById('map').appendChild(loadingMsg);
+
+            navigator.geolocation.getCurrentPosition(
+                (position) => {
+                    initMap(position.coords.latitude, position.coords.longitude);
+                },
+                (error) => {
+                    console.error("Geolocation error:", error);
+                    document.getElementById('map').innerHTML = `
+            <div class="text-center p-4 bg-red-100 text-red-800 rounded">
+              <p>Could not get your location. Showing default map.</p>
+            </div>
+          `;
+                    initMap(51.505, -0.09); // Fallback to London
+                }
+            );
+        }
+
+        // Initialize on load
+        document.addEventListener('DOMContentLoaded', () => {
+            handleGeolocation();
+
+            // Toggle between map view and list view
+            document.getElementById("viewToggle").addEventListener("click", () => {
+                const mapContainer = document.getElementById("mapContainer");
+                const listContainer = document.getElementById("listContainer");
+                const toggleBtn = document.getElementById("viewToggle");
+
+                mapContainer.classList.toggle("hidden");
+                listContainer.classList.toggle("hidden");
+                if (mapContainer.classList.contains("hidden")) {
+                    toggleBtn.innerHTML = '<i class="fas fa-map-marked-alt"></i> <span class="sr-only">Toggle View</span> Map View';
+                } else {
+                    toggleBtn.innerHTML = '<i class="fas fa-list"></i> <span class="sr-only">Toggle View</span> List View';
+                }
+            });
+
+            // Filter restaurants by dietary preference (in list view)
+            document.getElementById("dietary").addEventListener("change", (e) => {
+                const filter = e.target.value;
+                const filtered =
+                    filter === "all"
+                        ? restaurants
+                        : restaurants.filter((r) => r.dietary === filter);
+                updateRestaurants(filtered);
+            });
+
+            // Toggle favorite status
+            document.getElementById("restaurantList").addEventListener("click", (e) => {
+                if (e.target.closest(".favorite-btn")) {
+                    const btn = e.target.closest(".favorite-btn");
+                    const id = parseInt(btn.dataset.id);
+                    if (favorites.has(id)) {
+                        favorites.delete(id);
+                        btn.classList.replace("bg-red-500", "bg-gray-200");
+                        btn.classList.replace("text-white", "text-gray-800");
+                        btn.innerHTML = '<i class="far fa-heart" aria-hidden="true"></i> Favorite';
+                        btn.setAttribute('aria-label', 'Add to favorites');
+                    } else {
+                        favorites.add(id);
+                        btn.classList.replace("bg-gray-200", "bg-red-500");
+                        btn.classList.replace("text-gray-800", "text-white");
+                        btn.innerHTML = '<i class="fas fa-heart" aria-hidden="true"></i> Favorited';
+                        btn.setAttribute('aria-label', 'Remove from favorites');
+                    }
+                    saveFavorites();
+                }
+            });
+        });
+    </script>
+</body>
+
+</html>

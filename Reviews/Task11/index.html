@@ -1,0 +1,771 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Travel Bundle Shop</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root {
+            /* Light theme variables */
+            --primary-color: #3a86ff;
+            --secondary-color: #ff006e;
+            --accent-color: #8338ec;
+            --bg-color: #f8f9fa;
+            --card-bg: #ffffff;
+            --text-color: #212529;
+            --border-color: #dee2e6;
+            --shadow-color: rgba(0, 0, 0, 0.1);
+            --hover-shadow: rgba(0, 0, 0, 0.15);
+            --success: #38b000;
+            --card-shadow: 0 4px 8px var(--shadow-color);
+            --hover-shadow: 0 8px 16px var(--hover-shadow);
+            --transition: all 0.3s ease;
+            --filter-bg: #ffffff;
+            --notification-bg: #ffffff;
+            --cart-item-bg: #f8f9fa;
+            --cart-item-hover: #e9ecef;
+        }
+
+        [data-theme="dark"] {
+            --primary-color: #4dabff;
+            --secondary-color: #ff4d8f;
+            --accent-color: #9d65f0;
+            --bg-color: #121212;
+            --card-bg: #1e1e1e;
+            --text-color: #e9ecef;
+            --border-color: #343a40;
+            --shadow-color: rgba(0, 0, 0, 0.3);
+            --hover-shadow: rgba(0, 0, 0, 0.4);
+            --success: #42c206;
+            --filter-bg: #1e1e1e;
+            --notification-bg: #1e1e1e;
+            --cart-item-bg: #2a2a2a;
+            --cart-item-hover: #333333;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        body {
+            background: var(--bg-color);
+            color: var(--text-color);
+            line-height: 1.6;
+            transition: background-color 0.3s ease, color 0.3s ease;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 20px auto;
+            padding: 0 15px;
+            display: flex;
+            gap: 20px;
+            flex-wrap: wrap;
+            position: relative;
+            padding-bottom: 80px;
+        }
+
+        header {
+            background: linear-gradient(135deg, var(--primary-color), var(--accent-color));
+            color: #ffffff;
+            text-align: center;
+            padding: 1.5rem;
+            position: relative;
+            overflow: hidden;
+            box-shadow: var(--card-shadow);
+            display: flex;
+            justify-content: center;
+        }
+
+        header h1 {
+            position: relative;
+            z-index: 2;
+            font-weight: 700;
+            letter-spacing: 1px;
+            margin: 0 auto;
+        }
+
+        header::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background-image: url('/api/placeholder/1200/600');
+            background-size: cover;
+            opacity: 0.1;
+            z-index: 1;
+        }
+
+        .theme-toggle {
+            position: absolute;
+            right: 20px;
+            top: 50%;
+            transform: translateY(-50%);
+            z-index: 10;
+            background: rgba(255, 255, 255, 0.2);
+            border: none;
+            color: white;
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: background-color 0.3s ease;
+        }
+
+        .theme-toggle:hover {
+            background: rgba(255, 255, 255, 0.3);
+        }
+
+        .filters {
+            width: 100%;
+            margin: 15px 0;
+            display: flex;
+            gap: 15px;
+            flex-wrap: wrap;
+            background: var(--card-bg);
+            padding: 15px;
+            border-radius: 10px;
+            box-shadow: var(--card-shadow);
+            transition: background-color 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        .filters select {
+            padding: 10px 15px;
+            border-radius: 8px;
+            border: 1px solid var(--border-color);
+            background-color: var(--card-bg);
+            color: var(--text-color);
+            font-size: 0.9rem;
+            transition: var(--transition);
+            cursor: pointer;
+            flex-grow: 1;
+            min-width: 150px;
+        }
+
+        .filters select:hover {
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 2px rgba(58, 134, 255, 0.1);
+        }
+
+        .filters select:focus {
+            outline: none;
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 3px rgba(58, 134, 255, 0.2);
+        }
+
+        .products {
+            flex: 1;
+            min-width: 300px;
+        }
+
+        .product-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 20px;
+        }
+
+        .product-card {
+            background: var(--card-bg);
+            padding: 20px;
+            border-radius: 12px;
+            box-shadow: var(--card-shadow);
+            transition: transform 0.3s ease, box-shadow 0.3s ease, background-color 0.3s ease;
+            position: relative;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            border: 1px solid var(--border-color);
+        }
+
+        [data-theme="dark"] .product-card {
+            box-shadow: 0 0 15px var(--primary-color, rgba(58, 134, 255, 0.3));
+        }
+
+        .product-card:hover {
+            transform: translateY(-5px);
+            box-shadow: var(--hover-shadow);
+        }
+
+        [data-theme="dark"] .product-card:hover {
+            box-shadow: 0 0 20px var(--accent-color, rgba(131, 56, 236, 0.5));
+        }
+
+        .product-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 5px;
+            background: linear-gradient(90deg, var(--primary-color), var(--accent-color));
+        }
+
+        .product-card h3 {
+            font-size: 1.2rem;
+            color: var(--text-color);
+            margin-bottom: 5px;
+        }
+
+        .product-price {
+            font-size: 1.4rem;
+            font-weight: 700;
+            color: var(--primary-color);
+        }
+
+        .popularity {
+            display: flex;
+            gap: 2px;
+            margin-bottom: 10px;
+        }
+
+        .popularity i {
+            color: #ffc107;
+        }
+
+        .product-card button {
+            width: 100%;
+            padding: 12px;
+            background: var(--primary-color);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: var(--transition);
+            margin-top: auto;
+        }
+
+        .product-card button:hover {
+            background: var(--accent-color);
+            transform: scale(1.02);
+        }
+
+        .cart {
+            width: 350px;
+            background: var(--card-bg);
+            padding: 20px;
+            border-radius: 12px;
+            box-shadow: var(--card-shadow);
+            height: fit-content;
+            position: sticky;
+            top: 20px;
+            transition: background-color 0.3s ease, box-shadow 0.3s ease;
+            border: 1px solid var(--border-color);
+        }
+
+        [data-theme="dark"] .cart {
+            box-shadow: 0 0 15px var(--primary-color, rgba(58, 134, 255, 0.3));
+        }
+
+        .cart h2 {
+            color: var(--text-color);
+            margin-bottom: 15px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid var(--border-color);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .cart h2 i {
+            color: var(--primary-color);
+        }
+
+        .cart-items {
+            max-height: 300px;
+            overflow-y: auto;
+            margin-bottom: 15px;
+            scrollbar-width: thin;
+            scrollbar-color: var(--primary-color) var(--bg-color);
+        }
+
+        .cart-items::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        .cart-items::-webkit-scrollbar-track {
+            background: var(--bg-color);
+        }
+
+        .cart-items::-webkit-scrollbar-thumb {
+            background-color: var(--primary-color);
+            border-radius: 6px;
+        }
+
+        .cart-item {
+            display: flex;
+            justify-content: space-between;
+            margin: 10px 0;
+            padding: 10px;
+            border-radius: 8px;
+            background-color: var(--cart-item-bg);
+            transition: background-color 0.3s ease;
+        }
+
+        .cart-item:hover {
+            background-color: var(--cart-item-hover);
+        }
+
+        .cart-item-details {
+            flex-grow: 1;
+        }
+
+        .cart-item-name {
+            font-weight: 600;
+            color: var(--text-color);
+        }
+
+        .cart-item-price {
+            color: var(--primary-color);
+        }
+
+        .remove-button {
+            background: transparent;
+            border: none;
+            color: #dc3545;
+            cursor: pointer;
+            transition: var(--transition);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+        }
+
+        .remove-button:hover {
+            background: rgba(220, 53, 69, 0.1);
+        }
+
+        .empty-cart {
+            text-align: center;
+            color: var(--text-color);
+            opacity: 0.7;
+            padding: 20px 0;
+        }
+
+        .subtotal,
+        .total {
+            display: flex;
+            justify-content: space-between;
+            margin: 10px 0;
+            font-weight: 600;
+            color: var(--text-color);
+        }
+
+        .total {
+            font-size: 1.2rem;
+            color: var(--primary-color);
+            border-top: 2px solid var(--border-color);
+            padding-top: 10px;
+            margin-top: 20px;
+        }
+
+        .checkout-button {
+            width: 100%;
+            padding: 15px;
+            background: var(--success);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+            margin-top: 15px;
+            transition: var(--transition);
+        }
+
+        .checkout-button:hover {
+            filter: brightness(1.1);
+            transform: scale(1.02);
+        }
+
+        .checkout-button:disabled {
+            background: #6c757d;
+            cursor: not-allowed;
+            transform: none;
+            opacity: 0.7;
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                flex-direction: column;
+                padding-bottom: 200px;
+            }
+
+            .cart {
+                width: 100%;
+                position: fixed;
+                bottom: 0;
+                left: 0;
+                z-index: 1000;
+                border-radius: 20px 20px 0 0;
+                max-height: 40vh;
+                overflow-y: auto;
+            }
+
+            .cart-items {
+                max-height: 150px;
+            }
+
+            .theme-toggle {
+                top: 15px;
+                right: 15px;
+                transform: none;
+            }
+        }
+
+        /* Notification styles */
+        .notification {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: var(--notification-bg);
+            color: var(--text-color);
+            padding: 15px 20px;
+            border-radius: 8px;
+            box-shadow: var(--card-shadow);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            transform: translateX(150%);
+            transition: transform 0.3s ease, background-color 0.3s ease;
+            z-index: 1000;
+            border: 1px solid var(--border-color);
+        }
+
+        .notification.show {
+            transform: translateX(0);
+        }
+
+        .notification i {
+            font-size: 1.2rem;
+        }
+
+        .notification.success {
+            border-left: 4px solid var(--success);
+        }
+
+        .notification.success i {
+            color: var(--success);
+        }
+
+        .notification.warning {
+            border-left: 4px solid #ffc107;
+        }
+
+        .notification.warning i {
+            color: #ffc107;
+        }
+
+        /* Theme toggle animation */
+        .theme-toggle i {
+            transition: transform 0.5s ease;
+        }
+
+        .theme-toggle:hover i {
+            transform: rotate(30deg);
+        }
+
+        /* Glow effect for dark mode */
+        @keyframes glow {
+            0% {
+                box-shadow: 0 0 5px var(--primary-color, rgba(58, 134, 255, 0.3));
+            }
+
+            50% {
+                box-shadow: 0 0 20px var(--primary-color, rgba(58, 134, 255, 0.5));
+            }
+
+            100% {
+                box-shadow: 0 0 5px var(--primary-color, rgba(58, 134, 255, 0.3));
+            }
+        }
+
+        [data-theme="dark"] .product-card,
+        [data-theme="dark"] .cart {
+            animation: glow 3s infinite;
+        }
+
+        /* Product description text */
+        .product-description {
+            color: var(--text-color);
+            opacity: 0.8;
+            font-size: 0.9rem;
+        }
+
+        /* Empty results message */
+        .empty-results {
+            grid-column: 1 / -1;
+            text-align: center;
+            padding: 40px 0;
+            color: var(--text-color);
+            opacity: 0.7;
+        }
+    </style>
+</head>
+
+<body>
+    <header>
+        <h1><i class="fas fa-suitcase"></i> Travel Bundle Shop</h1>
+        <button id="themeToggle" class="theme-toggle" aria-label="Toggle theme">
+            <i class="fas fa-sun"></i>
+        </button>
+    </header>
+
+    <div class="container">
+        <div class="filters">
+            <select id="sortPrice">
+                <option value="">Sort by Price</option>
+                <option value="low">Price: Low to High</option>
+                <option value="high">Price: High to Low</option>
+            </select>
+            <select id="sortPopularity">
+                <option value="">Sort by Popularity</option>
+                <option value="high">Most Popular</option>
+                <option value="low">Least Popular</option>
+            </select>
+            <select id="filterCategory">
+                <option value="">All Categories</option>
+                <option value="insurance">Insurance</option>
+                <option value="transportation">Transportation</option>
+                <option value="activities">Activities</option>
+                <option value="accommodation">Accommodation</option>
+            </select>
+        </div>
+
+        <div class="products">
+            <div class="product-grid" id="productGrid"></div>
+        </div>
+
+        <div class="cart">
+            <h2><i class="fas fa-shopping-cart"></i> Your Travel Bundle</h2>
+            <div id="cartItems" class="cart-items"></div>
+            <div class="subtotal" id="cartSubtotal">Subtotal: $0.00</div>
+            <div class="total" id="cartTotal">Total: $0.00</div>
+            <button id="checkoutButton" class="checkout-button" disabled>
+                <i class="fas fa-check-circle"></i> Checkout
+            </button>
+        </div>
+    </div>
+
+    <div id="notification" class="notification">
+        <i class="fas fa-check-circle"></i>
+        <span id="notificationMessage"></span>
+    </div>
+
+    <script>
+        const products = [
+            { id: 1, name: "Travel Insurance", price: 49.99, popularity: 8, category: "insurance", description: "Comprehensive coverage for your trip" },
+            { id: 2, name: "City Walking Tour", price: 29.99, popularity: 6, category: "activities", description: "Explore the city with a local guide" },
+            { id: 3, name: "Car Rental - Economy", price: 79.99, popularity: 7, category: "transportation", description: "Compact car for 3 days" },
+            { id: 4, name: "Food & Wine Tour", price: 39.99, popularity: 9, category: "activities", description: "Sample local cuisine and wines" },
+            { id: 5, name: "Hotel Upgrade", price: 99.99, popularity: 5, category: "accommodation", description: "Upgrade to a premium room" },
+            { id: 6, name: "Airport Transfer", price: 19.99, popularity: 8, category: "transportation", description: "Private transfer to your hotel" },
+            { id: 7, name: "Adventure Package", price: 89.99, popularity: 7, category: "activities", description: "Hiking and zip-lining adventure" },
+            { id: 8, name: "Luggage Insurance", price: 24.99, popularity: 4, category: "insurance", description: "Coverage for lost or damaged luggage" },
+            { id: 9, name: "Luxury Villa Rental", price: 199.99, popularity: 6, category: "accommodation", description: "Exclusive villa for your stay" }
+        ];
+
+        let cart = [];
+
+        // Theme management
+        function setTheme(theme) {
+            document.documentElement.setAttribute('data-theme', theme);
+            localStorage.setItem('theme', theme);
+            updateThemeToggleIcon(theme);
+        }
+
+        function updateThemeToggleIcon(theme) {
+            const themeToggle = document.getElementById('themeToggle');
+            if (theme === 'dark') {
+                themeToggle.innerHTML = '<i class="fas fa-moon"></i>';
+            } else {
+                themeToggle.innerHTML = '<i class="fas fa-sun"></i>';
+            }
+        }
+
+        // Initialize theme from local storage or default to light
+        const savedTheme = localStorage.getItem('theme') || 'light';
+        setTheme(savedTheme);
+
+        // Theme toggle functionality
+        document.getElementById('themeToggle').addEventListener('click', () => {
+            const currentTheme = document.documentElement.getAttribute('data-theme');
+            const newTheme = currentTheme === 'light' ? 'dark' : 'light';
+            setTheme(newTheme);
+
+            // Show theme change notification
+            showNotification(`Switched to ${newTheme} mode!`);
+        });
+
+        function renderProducts(productList) {
+            const grid = document.getElementById('productGrid');
+            grid.innerHTML = '';
+
+            if (productList.length === 0) {
+                grid.innerHTML = '<div class="empty-results">No products match your filters. Try adjusting your criteria.</div>';
+                return;
+            }
+
+            productList.forEach(product => {
+                const card = document.createElement('div');
+                card.className = 'product-card';
+
+                // Create popularity stars
+                let starsHTML = '';
+                for (let i = 0; i < 5; i++) {
+                    if (i < Math.floor(product.popularity / 2)) {
+                        starsHTML += '<i class="fas fa-star"></i>';
+                    } else {
+                        starsHTML += '<i class="far fa-star"></i>';
+                    }
+                }
+
+                card.innerHTML = `
+                    <h3>${product.name}</h3>
+                    <div class="popularity">${starsHTML}</div>
+                    <p class="product-description">${product.description}</p>
+                    <div class="product-price">$${product.price.toFixed(2)}</div>
+                    <button onclick="addToCart(${product.id})">
+                        <i class="fas fa-plus"></i> Add to Bundle
+                    </button>
+                `;
+                grid.appendChild(card);
+            });
+        }
+
+        function renderCart() {
+            const cartItems = document.getElementById('cartItems');
+            cartItems.innerHTML = '';
+
+            if (cart.length === 0) {
+                cartItems.innerHTML = '<div class="empty-cart">Your bundle is empty</div>';
+                document.getElementById('checkoutButton').disabled = true;
+            } else {
+                document.getElementById('checkoutButton').disabled = false;
+
+                cart.forEach(item => {
+                    const div = document.createElement('div');
+                    div.className = 'cart-item';
+                    div.innerHTML = `
+                        <div class="cart-item-details">
+                            <div class="cart-item-name">${item.name}</div>
+                            <div class="cart-item-price">$${item.price.toFixed(2)}</div>
+                        </div>
+                        <button class="remove-button" onclick="removeFromCart(${item.id})">
+                            <i class="fas fa-times"></i>
+                        </button>
+                    `;
+                    cartItems.appendChild(div);
+                });
+            }
+
+            const subtotal = cart.reduce((sum, item) => sum + item.price, 0);
+            document.getElementById('cartSubtotal').textContent = `Subtotal: $${subtotal.toFixed(2)}`;
+
+            // Simple tax calculation (5% tax - it is just for demo)
+            const tax = subtotal * 0.05;
+            const total = subtotal + tax;
+            document.getElementById('cartTotal').textContent = `Total: $${total.toFixed(2)}`;
+        }
+
+        function addToCart(productId) {
+            const product = products.find(p => p.id === productId);
+            if (product && !cart.some(item => item.id === productId)) {
+                cart.push(product);
+                renderCart();
+                showNotification(`${product.name} added to your bundle!`);
+            } else if (cart.some(item => item.id === productId)) {
+                showNotification(`${product.name} is already in your bundle!`, 'warning');
+            }
+        }
+
+        function removeFromCart(productId) {
+            const product = products.find(p => p.id === productId);
+            cart = cart.filter(item => item.id !== productId);
+            renderCart();
+            if (product) {
+                showNotification(`${product.name} removed from your bundle!`);
+            }
+        }
+
+        function filterAndSortProducts() {
+            let filtered = [...products];
+            const priceSort = document.getElementById('sortPrice').value;
+            const popSort = document.getElementById('sortPopularity').value;
+            const categoryFilter = document.getElementById('filterCategory').value;
+
+            // Apply category filter
+            if (categoryFilter) {
+                filtered = filtered.filter(p => p.category === categoryFilter);
+            }
+
+            // Apply sorting
+            if (priceSort === 'low') {
+                filtered.sort((a, b) => a.price - b.price);
+            } else if (priceSort === 'high') {
+                filtered.sort((a, b) => b.price - a.price);
+            }
+
+            if (popSort === 'high') {
+                filtered.sort((a, b) => b.popularity - a.popularity);
+            } else if (popSort === 'low') {
+                filtered.sort((a, b) => a.popularity - b.popularity);
+            }
+
+            renderProducts(filtered);
+        }
+
+        function showNotification(message, type = 'success') {
+            const notification = document.getElementById('notification');
+            const notificationMessage = document.getElementById('notificationMessage');
+
+            notification.className = `notification ${type}`;
+            notificationMessage.textContent = message;
+
+            // Update icon based on notification type
+            let iconElement = notification.querySelector('i');
+            if (type === 'success') {
+                iconElement.className = 'fas fa-check-circle';
+            } else if (type === 'warning') {
+                iconElement.className = 'fas fa-exclamation-triangle';
+            }
+
+            notification.classList.add('show');
+
+            setTimeout(() => {
+                notification.classList.remove('show');
+            }, 3000);
+        }
+
+        // Event listeners for sorting and filtering
+        document.getElementById('sortPrice').addEventListener('change', filterAndSortProducts);
+        document.getElementById('sortPopularity').addEventListener('change', filterAndSortProducts);
+        document.getElementById('filterCategory').addEventListener('change', filterAndSortProducts);
+
+        document.getElementById('checkoutButton').addEventListener('click', function () {
+            if (cart.length > 0) {
+                alert('Thank you for your purchase! Your travel bundle has been confirmed.');
+                cart = [];
+                renderCart();
+            }
+        });
+
+        // Initial render
+        renderProducts(products);
+        renderCart();
+    </script>
+</body>
+
+</html>

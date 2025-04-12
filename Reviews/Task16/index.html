@@ -1,0 +1,1327 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pulse - Digital News Magazine</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&family=Playfair+Display:wght@700&display=swap"
+        rel="stylesheet">
+    <style>
+        :root {
+
+            --primary: #2E5EAA;
+            --secondary: #5E81CC;
+            --accent: #E63946;
+            --neutral-light: #F5F5F5;
+            --neutral-dark: #333333;
+
+
+            --bg-color: #ffffff;
+            --text-color: var(--neutral-dark);
+            --card-bg: var(--neutral-light);
+            --accent-color: var(--accent);
+            --nav-bg: rgba(255, 255, 255, 0.95);
+            --border-color: #e0e0e0;
+            --heading-color: var(--primary);
+            --card-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+        }
+
+        [data-theme="dark"] {
+            --bg-color: #121212;
+            --text-color: #f0f0f0;
+            --card-bg: #1e1e1e;
+            --accent-color: #ff6b6b;
+            --nav-bg: rgba(30, 30, 30, 0.95);
+            --border-color: #2c2c2c;
+            --heading-color: var(--secondary);
+            --card-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Poppins', sans-serif;
+            background: var(--bg-color);
+            color: var(--text-color);
+            line-height: 1.6;
+            transition: background-color 0.3s ease, color 0.3s ease;
+        }
+
+        .logo {
+            font-family: 'Playfair Display', serif;
+            font-size: 1.8rem;
+            font-weight: 700;
+            color: var(--primary);
+            letter-spacing: -0.5px;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        [data-theme="dark"] .logo {
+            color: var(--secondary);
+        }
+
+        .logo i {
+            color: var(--accent-color);
+        }
+
+        nav {
+            position: fixed;
+            top: 0;
+            width: 100%;
+            background: var(--nav-bg);
+            backdrop-filter: blur(10px);
+            padding: 1rem 2rem;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            z-index: 1000;
+            transition: all 0.3s ease;
+        }
+
+        .nav-content {
+            max-width: 1200px;
+            margin: 0 auto;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .menu-items {
+            display: flex;
+            gap: 2rem;
+            align-items: center;
+        }
+
+        .menu-item {
+            position: relative;
+        }
+
+        .menu-items a {
+            text-decoration: none;
+            color: var(--text-color);
+            font-weight: 500;
+            padding: 0.5rem 0;
+            position: relative;
+            transition: all 0.3s ease;
+        }
+
+        .menu-items a::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 0;
+            height: 2px;
+            background: var(--accent-color);
+            transition: width 0.3s ease;
+        }
+
+        .menu-items a:hover::after {
+            width: 100%;
+        }
+
+        .dropdown {
+            position: relative;
+            cursor: pointer;
+        }
+
+        .dropdown-content {
+            display: none;
+            position: absolute;
+            top: 100%;
+            left: 0;
+            background: var(--nav-bg);
+            min-width: 180px;
+            box-shadow: var(--card-shadow);
+            border-radius: 8px;
+            padding: 0.5rem 0;
+            z-index: 1001;
+            margin-top: 0.5rem;
+        }
+
+        .dropdown-content a {
+            display: block;
+            padding: 0.75rem 1rem;
+        }
+
+        .dropdown-content a:hover {
+            background: rgba(0, 0, 0, 0.05);
+        }
+
+        [data-theme="dark"] .dropdown-content a:hover {
+            background: rgba(255, 255, 255, 0.05);
+        }
+
+        .dropdown:hover .dropdown-content {
+            display: block;
+        }
+
+        .theme-toggle {
+            display: flex;
+            align-items: center;
+            padding: 0.5rem;
+            background: transparent;
+            color: var(--text-color);
+            border: 1px solid var(--border-color);
+            border-radius: 50%;
+            width: 36px;
+            height: 36px;
+            cursor: pointer;
+            justify-content: center;
+            transition: all 0.3s ease;
+        }
+
+        .theme-toggle:hover {
+            background: var(--border-color);
+        }
+
+        .hamburger {
+            display: none;
+            cursor: pointer;
+            border: none;
+            background: transparent;
+            color: var(--text-color);
+            font-size: 1.5rem;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 2rem;
+            margin-top: 100px;
+        }
+
+        .section-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1.5rem;
+        }
+
+        .section-title {
+            font-family: 'Playfair Display', serif;
+            font-size: 1.8rem;
+            color: var(--heading-color);
+            position: relative;
+            padding-bottom: 0.5rem;
+        }
+
+        .section-title::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 60px;
+            height: 3px;
+            background: var(--accent-color);
+        }
+
+        .view-all {
+            color: var(--accent-color);
+            text-decoration: none;
+            font-weight: 500;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            transition: all 0.3s ease;
+        }
+
+        .view-all:hover {
+            opacity: 0.8;
+        }
+
+        .featured-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 2rem;
+            margin-bottom: 4rem;
+        }
+
+        .featured-main {
+            grid-column: span 2;
+            grid-row: span 2;
+        }
+
+        .article-card {
+            background: var(--card-bg);
+            border-radius: 10px;
+            overflow: hidden;
+            transition: all 0.3s ease;
+            box-shadow: var(--card-shadow);
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            border: 1px solid var(--border-color);
+        }
+
+        .article-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1);
+        }
+
+        [data-theme="dark"] .article-card:hover {
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.3);
+        }
+
+        .article-image {
+            position: relative;
+            overflow: hidden;
+        }
+
+        .article-card img {
+            width: 100%;
+            height: 220px;
+            object-fit: cover;
+            transition: transform 0.5s ease;
+        }
+
+        .featured-main .article-image img {
+            height: 400px;
+        }
+
+        .article-card:hover img {
+            transform: scale(1.05);
+        }
+
+        .article-category {
+            position: absolute;
+            top: 1rem;
+            left: 1rem;
+            background: var(--accent-color);
+            color: white;
+            padding: 0.25rem 0.75rem;
+            border-radius: 4px;
+            font-size: 0.8rem;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+
+        .article-content {
+            padding: 1.5rem;
+            display: flex;
+            flex-direction: column;
+            flex-grow: 1;
+        }
+
+        .article-meta {
+            display: flex;
+            gap: 1rem;
+            color: #777;
+            font-size: 0.85rem;
+            margin-bottom: 0.75rem;
+        }
+
+        .article-card h3 {
+            font-size: 1.25rem;
+            font-weight: 600;
+            margin-bottom: 0.75rem;
+            color: var(--text-color);
+        }
+
+        .featured-main h3 {
+            font-size: 1.8rem;
+        }
+
+        .article-excerpt {
+            margin-bottom: 1.5rem;
+            font-size: 0.95rem;
+            color: #666;
+            line-height: 1.6;
+        }
+
+        [data-theme="dark"] .article-excerpt {
+            color: #aaa;
+        }
+
+        .article-footer {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-top: auto;
+            padding-top: 1rem;
+            border-top: 1px solid var(--border-color);
+        }
+
+        .article-author {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .author-avatar {
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            object-fit: cover;
+        }
+
+        .article-actions {
+            display: flex;
+            gap: 1rem;
+        }
+
+        .article-actions button {
+            background: transparent;
+            border: none;
+            color: #777;
+            cursor: pointer;
+            transition: color 0.3s ease;
+        }
+
+        .article-actions button:hover {
+            color: var(--accent-color);
+        }
+
+        .picks-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 2rem;
+        }
+
+        .newsletter {
+            background: var(--primary);
+            color: white;
+            border-radius: 10px;
+            padding: 2rem;
+            margin: 4rem 0;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .newsletter::before {
+            content: '';
+            position: absolute;
+            top: -50px;
+            right: -50px;
+            width: 200px;
+            height: 200px;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.1);
+        }
+
+        .newsletter-content {
+            max-width: 600px;
+            position: relative;
+            z-index: 1;
+        }
+
+        .newsletter h2 {
+            font-family: 'Playfair Display', serif;
+            font-size: 2rem;
+            margin-bottom: 1rem;
+        }
+
+        .newsletter p {
+            margin-bottom: 1.5rem;
+            opacity: 0.9;
+        }
+
+        .newsletter-form {
+            display: flex;
+            max-width: 500px;
+        }
+
+        .newsletter-form input {
+            flex-grow: 1;
+            padding: 0.75rem 1rem;
+            border: none;
+            border-radius: 4px 0 0 4px;
+            font-family: 'Poppins', sans-serif;
+        }
+
+        .newsletter-form button {
+            background: var(--accent-color);
+            color: white;
+            border: none;
+            padding: 0 1.5rem;
+            border-radius: 0 4px 4px 0;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .newsletter-form button:hover {
+            background: #d32f3a;
+        }
+
+        .page-loader {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: var(--bg-color);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 2000;
+            transition: opacity 0.5s ease;
+        }
+
+        .loader {
+            width: 40px;
+            height: 40px;
+            border: 4px solid var(--border-color);
+            border-top: 4px solid var(--accent-color);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% {
+                transform: rotate(0deg);
+            }
+
+            100% {
+                transform: rotate(360deg);
+            }
+        }
+
+        .fade-out {
+            opacity: 0;
+            pointer-events: none;
+        }
+
+        @media (max-width: 1024px) {
+            .featured-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+
+            .featured-main {
+                grid-column: span 2;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                padding: 1.5rem;
+            }
+
+            .hamburger {
+                display: block;
+            }
+
+            .menu-items {
+                display: none;
+                position: absolute;
+                top: 100%;
+                left: 0;
+                right: 0;
+                background: var(--nav-bg);
+                flex-direction: column;
+                padding: 1rem;
+                box-shadow: 0 5px 10px rgba(0, 0, 0, 0.1);
+                align-items: flex-start;
+            }
+
+            .menu-items.active {
+                display: flex;
+            }
+
+            .dropdown-content {
+                position: static;
+                box-shadow: none;
+                padding-left: 1rem;
+                display: none;
+            }
+
+            .dropdown.active .dropdown-content {
+                display: block;
+            }
+
+            .featured-main {
+                grid-column: span 1;
+            }
+
+            .picks-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .newsletter-form {
+                flex-direction: column;
+            }
+
+            .newsletter-form input {
+                border-radius: 4px;
+                margin-bottom: 1rem;
+            }
+
+            .newsletter-form button {
+                border-radius: 4px;
+                padding: 0.75rem;
+            }
+        }
+
+        @media (max-width: 576px) {
+            .featured-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .nav-content {
+                padding: 0.5rem 0;
+            }
+
+            .article-footer {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 1rem;
+            }
+        }
+
+
+        .skip-link {
+            position: absolute;
+            top: -50px;
+            left: 0;
+            background: var(--accent-color);
+            color: white;
+            padding: 0.5rem 1rem;
+            z-index: 1001;
+            transition: top 0.3s ease;
+        }
+
+        .skip-link:focus {
+            top: 0;
+        }
+
+        :focus-visible {
+            outline: 2px solid var(--accent-color);
+            outline-offset: 2px;
+        }
+    </style>
+</head>
+
+<body>
+    <a href="#main-content" class="skip-link">Skip to main content</a>
+
+    <div class="page-loader">
+        <div class="loader"></div>
+    </div>
+
+    <nav>
+        <div class="nav-content">
+            <div class="logo">
+                <i class="fas fa-bolt"></i> News Magazine
+            </div>
+            <button class="hamburger" aria-label="Toggle menu">
+                <i class="fas fa-bars"></i>
+            </button>
+            <div class="menu-items">
+                <div class="menu-item">
+                    <a href="#" aria-current="page">Home</a>
+                </div>
+                <div class="menu-item dropdown">
+                    <a href="#" aria-haspopup="true">Categories <i class="fas fa-chevron-down"></i></a>
+                    <div class="dropdown-content">
+                        <a href="#politics">Politics</a>
+                        <a href="#tech">Technology</a>
+                        <a href="#science">Science</a>
+                        <a href="#business">Business</a>
+                        <a href="#helth">Health</a>
+                    </div>
+                </div>
+                <div class="menu-item dropdown">
+                    <a href="#" aria-haspopup="true">Trending <i class="fas fa-chevron-down"></i></a>
+                    <div class="dropdown-content">
+                        <a href="#">Weekly Top</a>
+                        <a href="#reader">Reader's Choice</a>
+                        <a href="#editor">Editor's Choice</a>
+                    </div>
+                </div>
+                <div class="menu-item">
+                    <a href="#">About</a>
+                </div>
+                <div class="menu-item">
+                    <a href="#">Contact</a>
+                </div>
+                <button class="theme-toggle" aria-label="Toggle dark mode">
+                    <i class="fas fa-moon"></i>
+                </button>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container" id="main-content">
+        <section class="featured">
+            <div class="section-header">
+                <h2 class="section-title">Featured Articles</h2>
+                <a href="#" class="view-all">View All <i class="fas fa-arrow-right"></i></a>
+            </div>
+            <div class="featured-grid">
+                <div id="politics" class="article-card featured-main">
+                    <div class="article-image">
+                        <img src="/api/placeholder/800/400" alt="Breaking News">
+                        <span class="article-category">Politics</span>
+                    </div>
+                    <div class="article-content">
+                        <div class="article-meta">
+                            <span><i class="far fa-clock"></i> April 7, 2025</span>
+                            <span><i class="far fa-comment"></i> 24 Comments</span>
+                        </div>
+                        <h3>This is Breaking news</h3>
+                        <p class="article-excerpt">Lorem ipsum, dolor sit amet consectetur adipisicing elit.
+                            Perspiciatis distinctio blanditiis unde, quisquam dignissimos fugit voluptate iure eligendi
+                            dolorum dicta tenetur, porro neque! Earum quibusdam veniam quae nemo amet corporis?
+                            Lorem ipsum dolor sit amet consectetur adipisicing elit. Distinctio reiciendis nemo facere
+                            quaerat est nostrum quod. Quo, ea aut ducimus optio beatae magnam aperiam eos laboriosam,
+                            similique ut aspernatur id consequuntur sint facilis blanditiis? Blanditiis ipsum quis quam,
+                            veniam deleniti quod dolorem soluta cupiditate quasi accusamus cum facilis quisquam delectus
+                            deserunt ad reiciendis eligendi vero. Atque, repellendus mollitia esse pariatur eum minus
+                            cupiditate. Quos illum porro voluptatibus obcaecati cum totam maiores cumque voluptas,
+                            accusantium error facilis perspiciatis eos molestias natus saepe tempore qui nulla hic
+                            veniam accusamus incidunt nisi temporibus a. Laborum, enim. Deleniti perferendis quidem
+                            dolorem fugit praesentium natus minima dolores dignissimos earum adipisci eligendi porro
+                            modi consectetur sint, velit quos distinctio, labore alias? Voluptatum cum consequuntur
+                            placeat laudantium optio sed, at, obcaecati doloremque maiores nobis saepe vel, aspernatur
+                            perferendis debitis delectus. Iste, quasi esse adipisci officiis temporibus et enim
+                            recusandae architecto illum. Sapiente in ducimus animi est ab modi perferendis
+                            necessitatibus quod nostrum sit? Sit quibusdam delectus quisquam necessitatibus laboriosam
+                            adipisci minima distinctio eum aliquam, temporibus veniam ipsum quam, placeat quia quas
+                            eveniet doloribus totam culpa, odio eligendi velit aperiam debitis voluptatem nam. Cum, eum
+                            eos delectus iusto odit, perspiciatis ipsam aperiam doloremque veniam, pariatur veritatis
+                            assumenda! Saepe ratione laborum repellendus est inventore similique dolor unde quasi.
+                            Quisquam rem perspiciatis, praesentium molestias suscipit, voluptatibus ipsum porro magnam
+                            neque vitae quo ex dolorum saepe quos eaque! Fugiat veniam voluptatibus dicta nostrum
+                            consequatur dolorem deserunt aut, provident accusantium esse ut culpa aliquam voluptatum
+                            adipisci, tenetur sequi corrupti sapiente doloremque aspernatur excepturi! At voluptates,
+                            suscipit tenetur non dolore quis numquam eligendi corrupti modi voluptatum dolorum odit, in
+                            deserunt temporibus vel ducimus impedit. Rerum nihil assumenda placeat molestiae impedit
+                            eaque natus autem ipsum est, facilis, voluptate neque vitae deleniti
+                            aspernatur sit dicta praesentium incidunt iste explicabo doloribus rem aliquam delectus ex.
+                            Nostrum!
+                        </p>
+                        <div class="article-footer">
+                            <div class="article-author">
+                                <span>By Sarah Johnson</span>
+                            </div>
+                            <div class="article-actions">
+                                <button aria-label="Save article"><i class="far fa-bookmark"></i></button>
+                                <button aria-label="Share article"><i class="far fa-share-square"></i></button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div id="tech" class="article-card">
+                    <div class="article-image">
+                        <img src="" alt="Technology News">
+                        <span class="article-category">Tech</span>
+                    </div>
+                    <div class="article-content">
+                        <div class="article-meta">
+                            <span><i class="far fa-clock"></i> April 6, 2025</span>
+                        </div>
+                        <h3>Technology Update</h3>
+                        <p class="article-excerpt">Lorem ipsum dolor sit amet consectetur adipisicing elit. Explicabo
+                            dignissimos totam fugiat reiciendis nesciunt nisi aperiam ipsa quod consequuntur sed, quos
+                            unde amet repudiandae corporis vitae delectus voluptas deserunt perferendis placeat?
+                            Delectus hic ipsum ut itaque laborum nobis ad sint, repellat officia, et odit quaerat ipsa
+                            atque in ullam, consequuntur aspernatur ex! Soluta dicta ad ab excepturi iusto et corrupti,
+                            ipsam ducimus esse praesentium veniam quae beatae natus voluptatem nihil aspernatur in
+                            molestiae ex possimus animi facere perspiciatis officiis, assumenda tempora. Quasi
+                            consectetur aut odio voluptas asperiores corporis,
+                            sed repudiandae eligendi cupiditate sit. Culpa aperiam atque, expedita error modi quae!</p>
+                        <div class="article-footer">
+                            <div class="article-author">
+                                <span>By Alex Chen</span>
+                            </div>
+                            <div class="article-actions">
+                                <button aria-label="Save article"><i class="far fa-bookmark"></i></button>
+                                <button aria-label="Share article"><i class="far fa-share-square"></i></button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div id="business" class="article-card">
+                    <div class="article-image">
+                        <img src="/api/placeholder/400/220" alt="Business News">
+                        <span class="article-category">Business</span>
+                    </div>
+                    <div class="article-content">
+                        <div class="article-meta">
+                            <span><i class="far fa-clock"></i> April 5, 2025</span>
+                        </div>
+                        <h3>Business news</h3>
+                        <p class="article-excerpt">Lorem ipsum dolor sit amet consectetur, adipisicing elit. Autem at
+                            provident beatae eligendi illum quo, dignissimos quos quisquam, magni doloribus voluptate
+                            pariatur, qui culpa vitae architecto earum voluptatum. Dicta itaque unde sit, optio ut
+                            doloremque totam? Suscipit recusandae minus sit dolorum veritatis aut porro eius saepe
+                            expedita blanditiis ullam, nostrum ducimus consequuntur accusantium consectetur non libero
+                            pariatur tempora numquam officia sed accusamus molestias qui fugiat. Impedit veritatis cum
+                            iusto deleniti esse molestias sit inventore, sapiente eos quod rem amet quas soluta modi
+                            nisi aspernatur unde quam cupiditate ut officia. A molestias sunt possimus voluptates
+                            officiis sequi dolor illum officia laborum!</p>
+                        <div class="article-footer">
+                            <div class="article-author">
+                                <span>By Michael Lee</span>
+                            </div>
+                            <div class="article-actions">
+                                <button aria-label="Save article"><i class="far fa-bookmark"></i></button>
+                                <button aria-label="Share article"><i class="far fa-share-square"></i></button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section class="newsletter">
+            <div class="newsletter-content">
+                <h2>Stay Informed</h2>
+                <p>Subscribe to our newsletter to receive the latest news and exclusive content directly in your inbox.
+                </p>
+                <form class="newsletter-form">
+                    <input type="email" placeholder="Your email address" aria-label="Email address">
+                    <button type="submit">Subscribe</button>
+                </form>
+            </div>
+        </section>
+
+        <section id="editor" class="editors-picks">
+            <div class="section-header">
+                <h2 class="section-title">Editor's Picks</h2>
+                <a href="#" class="view-all">View All <i class="fas fa-arrow-right"></i></a>
+            </div>
+            <div class="picks-grid">
+                <div class="article-card">
+                    <div class="article-image">
+                        <img src="/api/placeholder/400/220" alt="Editor's Pick 1">
+                        <span class="article-category">Science</span>
+                    </div>
+                    <div class="article-content">
+                        <div class="article-meta">
+                            <span><i class="far fa-clock"></i> April 4, 2025</span>
+                        </div>
+                        <h3>Breakthrough in Renewable Energy Storage</h3>
+                        <p class="article-excerpt">Scientists have developed a new battery technology that could
+                            revolutionize how we store renewable energy.</p>
+                        <div class="article-footer">
+                            <div class="article-author">
+                                <span>By Emma Roberts</span>
+                            </div>
+                            <div class="article-actions">
+                                <button aria-label="Save article"><i class="far fa-bookmark"></i></button>
+                                <button aria-label="Share article"><i class="far fa-share-square"></i></button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="article-card">
+                    <div class="article-image">
+                        <img src="/api/placeholder/400/220" alt="Editor's Pick 2">
+                        <span class="article-category">Health</span>
+                    </div>
+                    <div class="article-content">
+                        <div class="article-meta">
+                            <span><i class="far fa-clock"></i> April 3, 2025</span>
+                        </div>
+                        <h3>New Dietary Guidelines Challenge Traditional Advice</h3>
+                        <p class="article-excerpt">Recent research suggests a significant shift in nutritional
+                            recommendations for optimal health and longevity.</p>
+                        <div class="article-footer">
+                            <div class="article-author">
+                                <span>By David Park</span>
+                            </div>
+                            <div class="article-actions">
+                                <button aria-label="Save article"><i class="far fa-bookmark"></i></button>
+                                <button aria-label="Share article"><i class="far fa-share-square"></i></button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section id="reader" class="reader-suggestions">
+            <div class="section-header">
+                <h2 class="section-title">Reader's Suggestions</h2>
+                <a href="#" class="view-all">View All <i class="fas fa-arrow-right"></i></a>
+            </div>
+            <div class="picks-grid">
+                <div class="article-card">
+                    <div class="article-image">
+                        <img src="/api/placeholder/400/220" alt="Reader's Suggestion 1">
+                        <span class="article-category">Culture</span>
+                    </div>
+                    <div class="article-content">
+                        <div class="article-meta">
+                            <span><i class="far fa-clock"></i> April 2, 2025</span>
+                        </div>
+                        <h3>The Resurgence of Independent Bookstores</h3>
+                        <p class="article-excerpt">After years of decline, local bookstores are making a surprising
+                            comeback with innovative community-focused approaches.</p>
+                        <div class="article-footer">
+                            <div class="article-author">
+                                <span>By Rita Brown</span>
+                            </div>
+                            <div class="article-actions">
+                                <button aria-label="Save article"><i class="far fa-bookmark"></i></button>
+                                <button aria-label="Share article"><i class="far fa-share-square"></i></button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="article-card">
+                    <div class="article-image">
+                        <img src="/api/placeholder/400/220" alt="Reader's Suggestion 2">
+                        <span class="article-category">Travel</span>
+                    </div>
+                    <div class="article-content">
+                        <div class="article-meta">
+                            <span><i class="far fa-clock"></i> April 1, 2025</span>
+                        </div>
+                        <h3>Sustainable Tourism: The New Frontier</h3>
+                        <p class="article-excerpt">Eco-conscious travelers are driving a major shift in how people
+                            explore the world, with new destinations emerging.</p>
+                        <div class="article-footer">
+                            <div class="article-author">
+                                <span>By James Wilson</span>
+                            </div>
+                            <div class="article-actions">
+                                <button aria-label="Save article"><i class="far fa-bookmark"></i></button>
+                                <button aria-label="Share article"><i class="far fa-share-square"></i></button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </div>
+
+    <!-- <script>
+        // Page loader
+        window.addEventListener('load', () => {
+            setTimeout(() => {
+                document.querySelector('.page-loader').classList.add('fade-out');
+            }, 500);
+        });
+
+        // Theme toggle
+        const themeToggle = document.querySelector('.theme-toggle');
+        const themeIcon = themeToggle.querySelector('i');
+        
+        // Check for saved theme preference
+        if (localStorage.getItem('theme') === 'dark') {
+            document.body.dataset.theme = 'dark';
+            themeIcon.classList.replace('fa-moon', 'fa-sun');
+        }
+        
+        themeToggle.addEventListener('click', () => {
+            if (document.body.dataset.theme === 'dark') {
+                document.body.dataset.theme = 'light';
+                themeIcon.classList.replace('fa-sun', 'fa-moon');
+                localStorage.setItem('theme', 'light');
+            } else {
+                document.body.dataset.theme = 'dark';
+                themeIcon.classList.replace('fa-moon', 'fa-sun');
+                localStorage.setItem('theme', 'dark');
+            }
+        });
+
+        // Navigation scroll effect
+        window.addEventListener('scroll', () => {
+            const nav = document.querySelector('nav');
+            if (window.scrollY > 50) {
+                nav.style.padding = '0.5rem 2rem';
+            } else {
+                nav.style.padding = '1rem 2rem';
+            }
+        });
+
+        // Mobile menu
+        const hamburger = document.querySelector('.hamburger');
+        const menuItems = document.querySelector('.menu-items');
+        
+        hamburger.addEventListener('click', () => {
+            menuItems.classList.toggle('active');
+            // Toggle between menu and close icons
+            const icon = hamburger.querySelector('i');
+            if (icon.classList.contains('fa-bars')) {
+                icon.classList.replace('fa-bars', ' -->
+
+    <script>
+        // DOM Elements
+        const pageLoader = document.querySelector('.page-loader');
+        const themeToggle = document.querySelector('.theme-toggle');
+        const themeIcon = themeToggle.querySelector('i');
+        const hamburger = document.querySelector('.hamburger');
+        const menuItems = document.querySelector('.menu-items');
+        const dropdowns = document.querySelectorAll('.dropdown');
+        const nav = document.querySelector('nav');
+        const articleCards = document.querySelectorAll('.article-card');
+        const bookmarkButtons = document.querySelectorAll('.article-actions button:first-child');
+        const shareButtons = document.querySelectorAll('.article-actions button:last-child');
+        const newsletterForm = document.querySelector('.newsletter-form');
+
+        // Page loader
+        window.addEventListener('load', () => {
+            setTimeout(() => {
+                pageLoader.classList.add('fade-out');
+                // Animate article cards entrance
+                animateArticles();
+            }, 500);
+        });
+
+        // Animate articles on load with staggered effect
+        function animateArticles() {
+            articleCards.forEach((card, index) => {
+                setTimeout(() => {
+                    card.style.opacity = '0';
+                    card.style.transform = 'translateY(20px)';
+                    card.style.transition = 'opacity 0.5s ease, transform 0.5s ease';
+
+                    setTimeout(() => {
+                        card.style.opacity = '1';
+                        card.style.transform = 'translateY(0)';
+                    }, 50);
+                }, index * 100);
+            });
+        }
+
+        // Theme toggle functionality
+        function initThemeToggle() {
+            // Check for saved theme preference
+            if (localStorage.getItem('theme') === 'dark') {
+                document.body.dataset.theme = 'dark';
+                themeIcon.classList.replace('fa-moon', 'fa-sun');
+            }
+
+            themeToggle.addEventListener('click', () => {
+                if (document.body.dataset.theme === 'dark') {
+                    document.body.dataset.theme = 'light';
+                    themeIcon.classList.replace('fa-sun', 'fa-moon');
+                    localStorage.setItem('theme', 'light');
+                } else {
+                    document.body.dataset.theme = 'dark';
+                    themeIcon.classList.replace('fa-moon', 'fa-sun');
+                    localStorage.setItem('theme', 'dark');
+                }
+            });
+        }
+
+        // Navigation scroll effect
+        function initScrollEffect() {
+            window.addEventListener('scroll', () => {
+                if (window.scrollY > 50) {
+                    nav.classList.add('scrolled');
+                    nav.style.padding = '0.5rem 2rem';
+                } else {
+                    nav.classList.remove('scrolled');
+                    nav.style.padding = '1rem 2rem';
+                }
+            });
+        }
+
+        // Mobile menu functionality
+        function initMobileMenu() {
+            hamburger.addEventListener('click', () => {
+                menuItems.classList.toggle('active');
+                // Toggle between menu and close icons
+                const icon = hamburger.querySelector('i');
+                if (icon.classList.contains('fa-bars')) {
+                    icon.classList.replace('fa-bars', 'fa-times');
+                } else {
+                    icon.classList.replace('fa-times', 'fa-bars');
+                }
+            });
+
+            // Close menu when clicking outside
+            document.addEventListener('click', (e) => {
+                if (!menuItems.contains(e.target) && !hamburger.contains(e.target)) {
+                    menuItems.classList.remove('active');
+                    const icon = hamburger.querySelector('i');
+                    if (icon.classList.contains('fa-times')) {
+                        icon.classList.replace('fa-times', 'fa-bars');
+                    }
+                }
+            });
+
+            // Mobile dropdown toggles
+            if (window.innerWidth <= 768) {
+                dropdowns.forEach(dropdown => {
+                    const dropdownLink = dropdown.querySelector('a');
+
+                    dropdownLink.addEventListener('click', (e) => {
+                        e.preventDefault();
+                        dropdown.classList.toggle('active');
+
+                        // Close other dropdowns
+                        dropdowns.forEach(otherDropdown => {
+                            if (otherDropdown !== dropdown) {
+                                otherDropdown.classList.remove('active');
+                            }
+                        });
+                    });
+                });
+            }
+        }
+
+        // Bookmark functionality
+        function initBookmarkButtons() {
+            // Get saved bookmarks from local storage
+            const savedBookmarks = JSON.parse(localStorage.getItem('bookmarks')) || [];
+
+            bookmarkButtons.forEach((button, index) => {
+                const articleTitle = button.closest('.article-card').querySelector('h3').textContent;
+
+                // Check if this article is already bookmarked
+                if (savedBookmarks.includes(articleTitle)) {
+                    button.querySelector('i').classList.replace('far', 'fas');
+                    button.setAttribute('aria-pressed', 'true');
+                }
+
+                // Toggle bookmark status
+                button.addEventListener('click', () => {
+                    const icon = button.querySelector('i');
+
+                    if (icon.classList.contains('far')) {
+                        // Add bookmark
+                        icon.classList.replace('far', 'fas');
+                        button.setAttribute('aria-pressed', 'true');
+
+                        // Show confirmation toast
+                        showToast(`Article bookmarked!`);
+
+                        // Save to local storage
+                        savedBookmarks.push(articleTitle);
+                        localStorage.setItem('bookmarks', JSON.stringify(savedBookmarks));
+                    } else {
+                        // Remove bookmark
+                        icon.classList.replace('fas', 'far');
+                        button.setAttribute('aria-pressed', 'false');
+
+                        // Show confirmation toast
+                        showToast(`Bookmark removed`);
+
+                        // Remove from local storage
+                        const index = savedBookmarks.indexOf(articleTitle);
+                        if (index > -1) {
+                            savedBookmarks.splice(index, 1);
+                            localStorage.setItem('bookmarks', JSON.stringify(savedBookmarks));
+                        }
+                    }
+                });
+            });
+        }
+
+        // Share functionality
+        function initShareButtons() {
+            shareButtons.forEach(button => {
+                button.addEventListener('click', () => {
+                    const articleCard = button.closest('.article-card');
+                    const articleTitle = articleCard.querySelector('h3').textContent;
+                    const articleUrl = window.location.href;
+
+                    // Check if Web Share API is available
+                    if (navigator.share) {
+                        navigator.share({
+                            title: articleTitle,
+                            url: articleUrl
+                        })
+                            .then(() => showToast('Shared successfully!'))
+                            .catch(error => console.log('Error sharing:', error));
+                    } else {
+                        // Fallback - copy URL to clipboard
+                        navigator.clipboard.writeText(articleUrl)
+                            .then(() => showToast('Link copied to clipboard!'))
+                            .catch(err => console.log('Error copying text: ', err));
+                    }
+                });
+            });
+        }
+
+        // Newsletter subscription
+        function initNewsletterForm() {
+            newsletterForm.addEventListener('submit', (e) => {
+                e.preventDefault();
+                const emailInput = newsletterForm.querySelector('input');
+                const email = emailInput.value.trim();
+
+                if (email && isValidEmail(email)) {
+                    // Simulate API call
+                    showLoadingState(newsletterForm.querySelector('button'));
+
+                    // Simulate delay
+                    setTimeout(() => {
+                        hideLoadingState(newsletterForm.querySelector('button'));
+                        showToast('Thanks for subscribing!');
+                        emailInput.value = '';
+                    }, 1000);
+
+                    // Here you would normally send this to your backend
+                    console.log('Subscription email:', email);
+                } else {
+                    showToast('Please enter a valid email', 'error');
+                    emailInput.focus();
+                }
+            });
+        }
+
+        // Validate email format
+        function isValidEmail(email) {
+            const re = /^(([^<>()\[\]\\.,;:\s@"]+(\.[^<>()\[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/;
+            return re.test(email.toLowerCase());
+        }
+
+        // Show loading state on button
+        function showLoadingState(button) {
+            const originalText = button.textContent;
+            button.dataset.originalText = originalText;
+            button.disabled = true;
+            button.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+        }
+
+        // Hide loading state on button
+        function hideLoadingState(button) {
+            button.innerHTML = button.dataset.originalText;
+            button.disabled = false;
+        }
+
+        // Toast notification system
+        function showToast(message, type = 'success') {
+            // Remove existing toast if present
+            const existingToast = document.querySelector('.toast');
+            if (existingToast) {
+                existingToast.remove();
+            }
+
+            // Create new toast
+            const toast = document.createElement('div');
+            toast.className = `toast ${type}`;
+            toast.textContent = message;
+
+            // Style the toast
+            toast.style.position = 'fixed';
+            toast.style.bottom = '20px';
+            toast.style.right = '20px';
+            toast.style.padding = '10px 20px';
+            toast.style.borderRadius = '4px';
+            toast.style.backgroundColor = type === 'success' ? '#4CAF50' : '#F44336';
+            toast.style.color = 'white';
+            toast.style.zIndex = '9999';
+            toast.style.opacity = '0';
+            toast.style.transition = 'opacity 0.3s ease';
+
+            // Add to DOM
+            document.body.appendChild(toast);
+
+            // Animate in
+            setTimeout(() => {
+                toast.style.opacity = '1';
+            }, 10);
+
+            // Remove after 3 seconds
+            setTimeout(() => {
+                toast.style.opacity = '0';
+                setTimeout(() => {
+                    toast.remove();
+                }, 300);
+            }, 3000);
+        }
+
+
+        function initLazyLoading() {
+            if ('IntersectionObserver' in window) {
+                const lazyImages = document.querySelectorAll('img');
+
+                const imageObserver = new IntersectionObserver((entries, observer) => {
+                    entries.forEach(entry => {
+                        if (entry.isIntersecting) {
+                            const img = entry.target;
+                            img.style.opacity = '0';
+                            img.style.transition = 'opacity 0.5s ease';
+                            setTimeout(() => {
+                                img.style.opacity = '1';
+                            }, 100);
+
+                            imageObserver.unobserve(img);
+                        }
+                    });
+                });
+
+                lazyImages.forEach(img => {
+                    imageObserver.observe(img);
+                });
+            }
+        }
+
+
+        function initReadingProgressBar() {
+            const progressBar = document.createElement('div');
+            progressBar.className = 'reading-progress';
+            progressBar.style.position = 'fixed';
+            progressBar.style.top = '0';
+            progressBar.style.left = '0';
+            progressBar.style.height = '3px';
+            progressBar.style.backgroundColor = 'var(--accent-color)';
+            progressBar.style.zIndex = '1001';
+            progressBar.style.width = '0%';
+            progressBar.style.transition = 'width 0.1s ease';
+
+            document.body.appendChild(progressBar);
+
+            window.addEventListener('scroll', () => {
+                const scrollTop = window.scrollY || document.documentElement.scrollTop;
+                const scrollHeight = document.documentElement.scrollHeight;
+                const clientHeight = document.documentElement.clientHeight;
+
+                const scrollPercentage = (scrollTop / (scrollHeight - clientHeight)) * 100;
+                progressBar.style.width = `${scrollPercentage}%`;
+            });
+        }
+
+
+        function calculateReadTimes() {
+            const articles = document.querySelectorAll('.article-card');
+            const wordsPerMinute = 200;
+
+            articles.forEach(article => {
+                const content = article.textContent;
+                const wordCount = content.split(/\s+/).length;
+                const readingTime = Math.ceil(wordCount / wordsPerMinute);
+
+                const metaSection = article.querySelector('.article-meta');
+                if (metaSection) {
+                    const readTimeSpan = document.createElement('span');
+                    readTimeSpan.innerHTML = `<i class="far fa-clock"></i> ${readingTime} min read`;
+                    metaSection.appendChild(readTimeSpan);
+                }
+            });
+        }
+
+
+        function init() {
+            initThemeToggle();
+            initScrollEffect();
+            initMobileMenu();
+            initBookmarkButtons();
+            initShareButtons();
+            initNewsletterForm();
+            initLazyLoading();
+            initReadingProgressBar();
+            calculateReadTimes();
+
+
+            if (!localStorage.getItem('theme')) {
+                const prefersDarkMode = window.matchMedia('(prefers-color-scheme: dark)').matches;
+                if (prefersDarkMode) {
+                    document.body.dataset.theme = 'dark';
+                    themeIcon.classList.replace('fa-moon', 'fa-sun');
+                }
+            }
+        }
+
+
+        document.addEventListener('DOMContentLoaded', init);
+    </script>
+</body>
+
+</html>

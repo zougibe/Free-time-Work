@@ -1,0 +1,675 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Data Explorer Pro</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: {
+                            50: '#eff6ff',
+                            100: '#dbeafe',
+                            200: '#bfdbfe',
+                            300: '#93c5fd',
+                            400: '#60a5fa',
+                            500: '#3b82f6',
+                            600: '#2563eb',
+                            700: '#1d4ed8',
+                            800: '#1e40af',
+                            900: '#1e3a8a',
+                        },
+                        secondary: {
+                            50: '#f0fdfa',
+                            100: '#ccfbf1',
+                            200: '#99f6e4',
+                            300: '#5eead4',
+                            400: '#2dd4bf',
+                            500: '#14b8a6',
+                            600: '#0d9488',
+                            700: '#0f766e',
+                            800: '#115e59',
+                            900: '#134e4a',
+                        },
+                        accent: {
+                            50: '#fff7ed',
+                            100: '#ffedd5',
+                            200: '#fed7aa',
+                            300: '#fdba74',
+                            400: '#fb923c',
+                            500: '#f97316',
+                            600: '#ea580c',
+                            700: '#c2410c',
+                            800: '#9a3412',
+                            900: '#7c2d12',
+                        },
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'system-ui', 'sans-serif'],
+                        mono: ['JetBrains Mono', 'monospace'],
+                    },
+                    boxShadow: {
+                        'custom': '0 4px 20px -2px rgba(0, 0, 0, 0.1)',
+                        'custom-lg': '0 10px 30px -3px rgba(0, 0, 0, 0.1)',
+                    },
+                }
+            }
+        }
+    </script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500&display=swap');
+
+        html {
+            scroll-behavior: smooth;
+        }
+
+        .table-container {
+            max-height: 400px;
+            overflow-y: auto;
+            scrollbar-width: thin;
+            scrollbar-color: #e5e7eb transparent;
+        }
+
+        .table-container::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        .table-container::-webkit-scrollbar-track {
+            background: transparent;
+        }
+
+        .table-container::-webkit-scrollbar-thumb {
+            background-color: #e5e7eb;
+            border-radius: 20px;
+        }
+
+        tr.selected {
+            background-color: #eff6ff;
+            border-left: 3px solid #3b82f6;
+        }
+
+        tr:not(.selected):hover {
+            background-color: #f9fafb;
+        }
+
+        .fade-in {
+            animation: fadeIn 0.3s ease-in-out;
+        }
+
+        .slide-in {
+            animation: slideIn 0.4s ease-out;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+            }
+
+            to {
+                opacity: 1;
+            }
+        }
+
+        @keyframes slideIn {
+            from {
+                transform: translateY(10px);
+                opacity: 0;
+            }
+
+            to {
+                transform: translateY(0);
+                opacity: 1;
+            }
+        }
+
+        .icon-pulse {
+            animation: iconPulse 1.5s infinite;
+        }
+
+        @keyframes iconPulse {
+            0% {
+                transform: scale(1);
+            }
+
+            50% {
+                transform: scale(1.1);
+            }
+
+            100% {
+                transform: scale(1);
+            }
+        }
+
+        .chart-container {
+            position: relative;
+            height: 300px;
+            transition: height 0.3s ease;
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                grid-template-columns: 1fr;
+            }
+
+            .sidebar {
+                max-height: 300px;
+                overflow-y: auto;
+            }
+
+            .chart-container {
+                height: 250px;
+            }
+        }
+    </style>
+</head>
+
+<body class="bg-gray-50 font-sans text-gray-800">
+    <nav class="bg-white shadow-sm py-4">
+        <div class="container mx-auto px-4 max-w-7xl">
+            <div class="flex justify-between items-center">
+                <div class="flex items-center space-x-2">
+                    <i class="fas fa-chart-line text-primary-600 text-2xl"></i>
+                    <h1 class="text-xl font-bold text-gray-800">Data Explorer Pro</h1>
+                </div>
+                <div class="flex items-center space-x-3">
+                    <button id="themeToggle" class="p-2 rounded-full hover:bg-gray-100 transition-colors">
+                        <i class="fas fa-sun"></i>
+                    </button>
+                    <button
+                        class="bg-primary-500 hover:bg-primary-600 text-white px-3 py-2 rounded-lg text-sm font-medium transition-colors flex items-center">
+                        <i class="fas fa-download mr-2"></i>
+                        Export Data
+                    </button>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container mx-auto p-4 md:p-6 grid grid-cols-1 lg:grid-cols-3 gap-6 max-w-7xl">
+        <!-- Main Content -->
+        <div class="lg:col-span-2">
+            <div class="bg-white rounded-xl shadow-custom p-6 slide-in">
+                <div
+                    class="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 space-y-4 md:space-y-0">
+                    <div>
+                        <h2 class="text-xl font-bold text-gray-800">Dataset Overview</h2>
+                        <p class="text-gray-500 text-sm">Viewing 10 records per page</p>
+                    </div>
+                    <div class="flex items-center space-x-2 w-full md:w-auto">
+                        <div class="relative flex-grow md:flex-grow-0">
+                            <span
+                                class="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none text-gray-400">
+                                <i class="fas fa-search"></i>
+                            </span>
+                            <input id="search" type="text" placeholder="Search by name or category..."
+                                class="pl-10 pr-4 py-2 border border-gray-300 rounded-lg w-full md:w-64 focus:ring-2 focus:ring-primary-400 focus:border-primary-400 transition-all outline-none">
+                        </div>
+                        <button class="bg-gray-100 hover:bg-gray-200 p-2 rounded-lg text-gray-600 transition-colors">
+                            <i class="fas fa-filter"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <div class="table-container ring-1 ring-gray-200 rounded-lg overflow-hidden mb-6">
+                    <table id="dataTable" class="w-full">
+                        <thead>
+                            <tr>
+                                <th
+                                    class="bg-gray-50 p-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider border-b border-gray-200">
+                                    <div class="flex items-center space-x-1 cursor-pointer hover:text-primary-600 transition-colors"
+                                        data-sort="id">
+                                        <span>ID</span>
+                                        <i class="fas fa-sort text-gray-400"></i>
+                                    </div>
+                                </th>
+                                <th
+                                    class="bg-gray-50 p-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider border-b border-gray-200">
+                                    <div class="flex items-center space-x-1 cursor-pointer hover:text-primary-600 transition-colors"
+                                        data-sort="name">
+                                        <span>Name</span>
+                                        <i class="fas fa-sort text-gray-400"></i>
+                                    </div>
+                                </th>
+                                <th
+                                    class="bg-gray-50 p-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider border-b border-gray-200">
+                                    <div class="flex items-center space-x-1 cursor-pointer hover:text-primary-600 transition-colors"
+                                        data-sort="value">
+                                        <span>Value</span>
+                                        <i class="fas fa-sort text-gray-400"></i>
+                                    </div>
+                                </th>
+                                <th
+                                    class="bg-gray-50 p-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider border-b border-gray-200">
+                                    <div class="flex items-center space-x-1 cursor-pointer hover:text-primary-600 transition-colors"
+                                        data-sort="category">
+                                        <span>Category</span>
+                                        <i class="fas fa-sort text-gray-400"></i>
+                                    </div>
+                                </th>
+                            </tr>
+                        </thead>
+                        <tbody id="tableBody"></tbody>
+                    </table>
+                </div>
+
+                <div class="flex flex-col md:flex-row justify-between items-center">
+                    <div class="flex space-x-2 mb-4 md:mb-0">
+                        <button id="prevBtn"
+                            class="bg-primary-500 text-white px-4 py-2 rounded-lg hover:bg-primary-600 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors flex items-center space-x-1">
+                            <i class="fas fa-chevron-left text-xs"></i>
+                            <span>Previous</span>
+                        </button>
+                        <button id="nextBtn"
+                            class="bg-primary-500 text-white px-4 py-2 rounded-lg hover:bg-primary-600 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors flex items-center space-x-1">
+                            <span>Next</span>
+                            <i class="fas fa-chevron-right text-xs"></i>
+                        </button>
+                    </div>
+                    <span id="pageInfo" class="text-gray-600 font-medium bg-gray-100 px-3 py-1 rounded-lg"></span>
+                </div>
+            </div>
+
+            <div class="bg-white rounded-xl shadow-custom p-6 mt-6 slide-in" style="animation-delay: 0.1s">
+                <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-6">
+                    <div>
+                        <h2 class="text-xl font-bold text-gray-800">Data Visualization</h2>
+                        <p class="text-gray-500 text-sm">Aggregated by category</p>
+                    </div>
+                    <div class="flex items-center space-x-2 mt-3 md:mt-0">
+                        <select id="chartType"
+                            class="bg-white border border-gray-300 rounded-lg py-2 px-3 focus:ring-2 focus:ring-primary-400 focus:border-primary-400 transition-all outline-none text-sm">
+                            <option value="bar">Bar Chart</option>
+                            <option value="line">Line Chart</option>
+                            <option value="pie">Pie Chart</option>
+                            <option value="doughnut">Doughnut Chart</option>
+                            <option value="polarArea">Polar Area</option>
+                        </select>
+                        <button class="bg-gray-100 hover:bg-gray-200 p-2 rounded-lg text-gray-600 transition-colors">
+                            <i class="fas fa-expand-alt"></i>
+                        </button>
+                    </div>
+                </div>
+                <div class="chart-container">
+                    <canvas id="dataChart"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <!-- Sidebar -->
+        <div class="sidebar bg-white rounded-xl shadow-custom p-6 slide-in" style="animation-delay: 0.2s">
+            <h2 class="text-xl font-bold text-gray-800 mb-4 flex items-center">
+                <i class="fas fa-info-circle text-primary-500 mr-2"></i>
+                Details
+            </h2>
+            <div id="empty-details" class="flex flex-col items-center justify-center py-12 text-center">
+                <div class="bg-gray-100 p-4 rounded-full mb-4">
+                    <i class="fas fa-mouse-pointer text-primary-400 text-2xl icon-pulse"></i>
+                </div>
+                <p class="text-gray-500">Click on any row to view detailed information</p>
+            </div>
+            <div id="details" class="hidden space-y-4 fade-in">
+                <div class="flex justify-between border-b border-gray-100 pb-4">
+                    <h3 class="font-medium text-gray-500">DATA DETAILS</h3>
+                    <span class="bg-green-100 text-green-800 text-xs px-2 py-1 rounded-full"
+                        id="status-badge">Active</span>
+                </div>
+                <div id="details-content" class="space-y-4">
+                    <!-- Details content will be inserted here by JavaScript -->
+                </div>
+                <div class="pt-4 space-y-3">
+                    <h4 class="font-medium text-gray-500 text-sm">QUICK ACTIONS</h4>
+                    <div class="grid grid-cols-2 gap-3">
+                        <button
+                            class="flex items-center justify-center py-2 bg-gray-100 hover:bg-gray-200 rounded-lg text-sm transition-colors">
+                            <i class="fas fa-edit mr-2 text-gray-600"></i>
+                            Edit
+                        </button>
+                        <button
+                            class="flex items-center justify-center py-2 bg-gray-100 hover:bg-gray-200 rounded-lg text-sm transition-colors">
+                            <i class="fas fa-trash-alt mr-2 text-gray-600"></i>
+                            Delete
+                        </button>
+                        <button
+                            class="flex items-center justify-center py-2 bg-gray-100 hover:bg-gray-200 rounded-lg text-sm transition-colors">
+                            <i class="fas fa-copy mr-2 text-gray-600"></i>
+                            Duplicate
+                        </button>
+                        <button
+                            class="flex items-center justify-center py-2 bg-gray-100 hover:bg-gray-200 rounded-lg text-sm transition-colors">
+                            <i class="fas fa-file-export mr-2 text-gray-600"></i>
+                            Export
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+
+        const sampleData = Array.from({ length: 50 }, (_, i) => ({
+            id: i + 1,
+            name: `Item ${i + 1}`,
+            value: Math.floor(Math.random() * 100),
+            category: ['A', 'B', 'C'][Math.floor(Math.random() * 3)],
+            date: new Date(2023, Math.floor(Math.random() * 12), Math.floor(Math.random() * 28) + 1).toISOString().split('T')[0],
+            status: Math.random() > 0.3 ? 'Active' : 'Inactive'
+        }));
+
+        const state = {
+            data: sampleData,
+            filteredData: sampleData,
+            page: 1,
+            rowsPerPage: 10,
+            selectedRow: null,
+            sortField: null,
+            sortDirection: 'asc'
+        };
+
+        let chartInstance = null;
+        const chartColors = {
+            A: 'rgba(59, 130, 246, 0.7)',
+            B: 'rgba(16, 185, 129, 0.7)',
+            C: 'rgba(249, 115, 22, 0.7)'
+        };
+        const chartBorders = {
+            A: 'rgb(59, 130, 246)',
+            B: 'rgb(16, 185, 129)',
+            C: 'rgb(249, 115, 22)'
+        };
+
+        function renderTable() {
+            const tbody = document.getElementById('tableBody');
+            const start = (state.page - 1) * state.rowsPerPage;
+            const end = start + state.rowsPerPage;
+            const pageData = state.filteredData.slice(start, end);
+
+            tbody.innerHTML = '';
+            pageData.forEach(item => {
+                const tr = document.createElement('tr');
+                tr.className = `border-b border-gray-200 transition-colors ${state.selectedRow === item.id ? 'selected' : ''}`;
+
+
+                let categoryClass = '';
+                let categoryIcon = '';
+                if (item.category === 'A') {
+                    categoryClass = 'bg-primary-100 text-primary-800';
+                    categoryIcon = '<i class="fas fa-star mr-1"></i>';
+                } else if (item.category === 'B') {
+                    categoryClass = 'bg-secondary-100 text-secondary-800';
+                    categoryIcon = '<i class="fas fa-flag mr-1"></i>';
+                } else {
+                    categoryClass = 'bg-accent-100 text-accent-800';
+                    categoryIcon = '<i class="fas fa-tag mr-1"></i>';
+                }
+
+
+                let valueClass = '';
+                if (item.value > 70) {
+                    valueClass = 'text-green-600 font-medium';
+                } else if (item.value < 30) {
+                    valueClass = 'text-red-600 font-medium';
+                }
+
+                tr.innerHTML = `
+                    <td class="p-3 font-mono text-sm">${item.id}</td>
+                    <td class="p-3 font-medium">${item.name}</td>
+                    <td class="p-3 ${valueClass}">${item.value}</td>
+                    <td class="p-3">
+                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${categoryClass}">
+                            ${categoryIcon}${item.category}
+                        </span>
+                    </td>
+                `;
+                tr.addEventListener('click', () => selectRow(item));
+                tbody.appendChild(tr);
+            });
+
+            updatePagination();
+            updateChart();
+        }
+
+        function updatePagination() {
+            const totalPages = Math.ceil(state.filteredData.length / state.rowsPerPage);
+            document.getElementById('pageInfo').textContent = `Page ${state.page} of ${totalPages}`;
+            document.getElementById('prevBtn').disabled = state.page === 1;
+            document.getElementById('nextBtn').disabled = state.page === totalPages || totalPages === 0;
+        }
+
+        function selectRow(item) {
+
+            state.selectedRow = item.id;
+
+
+            document.getElementById('empty-details').classList.add('hidden');
+            const details = document.getElementById('details');
+            details.classList.remove('hidden');
+
+
+            const statusBadge = document.getElementById('status-badge');
+            statusBadge.textContent = item.status;
+            if (item.status === 'Active') {
+                statusBadge.className = 'bg-green-100 text-green-800 text-xs px-2 py-1 rounded-full';
+            } else {
+                statusBadge.className = 'bg-gray-100 text-gray-800 text-xs px-2 py-1 rounded-full';
+            }
+
+
+            const detailsContent = document.getElementById('details-content');
+
+            // Calculate some demo metrics
+            const avgValue = state.data.reduce((sum, d) => sum + d.value, 0) / state.data.length;
+            const percentOfAvg = Math.round((item.value / avgValue) * 100);
+
+            detailsContent.innerHTML = `
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <p class="text-xs text-gray-500">ID</p>
+                        <p class="font-mono font-medium">${item.id}</p>
+                    </div>
+                    <div>
+                        <p class="text-xs text-gray-500">CATEGORY</p>
+                        <p class="font-medium">${item.category}</p>
+                    </div>
+                </div>
+                
+                <div>
+                    <p class="text-xs text-gray-500">NAME</p>
+                    <p class="font-medium">${item.name}</p>
+                </div>
+                
+                <div>
+                    <p class="text-xs text-gray-500">VALUE</p>
+                    <div class="flex items-center">
+                        <span class="text-2xl font-bold ${item.value > 50 ? 'text-green-600' : item.value < 30 ? 'text-red-500' : ''}">${item.value}</span>
+                        <span class="ml-2 text-xs ${percentOfAvg > 100 ? 'text-green-600' : 'text-red-500'}">
+                            ${percentOfAvg > 100 ? '+' : ''}${percentOfAvg - 100}% vs. avg
+                        </span>
+                    </div>
+                </div>
+                
+                <div>
+                    <p class="text-xs text-gray-500">DATE CREATED</p>
+                    <p class="font-medium">${item.date}</p>
+                </div>
+                
+                <div class="mt-1">
+                    <p class="text-xs text-gray-500 mb-1">VALUE DISTRIBUTION</p>
+                    <div class="h-2 bg-gray-200 rounded-full overflow-hidden">
+                        <div class="h-full bg-primary-500" style="width: ${item.value}%"></div>
+                    </div>
+                </div>
+            `;
+
+            renderTable();
+        }
+
+        function updateChart() {
+            const ctx = document.getElementById('dataChart').getContext('2d');
+            const chartType = document.getElementById('chartType').value;
+            const categories = [...new Set(state.filteredData.map(d => d.category))].sort();
+            const dataByCategory = categories.map(cat =>
+                state.filteredData.filter(d => d.category === cat)
+                    .reduce((sum, d) => sum + d.value, 0)
+            );
+
+            if (chartInstance) chartInstance.destroy();
+
+            const isPieOrDoughnut = chartType === 'pie' || chartType === 'doughnut' || chartType === 'polarArea';
+
+            const backgroundColors = categories.map(cat => chartColors[cat]);
+            const borderColors = isPieOrDoughnut ? categories.map(cat => chartBorders[cat]) : chartBorders.A;
+
+            chartInstance = new Chart(ctx, {
+                type: chartType,
+                data: {
+                    labels: categories.map(cat => `Category ${cat}`),
+                    datasets: [{
+                        label: 'Value by Category',
+                        data: dataByCategory,
+                        backgroundColor: backgroundColors,
+                        borderColor: borderColors,
+                        borderWidth: 1,
+                        tension: 0.4,
+                        fill: chartType === 'line' ? 'origin' : undefined,
+                        hoverOffset: 10
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: isPieOrDoughnut ? 'right' : 'top',
+                            labels: {
+                                usePointStyle: true,
+                                padding: 15
+                            }
+                        },
+                        tooltip: {
+                            backgroundColor: 'rgba(255, 255, 255, 0.9)',
+                            titleColor: '#1f2937',
+                            bodyColor: '#4b5563',
+                            borderColor: '#e5e7eb',
+                            borderWidth: 1,
+                            padding: 12,
+                            cornerRadius: 8,
+                            boxPadding: 8,
+                            usePointStyle: true,
+                            callbacks: {
+                                label: function (context) {
+                                    return ` Value: ${context.raw}`;
+                                }
+                            }
+                        }
+                    },
+                    scales: isPieOrDoughnut ? undefined : {
+                        x: {
+                            grid: {
+                                display: false
+                            }
+                        },
+                        y: {
+                            beginAtZero: true,
+                            grid: {
+                                color: 'rgba(0, 0, 0, 0.05)'
+                            }
+                        }
+                    },
+                    animation: {
+                        duration: 1000,
+                        easing: 'easeOutQuart'
+                    }
+                }
+            });
+        }
+
+
+        function sortData(field) {
+            if (state.sortField === field) {
+                state.sortDirection = state.sortDirection === 'asc' ? 'desc' : 'asc';
+            } else {
+                state.sortField = field;
+                state.sortDirection = 'asc';
+            }
+
+            state.filteredData = [...state.filteredData].sort((a, b) => {
+                if (a[field] < b[field]) return state.sortDirection === 'asc' ? -1 : 1;
+                if (a[field] > b[field]) return state.sortDirection === 'asc' ? 1 : -1;
+                return 0;
+            });
+
+            state.page = 1;
+            renderTable();
+
+            document.querySelectorAll('th [data-sort]').forEach(el => {
+                const sortIcon = el.querySelector('i');
+                if (el.dataset.sort === field) {
+                    sortIcon.className = state.sortDirection === 'asc'
+                        ? 'fas fa-sort-up text-primary-600'
+                        : 'fas fa-sort-down text-primary-600';
+                } else {
+                    sortIcon.className = 'fas fa-sort text-gray-400';
+                }
+            });
+        }
+
+
+        document.getElementById('prevBtn').addEventListener('click', () => {
+            if (state.page > 1) {
+                state.page--;
+                renderTable();
+            }
+        });
+
+        document.getElementById('nextBtn').addEventListener('click', () => {
+            if (state.page < Math.ceil(state.filteredData.length / state.rowsPerPage)) {
+                state.page++;
+                renderTable();
+            }
+        });
+
+        document.getElementById('search').addEventListener('input', (e) => {
+            const term = e.target.value.toLowerCase();
+            state.filteredData = state.data.filter(item =>
+                item.name.toLowerCase().includes(term) ||
+                item.category.toLowerCase().includes(term)
+            );
+            state.page = 1;
+            renderTable();
+        });
+
+        document.getElementById('chartType').addEventListener('change', updateChart);
+
+
+        document.querySelectorAll('th [data-sort]').forEach(el => {
+            el.addEventListener('click', () => {
+                sortData(el.dataset.sort);
+            });
+        });
+
+
+        const themeToggle = document.getElementById('themeToggle');
+        themeToggle.addEventListener('click', () => {
+            const icon = themeToggle.querySelector('i');
+            if (icon.classList.contains('fa-sun')) {
+                icon.classList.remove('fa-sun');
+                icon.classList.add('fa-moon');
+            } else {
+                icon.classList.remove('fa-moon');
+                icon.classList.add('fa-sun');
+            }
+        });
+
+        renderTable();
+    </script>
+</body>
+
+</html>

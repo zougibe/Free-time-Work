@@ -1,0 +1,566 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Decision Tree Tool</title>
+    <!-- D3.js for tree visualization -->
+    <script src="https://d3js.org/d3.v7.min.js"></script>
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #f0f4f8, #d9e2ec);
+            margin: 0;
+            padding: 20px;
+            color: #333;
+            min-height: 100vh;
+        }
+
+        h1 {
+            text-align: center;
+            color: #2c3e50;
+            margin-bottom: 30px;
+            font-weight: 600;
+            text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.1);
+        }
+
+        .container {
+            display: flex;
+            gap: 20px;
+            width: 90vw;
+            margin: 0 auto;
+            flex-wrap: nowrap;
+        }
+
+        .input-section {
+            flex: 1.25;
+            background: #ffffff;
+            padding: 30px;
+            border-radius: 16px;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+            animation: fadeInUp 0.6s ease;
+            height: 85vh;
+            overflow: auto;
+            position: relative;
+        }
+
+        .visualization {
+            flex: 3;
+            background: #ffffff;
+            padding: 30px;
+            border-radius: 16px;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+            animation: fadeInUp 0.8s ease;
+            height: 85vh;
+            overflow: auto;
+        }
+
+        .decision-header {
+            font-weight: bold;
+            margin-bottom: 10px;
+            font-size: 16px;
+            color: #2c3e50;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .decision-header::before {
+            content: "→";
+            color: #00b894;
+            font-weight: bold;
+        }
+
+        .decision-input {
+            position: relative;
+            margin-bottom: 20px;
+            padding: 20px;
+            background: #f9f9f9;
+            border-left: 5px solid #00b894;
+            border-radius: 10px;
+            transition: all 0.3s ease;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+        }
+
+        .decision-input:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+        }
+
+        .inputs-container {
+            margin-top: 15px;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+
+        .inputs-container input[type="text"],
+        .inputs-container input[type="number"] {
+            padding: 12px;
+            border: 1px solid #ccc;
+            border-radius: 8px;
+            flex: 1;
+            min-width: 80px;
+            transition: all 0.3s;
+            font-size: 14px;
+            background: #fff;
+        }
+
+        .inputs-container input[type="text"]:focus,
+        .inputs-container input[type="number"]:focus {
+            border-color: #00b894;
+            outline: none;
+            box-shadow: 0 0 0 2px rgba(0, 184, 148, 0.2);
+        }
+
+        .button-group {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            margin-bottom: 20px;
+        }
+
+        button {
+            background: linear-gradient(145deg, #00b894, #00cec9);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 10px;
+            cursor: pointer;
+            font-weight: 600;
+            box-shadow: 0 5px 15px rgba(0, 190, 200, 0.3);
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 14px;
+        }
+
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 25px rgba(0, 190, 200, 0.5);
+        }
+
+        button:active {
+            transform: translateY(0);
+        }
+
+        button.secondary {
+            background: linear-gradient(145deg, #f5f6fa, #dfe6e9);
+            color: #2c3e50;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+        }
+
+        button.secondary:hover {
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
+        }
+
+        button.danger {
+            background: linear-gradient(145deg, #ff7675, #e84393);
+            box-shadow: 0 5px 15px rgba(231, 76, 60, 0.3);
+        }
+
+        button.danger:hover {
+            box-shadow: 0 10px 25px rgba(231, 76, 60, 0.5);
+        }
+
+        .delete-button {
+            position: absolute;
+            top: 15px;
+            right: 15px;
+            width: 15px;
+            height: 5px;
+            background: #ff7675;
+            border: none;
+            /* border-radius: 50%; */
+            cursor: pointer;
+            color: white;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+            transition: all 0.3s;
+        }
+
+        .delete-button:hover {
+            transform: scale(1.1);
+            background: #e84393;
+        }
+
+        #results {
+            margin-top: 30px;
+            font-size: 18px;
+            color: #2d3436;
+            text-align: center;
+            padding: 20px;
+            background: #f5f6fa;
+            border-radius: 10px;
+            font-weight: 600;
+            box-shadow: inset 0 0 10px rgba(0, 0, 0, 0.05);
+        }
+
+        .error-modal {
+            display: none;
+            background: #ffcccc;
+            color: #e74c3c;
+            padding: 15px;
+            margin-top: 20px;
+            border-radius: 10px;
+            text-align: center;
+            font-weight: 500;
+            box-shadow: 0 2px 10px rgba(231, 76, 60, 0.2);
+        }
+
+        #decisionTreeSVG {
+            width: 100%;
+            height: 100%;
+            background: #f9f9f9;
+            border-radius: 8px;
+        }
+
+        .node text {
+            font-size: 14px;
+            font-weight: 500;
+        }
+
+        .link {
+            stroke-opacity: 0.6;
+        }
+
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .tooltip {
+            position: absolute;
+            padding: 10px;
+            background: rgba(0, 0, 0, 0.8);
+            color: white;
+            border-radius: 5px;
+            pointer-events: none;
+            font-size: 14px;
+            z-index: 10;
+        }
+
+        @media (max-width: 1200px) {
+            .container {
+                flex-direction: column;
+            }
+
+            .input-section,
+            .visualization {
+                height: auto;
+                min-height: 400px;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <h1>Decision Tree Tool</h1>
+    <div class="container">
+        <div class="input-section">
+            <div id="decisionInputs">
+                <div class="decision-input">
+                    <div class="decision-header">Decision 1</div>
+                    <button class="delete-button" onclick="deleteDecision(this)">×</button>
+                    <div class="inputs-container">
+                        <input type="text" placeholder="Decision 1 Name" class="decision-name" />
+                        <input type="number" placeholder="Probability (%)" class="probability" min="0" max="100" />
+                        <input type="number" placeholder="Outcome" class="outcome" />
+                    </div>
+                </div>
+                <div class="decision-input">
+                    <div class="decision-header">Decision 2</div>
+                    <button class="delete-button" onclick="deleteDecision(this)">×</button>
+                    <div class="inputs-container">
+                        <input type="text" placeholder="Decision 2 Name" class="decision-name" />
+                        <input type="number" placeholder="Probability (%)" class="probability" min="0" max="100" />
+                        <input type="number" placeholder="Outcome" class="outcome" />
+                    </div>
+                </div>
+            </div>
+            <div class="button-group">
+                <button onclick="addDecision()">
+                    <span style="font-size: 18px;">➕</span> Add Decision
+                </button>
+                <button onclick="calculateTree()">
+                    <span style="font-size: 18px;">📈</span> Calculate
+                </button>
+                <button class="secondary" onclick="resetData()">
+                    <span style="font-size: 18px;">🔁</span> Reset
+                </button>
+            </div>
+            <div id="results"></div>
+            <div id="errorModal" class="error-modal"></div>
+        </div>
+        <div class="visualization">
+            <!-- SVG element for zoomable decision tree visualization -->
+            <svg id="decisionTreeSVG"></svg>
+        </div>
+    </div>
+
+    <div class="tooltip" id="tooltip" style="opacity:0;"></div>
+
+    <script>
+        // Delete a decision input block.
+        function deleteDecision(button) {
+            const decisionDiv = button.parentElement;
+            decisionDiv.style.animation = 'fadeOut 0.3s ease';
+            setTimeout(() => {
+                decisionDiv.remove();
+                updateDecisionHeaders();
+            }, 300);
+        }
+
+        // Update the headers for decision inputs to reflect their sequential order.
+        function updateDecisionHeaders() {
+            document.querySelectorAll("#decisionInputs .decision-input").forEach((div, index) => {
+                const header = div.querySelector(".decision-header");
+                header.innerText = `Decision ${index + 1}`;
+            });
+        }
+
+        // Adds a new decision input block with an appropriate header.
+        function addDecision() {
+            const decisionCount = document.querySelectorAll('.decision-input').length + 1;
+            const div = document.createElement('div');
+            div.className = 'decision-input';
+            div.style.opacity = '0';
+            div.style.transform = 'translateY(20px)';
+            div.innerHTML = `
+                <div class="decision-header">Decision ${decisionCount}</div>
+                <button class="delete-button" onclick="deleteDecision(this)">×</button>
+                <div class="inputs-container">
+                    <input type="text" placeholder="Decision ${decisionCount} Name" class="decision-name">
+                    <input type="number" placeholder="Probability (%)" class="probability" min="0" max="100">
+                    <input type="number" placeholder="Outcome" class="outcome">
+                </div>`;
+            document.getElementById('decisionInputs').appendChild(div);
+
+            // Animate the new decision in
+            setTimeout(() => {
+                div.style.opacity = '1';
+                div.style.transform = 'translateY(0)';
+                div.style.transition = 'all 0.3s ease';
+            }, 10);
+
+            updateDecisionHeaders();
+        }
+
+        // Reset all data
+        function resetData() {
+            const decisionInputs = document.getElementById('decisionInputs');
+            decisionInputs.innerHTML = '';
+
+            // Add back two default decision inputs
+            for (let i = 1; i <= 2; i++) {
+                const div = document.createElement('div');
+                div.className = 'decision-input';
+                div.innerHTML = `
+                    <div class="decision-header">Decision ${i}</div>
+                    <button class="delete-button" onclick="deleteDecision(this)">×</button>
+                    <div class="inputs-container">
+                        <input type="text" placeholder="Decision ${i} Name" class="decision-name">
+                        <input type="number" placeholder="Probability (%)" class="probability" min="0" max="100">
+                        <input type="number" placeholder="Outcome" class="outcome">
+                    </div>`;
+                decisionInputs.appendChild(div);
+            }
+
+            // Clear results and errors
+            document.getElementById('results').innerText = '';
+            document.getElementById('errorModal').style.display = 'none';
+
+            // Clear the visualization
+            d3.select("#decisionTreeSVG").selectAll("*").remove();
+        }
+
+        // Calculates the expected value and draws the zoomable decision tree.
+        function calculateTree() {
+            // Clear previous error messages.
+            const errorDiv = document.getElementById("errorModal");
+            errorDiv.style.display = "none";
+            errorDiv.innerText = "";
+
+            // Retrieve decision inputs.
+            const decisions = [];
+            let totalProbability = 0;
+            document.querySelectorAll('.decision-input').forEach((inputDiv) => {
+                const nameInput = inputDiv.querySelector('.decision-name');
+                const name = nameInput.value || nameInput.placeholder.replace(" Name", "");
+                const probValue = parseFloat(inputDiv.querySelector('.probability').value);
+                const outcomeValue = parseFloat(inputDiv.querySelector('.outcome').value);
+
+                // Only add decision if probability and outcome are valid numbers.
+                if (!isNaN(probValue) && !isNaN(outcomeValue)) {
+                    decisions.push({ name, prob: probValue / 100, outcome: outcomeValue });
+                    totalProbability += probValue;
+                }
+            });
+
+            // Validate that at least two decisions are entered.
+            if (decisions.length < 2) {
+                errorDiv.innerText = "Please enter at least two valid decisions.";
+                errorDiv.style.display = "block";
+                return;
+            }
+
+            // Validate that probabilities sum to 100%
+            if (Math.abs(totalProbability - 100) > 0.1) {
+                errorDiv.innerText = `Probabilities must sum to 100% (current sum: ${totalProbability.toFixed(1)}%)`;
+                errorDiv.style.display = "block";
+                return;
+            }
+
+            // Compute and display the expected value.
+            const expectedValue = decisions.reduce((sum, d) => sum + d.prob * d.outcome, 0);
+            document.getElementById('results').innerHTML = `
+                <div>Expected Value: <strong>${expectedValue.toFixed(2)}</strong></div>
+                <div style="font-size:14px;margin-top:8px;color:#636e72;">(Weighted average of all possible outcomes)</div>
+            `;
+
+            // Build a two-level tree structure:
+            // The root ("Decision Point") has branches for each decision.
+            const treeData = {
+                name: "Decision Point",
+                children: decisions.map(d => ({
+                    name: d.name,
+                    prob: d.prob,
+                    outcome: d.outcome,
+                    expected: (d.prob * d.outcome).toFixed(2)
+                }))
+            };
+
+            // Set up the SVG and dimensions.
+            const svg = d3.select("#decisionTreeSVG");
+            svg.selectAll("*").remove();  // Clear previous tree
+            const width = +svg.attr("width") || svg.node().clientWidth;
+            const height = +svg.attr("height") || svg.node().clientHeight;
+            const margin = { top: 40, right: 90, bottom: 30, left: 90 };
+            const innerWidth = width - margin.left - margin.right;
+            const innerHeight = height - margin.top - margin.bottom;
+
+            // Append group that will hold the tree. This group will be zoomable.
+            const g = svg.append("g")
+                .attr("transform", `translate(${margin.left},${margin.top})`);
+
+            // Enable zoom and pan.
+            svg.call(d3.zoom()
+                .scaleExtent([0.5, 5])
+                .on("zoom", (event) => {
+                    g.attr("transform", event.transform);
+                }));
+
+            // Create a hierarchical layout.
+            const root = d3.hierarchy(treeData);
+
+            // Generate tree layout.
+            const treeLayout = d3.tree().size([innerHeight, innerWidth]);
+            treeLayout(root);
+
+            // Draw links (edges) between nodes.
+            g.selectAll(".link")
+                .data(root.links())
+                .enter()
+                .append("path")
+                .attr("class", "link")
+                .attr("fill", "none")
+                .attr("stroke", "#00b894")
+                .attr("stroke-width", 2)
+                .attr("d", d3.linkHorizontal()
+                    .x(d => d.y)
+                    .y(d => d.x));
+
+            // Label each edge with probability percentage.
+            g.selectAll(".link-label")
+                .data(root.links())
+                .enter()
+                .append("text")
+                .attr("class", "link-label")
+                .attr("dy", -5)
+                .attr("text-anchor", "middle")
+                .attr("x", d => (d.source.y + d.target.y) / 2)
+                .attr("y", d => (d.source.x + d.target.x) / 2)
+                .text(d => {
+                    if (d.source.data.name === "Decision Point" && d.target.data.prob != null) {
+                        return `${(d.target.data.prob * 100).toFixed(1)}%`;
+                    }
+                    return "";
+                })
+                .attr("fill", "#555")
+                .style("font-size", "12px")
+                .style("font-weight", "500");
+
+            // Draw nodes.
+            const node = g.selectAll(".node")
+                .data(root.descendants())
+                .enter()
+                .append("g")
+                .attr("class", d => "node" + (d.children ? " node--internal" : " node--leaf"))
+                .attr("transform", d => `translate(${d.y},${d.x})`)
+                .on("mouseover", function (event, d) {
+                    if (!d.children) {
+                        const tooltip = document.getElementById("tooltip");
+                        tooltip.innerHTML = `
+                            <div><strong>${d.data.name}</strong></div>
+                            <div>Probability: ${(d.data.prob * 100).toFixed(1)}%</div>
+                            <div>Outcome: ${d.data.outcome}</div>
+                            <div>Contribution: ${d.data.expected}</div>
+                        `;
+                        tooltip.style.opacity = 1;
+                        tooltip.style.left = `${event.pageX + 10}px`;
+                        tooltip.style.top = `${event.pageY + 10}px`;
+                    }
+                })
+                .on("mouseout", function () {
+                    const tooltip = document.getElementById("tooltip");
+                    tooltip.style.opacity = 0;
+                });
+
+            node.append("circle")
+                .attr("r", 20)
+                .attr("fill", d => d.children ? "#00b894" : "#00cec9")
+                .attr("stroke", "#fff")
+                .attr("stroke-width", 2);
+
+            // Node labels
+            node.append("text")
+                .attr("dy", ".35em")
+                .attr("x", d => d.children ? -25 : 25)
+                .style("text-anchor", d => d.children ? "end" : "start")
+                .style("font-size", "14px")
+                .text(d => {
+                    if (!d.children && d.data.outcome != null) {
+                        return `${d.data.name}`;
+                    }
+                    return d.data.name;
+                });
+
+            // Add outcome values below leaf nodes
+            node.filter(d => !d.children)
+                .append("text")
+                .attr("dy", "2.5em")
+                .attr("x", 25)
+                .style("text-anchor", "start")
+                .style("font-size", "12px")
+                .style("fill", "#636e72")
+                .text(d => `Outcome: ${d.data.outcome}`);
+        }
+    </script>
+</body>
+
+</html>
