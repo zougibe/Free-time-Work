@@ -1,0 +1,978 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Educational Resources Library</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root {
+            --primary-color: #4f46e5;
+            --primary-hover: #4338ca;
+            --secondary-color: #10b981;
+            --secondary-hover: #059669;
+        }
+
+        .resource-card {
+            transition: all 0.3s ease;
+            border-radius: 0.75rem;
+            overflow: hidden;
+            border: 1px solid #e5e7eb;
+        }
+
+        .resource-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1);
+            border-color: var(--primary-color);
+        }
+
+        .review-section {
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.3s ease-out;
+        }
+
+        .review-section.active {
+            max-height: 500px;
+            transition: max-height 0.5s ease-in;
+        }
+
+        .tag-filter {
+            transition: all 0.2s ease;
+        }
+
+        .tag-filter:hover {
+            transform: scale(1.05);
+        }
+
+        .skeleton-loader {
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+
+            0%,
+            100% {
+                opacity: 1;
+            }
+
+            50% {
+                opacity: 0.5;
+            }
+        }
+
+        .search-container {
+            position: relative;
+        }
+
+        .search-container i {
+            position: absolute;
+            left: 12px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #9ca3af;
+        }
+
+        .search-container input {
+            padding-left: 40px;
+        }
+
+        .dropdown-menu {
+            opacity: 0;
+            visibility: hidden;
+            transform: translateY(10px);
+            transition: all 0.2s ease;
+        }
+
+        .dropdown:hover .dropdown-menu {
+            opacity: 1;
+            visibility: visible;
+            transform: translateY(0);
+        }
+
+        .scroll-to-top {
+            opacity: 0;
+            visibility: hidden;
+            transition: all 0.3s ease;
+        }
+
+        .scroll-to-top.visible {
+            opacity: 1;
+            visibility: visible;
+        }
+
+        @media (max-width: 640px) {
+            .filter-buttons button {
+                font-size: 0.75rem;
+                padding: 0.5rem 0.75rem;
+            }
+
+            .resource-actions {
+                flex-direction: column;
+            }
+
+            .resource-actions button {
+                width: 100%;
+            }
+        }
+    </style>
+</head>
+
+<body class="bg-gray-50 font-sans antialiased">
+    <!-- Header -->
+    <header class="bg-gradient-to-r from-indigo-600 to-indigo-800 text-white shadow-lg">
+        <div class="container mx-auto px-4 py-6 flex flex-col sm:flex-row justify-between items-center gap-4">
+            <div class="flex items-center gap-3">
+                <i class="fas fa-book-open text-2xl"></i>
+                <h1 class="text-2xl md:text-3xl font-bold">Educational Resources Library</h1>
+            </div>
+            <div class="search-container w-full sm:w-96">
+                <i class="fas fa-search"></i>
+                <input type="text" id="searchBar" placeholder="Search by title, description or tags..."
+                    class="p-3 rounded-lg w-full focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 shadow-sm">
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <div class="container mx-auto px-4 py-8">
+        <!-- Filters and Sorting -->
+        <section class="mb-8">
+            <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-6">
+                <h2 class="text-xl font-semibold text-gray-800">Browse Resources</h2>
+
+                <div class="flex flex-col sm:flex-row gap-3 w-full md:w-auto">
+                    <!-- Category Filter -->
+                    <div class="dropdown relative">
+                        <button
+                            class="flex items-center gap-2 bg-white border border-gray-300 rounded-lg px-4 py-2 shadow-sm hover:bg-gray-50">
+                            <i class="fas fa-filter"></i>
+                            <span>Filter by Category</span>
+                            <i class="fas fa-chevron-down text-xs"></i>
+                        </button>
+                        <div class="dropdown-menu absolute z-10 mt-1 w-48 bg-white rounded-md shadow-lg py-1">
+                            <button class="category-filter block w-full text-left px-4 py-2 hover:bg-indigo-50"
+                                data-category="all">
+                                <i class="fas fa-layer-group mr-2 text-gray-500"></i>All Categories
+                            </button>
+                            <button class="category-filter block w-full text-left px-4 py-2 hover:bg-indigo-50"
+                                data-category="Math">
+                                <i class="fas fa-square-root-alt mr-2 text-red-500"></i>Math
+                            </button>
+                            <button class="category-filter block w-full text-left px-4 py-2 hover:bg-indigo-50"
+                                data-category="Science">
+                                <i class="fas fa-flask mr-2 text-blue-500"></i>Science
+                            </button>
+                            <button class="category-filter block w-full text-left px-4 py-2 hover:bg-indigo-50"
+                                data-category="History">
+                                <i class="fas fa-landmark mr-2 text-amber-500"></i>History
+                            </button>
+                            <button class="category-filter block w-full text-left px-4 py-2 hover:bg-indigo-50"
+                                data-category="Literature">
+                                <i class="fas fa-book mr-2 text-green-500"></i>Literature
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Sort Dropdown -->
+                    <div class="dropdown relative">
+                        <button
+                            class="flex items-center gap-2 bg-white border border-gray-300 rounded-lg px-4 py-2 shadow-sm hover:bg-gray-50">
+                            <i class="fas fa-sort"></i>
+                            <span>Sort by</span>
+                            <i class="fas fa-chevron-down text-xs"></i>
+                        </button>
+                        <div class="dropdown-menu absolute z-10 mt-1 w-48 bg-white rounded-md shadow-lg py-1">
+                            <button class="sort-btn block w-full text-left px-4 py-2 hover:bg-indigo-50"
+                                data-sort="title-asc">
+                                <i class="fas fa-sort-alpha-down mr-2"></i>Title (A-Z)
+                            </button>
+                            <button class="sort-btn block w-full text-left px-4 py-2 hover:bg-indigo-50"
+                                data-sort="title-desc">
+                                <i class="fas fa-sort-alpha-up-alt mr-2"></i>Title (Z-A)
+                            </button>
+                            <button class="sort-btn block w-full text-left px-4 py-2 hover:bg-indigo-50"
+                                data-sort="category-asc">
+                                <i class="fas fa-tags mr-2"></i>Category
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Active Filters -->
+            <div id="activeFilters" class="flex flex-wrap gap-2 mb-4 hidden">
+                <div class="bg-indigo-100 text-indigo-800 px-3 py-1 rounded-full text-sm flex items-center">
+                    <span class="mr-1"></span>
+                    <button class="ml-1 text-indigo-500 hover:text-indigo-700">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+            </div>
+        </section>
+
+        <!-- Resources Grid -->
+        <main>
+            <!-- Loading Skeleton -->
+            <div id="loadingSkeleton" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                <div class="bg-white p-4 rounded-lg shadow border border-gray-200">
+                    <div class="skeleton-loader h-6 w-3/4 bg-gray-200 rounded mb-4"></div>
+                    <div class="skeleton-loader h-4 w-full bg-gray-200 rounded mb-2"></div>
+                    <div class="skeleton-loader h-4 w-5/6 bg-gray-200 rounded mb-2"></div>
+                    <div class="skeleton-loader h-4 w-2/3 bg-gray-200 rounded mb-4"></div>
+                    <div class="skeleton-loader h-8 w-full bg-gray-200 rounded mb-4"></div>
+                </div>
+                <!-- Repeat for more skeleton items -->
+            </div>
+
+            <!-- No Results Message -->
+            <div id="noResults" class="text-center py-12 hidden">
+                <i class="fas fa-book-open text-5xl text-gray-300 mb-4"></i>
+                <h3 class="text-xl font-medium text-gray-600">No resources found</h3>
+                <p class="text-gray-500 mt-2">Try adjusting your search or filter criteria</p>
+                <button id="resetFilters"
+                    class="mt-4 px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700">
+                    Reset All Filters
+                </button>
+            </div>
+
+            <!-- Resources Grid -->
+            <div id="resourcesGrid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6"></div>
+        </main>
+
+        <!-- Pagination -->
+        <div id="pagination" class="mt-12 flex justify-center hidden">
+            <nav class="inline-flex rounded-md shadow">
+                <button
+                    class="pagination-btn px-3 py-2 rounded-l-md border border-gray-300 bg-white text-gray-500 hover:bg-gray-50 disabled:opacity-50"
+                    data-page="prev" disabled>
+                    <i class="fas fa-chevron-left"></i>
+                </button>
+                <div class="flex">
+                    <button
+                        class="pagination-btn px-4 py-2 border-t border-b border-gray-300 bg-white text-gray-500 hover:bg-gray-50 font-medium active">
+                        1
+                    </button>
+                </div>
+                <button
+                    class="pagination-btn px-3 py-2 rounded-r-md border border-gray-300 bg-white text-gray-500 hover:bg-gray-50 disabled:opacity-50"
+                    data-page="next">
+                    <i class="fas fa-chevron-right"></i>
+                </button>
+            </nav>
+        </div>
+    </div>
+
+    <!-- Scroll to Top Button -->
+    <button id="scrollToTop"
+        class="scroll-to-top fixed bottom-6 right-6 bg-indigo-600 text-white p-3 rounded-full shadow-lg hover:bg-indigo-700 transition-all">
+        <i class="fas fa-arrow-up"></i>
+    </button>
+
+    <!-- Footer -->
+    <footer class="bg-gray-800 text-white py-8">
+        <div class="container mx-auto px-4">
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-8">
+                <div>
+                    <h3 class="text-lg font-semibold mb-4">About Us</h3>
+                    <p class="text-gray-400">Our mission is to provide high-quality educational resources to learners
+                        worldwide.</p>
+                </div>
+                <div>
+                    <h3 class="text-lg font-semibold mb-4">Quick Links</h3>
+                    <ul class="space-y-2">
+                        <li><a href="#" class="text-gray-400 hover:text-white">Browse Resources</a></li>
+                        <li><a href="#" class="text-gray-400 hover:text-white">Submit a Resource</a></li>
+                        <li><a href="#" class="text-gray-400 hover:text-white">Contact Us</a></li>
+                    </ul>
+                </div>
+                <div>
+                    <h3 class="text-lg font-semibold mb-4">Categories</h3>
+                    <ul class="space-y-2">
+                        <li><a href="#" class="text-gray-400 hover:text-white">Mathematics</a></li>
+                        <li><a href="#" class="text-gray-400 hover:text-white">Science</a></li>
+                        <li><a href="#" class="text-gray-400 hover:text-white">History</a></li>
+                        <li><a href="#" class="text-gray-400 hover:text-white">Literature</a></li>
+                    </ul>
+                </div>
+                <div>
+                    <h3 class="text-lg font-semibold mb-4">Connect</h3>
+                    <div class="flex space-x-4">
+                        <a href="#" class="text-gray-400 hover:text-white"><i class="fab fa-facebook-f"></i></a>
+                        <a href="#" class="text-gray-400 hover:text-white"><i class="fab fa-twitter"></i></a>
+                        <a href="#" class="text-gray-400 hover:text-white"><i class="fab fa-instagram"></i></a>
+                        <a href="#" class="text-gray-400 hover:text-white"><i class="fab fa-linkedin-in"></i></a>
+                    </div>
+                    <p class="text-gray-400 mt-4">Subscribe to our newsletter</p>
+                    <div class="mt-2 flex">
+                        <input type="email" placeholder="Your email" class="px-3 py-2 rounded-l text-gray-800 w-full">
+                        <button class="bg-indigo-600 px-3 py-2 rounded-r hover:bg-indigo-700">
+                            <i class="fas fa-paper-plane"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+            <div class="border-t border-gray-700 mt-8 pt-6 text-center text-gray-400">
+                <p>&copy; 2025 Educational Resources Library. All rights reserved.</p>
+            </div>
+        </div>
+    </footer>
+
+    <script>
+        // Enhanced resources data with more details
+        const resources = [
+            {
+                id: 1,
+                title: "Algebra Basics",
+                description: "Comprehensive introduction to algebraic concepts and equations with practice problems and solutions.",
+                category: "Math",
+                tags: ["algebra", "beginner", "equations", "mathematics"],
+                fileUrl: "#",
+                fileType: "pdf",
+                fileSize: "2.4 MB",
+                rating: 4.5,
+                reviewCount: 24,
+                downloads: 1250,
+                lastUpdated: "2025-03-15",
+                reviews: [
+                    { user: "MathStudent22", text: "Great resource for starters! Explained complex concepts simply.", rating: 5, date: "2025-04-01" },
+                    { user: "AlgebraFan", text: "Very clear explanations. The practice problems were especially helpful.", rating: 4, date: "2025-03-28" }
+                ]
+            },
+            {
+                id: 2,
+                title: "Physics Fundamentals",
+                description: "Core principles of physics with practical examples and interactive simulations.",
+                category: "Science",
+                tags: ["physics", "mechanics", "intermediate", "science"],
+                fileUrl: "#",
+                fileType: "interactive",
+                fileSize: "5.1 MB",
+                rating: 4.2,
+                reviewCount: 18,
+                downloads: 890,
+                lastUpdated: "2025-02-28",
+                reviews: [
+                    { user: "ScienceLover", text: "Really helpful examples! Made difficult concepts easier to understand.", rating: 4, date: "2025-04-05" },
+                    { user: "PhysicsStudent", text: "Needs more diagrams for visual learners.", rating: 3, date: "2025-03-15" },
+                    { user: "CuriousMind", text: "The interactive simulations are fantastic!", rating: 5, date: "2025-03-10" }
+                ]
+            },
+            {
+                id: 3,
+                title: "World War II Overview",
+                description: "Detailed examination of key events, figures, and impacts of World War II with timelines and maps.",
+                category: "History",
+                tags: ["history", "wwii", "advanced", "20th-century"],
+                fileUrl: "#",
+                fileType: "pdf",
+                fileSize: "3.7 MB",
+                rating: 4.8,
+                reviewCount: 32,
+                downloads: 2100,
+                lastUpdated: "2025-01-20",
+                reviews: [
+                    { user: "HistoryBuff", text: "Very detailed! Covers all major aspects of the war.", rating: 5, date: "2025-03-22" },
+                    { user: "WarStudies", text: "Well-structured content with excellent primary source integration.", rating: 5, date: "2025-03-18" }
+                ]
+            },
+            {
+                id: 4,
+                title: "Shakespeare's Works",
+                description: "In-depth analysis of major plays by Shakespeare with modern interpretations and study guides.",
+                category: "Literature",
+                tags: ["literature", "shakespeare", "beginner", "drama"],
+                fileUrl: "#",
+                fileType: "pdf",
+                fileSize: "1.9 MB",
+                rating: 4.3,
+                reviewCount: 15,
+                downloads: 760,
+                lastUpdated: "2025-03-05",
+                reviews: [
+                    { user: "LitStudent", text: "Insightful analysis! Helped me understand the themes better.", rating: 4, date: "2025-04-02" },
+                    { user: "DramaFan", text: "Great for students. The study guide questions are particularly useful.", rating: 5, date: "2025-03-25" }
+                ]
+            },
+            {
+                id: 5,
+                title: "Calculus for Beginners",
+                description: "Step-by-step introduction to calculus concepts with visual explanations and practice problems.",
+                category: "Math",
+                tags: ["calculus", "mathematics", "beginner", "functions"],
+                fileUrl: "#",
+                fileType: "interactive",
+                fileSize: "4.2 MB",
+                rating: 4.6,
+                reviewCount: 21,
+                downloads: 1100,
+                lastUpdated: "2025-03-10",
+                reviews: [
+                    { user: "MathNewbie", text: "Made calculus approachable for someone with limited math background.", rating: 5, date: "2025-03-30" },
+                    { user: "STEMStudent", text: "Excellent visuals for understanding limits and derivatives.", rating: 4, date: "2025-03-12" }
+                ]
+            },
+            {
+                id: 6,
+                title: "Chemistry Essentials",
+                description: "Fundamental chemistry concepts with lab simulations and molecular visualizations.",
+                category: "Science",
+                tags: ["chemistry", "science", "interactive", "molecules"],
+                fileUrl: "#",
+                fileType: "interactive",
+                fileSize: "6.3 MB",
+                rating: 4.4,
+                reviewCount: 19,
+                downloads: 950,
+                lastUpdated: "2025-02-15",
+                reviews: [
+                    { user: "ChemFan", text: "The molecular visualizations are incredibly helpful!", rating: 5, date: "2025-03-20" },
+                    { user: "ScienceTeacher", text: "Great resource for my high school chemistry class.", rating: 4, date: "2025-02-28" }
+                ]
+            }
+        ];
+
+        // Current state
+        let currentState = {
+            filteredResources: [],
+            activeCategory: 'all',
+            activeTag: null,
+            searchQuery: '',
+            sortBy: 'title-asc',
+            currentPage: 1,
+            itemsPerPage: 6
+        };
+
+        // DOM Elements
+        const elements = {
+            resourcesGrid: document.getElementById('resourcesGrid'),
+            searchBar: document.getElementById('searchBar'),
+            activeFilters: document.getElementById('activeFilters'),
+            noResults: document.getElementById('noResults'),
+            resetFilters: document.getElementById('resetFilters'),
+            loadingSkeleton: document.getElementById('loadingSkeleton'),
+            pagination: document.getElementById('pagination'),
+            scrollToTop: document.getElementById('scrollToTop')
+        };
+
+        // Initialize the app
+        function init() {
+            renderResources();
+            setupEventListeners();
+            simulateLoading();
+
+            // Check scroll position for scroll-to-top button
+            window.addEventListener('scroll', toggleScrollToTop);
+            elements.scrollToTop.addEventListener('click', scrollToTop);
+        }
+
+        // Simulate loading (for demo purposes)
+        function simulateLoading() {
+            elements.loadingSkeleton.classList.remove('hidden');
+            setTimeout(() => {
+                elements.loadingSkeleton.classList.add('hidden');
+            }, 800);
+        }
+
+        // Render resources based on current state
+        function renderResources() {
+            // Filter and sort resources
+            let filtered = filterResources();
+            filtered = sortResources(filtered);
+
+            // Update current state
+            currentState.filteredResources = filtered;
+
+            // Paginate results
+            const paginated = paginateResults(filtered);
+
+            // Render UI
+            renderResourceGrid(paginated);
+            renderActiveFilters();
+            renderPagination(filtered.length);
+            toggleNoResultsMessage(filtered.length === 0);
+        }
+
+        // Filter resources based on current state
+        function filterResources() {
+            return resources.filter(resource => {
+                // Category filter
+                const categoryMatch = currentState.activeCategory === 'all' ||
+                    resource.category === currentState.activeCategory;
+
+                // Tag filter
+                const tagMatch = !currentState.activeTag ||
+                    resource.tags.includes(currentState.activeTag);
+
+                // Search query
+                const searchMatch = !currentState.searchQuery ||
+                    resource.title.toLowerCase().includes(currentState.searchQuery) ||
+                    resource.description.toLowerCase().includes(currentState.searchQuery) ||
+                    resource.tags.some(tag => tag.toLowerCase().includes(currentState.searchQuery));
+
+                return categoryMatch && tagMatch && searchMatch;
+            });
+        }
+
+        // Sort resources based on current sort option
+        function sortResources(resources) {
+            const [key, direction] = currentState.sortBy.split('-');
+
+            return [...resources].sort((a, b) => {
+                // For title sorting
+                if (key === 'title') {
+                    return direction === 'asc'
+                        ? a.title.localeCompare(b.title)
+                        : b.title.localeCompare(a.title);
+                }
+
+                // For category sorting
+                if (key === 'category') {
+                    return a.category.localeCompare(b.category);
+                }
+
+                // Default (no sorting)
+                return 0;
+            });
+        }
+
+        // Paginate results
+        function paginateResults(resources) {
+            const start = (currentState.currentPage - 1) * currentState.itemsPerPage;
+            const end = start + currentState.itemsPerPage;
+            return resources.slice(start, end);
+        }
+
+        // Render resource grid
+        function renderResourceGrid(resources) {
+            elements.resourcesGrid.innerHTML = '';
+
+            if (resources.length === 0) {
+                return;
+            }
+
+            resources.forEach(resource => {
+                const card = document.createElement('div');
+                card.className = 'resource-card bg-white p-6 shadow-lg border border-gray-200 hover:border-indigo-300';
+                card.innerHTML = `
+                    <div class="flex justify-between items-start mb-3">
+                        <div>
+                            <span class="inline-block px-2 py-1 text-xs font-semibold rounded-full 
+                                ${resource.category === 'Math' ? 'bg-red-100 text-red-800' :
+                        resource.category === 'Science' ? 'bg-blue-100 text-blue-800' :
+                            resource.category === 'History' ? 'bg-amber-100 text-amber-800' :
+                                'bg-green-100 text-green-800'}">
+                                ${resource.category}
+                            </span>
+                        </div>
+                        <div class="flex items-center text-yellow-500">
+                            ${renderStars(resource.rating)}
+                            <span class="ml-1 text-gray-600 text-sm">(${resource.reviewCount})</span>
+                        </div>
+                    </div>
+                    
+                    <h2 class="text-xl font-bold mb-2 text-gray-800">${resource.title}</h2>
+                    <p class="text-gray-600 mb-4">${resource.description}</p>
+                    
+                    <div class="flex flex-wrap gap-2 mb-4">
+                        ${resource.tags.map(tag => `
+                            <button class="tag-filter bg-gray-100 hover:bg-gray-200 text-gray-800 px-3 py-1 rounded-full text-xs font-medium transition-all"
+                                data-tag="${tag}">
+                                #${tag}
+                            </button>
+                        `).join('')}
+                    </div>
+                    
+                    <div class="flex items-center justify-between text-sm text-gray-500 mb-4">
+                        <span><i class="fas fa-download mr-1"></i> ${resource.downloads.toLocaleString()} downloads</span>
+                        <span><i class="far fa-calendar-alt mr-1"></i> Updated ${formatDate(resource.lastUpdated)}</span>
+                    </div>
+                    
+                    <div class="resource-actions flex gap-3 mb-4">
+                        <button class="download-btn flex-1 bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg flex items-center justify-center gap-2 transition-colors"
+                            data-url="${resource.fileUrl}">
+                            <i class="fas fa-download"></i>
+                            <span>Download (${resource.fileSize})</span>
+                        </button>
+                        <button class="favorite-btn p-2 border border-gray-300 rounded-lg hover:bg-gray-100 transition-colors"
+                            aria-label="Add to favorites">
+                            <i class="far fa-heart"></i>
+                        </button>
+                    </div>
+                    
+                    <button class="toggle-reviews w-full py-2 text-indigo-600 hover:text-indigo-800 font-medium flex items-center justify-center gap-2 transition-colors">
+                        <i class="fas fa-comment-alt"></i>
+                        <span>Show Reviews (${resource.reviews.length})</span>
+                        <i class="fas fa-chevron-down text-xs transition-transform"></i>
+                    </button>
+                    
+                    <div class="review-section mt-4 border-t border-gray-200 pt-4">
+                        <h3 class="font-semibold text-gray-800 mb-3">User Reviews</h3>
+                        <div class="space-y-4">
+                            ${resource.reviews.map(review => `
+                                <div class="bg-gray-50 p-3 rounded-lg">
+                                    <div class="flex justify-between items-center mb-2">
+                                        <span class="font-medium text-gray-800">${review.user}</span>
+                                        <span class="text-xs text-gray-500">${formatDate(review.date)}</span>
+                                    </div>
+                                    <div class="flex items-center mb-2">
+                                        ${renderStars(review.rating)}
+                                    </div>
+                                    <p class="text-gray-700">${review.text}</p>
+                                </div>
+                            `).join('')}
+                        </div>
+                        <button class="add-review-btn mt-4 text-sm text-indigo-600 hover:text-indigo-800 flex items-center gap-1">
+                            <i class="fas fa-plus"></i>
+                            <span>Add your review</span>
+                        </button>
+                    </div>
+                `;
+                elements.resourcesGrid.appendChild(card);
+            });
+
+            // Add event listeners to the newly created elements
+            addResourceEventListeners();
+        }
+
+        // Render star rating
+        function renderStars(rating) {
+            const fullStars = Math.floor(rating);
+            const hasHalfStar = rating % 1 >= 0.5;
+            const emptyStars = 5 - fullStars - (hasHalfStar ? 1 : 0);
+
+            let stars = '';
+
+            // Full stars
+            for (let i = 0; i < fullStars; i++) {
+                stars += '<i class="fas fa-star"></i>';
+            }
+
+            // Half star
+            if (hasHalfStar) {
+                stars += '<i class="fas fa-star-half-alt"></i>';
+            }
+
+            // Empty stars
+            for (let i = 0; i < emptyStars; i++) {
+                stars += '<i class="far fa-star"></i>';
+            }
+
+            return stars;
+        }
+
+        // Format date
+        function formatDate(dateString) {
+            const date = new Date(dateString);
+            return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+        }
+
+        // Render active filters
+        function renderActiveFilters() {
+            elements.activeFilters.innerHTML = '';
+
+            const filters = [];
+
+            if (currentState.activeCategory !== 'all') {
+                filters.push({
+                    type: 'category',
+                    value: currentState.activeCategory,
+                    text: `Category: ${currentState.activeCategory}`
+                });
+            }
+
+            if (currentState.activeTag) {
+                filters.push({
+                    type: 'tag',
+                    value: currentState.activeTag,
+                    text: `Tag: #${currentState.activeTag}`
+                });
+            }
+
+            if (currentState.searchQuery) {
+                filters.push({
+                    type: 'search',
+                    value: currentState.searchQuery,
+                    text: `Search: "${currentState.searchQuery}"`
+                });
+            }
+
+            if (filters.length === 0) {
+                elements.activeFilters.classList.add('hidden');
+                return;
+            }
+
+            elements.activeFilters.classList.remove('hidden');
+
+            filters.forEach(filter => {
+                const filterElement = document.createElement('div');
+                filterElement.className = 'bg-indigo-100 text-indigo-800 px-3 py-1 rounded-full text-sm flex items-center';
+                filterElement.innerHTML = `
+                    <span class="mr-1">${filter.text}</span>
+                    <button class="ml-1 text-indigo-500 hover:text-indigo-700 remove-filter" 
+                        data-type="${filter.type}" data-value="${filter.value}">
+                        <i class="fas fa-times"></i>
+                    </button>
+                `;
+                elements.activeFilters.appendChild(filterElement);
+            });
+
+            // Add event listeners to remove filter buttons
+            document.querySelectorAll('.remove-filter').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    const type = btn.dataset.type;
+                    const value = btn.dataset.value;
+
+                    if (type === 'category') {
+                        currentState.activeCategory = 'all';
+                    } else if (type === 'tag') {
+                        currentState.activeTag = null;
+                    } else if (type === 'search') {
+                        currentState.searchQuery = '';
+                        elements.searchBar.value = '';
+                    }
+
+                    renderResources();
+                });
+            });
+        }
+
+        // Render pagination controls
+        function renderPagination(totalItems) {
+            if (totalItems <= currentState.itemsPerPage) {
+                elements.pagination.classList.add('hidden');
+                return;
+            }
+
+            elements.pagination.classList.remove('hidden');
+
+            const totalPages = Math.ceil(totalItems / currentState.itemsPerPage);
+            const paginationContainer = elements.pagination.querySelector('.flex');
+
+            // Clear existing page buttons (keep prev/next)
+            paginationContainer.innerHTML = '';
+
+            // Previous button
+            const prevBtn = document.createElement('button');
+            prevBtn.className = 'pagination-btn px-3 py-2 rounded-l-md border border-gray-300 bg-white text-gray-500 hover:bg-gray-50';
+            prevBtn.dataset.page = 'prev';
+            prevBtn.innerHTML = '<i class="fas fa-chevron-left"></i>';
+            prevBtn.disabled = currentState.currentPage === 1;
+            paginationContainer.appendChild(prevBtn);
+
+            // Page buttons
+            for (let i = 1; i <= totalPages; i++) {
+                const pageBtn = document.createElement('button');
+                pageBtn.className = `pagination-btn px-4 py-2 border-t border-b border-gray-300 bg-white text-gray-500 hover:bg-gray-50 font-medium ${i === currentState.currentPage ? 'bg-indigo-50 text-indigo-600' : ''
+                    }`;
+                pageBtn.textContent = i;
+                pageBtn.dataset.page = i;
+                paginationContainer.appendChild(pageBtn);
+            }
+
+            // Next button
+            const nextBtn = document.createElement('button');
+            nextBtn.className = 'pagination-btn px-3 py-2 rounded-r-md border border-gray-300 bg-white text-gray-500 hover:bg-gray-50';
+            nextBtn.dataset.page = 'next';
+            nextBtn.innerHTML = '<i class="fas fa-chevron-right"></i>';
+            nextBtn.disabled = currentState.currentPage === totalPages;
+            paginationContainer.appendChild(nextBtn);
+
+            // Add event listeners to pagination buttons
+            document.querySelectorAll('.pagination-btn').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    const page = btn.dataset.page;
+
+                    if (page === 'prev' && currentState.currentPage > 1) {
+                        currentState.currentPage--;
+                    } else if (page === 'next' && currentState.currentPage < totalPages) {
+                        currentState.currentPage++;
+                    } else if (!isNaN(page)) {
+                        currentState.currentPage = parseInt(page);
+                    }
+
+                    renderResources();
+                    window.scrollTo({ top: 0, behavior: 'smooth' });
+                });
+            });
+        }
+
+        // Toggle no results message
+        function toggleNoResultsMessage(show) {
+            if (show) {
+                elements.noResults.classList.remove('hidden');
+            } else {
+                elements.noResults.classList.add('hidden');
+            }
+        }
+
+        // Add event listeners to resource cards
+        function addResourceEventListeners() {
+            // Download buttons
+            document.querySelectorAll('.download-btn').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    const url = btn.dataset.url;
+                    // In a real app, this would initiate a download
+                    showToast('Download started!', 'success');
+                });
+            });
+
+            // Favorite buttons
+            document.querySelectorAll('.favorite-btn').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    e.currentTarget.innerHTML = '<i class="fas fa-heart text-red-500"></i>';
+                    showToast('Added to favorites', 'success');
+                });
+            });
+
+            // Toggle review sections
+            document.querySelectorAll('.toggle-reviews').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    const reviewSection = btn.nextElementSibling;
+                    const chevron = btn.querySelector('.fa-chevron-down');
+
+                    reviewSection.classList.toggle('active');
+
+                    if (reviewSection.classList.contains('active')) {
+                        btn.innerHTML = `
+                            <i class="fas fa-comment-alt"></i>
+                            <span>Hide Reviews</span>
+                            <i class="fas fa-chevron-up text-xs transition-transform"></i>
+                        `;
+                    } else {
+                        btn.innerHTML = `
+                            <i class="fas fa-comment-alt"></i>
+                            <span>Show Reviews (${btn.parentElement.querySelector('.review-section').children[1].children.length})</span>
+                            <i class="fas fa-chevron-down text-xs transition-transform"></i>
+                        `;
+                    }
+                });
+            });
+
+            // Add review buttons
+            document.querySelectorAll('.add-review-btn').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    showToast('Sign in to add your review', 'info');
+                });
+            });
+
+            // Tag filter buttons
+            document.querySelectorAll('.tag-filter').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    const tag = btn.dataset.tag;
+                    currentState.activeTag = tag;
+                    currentState.currentPage = 1;
+                    renderResources();
+                });
+            });
+        }
+
+        // Setup event listeners
+        function setupEventListeners() {
+            // Search input
+            elements.searchBar.addEventListener('input', (e) => {
+                currentState.searchQuery = e.target.value.toLowerCase();
+                currentState.currentPage = 1;
+                renderResources();
+            });
+
+            // Category filter buttons
+            document.querySelectorAll('.category-filter').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    currentState.activeCategory = btn.dataset.category;
+                    currentState.currentPage = 1;
+                    renderResources();
+
+                    // Update active state in dropdown
+                    document.querySelectorAll('.category-filter').forEach(b => {
+                        b.classList.remove('bg-indigo-100', 'text-indigo-800');
+                    });
+                    btn.classList.add('bg-indigo-100', 'text-indigo-800');
+                });
+            });
+
+            // Sort buttons
+            document.querySelectorAll('.sort-btn').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    currentState.sortBy = btn.dataset.sort;
+                    renderResources();
+
+                    // Update active state in dropdown
+                    document.querySelectorAll('.sort-btn').forEach(b => {
+                        b.classList.remove('bg-indigo-100', 'text-indigo-800');
+                    });
+                    btn.classList.add('bg-indigo-100', 'text-indigo-800');
+                });
+            });
+
+            // Reset filters button
+            elements.resetFilters.addEventListener('click', resetAllFilters);
+        }
+
+        // Reset all filters
+        function resetAllFilters() {
+            currentState = {
+                filteredResources: [],
+                activeCategory: 'all',
+                activeTag: null,
+                searchQuery: '',
+                sortBy: 'title-asc',
+                currentPage: 1,
+                itemsPerPage: 6
+            };
+
+            elements.searchBar.value = '';
+            renderResources();
+
+            // Reset dropdown UI states
+            document.querySelectorAll('.category-filter').forEach(b => {
+                b.classList.remove('bg-indigo-100', 'text-indigo-800');
+            });
+            document.querySelector('.category-filter[data-category="all"]').classList.add('bg-indigo-100', 'text-indigo-800');
+
+            document.querySelectorAll('.sort-btn').forEach(b => {
+                b.classList.remove('bg-indigo-100', 'text-indigo-800');
+            });
+        }
+
+        // Show toast notification
+        function showToast(message, type) {
+            const toast = document.createElement('div');
+            toast.className = `fixed bottom-4 left-1/2 transform -translate-x-1/2 px-6 py-3 rounded-lg shadow-lg text-white ${type === 'success' ? 'bg-green-500' :
+                    type === 'error' ? 'bg-red-500' :
+                        'bg-blue-500'
+                }`;
+            toast.textContent = message;
+            document.body.appendChild(toast);
+
+            setTimeout(() => {
+                toast.classList.add('opacity-0', 'transition-opacity', 'duration-300');
+                setTimeout(() => toast.remove(), 300);
+            }, 3000);
+        }
+
+        // Toggle scroll-to-top button
+        function toggleScrollToTop() {
+            if (window.scrollY > 300) {
+                elements.scrollToTop.classList.add('visible');
+            } else {
+                elements.scrollToTop.classList.remove('visible');
+            }
+        }
+
+        // Scroll to top
+        function scrollToTop() {
+            window.scrollTo({
+                top: 0,
+                behavior: 'smooth'
+            });
+        }
+
+        // Initialize the app when DOM is loaded
+        document.addEventListener('DOMContentLoaded', init);
+    </script>
+</body>
+
+</html>
