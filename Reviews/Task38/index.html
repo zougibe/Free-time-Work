@@ -1,0 +1,709 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Grammar Checker Pro</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Material+Symbols+Rounded"
+        rel="stylesheet" />
+
+    <style>
+        html {
+            scroll-behavior: smooth;
+            font-family: 'Inter', sans-serif;
+        }
+
+        .fade-in {
+            animation: fadeIn 0.5s ease-in-out;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .glass {
+            backdrop-filter: blur(20px) saturate(180%);
+            -webkit-backdrop-filter: blur(20px) saturate(180%);
+            background-color: rgba(255, 255, 255, 0.08);
+            border-radius: 12px;
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+        }
+
+        select,
+        input,
+        textarea {
+            background-color: rgba(255, 255, 255, 0.1);
+            color: #fff;
+            transition: all 0.2s ease;
+        }
+
+        select:focus,
+        input:focus,
+        textarea:focus {
+            outline: none;
+            box-shadow: 0 0 0 2px rgba(168, 85, 247, 0.5);
+        }
+
+        select option {
+            background-color: #1e1b4b;
+            color: #fff;
+        }
+
+        body {
+            background: linear-gradient(135deg, #0f0c29, #302b63, #24243e);
+            color: #f4f4f4;
+            min-height: 100vh;
+        }
+
+        ::selection {
+            background: #a78bfa;
+            color: white;
+        }
+
+        #rulesList {
+            padding-right: 12px;
+        }
+
+        #rulesList::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        #rulesList::-webkit-scrollbar-track {
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 10px;
+        }
+
+        #rulesList::-webkit-scrollbar-thumb {
+            background: linear-gradient(to bottom, #a855f7, #3b82f6);
+            border-radius: 10px;
+        }
+
+        #rulesList::-webkit-scrollbar-thumb:hover {
+            background: linear-gradient(to bottom, #9333ea, #2563eb);
+        }
+
+        .toast {
+            position: fixed;
+            bottom: 30px;
+            right: 30px;
+            background: rgba(30, 30, 30, 0.9);
+            color: white;
+            padding: 12px 20px;
+            border-radius: 8px;
+            font-weight: 500;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+            z-index: 9999;
+            opacity: 0;
+            animation: toastIn 0.3s forwards, toastOut 0.3s 2.7s forwards;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .toast.success {
+            background: #10b981;
+        }
+
+        .toast.error {
+            background: #ef4444;
+        }
+
+        .toast.warning {
+            background: #f59e0b;
+        }
+
+        @keyframes toastIn {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @keyframes toastOut {
+            to {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+        }
+
+        .word-tag {
+            transition: all 0.2s ease;
+            position: relative;
+        }
+
+        .word-tag.violation:hover::after {
+            content: attr(data-violations);
+            position: absolute;
+            bottom: 100%;
+            left: 50%;
+            transform: translateX(-50%);
+            background: #ef4444;
+            color: white;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-size: 0.7rem;
+            white-space: nowrap;
+            z-index: 10;
+            margin-bottom: 4px;
+        }
+
+        .rule-description {
+            font-size: 0.85rem;
+            color: #d1d5db;
+            margin-top: 2px;
+        }
+
+        .summary-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 6px 0;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .summary-item:last-child {
+            border-bottom: none;
+        }
+
+        .pulse {
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0% {
+                box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7);
+            }
+
+            70% {
+                box-shadow: 0 0 0 10px rgba(16, 185, 129, 0);
+            }
+
+            100% {
+                box-shadow: 0 0 0 0 rgba(16, 185, 129, 0);
+            }
+        }
+    </style>
+</head>
+
+<body class="min-h-screen px-4 py-8 md:px-6 md:py-10">
+
+    <!-- Page Title -->
+    <div class="text-center text-white mb-10 fade-in">
+        <h1 class="text-4xl font-bold bg-gradient-to-r from-purple-400 to-blue-400 bg-clip-text text-transparent">
+            Grammar Checker Pro</h1>
+        <p class="text-lg text-purple-200 mt-2">Enhance your writing with custom grammar rules</p>
+    </div>
+
+    <div class="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-2 gap-6 fade-in">
+        <!-- Left Panel -->
+        <div class="glass p-6 text-white">
+            <h2 class="text-2xl font-bold mb-4 flex items-center gap-2">
+                <span class="material-symbols-rounded text-purple-300">edit_document</span>
+                Create Grammar Rules
+            </h2>
+
+            <div class="space-y-4">
+                <!-- Rule Type -->
+                <div class="space-y-1">
+                    <label for="ruleType" class="text-sm font-semibold">Select rule type:</label>
+                    <select id="ruleType"
+                        class="w-full border border-white/30 rounded-lg px-3 py-2 bg-white/10 text-white focus:outline-none focus:ring-2 focus:ring-purple-400">
+                        <option value="endsWith">Word ends with (prohibited)</option>
+                        <option value="startsWith">Word starts with (prohibited)</option>
+                        <option value="contains">Word contains (prohibited)</option>
+                        <option value="noConsecutiveSpaces">No consecutive spaces</option>
+                        <option value="caseSensitivity">All lowercase</option>
+                        <option value="wordLength">Max word length</option>
+                        <option value="minWordLength">Min word length</option>
+                        <option value="punctuation">Must end with period</option>
+                        <option value="noNumbers">No numbers in words</option>
+                    </select>
+                    <p id="ruleDescription" class="rule-description"></p>
+                </div>
+
+                <!-- Rule Value -->
+                <div class="space-y-1" id="valueContainer">
+                    <label for="ruleValue" class="text-sm font-semibold">Rule value:</label>
+                    <input type="text" id="ruleValue" placeholder="e.g. 'ing'"
+                        class="w-full border border-white/30 rounded-lg px-3 py-2 bg-white/10 text-white focus:outline-none focus:ring-2 focus:ring-purple-400" />
+                </div>
+
+                <!-- Add Rule Button -->
+                <button onclick="addRule()"
+                    class="w-full bg-gradient-to-r from-purple-500 to-blue-500 hover:from-purple-600 hover:to-blue-600 text-white font-semibold px-4 py-3 rounded-lg transition-all shadow-md flex items-center justify-center gap-2">
+                    <span class="material-symbols-rounded">add</span>
+                    Add Rule
+                </button>
+
+                <!-- Clear Rules Button -->
+                <button onclick="clearRules()"
+                    class="w-full bg-gradient-to-r from-gray-600 to-gray-700 hover:from-gray-700 hover:to-gray-800 text-white font-semibold px-4 py-3 rounded-lg transition-all shadow-md flex items-center justify-center gap-2">
+                    <span class="material-symbols-rounded">delete</span>
+                    Clear All Rules
+                </button>
+
+                <!-- Rules List -->
+                <div class="mt-4">
+                    <div class="flex justify-between items-center mb-2">
+                        <h3 class="font-semibold">Active Rules</h3>
+                        <span class="text-xs bg-white/10 px-2 py-1 rounded-full">${rules.length} rules</span>
+                    </div>
+                    <div id="rulesList" class="space-y-2 max-h-64 overflow-y-auto"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Right Panel -->
+        <div class="glass p-6 text-white">
+            <h2 class="text-2xl font-bold mb-4 flex items-center gap-2">
+                <span class="material-symbols-rounded text-purple-300">text_snippet</span>
+                Text Analysis
+            </h2>
+
+            <!-- Textarea -->
+            <div class="space-y-1 mb-4">
+                <label for="inputText" class="text-sm font-semibold">Enter text to analyze:</label>
+                <textarea id="inputText"
+                    placeholder="Paste or type your text here to check against your grammar rules..."
+                    class="w-full h-40 border border-white/30 rounded-lg px-3 py-2 font-mono bg-white/10 text-white focus:outline-none focus:ring-2 focus:ring-purple-400 resize-none"></textarea>
+            </div>
+
+            <!-- Stats -->
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-3 mb-4">
+                <div class="bg-white/5 p-3 rounded-lg">
+                    <div class="text-xs text-gray-300">Words</div>
+                    <div class="text-xl font-bold" id="wordCount">0</div>
+                </div>
+                <div class="bg-white/5 p-3 rounded-lg">
+                    <div class="text-xs text-gray-300">Characters</div>
+                    <div class="text-xl font-bold" id="charCount">0</div>
+                </div>
+                <div class="bg-white/5 p-3 rounded-lg">
+                    <div class="text-xs text-gray-300">Violations</div>
+                    <div class="text-xl font-bold" id="violationCount">0</div>
+                </div>
+                <div class="bg-white/5 p-3 rounded-lg">
+                    <div class="text-xs text-gray-300">Rules</div>
+                    <div class="text-xl font-bold" id="ruleCount">0</div>
+                </div>
+            </div>
+
+            <!-- Word Tags -->
+            <div class="mb-6">
+                <h3 class="font-semibold mb-2">Analysis Results</h3>
+                <div class="text-base p-4 bg-white/5 rounded-lg min-h-20" id="result">
+                    <p class="text-gray-400 italic">Results will appear here after analysis...</p>
+                </div>
+            </div>
+
+            <!-- Summary -->
+            <div class="mb-6">
+                <h3 class="font-semibold mb-2">Violation Summary</h3>
+                <div class="p-4 bg-white/5 rounded-lg" id="summary">
+                    <p class="text-gray-400 italic">No violations found yet</p>
+                </div>
+            </div>
+
+            <!-- Chart -->
+            <div>
+                <h3 class="font-semibold mb-2">Violation Statistics</h3>
+                <div class="p-4 bg-white/5 rounded-lg">
+                    <canvas id="violationChart" height="200"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let rules = [];
+        let chart = null;
+        let debounceTimer;
+
+        // Rule descriptions
+        const ruleDescriptions = {
+            endsWith: "Flags words that end with the specified characters",
+            startsWith: "Flags words that start with the specified characters",
+            contains: "Flags words that contain the specified characters",
+            noConsecutiveSpaces: "Flags when two or more spaces appear consecutively",
+            caseSensitivity: "Flags words that contain uppercase letters",
+            wordLength: "Flags words longer than the specified character count",
+            minWordLength: "Flags words shorter than the specified character count",
+            punctuation: "Flags text that doesn't end with a period",
+            noNumbers: "Flags words that contain numbers"
+        };
+
+        // Initialize the app
+        document.addEventListener('DOMContentLoaded', function () {
+            updateRuleDescription();
+            document.getElementById('ruleType').addEventListener('change', updateRuleDescription);
+            document.getElementById('inputText').addEventListener('input', function () {
+                clearTimeout(debounceTimer);
+                debounceTimer = setTimeout(analyzeText, 500);
+            });
+            updateRuleCount();
+        });
+
+        function updateRuleDescription() {
+            const ruleType = document.getElementById('ruleType').value;
+            document.getElementById('ruleDescription').textContent = ruleDescriptions[ruleType] || '';
+
+            // Show/hide value input based on rule type
+            const needsValue = !['noConsecutiveSpaces', 'caseSensitivity', 'punctuation', 'noNumbers'].includes(ruleType);
+            document.getElementById('valueContainer').style.display = needsValue ? 'block' : 'none';
+        }
+
+        function addRule() {
+            const type = document.getElementById("ruleType").value;
+            const valueInput = document.getElementById("ruleValue");
+            let value = valueInput.value.trim();
+
+            // Validate based on rule type
+            let isValid = true;
+            let message = "";
+
+            switch (type) {
+                case 'wordLength':
+                case 'minWordLength':
+                    if (isNaN(value) || parseInt(value) <= 0) {
+                        isValid = false;
+                        message = "Please enter a valid positive number for word length";
+                    }
+                    break;
+                case 'endsWith':
+                case 'startsWith':
+                case 'contains':
+                    if (value === "") {
+                        isValid = false;
+                        message = "Please enter characters to check for";
+                    }
+                    break;
+            }
+
+            if (!isValid) {
+                showToast(message, "error");
+                return;
+            }
+
+            // For rules that don't need a value, set to empty string
+            if (['noConsecutiveSpaces', 'caseSensitivity', 'punctuation', 'noNumbers'].includes(type)) {
+                value = "";
+            }
+
+            rules.push({ type, value });
+            valueInput.value = "";
+            updateRulesList();
+            analyzeText();
+            updateRuleCount();
+            showToast("Rule added successfully!", "success");
+        }
+
+        function updateRulesList() {
+            const container = document.getElementById("rulesList");
+            container.innerHTML = "";
+
+            if (rules.length === 0) {
+                container.innerHTML = '<p class="text-gray-400 italic text-sm py-4 text-center">No rules added yet</p>';
+                return;
+            }
+
+            rules.forEach((rule, i) => {
+                const div = document.createElement("div");
+                div.className = "flex justify-between items-center bg-white/10 px-4 py-3 rounded-lg text-sm";
+                div.innerHTML = `
+          <div>
+            <span class="font-medium">${formatRuleName(rule.type)}</span>
+            ${rule.value ? `<span class="text-purple-300 ml-1">${rule.value}</span>` : ''}
+          </div>
+          <button onclick="removeRule(${i})" class="text-red-400 hover:text-red-300 transition-colors">
+            <span class="material-symbols-rounded">close</span>
+          </button>
+        `;
+                container.appendChild(div);
+            });
+        }
+
+        function formatRuleName(type) {
+            return type.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase());
+        }
+
+        function removeRule(index) {
+            rules.splice(index, 1);
+            updateRulesList();
+            analyzeText();
+            updateRuleCount();
+            showToast("Rule removed", "warning");
+        }
+
+        function clearRules() {
+            if (rules.length === 0) {
+                showToast("No rules to clear", "warning");
+                return;
+            }
+
+            if (confirm("Are you sure you want to clear all rules?")) {
+                rules = [];
+                updateRulesList();
+                analyzeText();
+                updateRuleCount();
+                showToast("All rules cleared", "warning");
+            }
+        }
+
+        function analyzeText() {
+            const text = document.getElementById("inputText").value;
+            const words = text.split(/\s+/).filter(w => w.length > 0);
+            let violations = {};
+            let resultHTML = "";
+            let totalViolations = 0;
+
+            // Update basic stats
+            document.getElementById("wordCount").textContent = words.length;
+            document.getElementById("charCount").textContent = text.length;
+
+            // If no rules, show empty state
+            if (rules.length === 0) {
+                document.getElementById("result").innerHTML = '<p class="text-gray-400 italic">Add rules to start analyzing text</p>';
+                document.getElementById("summary").innerHTML = '<p class="text-gray-400 italic">No rules defined</p>';
+                document.getElementById("violationCount").textContent = "0";
+                if (chart) chart.destroy();
+                return;
+            }
+
+            // Check each word against all rules
+            words.forEach(word => {
+                const wordStripped = word.replace(/[.,!?;:"']/g, '');
+                let wordViolations = [];
+
+                for (let rule of rules) {
+                    let isViolation = false;
+                    let violationMessage = "";
+
+                    switch (rule.type) {
+                        case "endsWith":
+                            isViolation = wordStripped.toLowerCase().endsWith(rule.value.toLowerCase());
+                            violationMessage = `Ends with "${rule.value}"`;
+                            break;
+                        case "startsWith":
+                            isViolation = wordStripped.toLowerCase().startsWith(rule.value.toLowerCase());
+                            violationMessage = `Starts with "${rule.value}"`;
+                            break;
+                        case "contains":
+                            isViolation = wordStripped.toLowerCase().includes(rule.value.toLowerCase());
+                            violationMessage = `Contains "${rule.value}"`;
+                            break;
+                        case "noConsecutiveSpaces":
+                            // Handled separately below
+                            break;
+                        case "caseSensitivity":
+                            isViolation = wordStripped !== wordStripped.toLowerCase();
+                            violationMessage = "Contains uppercase letters";
+                            break;
+                        case "wordLength":
+                            isViolation = wordStripped.length > parseInt(rule.value);
+                            violationMessage = `Longer than ${rule.value} chars`;
+                            break;
+                        case "minWordLength":
+                            isViolation = wordStripped.length < parseInt(rule.value);
+                            violationMessage = `Shorter than ${rule.value} chars`;
+                            break;
+                        case "punctuation":
+                            // Handled separately below
+                            break;
+                        case "noNumbers":
+                            isViolation = /\d/.test(wordStripped);
+                            violationMessage = "Contains numbers";
+                            break;
+                    }
+
+                    if (isViolation) {
+                        wordViolations.push(violationMessage);
+                        violations[rule.type] = (violations[rule.type] || 0) + 1;
+                        totalViolations++;
+                    }
+                }
+
+                // Add word to result with appropriate styling
+                if (wordViolations.length > 0) {
+                    resultHTML += `<span class="word-tag violation inline-block px-2 py-1 m-1 rounded-md text-sm bg-red-500/80 text-white font-medium" data-violations="${wordViolations.join(', ')}">${word}</span>`;
+                } else {
+                    resultHTML += `<span class="word-tag inline-block px-2 py-1 m-1 rounded-md text-sm bg-[#056629] text-white">${word}</span>`;
+                }
+            });
+
+            // Check for global rules (not per-word)
+            if (rules.some(r => r.type === "noConsecutiveSpaces") && /\s{2,}/.test(text)) {
+                violations["noConsecutiveSpaces"] = (violations["noConsecutiveSpaces"] || 0) + 1;
+                totalViolations++;
+            }
+
+            if (rules.some(r => r.type === "punctuation") && text.trim().length > 0 && !text.trim().endsWith(".")) {
+                violations["punctuation"] = (violations["punctuation"] || 0) + 1;
+                totalViolations++;
+            }
+
+            // Update results
+            document.getElementById("result").innerHTML = resultHTML || '<p class="text-gray-400 italic">No violations found</p>';
+            document.getElementById("violationCount").textContent = totalViolations;
+            updateSummary(violations);
+            updateChart(violations);
+        }
+
+        function updateSummary(violations) {
+            const summary = document.getElementById("summary");
+            const entries = Object.entries(violations);
+
+            if (entries.length === 0) {
+                summary.innerHTML = '<p class="text-green-400 font-medium">✔ No violations found</p>';
+                return;
+            }
+
+            let summaryHTML = '<div class="space-y-2">';
+            entries.forEach(([rule, count]) => {
+                summaryHTML += `
+          <div class="summary-item">
+            <span>${formatRuleName(rule)}</span>
+            <span class="font-medium ${count > 0 ? 'text-red-400' : 'text-green-400'}">${count}</span>
+          </div>
+        `;
+            });
+            summaryHTML += '</div>';
+            summary.innerHTML = summaryHTML;
+        }
+
+        function updateChart(violations) {
+            const ctx = document.getElementById("violationChart").getContext("2d");
+
+            // Destroy previous chart if it exists
+            if (chart) {
+                chart.destroy();
+            }
+
+            const labels = Object.keys(violations).map(formatRuleName);
+            const data = Object.values(violations);
+
+            // If no violations, show empty state
+            if (data.length === 0 || data.every(val => val === 0)) {
+                document.getElementById("violationChart").innerHTML = '<p class="text-gray-400 italic text-center py-8">No violations to display</p>';
+                return;
+            }
+
+            chart = new Chart(ctx, {
+                type: "bar",
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: "Violations",
+                        data: data,
+                        backgroundColor: [
+                            '#ef4444',
+                            '#f97316',
+                            '#f59e0b',
+                            '#eab308',
+                            '#84cc16',
+                            '#22c55e',
+                            '#10b981',
+                            '#14b8a6',
+                            '#06b6d4',
+                            '#0ea5e9',
+                            '#3b82f6',
+                            '#6366f1',
+                            '#8b5cf6',
+                            '#a855f7',
+                            '#d946ef',
+                            '#ec4899',
+                            '#f43f5e'
+                        ],
+                        borderColor: 'rgba(255, 255, 255, 0.1)',
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: {
+                            callbacks: {
+                                label: function (context) {
+                                    return `${context.parsed.y} violation${context.parsed.y !== 1 ? 's' : ''}`;
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            ticks: {
+                                stepSize: 1,
+                                color: '#d1d5db',
+                                font: {
+                                    family: 'Inter'
+                                }
+                            },
+                            grid: {
+                                color: 'rgba(255, 255, 255, 0.05)',
+                                drawBorder: false
+                            }
+                        },
+                        x: {
+                            ticks: {
+                                color: '#d1d5db',
+                                font: {
+                                    family: 'Inter'
+                                }
+                            },
+                            grid: {
+                                display: false,
+                                drawBorder: false
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        function updateRuleCount() {
+            document.getElementById("ruleCount").textContent = rules.length;
+        }
+
+        function showToast(message, type = "success") {
+            const toast = document.createElement("div");
+            toast.className = `toast ${type}`;
+
+            // Add icon based on type
+            let icon = '';
+            switch (type) {
+                case 'success': icon = 'check_circle'; break;
+                case 'error': icon = 'error'; break;
+                case 'warning': icon = 'warning'; break;
+                default: icon = 'info';
+            }
+
+            toast.innerHTML = `
+        <span class="material-symbols-rounded">${icon}</span>
+        <span>${message}</span>
+      `;
+
+            document.body.appendChild(toast);
+            setTimeout(() => toast.remove(), 3000);
+        }
+    </script>
+</body>
+
+</html>

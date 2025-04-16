@@ -1,0 +1,778 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Data Science Dashboard</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root {
+            --primary: #3b82f6;
+            --primary-light: #60a5fa;
+            --primary-dark: #2563eb;
+        }
+
+        body {
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+        }
+
+        canvas {
+            max-height: 300px;
+        }
+
+        /* Smooth transitions */
+        * {
+            transition: background-color 0.2s ease, color 0.2s ease, border-color 0.2s ease;
+        }
+
+        /* Custom scrollbar */
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: #1f2937;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: #4b5563;
+            border-radius: 4px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: var(--primary-light);
+        }
+
+        /* Animations */
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .fade-in {
+            animation: fadeIn 0.3s ease-out forwards;
+        }
+
+        .card-hover {
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+        }
+
+        .card-hover:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.2);
+        }
+
+        .progress-bar {
+            height: 6px;
+            border-radius: 3px;
+            overflow: hidden;
+        }
+
+        .progress-bar-fill {
+            height: 100%;
+            transition: width 0.6s ease;
+        }
+
+        /* Status badges */
+        .status-badge {
+            padding: 0.25rem 0.5rem;
+            border-radius: 9999px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        .status-active {
+            background-color: rgba(34, 197, 94, 0.1);
+            color: #22c55e;
+        }
+
+        .status-pending {
+            background-color: rgba(234, 179, 8, 0.1);
+            color: #eab308;
+        }
+
+        .status-completed {
+            background-color: rgba(59, 130, 246, 0.1);
+            color: #3b82f6;
+        }
+
+        /* Tooltip */
+        .tooltip {
+            position: relative;
+        }
+
+        .tooltip:hover .tooltip-text {
+            visibility: visible;
+            opacity: 1;
+        }
+
+        .tooltip-text {
+            visibility: hidden;
+            opacity: 0;
+            position: absolute;
+            z-index: 10;
+            bottom: 125%;
+            left: 50%;
+            transform: translateX(-50%);
+            background-color: #111827;
+            color: white;
+            padding: 0.5rem 0.75rem;
+            border-radius: 0.375rem;
+            font-size: 0.875rem;
+            white-space: nowrap;
+            transition: opacity 0.2s ease;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+        }
+
+        .tooltip-text::after {
+            content: "";
+            position: absolute;
+            top: 100%;
+            left: 50%;
+            margin-left: -5px;
+            border-width: 5px;
+            border-style: solid;
+            border-color: #111827 transparent transparent transparent;
+        }
+    </style>
+</head>
+
+<body class="bg-gray-900 text-gray-200 font-sans min-h-screen">
+    <header class="bg-gray-800 text-white p-6 shadow-lg border-b border-gray-700">
+        <div class="container mx-auto flex justify-between items-center">
+            <div class="flex items-center space-x-4">
+                <div class="bg-blue-500 p-2 rounded-lg">
+                    <i class="fas fa-chart-line text-white text-xl"></i>
+                </div>
+                <h1 class="text-2xl md:text-3xl font-bold tracking-tight">Data Science Dashboard</h1>
+            </div>
+            <div class="flex items-center space-x-4">
+                <button class="p-2 rounded-full hover:bg-gray-700 tooltip">
+                    <i class="fas fa-bell text-gray-300 hover:text-blue-400"></i>
+                    <span class="tooltip-text">Notifications</span>
+                </button>
+                <button class="p-2 rounded-full hover:bg-gray-700 tooltip">
+                    <i class="fas fa-cog text-gray-300 hover:text-blue-400"></i>
+                    <span class="tooltip-text">Settings</span>
+                </button>
+                <div class="h-8 w-8 rounded-full bg-blue-500 flex items-center justify-center">
+                    <span class="text-sm font-semibold">DS</span>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <main class="container mx-auto p-4 md:p-6">
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
+            <!-- KPI Stats -->
+            <section class="bg-gray-800 p-6 rounded-xl shadow-lg border border-gray-700 card-hover">
+                <div class="flex items-center justify-between mb-4">
+                    <h2 class="text-lg font-semibold text-blue-400">Active Projects</h2>
+                    <i class="fas fa-project-diagram text-blue-400"></i>
+                </div>
+                <div class="flex items-end justify-between">
+                    <p class="text-3xl font-bold" id="activeProjects">12</p>
+                    <p class="text-green-400 text-sm font-medium flex items-center">
+                        <i class="fas fa-arrow-up mr-1"></i> 8.2%
+                    </p>
+                </div>
+                <div class="mt-4 text-sm text-gray-400">
+                    <span class="text-green-400">•</span> 3 new this week
+                </div>
+            </section>
+
+            <section class="bg-gray-800 p-6 rounded-xl shadow-lg border border-gray-700 card-hover">
+                <div class="flex items-center justify-between mb-4">
+                    <h2 class="text-lg font-semibold text-blue-400">Success Rate</h2>
+                    <i class="fas fa-check-circle text-blue-400"></i>
+                </div>
+                <div class="flex items-end justify-between">
+                    <p class="text-3xl font-bold" id="successRate">87%</p>
+                    <p class="text-green-400 text-sm font-medium flex items-center">
+                        <i class="fas fa-arrow-up mr-1"></i> 2.5%
+                    </p>
+                </div>
+                <div class="mt-4 text-sm text-gray-400">
+                    <span class="text-green-400">•</span> Above target (85%)
+                </div>
+            </section>
+
+            <section class="bg-gray-800 p-6 rounded-xl shadow-lg border border-gray-700 card-hover">
+                <div class="flex items-center justify-between mb-4">
+                    <h2 class="text-lg font-semibold text-blue-400">Pending Tasks</h2>
+                    <i class="fas fa-tasks text-blue-400"></i>
+                </div>
+                <div class="flex items-end justify-between">
+                    <p class="text-3xl font-bold" id="pendingTasks">23</p>
+                    <p class="text-red-400 text-sm font-medium flex items-center">
+                        <i class="fas fa-arrow-down mr-1"></i> 12.3%
+                    </p>
+                </div>
+                <div class="mt-4 text-sm text-gray-400">
+                    <span class="text-red-400">•</span> 5 overdue
+                </div>
+            </section>
+
+            <section class="bg-gray-800 p-6 rounded-xl shadow-lg border border-gray-700 card-hover">
+                <div class="flex items-center justify-between mb-4">
+                    <h2 class="text-lg font-semibold text-blue-400">Team Velocity</h2>
+                    <i class="fas fa-running text-blue-400"></i>
+                </div>
+                <div class="flex items-end justify-between">
+                    <p class="text-3xl font-bold" id="teamVelocity">42</p>
+                    <p class="text-green-400 text-sm font-medium flex items-center">
+                        <i class="fas fa-arrow-up mr-1"></i> 5.1%
+                    </p>
+                </div>
+                <div class="mt-4 text-sm text-gray-400">
+                    <span class="text-green-400">•</span> 2.1x last sprint
+                </div>
+            </section>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
+            <!-- Chart -->
+            <section class="bg-gray-800 p-6 rounded-xl shadow-lg border border-gray-700 card-hover lg:col-span-2">
+                <div class="flex justify-between items-center mb-4">
+                    <h2 class="text-xl font-semibold text-blue-400">Project Progress</h2>
+                    <div class="flex space-x-2">
+                        <button class="px-3 py-1 text-xs bg-gray-700 hover:bg-gray-600 rounded-lg">Weekly</button>
+                        <button class="px-3 py-1 text-xs bg-blue-500 hover:bg-blue-600 rounded-lg">Monthly</button>
+                        <button class="px-3 py-1 text-xs bg-gray-700 hover:bg-gray-600 rounded-lg">Yearly</button>
+                    </div>
+                </div>
+                <canvas id="performanceChart"></canvas>
+            </section>
+
+            <!-- Alerts -->
+            <section class="bg-gray-800 p-6 rounded-xl shadow-lg border border-gray-700 card-hover">
+                <div class="flex justify-between items-center mb-4">
+                    <h2 class="text-xl font-semibold text-blue-400">Recent Alerts</h2>
+                    <button class="text-xs text-blue-400 hover:text-blue-300 flex items-center">
+                        <i class="fas fa-sync-alt mr-1"></i> Refresh
+                    </button>
+                </div>
+                <ul id="alertList" class="space-y-3">
+                    <!-- Alerts will be added here dynamically -->
+                </ul>
+                <button id="loadMoreAlerts"
+                    class="mt-4 w-full py-2 text-sm bg-gray-700 hover:bg-gray-600 rounded-lg flex items-center justify-center">
+                    <i class="fas fa-plus mr-2"></i> Load More
+                </button>
+            </section>
+        </div>
+
+        <!-- Data Table -->
+        <section class="bg-gray-800 p-6 rounded-xl shadow-lg border border-gray-700 card-hover">
+            <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4">
+                <h2 class="text-xl font-semibold text-blue-400">Project Overview</h2>
+                <div class="flex flex-col sm:flex-row gap-3 w-full sm:w-auto">
+                    <div class="relative flex-grow">
+                        <i class="fas fa-search absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"></i>
+                        <input id="tableFilter" type="text" placeholder="Search projects..."
+                            class="pl-10 w-full bg-gray-700 border border-gray-600 p-2 rounded-lg text-gray-200 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent" />
+                    </div>
+                    <select id="tableSort"
+                        class="bg-gray-700 border border-gray-600 p-2 rounded-lg text-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                        <option value="id">Sort by ID</option>
+                        <option value="name">Sort by Name</option>
+                        <option value="progress">Sort by Progress</option>
+                        <option value="status">Sort by Status</option>
+                    </select>
+                    <button id="addProjectBtn"
+                        class="px-4 py-2 bg-blue-500 hover:bg-blue-600 rounded-lg text-white font-medium flex items-center justify-center">
+                        <i class="fas fa-plus mr-2"></i> Add Project
+                    </button>
+                </div>
+            </div>
+            <div class="overflow-x-auto rounded-lg border border-gray-700">
+                <table class="min-w-full text-sm">
+                    <thead class="bg-gray-700 text-gray-300">
+                        <tr>
+                            <th class="p-4 font-medium text-left">ID</th>
+                            <th class="p-4 font-medium text-left">Project</th>
+                            <th class="p-4 font-medium text-left">Team</th>
+                            <th class="p-4 font-medium text-left">Progress</th>
+                            <th class="p-4 font-medium text-left">Status</th>
+                            <th class="p-4 font-medium text-left">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="projectTable" class="divide-y divide-gray-700">
+                        <!-- Table rows will be added here dynamically -->
+                    </tbody>
+                </table>
+            </div>
+            <div class="flex justify-between items-center mt-4 text-sm text-gray-400">
+                <div>Showing <span id="showingCount">4</span> of <span id="totalCount">4</span> projects</div>
+                <div class="flex space-x-2">
+                    <button class="px-3 py-1 bg-gray-700 hover:bg-gray-600 rounded-lg disabled:opacity-50" disabled>
+                        <i class="fas fa-chevron-left"></i>
+                    </button>
+                    <button class="px-3 py-1 bg-gray-700 hover:bg-gray-600 rounded-lg">
+                        <i class="fas fa-chevron-right"></i>
+                    </button>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <!-- Add Project Modal (hidden by default) -->
+    <div id="projectModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 hidden">
+        <div class="bg-gray-800 rounded-xl shadow-2xl p-6 w-full max-w-md border border-gray-700">
+            <div class="flex justify-between items-center mb-4">
+                <h3 class="text-xl font-semibold">Add New Project</h3>
+                <button id="closeModal" class="text-gray-400 hover:text-gray-200">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <form id="projectForm" class="space-y-4">
+                <div>
+                    <label for="projectName" class="block text-sm font-medium mb-1">Project Name</label>
+                    <input type="text" id="projectName"
+                        class="w-full bg-gray-700 border border-gray-600 p-2 rounded-lg text-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                        required>
+                </div>
+                <div>
+                    <label for="projectTeam" class="block text-sm font-medium mb-1">Team</label>
+                    <select id="projectTeam"
+                        class="w-full bg-gray-700 border border-gray-600 p-2 rounded-lg text-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                        <option value="Data Science">Data Science</option>
+                        <option value="ML Engineering">ML Engineering</option>
+                        <option value="Analytics">Analytics</option>
+                        <option value="Research">Research</option>
+                    </select>
+                </div>
+                <div>
+                    <label for="projectProgress" class="block text-sm font-medium mb-1">Progress (%)</label>
+                    <input type="number" id="projectProgress" min="0" max="100"
+                        class="w-full bg-gray-700 border border-gray-600 p-2 rounded-lg text-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                        required>
+                </div>
+                <div>
+                    <label for="projectStatus" class="block text-sm font-medium mb-1">Status</label>
+                    <select id="projectStatus"
+                        class="w-full bg-gray-700 border border-gray-600 p-2 rounded-lg text-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                        <option value="Active">Active</option>
+                        <option value="Pending">Pending</option>
+                        <option value="Completed">Completed</option>
+                    </select>
+                </div>
+                <div class="flex justify-end space-x-3 pt-4">
+                    <button type="button" id="cancelProject" class="px-4 py-2 bg-gray-700 hover:bg-gray-600 rounded-lg">
+                        Cancel
+                    </button>
+                    <button type="submit" class="px-4 py-2 bg-blue-500 hover:bg-blue-600 rounded-lg font-medium">
+                        Save Project
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        // Enhanced project data
+        let projects = [
+            { id: 1, name: "AI Research", team: "Research", progress: 75, status: "Active" },
+            { id: 2, name: "Data Pipeline", team: "Data Science", progress: 90, status: "Completed" },
+            { id: 3, name: "ML Model", team: "ML Engineering", progress: 45, status: "Pending" },
+            { id: 4, name: "Customer Analytics", team: "Analytics", progress: 60, status: "Active" },
+            { id: 5, name: "Recommendation Engine", team: "ML Engineering", progress: 30, status: "Pending" },
+            { id: 6, name: "Data Warehouse", team: "Data Science", progress: 100, status: "Completed" }
+        ];
+
+        // DOM Elements
+        const tableBody = document.getElementById("projectTable");
+        const filterInput = document.getElementById("tableFilter");
+        const sortSelect = document.getElementById("tableSort");
+        const showingCount = document.getElementById("showingCount");
+        const totalCount = document.getElementById("totalCount");
+        const addProjectBtn = document.getElementById("addProjectBtn");
+        const projectModal = document.getElementById("projectModal");
+        const closeModal = document.getElementById("closeModal");
+        const cancelProject = document.getElementById("cancelProject");
+        const projectForm = document.getElementById("projectForm");
+        const alertList = document.getElementById("alertList");
+        const loadMoreAlerts = document.getElementById("loadMoreAlerts");
+
+        // Status colors mapping
+        const statusColors = {
+            'Active': 'status-active',
+            'Pending': 'status-pending',
+            'Completed': 'status-completed'
+        };
+
+        // Render table with enhanced UI
+        function renderTable(data) {
+            tableBody.innerHTML = data.map(project => `
+                <tr class="hover:bg-gray-750 fade-in">
+                    <td class="p-4 font-medium">#${project.id}</td>
+                    <td class="p-4">
+                        <div class="font-medium">${project.name}</div>
+                        <div class="text-xs text-gray-400 mt-1">${project.team}</div>
+                    </td>
+                    <td class="p-4">
+                        <div class="flex -space-x-2">
+                            <div class="h-8 w-8 rounded-full bg-blue-500 flex items-center justify-center text-xs font-semibold">DS</div>
+                            <div class="h-8 w-8 rounded-full bg-green-500 flex items-center justify-center text-xs font-semibold">ML</div>
+                            ${project.team === 'Research' ?
+                    '<div class="h-8 w-8 rounded-full bg-purple-500 flex items-center justify-center text-xs font-semibold">RS</div>' : ''}
+                        </div>
+                    </td>
+                    <td class="p-4">
+                        <div class="flex items-center">
+                            <span class="w-10 mr-2">${project.progress}%</span>
+                            <div class="progress-bar bg-gray-700 flex-grow">
+                                <div class="progress-bar-fill ${getProgressColor(project.progress)}" 
+                                     style="width: ${project.progress}%"></div>
+                            </div>
+                        </div>
+                    </td>
+                    <td class="p-4">
+                        <span class="${statusColors[project.status]}">${project.status}</span>
+                    </td>
+                    <td class="p-4">
+                        <div class="flex space-x-2">
+                            <button class="p-1 text-blue-400 hover:text-blue-300 tooltip edit-btn" data-id="${project.id}">
+                                <i class="fas fa-edit"></i>
+                                <span class="tooltip-text">Edit</span>
+                            </button>
+                            <button class="p-1 text-red-400 hover:text-red-300 tooltip delete-btn" data-id="${project.id}">
+                                <i class="fas fa-trash-alt"></i>
+                                <span class="tooltip-text">Delete</span>
+                            </button>
+                        </div>
+                    </td>
+                </tr>
+            `).join("");
+
+            showingCount.textContent = data.length;
+            totalCount.textContent = projects.length;
+
+            // Add event listeners to action buttons
+            document.querySelectorAll('.edit-btn').forEach(btn => {
+                btn.addEventListener('click', (e) => editProject(e.target.closest('button').dataset.id));
+            });
+
+            document.querySelectorAll('.delete-btn').forEach(btn => {
+                btn.addEventListener('click', (e) => deleteProject(e.target.closest('button').dataset.id));
+            });
+        }
+
+        // Get progress bar color based on percentage
+        function getProgressColor(progress) {
+            if (progress < 30) return 'bg-red-500';
+            if (progress < 70) return 'bg-yellow-500';
+            return 'bg-green-500';
+        }
+
+        // Filter and sort table
+        function filterAndSortTable() {
+            let filtered = [...projects];
+            const filterText = filterInput.value.toLowerCase();
+
+            if (filterText) {
+                filtered = filtered.filter(p =>
+                    p.name.toLowerCase().includes(filterText) ||
+                    p.team.toLowerCase().includes(filterText) ||
+                    p.status.toLowerCase().includes(filterText)
+                );
+            }
+
+            const sortBy = sortSelect.value;
+            filtered.sort((a, b) => {
+                if (sortBy === 'progress') return b.progress - a.progress;
+                if (sortBy === 'name' || sortBy === 'team') {
+                    return String(a[sortBy]).localeCompare(String(b[sortBy]));
+                }
+                return a[sortBy] - b[sortBy];
+            });
+
+            renderTable(filtered);
+        }
+
+        // Initialize table
+        renderTable(projects);
+        filterInput.addEventListener('input', filterAndSortTable);
+        sortSelect.addEventListener('change', filterAndSortTable);
+
+        // Modal functionality
+        addProjectBtn.addEventListener('click', () => {
+            projectModal.classList.remove('hidden');
+        });
+
+        closeModal.addEventListener('click', () => {
+            projectModal.classList.add('hidden');
+        });
+
+        cancelProject.addEventListener('click', () => {
+            projectModal.classList.add('hidden');
+        });
+
+        // Handle form submission
+        projectForm.addEventListener('submit', (e) => {
+            e.preventDefault();
+
+            const newId = projects.length > 0 ? Math.max(...projects.map(p => p.id)) + 1 : 1;
+
+            const newProject = {
+                id: newId,
+                name: document.getElementById('projectName').value,
+                team: document.getElementById('projectTeam').value,
+                progress: parseInt(document.getElementById('projectProgress').value),
+                status: document.getElementById('projectStatus').value
+            };
+
+            projects.unshift(newProject);
+            filterAndSortTable();
+            projectModal.classList.add('hidden');
+            projectForm.reset();
+
+            // Show success notification
+            addAlert('Project added successfully', 'success');
+
+            // Update chart
+            updateChart();
+        });
+
+        // Edit project
+        function editProject(id) {
+            const project = projects.find(p => p.id == id);
+            if (!project) return;
+
+            document.getElementById('projectName').value = project.name;
+            document.getElementById('projectTeam').value = project.team;
+            document.getElementById('projectProgress').value = project.progress;
+            document.getElementById('projectStatus').value = project.status;
+
+            // Change form to edit mode
+            projectForm.dataset.editId = id;
+            projectForm.querySelector('button[type="submit"]').textContent = 'Update Project';
+            projectModal.querySelector('h3').textContent = 'Edit Project';
+
+            projectModal.classList.remove('hidden');
+        }
+
+        // Delete project
+        function deleteProject(id) {
+            if (confirm('Are you sure you want to delete this project?')) {
+                projects = projects.filter(p => p.id != id);
+                filterAndSortTable();
+                updateChart();
+                addAlert('Project deleted', 'error');
+            }
+        }
+
+        // Chart Setup
+        const ctx = document.getElementById('performanceChart').getContext('2d');
+        let chart = new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels: projects.map(p => p.name),
+                datasets: [{
+                    label: 'Progress (%)',
+                    data: projects.map(p => p.progress),
+                    backgroundColor: projects.map(p => {
+                        if (p.progress < 30) return 'rgba(239, 68, 68, 0.7)';
+                        if (p.progress < 70) return 'rgba(234, 179, 8, 0.7)';
+                        return 'rgba(34, 197, 94, 0.7)';
+                    }),
+                    borderColor: projects.map(p => {
+                        if (p.progress < 30) return 'rgba(239, 68, 68, 1)';
+                        if (p.progress < 70) return 'rgba(234, 179, 8, 1)';
+                        return 'rgba(34, 197, 94, 1)';
+                    }),
+                    borderWidth: 1,
+                    borderRadius: 4,
+                    borderSkipped: false
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        max: 100,
+                        grid: {
+                            color: '#374151',
+                            drawBorder: false
+                        },
+                        ticks: {
+                            color: '#9ca3af',
+                            callback: function (value) {
+                                return value + '%';
+                            }
+                        }
+                    },
+                    x: {
+                        grid: {
+                            display: false,
+                            drawBorder: false
+                        },
+                        ticks: {
+                            color: '#9ca3af',
+                            maxRotation: 45,
+                            minRotation: 45
+                        }
+                    }
+                },
+                plugins: {
+                    legend: {
+                        display: false,
+                        labels: {
+                            color: '#9ca3af',
+                            boxWidth: 12,
+                            padding: 20
+                        }
+                    },
+                    tooltip: {
+                        backgroundColor: '#111827',
+                        titleColor: '#f3f4f6',
+                        bodyColor: '#d1d5db',
+                        borderColor: '#374151',
+                        borderWidth: 1,
+                        padding: 12,
+                        callbacks: {
+                            label: function (context) {
+                                return `Progress: ${context.raw}%`;
+                            }
+                        }
+                    }
+                },
+                interaction: {
+                    intersect: false,
+                    mode: 'index'
+                }
+            }
+        });
+
+        // Update chart when data changes
+        function updateChart() {
+            chart.data.labels = projects.map(p => p.name);
+            chart.data.datasets[0].data = projects.map(p => p.progress);
+            chart.data.datasets[0].backgroundColor = projects.map(p => {
+                if (p.progress < 30) return 'rgba(239, 68, 68, 0.7)';
+                if (p.progress < 70) return 'rgba(234, 179, 8, 0.7)';
+                return 'rgba(34, 197, 94, 0.7)';
+            });
+            chart.data.datasets[0].borderColor = projects.map(p => {
+                if (p.progress < 30) return 'rgba(239, 68, 68, 1)';
+                if (p.progress < 70) return 'rgba(234, 179, 8, 1)';
+                return 'rgba(34, 197, 94, 1)';
+            });
+            chart.update();
+        }
+
+        // Alerts system
+        const alertMessages = [
+            { text: "Model accuracy dropped below 85%", type: "error" },
+            { text: "Data pipeline completed successfully", type: "success" },
+            { text: "New project assigned to your team", type: "info" },
+            { text: "Scheduled maintenance in 2 hours", type: "warning" },
+            { text: "New dataset available for analysis", type: "info" },
+            { text: "Performance issue detected in production", type: "error" }
+        ];
+
+        function addAlert(message, type) {
+            const alert = document.createElement("li");
+            alert.className = `p-3 rounded-lg flex items-start fade-in ${getAlertClass(type)}`;
+
+            const iconClass = {
+                'error': 'fas fa-exclamation-circle',
+                'success': 'fas fa-check-circle',
+                'warning': 'fas fa-exclamation-triangle',
+                'info': 'fas fa-info-circle'
+            }[type] || 'fas fa-info-circle';
+
+            alert.innerHTML = `
+                <i class="${iconClass} mt-1 mr-3 flex-shrink-0"></i>
+                <div class="flex-grow">${message}</div>
+                <button class="ml-2 text-opacity-70 hover:text-opacity-100 close-alert">
+                    <i class="fas fa-times"></i>
+                </button>
+            `;
+
+            alertList.prepend(alert);
+
+            // Limit to 5 alerts
+            if (alertList.children.length > 5) {
+                alertList.removeChild(alertList.lastChild);
+            }
+
+            // Add close event
+            alert.querySelector('.close-alert').addEventListener('click', () => {
+                alert.remove();
+            });
+
+            // Auto-remove after 10 seconds
+            setTimeout(() => {
+                if (alert.parentNode) {
+                    alert.classList.add('opacity-0', 'transition-opacity', 'duration-300');
+                    setTimeout(() => {
+                        if (alert.parentNode) alert.remove();
+                    }, 300);
+                }
+            }, 10000);
+        }
+
+        function getAlertClass(type) {
+            return {
+                'error': 'bg-red-900 text-red-200',
+                'success': 'bg-green-900 text-green-200',
+                'warning': 'bg-yellow-900 text-yellow-200',
+                'info': 'bg-blue-900 text-blue-200'
+            }[type] || 'bg-gray-700 text-gray-200';
+        }
+
+        // Load more alerts
+        loadMoreAlerts.addEventListener('click', () => {
+            for (let i = 0; i < 3; i++) {
+                const randomAlert = alertMessages[Math.floor(Math.random() * alertMessages.length)];
+                addAlert(randomAlert.text, randomAlert.type);
+            }
+        });
+
+        // Initialize with some alerts
+        for (let i = 0; i < 3; i++) {
+            const randomAlert = alertMessages[Math.floor(Math.random() * alertMessages.length)];
+            addAlert(randomAlert.text, randomAlert.type);
+        }
+
+        // Simulate periodic alerts
+        setInterval(() => {
+            const randomAlert = alertMessages[Math.floor(Math.random() * alertMessages.length)];
+            addAlert(randomAlert.text, randomAlert.type);
+        }, 15000);
+
+        // Update KPIs periodically
+        function updateKPIs() {
+            document.getElementById('activeProjects').textContent =
+                projects.filter(p => p.status === 'Active').length;
+
+            document.getElementById('successRate').textContent =
+                `${Math.floor(Math.random() * 5) + 85}%`;
+
+            document.getElementById('pendingTasks').textContent =
+                Math.floor(Math.random() * 10) + 20;
+        }
+
+        setInterval(updateKPIs, 10000);
+    </script>
+</body>
+
+</html>

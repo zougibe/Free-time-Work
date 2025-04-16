@@ -1,0 +1,1012 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Personal Finance Dashboard</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Lexend:wght@100..900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root {
+            --primary-gradient: linear-gradient(144deg, #af40ff, #5b42f3 50%, #00ddeb);
+            --error-color: #ff4d4f;
+            --success-color: #52c41a;
+            --warning-color: #faad14;
+            --text-primary: #f0f0f0;
+            --text-secondary: #ccc;
+            --bg-primary: rgba(255, 255, 255, 0.05);
+            --bg-secondary: rgba(255, 255, 255, 0.08);
+            --border-primary: rgba(255, 255, 255, 0.1);
+            --border-secondary: rgba(255, 255, 255, 0.2);
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Lexend', sans-serif;
+            margin: 0;
+            padding: 20px;
+            color: var(--text-primary);
+            background: linear-gradient(-45deg, #ff004f, #2c003e, #000026, #ff6a00);
+            background-size: 400% 400%;
+            animation: gradientBG 15s ease infinite;
+            min-height: 100vh;
+        }
+
+        @keyframes gradientBG {
+            0% {
+                background-position: 0% 50%;
+            }
+
+            50% {
+                background-position: 100% 50%;
+            }
+
+            100% {
+                background-position: 0% 50%;
+            }
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            display: grid;
+            gap: 20px;
+            grid-template-columns: repeat(2, 1fr);
+        }
+
+        .card {
+            background: var(--bg-primary);
+            backdrop-filter: blur(15px) saturate(180%);
+            -webkit-backdrop-filter: blur(15px) saturate(180%);
+            padding: 25px;
+            border-radius: 16px;
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
+            border: 1px solid var(--border-primary);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        .card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 12px 28px rgba(0, 0, 0, 0.4);
+        }
+
+        h1,
+        h2,
+        h3,
+        h4,
+        h5,
+        h6 {
+            font-weight: 700;
+            margin-top: 0;
+        }
+
+        h1 {
+            text-align: center;
+            margin-bottom: 30px;
+            font-size: 2.5rem;
+            background: linear-gradient(to right, #fff, #00ddeb);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .input-group {
+            margin-bottom: 20px;
+            position: relative;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 500;
+            color: var(--text-secondary);
+        }
+
+        input,
+        select {
+            font-family: 'Lexend', sans-serif;
+            font-weight: 400;
+            padding: 12px 15px;
+            margin: 0;
+            border: 1px solid var(--border-secondary);
+            border-radius: 8px;
+            background-color: rgba(255, 255, 255, 0.1);
+            color: var(--text-primary);
+            width: 100%;
+            transition: border-color 0.3s, box-shadow 0.3s;
+        }
+
+        input:focus,
+        select:focus {
+            outline: none;
+            border-color: #5b42f3;
+            box-shadow: 0 0 0 2px rgba(91, 66, 243, 0.2);
+        }
+
+        input::placeholder {
+            color: var(--text-secondary);
+            opacity: 0.7;
+        }
+
+        .error-message {
+            color: var(--error-color);
+            font-size: 0.85rem;
+            margin-top: 5px;
+            display: none;
+        }
+
+        .error input {
+            border-color: var(--error-color);
+        }
+
+        .success input {
+            border-color: var(--success-color);
+        }
+
+        button {
+            align-items: center;
+            background-image: var(--primary-gradient);
+            border: 0;
+            border-radius: 8px;
+            box-shadow: rgba(151, 65, 252, 0.2) 0 15px 30px -5px;
+            box-sizing: border-box;
+            color: #ffffff;
+            display: flex;
+            font-size: 16px;
+            justify-content: center;
+            line-height: 1em;
+            width: 100%;
+            min-width: 140px;
+            padding: 3px;
+            text-decoration: none;
+            user-select: none;
+            -webkit-user-select: none;
+            touch-action: manipulation;
+            white-space: nowrap;
+            cursor: pointer;
+            transition: all 0.3s;
+            margin-top: 10px;
+        }
+
+        button:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+
+        button:active,
+        button:hover:not(:disabled) {
+            outline: 0;
+        }
+
+        button span {
+            background-color: rgb(5, 6, 45);
+            padding: 16px 24px;
+            border-radius: 6px;
+            width: 100%;
+            height: 100%;
+            transition: 300ms;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+
+        button:hover:not(:disabled) span {
+            background: none;
+        }
+
+        button:active:not(:disabled) {
+            transform: scale(0.95);
+        }
+
+        .summary-item {
+            margin: 15px 0;
+            padding: 15px;
+            background: var(--bg-secondary);
+            border-radius: 8px;
+            border: 1px solid var(--border-primary);
+            transition: transform 0.2s;
+        }
+
+        .summary-item:hover {
+            transform: translateX(5px);
+        }
+
+        #netWorthGraph {
+            max-height: 350px;
+            width: 100%;
+        }
+
+        .list {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+
+        .list-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px 15px;
+            background: var(--bg-secondary);
+            border-radius: 8px;
+            margin-bottom: 10px;
+            border: 1px solid var(--border-primary);
+        }
+
+        .list-item-content {
+            flex: 1;
+        }
+
+        .list-item-actions {
+            display: flex;
+            gap: 10px;
+        }
+
+        .list-item-actions button {
+            min-width: 40px;
+            width: 40px;
+            height: 40px;
+            padding: 0;
+            margin: 0;
+        }
+
+        .list-item-actions button span {
+            padding: 0;
+        }
+
+        .progress-container {
+            margin-top: 10px;
+        }
+
+        .progress-bar {
+            width: 100%;
+            height: 10px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 5px;
+            overflow: hidden;
+            margin-top: 5px;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: var(--primary-gradient);
+            border-radius: 5px;
+            transition: width 0.5s ease;
+        }
+
+        .tooltip {
+            position: relative;
+            display: inline-block;
+        }
+
+        .tooltip .tooltip-text {
+            visibility: hidden;
+            width: 200px;
+            background-color: rgba(0, 0, 0, 0.8);
+            color: #fff;
+            text-align: center;
+            border-radius: 6px;
+            padding: 8px;
+            position: absolute;
+            z-index: 1;
+            bottom: 125%;
+            left: 50%;
+            transform: translateX(-50%);
+            opacity: 0;
+            transition: opacity 0.3s;
+            font-size: 0.9rem;
+        }
+
+        .tooltip:hover .tooltip-text {
+            visibility: visible;
+            opacity: 1;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 20px;
+            color: var(--text-secondary);
+        }
+
+        .empty-state i {
+            font-size: 2rem;
+            margin-bottom: 10px;
+            opacity: 0.5;
+        }
+
+        .tabs {
+            display: flex;
+            margin-bottom: 20px;
+            border-bottom: 1px solid var(--border-primary);
+        }
+
+        .tab {
+            padding: 10px 20px;
+            cursor: pointer;
+            border-bottom: 2px solid transparent;
+            transition: all 0.3s;
+        }
+
+        .tab.active {
+            border-bottom: 2px solid #5b42f3;
+            color: #5b42f3;
+        }
+
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        .notification {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            padding: 15px 20px;
+            border-radius: 8px;
+            background: rgba(0, 0, 0, 0.8);
+            color: white;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            transform: translateX(200%);
+            transition: transform 0.3s ease;
+            z-index: 1000;
+        }
+
+        .notification.show {
+            transform: translateX(0);
+        }
+
+        .notification.success {
+            border-left: 4px solid var(--success-color);
+        }
+
+        .notification.error {
+            border-left: 4px solid var(--error-color);
+        }
+
+        .notification.warning {
+            border-left: 4px solid var(--warning-color);
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                grid-template-columns: 1fr;
+            }
+
+            h1 {
+                font-size: 2rem;
+            }
+
+            .card {
+                padding: 15px;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div id="notification" class="notification">
+        <i class="fas fa-check-circle"></i>
+        <span>Notification message</span>
+    </div>
+
+    <h1>Personal Finance Dashboard</h1>
+    <div class="container">
+        <div class="card">
+            <h2>Financial Input</h2>
+
+            <div class="tabs">
+                <div class="tab active" data-tab="assets">Assets</div>
+                <div class="tab" data-tab="liabilities">Liabilities</div>
+                <div class="tab" data-tab="savings">Savings</div>
+            </div>
+
+            <div class="tab-content active" id="assets-tab">
+                <div class="input-group">
+                    <label for="assetName">Asset Name</label>
+                    <input type="text" id="assetName" placeholder="e.g. Savings Account, Investments">
+                    <div class="error-message" id="assetName-error">Please enter a valid asset name</div>
+                </div>
+
+                <div class="input-group">
+                    <label for="assetValue">Value ($)</label>
+                    <input type="number" id="assetValue" placeholder="Enter amount" min="0" step="0.01">
+                    <div class="error-message" id="assetValue-error">Please enter a valid amount</div>
+                </div>
+
+                <button onclick="addAsset()" id="addAssetBtn">
+                    <span><i class="fas fa-plus"></i> Add Asset</span>
+                </button>
+
+                <h3>Your Assets</h3>
+                <ul class="list" id="assetsList">
+                    <li class="empty-state">
+                        <i class="fas fa-wallet"></i>
+                        <p>No assets added yet</p>
+                    </li>
+                </ul>
+            </div>
+
+            <div class="tab-content" id="liabilities-tab">
+                <div class="input-group">
+                    <label for="liabilityName">Liability Name</label>
+                    <input type="text" id="liabilityName" placeholder="e.g. Credit Card, Student Loan">
+                    <div class="error-message" id="liabilityName-error">Please enter a valid liability name</div>
+                </div>
+
+                <div class="input-group">
+                    <label for="liabilityValue">Value ($)</label>
+                    <input type="number" id="liabilityValue" placeholder="Enter amount" min="0" step="0.01">
+                    <div class="error-message" id="liabilityValue-error">Please enter a valid amount</div>
+                </div>
+
+                <button onclick="addLiability()" id="addLiabilityBtn">
+                    <span><i class="fas fa-plus"></i> Add Liability</span>
+                </button>
+
+                <h3>Your Liabilities</h3>
+                <ul class="list" id="liabilitiesList">
+                    <li class="empty-state">
+                        <i class="fas fa-credit-card"></i>
+                        <p>No liabilities added yet</p>
+                    </li>
+                </ul>
+            </div>
+
+            <div class="tab-content" id="savings-tab">
+                <div class="input-group">
+                    <label for="monthlySavings">Monthly Savings ($)</label>
+                    <input type="number" id="monthlySavings" placeholder="Enter amount" min="0" step="0.01">
+                    <div class="error-message" id="monthlySavings-error">Please enter a valid amount</div>
+                </div>
+
+                <div class="summary-item">
+                    <div>Projected Savings</div>
+                    <div class="progress-container">
+                        <div>1 Year: $<span id="yearlySavings">0</span></div>
+                        <div class="progress-bar">
+                            <div class="progress-fill" style="width: 0%"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="card">
+            <h2>Financial Summary</h2>
+
+            <div class="summary-item">
+                <div>Total Assets</div>
+                <div>$<span id="totalAssets">0</span></div>
+            </div>
+
+            <div class="summary-item">
+                <div>Total Liabilities</div>
+                <div>$<span id="totalLiabilities">0</span></div>
+            </div>
+
+            <div class="summary-item" style="background: rgba(0, 221, 235, 0.1); border-color: rgba(0, 221, 235, 0.3);">
+                <div style="font-weight: 600;">Net Worth</div>
+                <div style="font-weight: 600;">$<span id="netWorth">0</span></div>
+            </div>
+
+            <h3>Financial Goals</h3>
+
+            <div class="input-group">
+                <label for="goalName">Goal Name</label>
+                <input type="text" id="goalName" placeholder="e.g. House Down Payment, Vacation">
+                <div class="error-message" id="goalName-error">Please enter a valid goal name</div>
+            </div>
+
+            <div class="input-group">
+                <label for="goalAmount">Target Amount ($)</label>
+                <input type="number" id="goalAmount" placeholder="Enter amount" min="0" step="0.01">
+                <div class="error-message" id="goalAmount-error">Please enter a valid amount</div>
+            </div>
+
+            <button onclick="addGoal()" id="addGoalBtn">
+                <span><i class="fas fa-bullseye"></i> Add Goal</span>
+            </button>
+
+            <h3>Your Goals</h3>
+            <ul class="list" id="goalsList">
+                <li class="empty-state">
+                    <i class="fas fa-flag"></i>
+                    <p>No goals set yet</p>
+                </li>
+            </ul>
+        </div>
+
+        <div class="card" style="grid-column: span 2;">
+            <h2>Net Worth Over Time</h2>
+            <canvas id="netWorthGraph"></canvas>
+        </div>
+    </div>
+
+    <script>
+        // DOM Elements
+        const elements = {
+            assetName: document.getElementById('assetName'),
+            assetValue: document.getElementById('assetValue'),
+            liabilityName: document.getElementById('liabilityName'),
+            liabilityValue: document.getElementById('liabilityValue'),
+            monthlySavings: document.getElementById('monthlySavings'),
+            goalName: document.getElementById('goalName'),
+            goalAmount: document.getElementById('goalAmount'),
+            totalAssets: document.getElementById('totalAssets'),
+            totalLiabilities: document.getElementById('totalLiabilities'),
+            netWorth: document.getElementById('netWorth'),
+            yearlySavings: document.getElementById('yearlySavings'),
+            assetsList: document.getElementById('assetsList'),
+            liabilitiesList: document.getElementById('liabilitiesList'),
+            goalsList: document.getElementById('goalsList'),
+            notification: document.getElementById('notification'),
+            tabs: document.querySelectorAll('.tab'),
+            tabContents: document.querySelectorAll('.tab-content')
+        };
+
+        // Data
+        let assets = JSON.parse(localStorage.getItem('assets')) || [];
+        let liabilities = JSON.parse(localStorage.getItem('liabilities')) || [];
+        let goals = JSON.parse(localStorage.getItem('goals')) || [];
+        let monthlySavings = parseFloat(localStorage.getItem('monthlySavings')) || 0;
+        let chart;
+
+        // Initialize the application
+        function init() {
+            setupEventListeners();
+            initChart();
+            updateSummary();
+            renderLists();
+            updateSavingsProjection();
+
+            // Set monthly savings if it exists
+            if (monthlySavings) {
+                elements.monthlySavings.value = monthlySavings;
+            }
+        }
+
+        // Set up event listeners
+        function setupEventListeners() {
+            // Tab switching
+            elements.tabs.forEach(tab => {
+                tab.addEventListener('click', () => switchTab(tab.dataset.tab));
+            });
+
+            // Input validation
+            elements.assetName.addEventListener('blur', () => validateInput(elements.assetName, 'assetName'));
+            elements.assetValue.addEventListener('blur', () => validateInput(elements.assetValue, 'assetValue'));
+            elements.liabilityName.addEventListener('blur', () => validateInput(elements.liabilityName, 'liabilityName'));
+            elements.liabilityValue.addEventListener('blur', () => validateInput(elements.liabilityValue, 'liabilityValue'));
+            elements.monthlySavings.addEventListener('blur', () => {
+                validateInput(elements.monthlySavings, 'monthlySavings');
+                updateSavingsProjection();
+            });
+            elements.goalName.addEventListener('blur', () => validateInput(elements.goalName, 'goalName'));
+            elements.goalAmount.addEventListener('blur', () => validateInput(elements.goalAmount, 'goalAmount'));
+
+            // Allow Enter key to submit forms
+            elements.assetName.addEventListener('keypress', (e) => {
+                if (e.key === 'Enter') addAsset();
+            });
+            elements.assetValue.addEventListener('keypress', (e) => {
+                if (e.key === 'Enter') addAsset();
+            });
+            elements.liabilityName.addEventListener('keypress', (e) => {
+                if (e.key === 'Enter') addLiability();
+            });
+            elements.liabilityValue.addEventListener('keypress', (e) => {
+                if (e.key === 'Enter') addLiability();
+            });
+            elements.goalName.addEventListener('keypress', (e) => {
+                if (e.key === 'Enter') addGoal();
+            });
+            elements.goalAmount.addEventListener('keypress', (e) => {
+                if (e.key === 'Enter') addGoal();
+            });
+        }
+
+        // Switch between tabs
+        function switchTab(tabId) {
+            elements.tabs.forEach(tab => {
+                tab.classList.toggle('active', tab.dataset.tab === tabId);
+            });
+
+            elements.tabContents.forEach(content => {
+                content.classList.toggle('active', content.id === `${tabId}-tab`);
+            });
+        }
+
+        // Initialize the chart
+        function initChart() {
+            const ctx = document.getElementById('netWorthGraph').getContext('2d');
+            chart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: ['Now'],
+                    datasets: [{
+                        label: 'Net Worth',
+                        data: [calculateNetWorth()],
+                        borderColor: '#00ddeb',
+                        backgroundColor: 'rgba(0, 221, 235, 0.1)',
+                        fill: true,
+                        tension: 0.3,
+                        borderWidth: 2,
+                        pointBackgroundColor: '#fff',
+                        pointRadius: 4,
+                        pointHoverRadius: 6
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            labels: {
+                                color: '#fff',
+                                font: { family: 'Lexend' }
+                            }
+                        },
+                        tooltip: {
+                            backgroundColor: 'rgba(0, 0, 0, 0.8)',
+                            titleFont: { family: 'Lexend', size: 14 },
+                            bodyFont: { family: 'Lexend', size: 12 },
+                            padding: 10,
+                            usePointStyle: true,
+                            callbacks: {
+                                label: function (context) {
+                                    return `Net Worth: $${context.raw.toLocaleString()}`;
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        x: {
+                            ticks: { color: '#ccc' },
+                            grid: { color: 'rgba(255, 255, 255, 0.1)' }
+                        },
+                        y: {
+                            ticks: {
+                                color: '#ccc',
+                                callback: function (value) {
+                                    return '$' + value.toLocaleString();
+                                }
+                            },
+                            grid: { color: 'rgba(255, 255, 255, 0.1)' }
+                        }
+                    }
+                }
+            });
+        }
+
+        // Calculate net worth
+        function calculateNetWorth() {
+            const totalAssets = assets.reduce((sum, item) => sum + item.value, 0);
+            const totalLiabilities = liabilities.reduce((sum, item) => sum + item.value, 0);
+            return totalAssets - totalLiabilities;
+        }
+
+        // Update summary information
+        function updateSummary() {
+            const totalAssets = assets.reduce((sum, item) => sum + item.value, 0);
+            const totalLiabilities = liabilities.reduce((sum, item) => sum + item.value, 0);
+            const netWorth = calculateNetWorth();
+
+            elements.totalAssets.textContent = totalAssets.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+            elements.totalLiabilities.textContent = totalLiabilities.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+            elements.netWorth.textContent = netWorth.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+
+            updateChart();
+            updateGoals();
+            saveData();
+        }
+
+        // Update the chart with new data
+        function updateChart() {
+            const currentNetWorth = calculateNetWorth();
+            const labels = ['Now'];
+            const data = [currentNetWorth];
+
+            // Project 12 months into the future
+            for (let i = 1; i <= 12; i++) {
+                labels.push(`${i}M`);
+                data.push(currentNetWorth + (monthlySavings * i));
+            }
+
+            chart.data.labels = labels;
+            chart.data.datasets[0].data = data;
+            chart.update();
+        }
+
+        // Update savings projection
+        function updateSavingsProjection() {
+            const savings = parseFloat(elements.monthlySavings.value) || 0;
+            elements.yearlySavings.textContent = (savings * 12).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+
+            // Update progress bar
+            const progressFill = document.querySelector('.progress-fill');
+            if (savings > 0) {
+                progressFill.style.width = '100%';
+            } else {
+                progressFill.style.width = '0%';
+            }
+
+            monthlySavings = savings;
+            localStorage.setItem('monthlySavings', monthlySavings);
+            updateChart();
+        }
+
+        // Validate input fields
+        function validateInput(inputElement, fieldName) {
+            const errorElement = document.getElementById(`${fieldName}-error`);
+
+            if (inputElement.value.trim() === '') {
+                showError(inputElement, errorElement, 'This field is required');
+                return false;
+            }
+
+            if (inputElement.type === 'number' && (isNaN(inputElement.value) || parseFloat(inputElement.value) < 0)) {
+                showError(inputElement, errorElement, 'Please enter a valid positive number');
+                return false;
+            }
+
+            if (inputElement.type === 'text' && inputElement.value.trim().length < 2) {
+                showError(inputElement, errorElement, 'Please enter at least 2 characters');
+                return false;
+            }
+
+            clearError(inputElement, errorElement);
+            return true;
+        }
+
+        // Show error state
+        function showError(inputElement, errorElement, message) {
+            inputElement.classList.add('error');
+            errorElement.textContent = message;
+            errorElement.style.display = 'block';
+        }
+
+        // Clear error state
+        function clearError(inputElement, errorElement) {
+            inputElement.classList.remove('error');
+            errorElement.style.display = 'none';
+        }
+
+        // Show notification
+        function showNotification(message, type = 'success') {
+            const icon = type === 'success' ? 'fa-check-circle' :
+                type === 'error' ? 'fa-exclamation-circle' : 'fa-info-circle';
+
+            elements.notification.innerHTML = `<i class="fas ${icon}"></i> <span>${message}</span>`;
+            elements.notification.className = `notification ${type} show`;
+
+            setTimeout(() => {
+                elements.notification.classList.remove('show');
+            }, 3000);
+        }
+
+        // Add a new asset
+        function addAsset() {
+            const name = elements.assetName.value.trim();
+            const value = parseFloat(elements.assetValue.value);
+
+            const isValidName = validateInput(elements.assetName, 'assetName');
+            const isValidValue = validateInput(elements.assetValue, 'assetValue');
+
+            if (!isValidName || !isValidValue) return;
+
+            assets.push({ id: Date.now(), name, value });
+
+            // Clear inputs
+            elements.assetName.value = '';
+            elements.assetValue.value = '';
+
+            updateSummary();
+            renderLists();
+            showNotification('Asset added successfully');
+        }
+
+        // Add a new liability
+        function addLiability() {
+            const name = elements.liabilityName.value.trim();
+            const value = parseFloat(elements.liabilityValue.value);
+
+            const isValidName = validateInput(elements.liabilityName, 'liabilityName');
+            const isValidValue = validateInput(elements.liabilityValue, 'liabilityValue');
+
+            if (!isValidName || !isValidValue) return;
+
+            liabilities.push({ id: Date.now(), name, value });
+
+            // Clear inputs
+            elements.liabilityName.value = '';
+            elements.liabilityValue.value = '';
+
+            updateSummary();
+            renderLists();
+            showNotification('Liability added successfully');
+        }
+
+        // Add a new goal
+        function addGoal() {
+            const name = elements.goalName.value.trim();
+            const amount = parseFloat(elements.goalAmount.value);
+
+            const isValidName = validateInput(elements.goalName, 'goalName');
+            const isValidAmount = validateInput(elements.goalAmount, 'goalAmount');
+
+            if (!isValidName || !isValidAmount) return;
+
+            goals.push({ id: Date.now(), name, amount });
+
+            // Clear inputs
+            elements.goalName.value = '';
+            elements.goalAmount.value = '';
+
+            updateGoals();
+            saveData();
+            showNotification('Goal added successfully');
+        }
+
+        // Update goals display
+        function updateGoals() {
+            const currentNetWorth = calculateNetWorth();
+            const goalsList = elements.goalsList;
+
+            if (goals.length === 0) {
+                goalsList.innerHTML = `
+                    <li class="empty-state">
+                        <i class="fas fa-flag"></i>
+                        <p>No goals set yet</p>
+                    </li>
+                `;
+                return;
+            }
+
+            goalsList.innerHTML = '';
+
+            goals.forEach(goal => {
+                const progress = Math.min((currentNetWorth / goal.amount) * 100, 100);
+                const monthsToGoal = monthlySavings > 0 ?
+                    Math.ceil((goal.amount - currentNetWorth) / monthlySavings) : 'N/A';
+                const isCompleted = currentNetWorth >= goal.amount;
+
+                const goalItem = document.createElement('li');
+                goalItem.className = 'list-item';
+                goalItem.innerHTML = `
+                    <div class="list-item-content">
+                        <div style="font-weight: ${isCompleted ? '600' : '400'}; color: ${isCompleted ? '#00ddeb' : 'inherit'}">
+                            ${goal.name}: $${goal.amount.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                            ${isCompleted ? '<span style="margin-left: 8px; color: var(--success-color);"><i class="fas fa-check"></i></span>' : ''}
+                        </div>
+                        <div class="progress-container">
+                            <div style="display: flex; justify-content: space-between; font-size: 0.9rem;">
+                                <span>${progress.toFixed(1)}%</span>
+                                <span>${isCompleted ? 'Completed!' : monthsToGoal > 0 ? `${monthsToGoal} months left` : 'Not enough savings'}</span>
+                            </div>
+                            <div class="progress-bar">
+                                <div class="progress-fill" style="width: ${progress}%"></div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="list-item-actions">
+                        <button onclick="deleteGoal(${goal.id})" class="tooltip">
+                            <span><i class="fas fa-trash"></i></span>
+                            <span class="tooltip-text">Delete Goal</span>
+                        </button>
+                    </div>
+                `;
+
+                goalsList.appendChild(goalItem);
+            });
+        }
+
+        // Render assets and liabilities lists
+        function renderLists() {
+            // Render assets
+            if (assets.length === 0) {
+                elements.assetsList.innerHTML = `
+                    <li class="empty-state">
+                        <i class="fas fa-wallet"></i>
+                        <p>No assets added yet</p>
+                    </li>
+                `;
+            } else {
+                elements.assetsList.innerHTML = '';
+                assets.forEach(asset => {
+                    const assetItem = document.createElement('li');
+                    assetItem.className = 'list-item';
+                    assetItem.innerHTML = `
+                        <div class="list-item-content">
+                            <div>${asset.name}</div>
+                            <div style="color: var(--success-color); font-weight: 500;">$${asset.value.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>
+                        </div>
+                        <div class="list-item-actions">
+                            <button onclick="deleteAsset(${asset.id})" class="tooltip">
+                                <span><i class="fas fa-trash"></i></span>
+                                <span class="tooltip-text">Delete Asset</span>
+                            </button>
+                        </div>
+                    `;
+                    elements.assetsList.appendChild(assetItem);
+                });
+            }
+
+            // Render liabilities
+            if (liabilities.length === 0) {
+                elements.liabilitiesList.innerHTML = `
+                    <li class="empty-state">
+                        <i class="fas fa-credit-card"></i>
+                        <p>No liabilities added yet</p>
+                    </li>
+                `;
+            } else {
+                elements.liabilitiesList.innerHTML = '';
+                liabilities.forEach(liability => {
+                    const liabilityItem = document.createElement('li');
+                    liabilityItem.className = 'list-item';
+                    liabilityItem.innerHTML = `
+                        <div class="list-item-content">
+                            <div>${liability.name}</div>
+                            <div style="color: var(--error-color); font-weight: 500;">$${liability.value.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>
+                        </div>
+                        <div class="list-item-actions">
+                            <button onclick="deleteLiability(${liability.id})" class="tooltip">
+                                <span><i class="fas fa-trash"></i></span>
+                                <span class="tooltip-text">Delete Liability</span>
+                            </button>
+                        </div>
+                    `;
+                    elements.liabilitiesList.appendChild(liabilityItem);
+                });
+            }
+        }
+
+        // Delete an asset
+        function deleteAsset(id) {
+            assets = assets.filter(asset => asset.id !== id);
+            updateSummary();
+            renderLists();
+            showNotification('Asset deleted', 'warning');
+        }
+
+        // Delete a liability
+        function deleteLiability(id) {
+            liabilities = liabilities.filter(liability => liability.id !== id);
+            updateSummary();
+            renderLists();
+            showNotification('Liability deleted', 'warning');
+        }
+
+        // Delete a goal
+        function deleteGoal(id) {
+            goals = goals.filter(goal => goal.id !== id);
+            updateGoals();
+            saveData();
+            showNotification('Goal deleted', 'warning');
+        }
+
+        // Save data to localStorage
+        function saveData() {
+            localStorage.setItem('assets', JSON.stringify(assets));
+            localStorage.setItem('liabilities', JSON.stringify(liabilities));
+            localStorage.setItem('goals', JSON.stringify(goals));
+        }
+
+        // Initialize the application when the DOM is loaded
+        document.addEventListener('DOMContentLoaded', init);
+    </script>
+</body>
+
+</html>

@@ -1,0 +1,636 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Instructor Portal</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link href="https://cdn.jsdelivr.net/npm/fullcalendar@5.11.3/main.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/fullcalendar@5.11.3/main.min.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        .section {
+            display: none;
+            opacity: 0;
+            transform: translateY(10px);
+            transition: opacity 0.3s ease, transform 0.3s ease;
+        }
+
+        .section.active {
+            display: block;
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        [aria-current="page"] {
+            background: rgba(255, 255, 255, 0.15);
+            backdrop-filter: blur(10px);
+        }
+
+        .nav-glass {
+            background: rgba(15, 23, 42, 0.8);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .chart-container {
+            position: relative;
+            height: 300px;
+            width: 100%;
+        }
+
+        .modal-glass {
+            background: rgba(15, 23, 42, 0.95);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .card-glass {
+            background: rgba(30, 41, 59, 0.5);
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            transition: all 0.3s ease;
+        }
+
+        .card-glass:hover {
+            background: rgba(30, 41, 59, 0.7);
+            transform: translateY(-2px);
+        }
+
+        /* Custom scrollbar */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: rgba(15, 23, 42, 0.5);
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: rgba(100, 116, 139, 0.5);
+            border-radius: 4px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: rgba(100, 116, 139, 0.8);
+        }
+
+        /* Custom chart tooltip */
+        .chartjs-tooltip {
+            background: rgba(30, 41, 59, 0.9) !important;
+            border: 1px solid rgba(255, 255, 255, 0.1) !important;
+            border-radius: 4px !important;
+            padding: 8px 12px !important;
+            backdrop-filter: blur(4px) !important;
+        }
+
+        /* FullCalendar dark mode */
+        .fc-theme-standard .fc-scrollgrid,
+        .fc-theme-standard td,
+        .fc-theme-standard th {
+            border-color: rgba(255, 255, 255, 0.1) !important;
+        }
+
+        .fc .fc-toolbar-title {
+            color: white !important;
+        }
+
+        .fc .fc-button {
+            background-color: rgba(30, 41, 59, 0.7) !important;
+            border-color: rgba(255, 255, 255, 0.1) !important;
+            color: white !important;
+        }
+
+        .fc .fc-button:hover {
+            background-color: rgba(30, 41, 59, 0.9) !important;
+        }
+
+        .fc .fc-daygrid-day.fc-day-today {
+            background-color: rgba(59, 130, 246, 0.2) !important;
+        }
+    </style>
+</head>
+
+<body class="bg-slate-900 text-slate-200 min-h-screen">
+    <!-- Header -->
+    <header class="nav-glass fixed w-full top-0 z-50 shadow-lg">
+        <div class="container mx-auto px-4 py-3 flex justify-between items-center">
+            <h1 class="text-xl font-bold text-white flex items-center">
+                <i class="fas fa-chalkboard-teacher mr-2 text-blue-400"></i> Instructor Portal
+            </h1>
+            <button id="mobile-menu-btn" class="md:hidden p-2 focus:outline-none text-blue-400" aria-expanded="false"
+                aria-label="Toggle menu">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16">
+                    </path>
+                </svg>
+            </button>
+            <nav id="main-nav" class="hidden md:flex space-x-1">
+                <a href="#courses"
+                    class="nav-link px-4 py-2 rounded-lg hover:bg-slate-700/50 transition-all duration-200 flex items-center">
+                    <i class="fas fa-book mr-2"></i> Courses
+                </a>
+                <a href="#analytics"
+                    class="nav-link px-4 py-2 rounded-lg hover:bg-slate-700/50 transition-all duration-200 flex items-center">
+                    <i class="fas fa-chart-line mr-2"></i> Analytics
+                </a>
+                <a href="#forum"
+                    class="nav-link px-4 py-2 rounded-lg hover:bg-slate-700/50 transition-all duration-200 flex items-center">
+                    <i class="fas fa-comments mr-2"></i> Forum
+                </a>
+                <a href="#calendar"
+                    class="nav-link px-4 py-2 rounded-lg hover:bg-slate-700/50 transition-all duration-200 flex items-center">
+                    <i class="fas fa-calendar-alt mr-2"></i> Calendar
+                </a>
+            </nav>
+        </div>
+        <div id="mobile-menu" class="hidden md:hidden bg-slate-800/90 px-4 py-2 backdrop-blur-sm">
+            <a href="#courses"
+                class="block px-4 py-3 rounded-lg hover:bg-slate-700/50 transition-all duration-200 flex items-center">
+                <i class="fas fa-book mr-3 w-5 text-center"></i> Courses
+            </a>
+            <a href="#analytics"
+                class="block px-4 py-3 rounded-lg hover:bg-slate-700/50 transition-all duration-200 flex items-center">
+                <i class="fas fa-chart-line mr-3 w-5 text-center"></i> Analytics
+            </a>
+            <a href="#forum"
+                class="block px-4 py-3 rounded-lg hover:bg-slate-700/50 transition-all duration-200 flex items-center">
+                <i class="fas fa-comments mr-3 w-5 text-center"></i> Forum
+            </a>
+            <a href="#calendar"
+                class="block px-4 py-3 rounded-lg hover:bg-slate-700/50 transition-all duration-200 flex items-center">
+                <i class="fas fa-calendar-alt mr-3 w-5 text-center"></i> Calendar
+            </a>
+        </div>
+    </header>
+
+    <main class="container mx-auto px-4 py-6 mt-16">
+        <!-- Courses Section -->
+        <section id="courses" class="section active">
+            <div class="flex justify-between items-center mb-6">
+                <h2 class="text-2xl font-bold text-white">
+                    <i class="fas fa-book-open mr-2 text-blue-400"></i> Course Management
+                </h2>
+                <button id="new-course-btn"
+                    class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg transition-all duration-200 flex items-center shadow-lg hover:shadow-blue-500/20">
+                    <i class="fas fa-plus mr-2"></i> New Course
+                </button>
+            </div>
+
+            <div id="course-modal"
+                class="fixed inset-0 bg-black bg-opacity-70 hidden items-center justify-center z-50 p-4">
+                <div class="modal-glass rounded-xl p-6 w-full max-w-md text-white">
+                    <div class="flex justify-between items-center mb-4">
+                        <h3 class="text-xl font-bold text-blue-400">Upload Course</h3>
+                        <button id="close-course-modal"
+                            class="text-gray-400 hover:text-white transition-colors duration-200">
+                            <i class="fas fa-times text-xl"></i>
+                        </button>
+                    </div>
+                    <form id="course-form" class="space-y-4">
+                        <div>
+                            <label for="course-title" class="block mb-2 font-medium">Course Title</label>
+                            <input type="text" id="course-title" required
+                                class="w-full px-4 py-2 bg-slate-800 border border-slate-700 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-white placeholder-slate-400 transition-all duration-200">
+                        </div>
+                        <div>
+                            <label for="course-file" class="block mb-2 font-medium">Upload Content</label>
+                            <div class="flex items-center justify-center w-full">
+                                <label for="course-file"
+                                    class="flex flex-col items-center justify-center w-full h-32 border-2 border-dashed rounded-lg cursor-pointer bg-slate-800 border-slate-700 hover:bg-slate-700/50 transition-colors duration-200">
+                                    <div class="flex flex-col items-center justify-center pt-5 pb-6">
+                                        <i class="fas fa-cloud-upload-alt text-3xl text-blue-400 mb-2"></i>
+                                        <p class="mb-2 text-sm text-slate-400">Click to upload or drag and drop</p>
+                                        <p class="text-xs text-slate-500">PDF, PPT, DOCX (MAX. 10MB)</p>
+                                    </div>
+                                    <input id="course-file" type="file" class="hidden" />
+                                </label>
+                            </div>
+                        </div>
+                        <div class="flex justify-end space-x-3 pt-2">
+                            <button type="button" id="cancel-course-btn"
+                                class="px-4 py-2 border border-slate-700 rounded-lg hover:bg-slate-700/50 focus:ring-2 focus:ring-blue-500 transition-colors duration-200">
+                                Cancel
+                            </button>
+                            <button type="submit"
+                                class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 focus:ring-2 focus:ring-blue-500 transition-colors duration-200 flex items-center">
+                                <i class="fas fa-upload mr-2"></i> Upload
+                            </button>
+                        </div>
+                    </form>
+                    <div id="upload-success"
+                        class="mt-4 p-3 bg-green-900/50 text-green-400 rounded-lg hidden items-center">
+                        <i class="fas fa-check-circle mr-2"></i> Course uploaded successfully!
+                    </div>
+                </div>
+            </div>
+
+            <div class="card-glass p-6 rounded-xl shadow-lg">
+                <div class="flex items-center">
+                    <i class="fas fa-info-circle text-blue-400 mr-3 text-xl"></i>
+                    <p class="text-slate-300">Use the "New Course" button to upload your course materials.</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- Analytics Section -->
+        <section id="analytics" class="section">
+            <h2 class="text-2xl font-bold mb-6 text-white">
+                <i class="fas fa-chart-bar mr-2 text-blue-400"></i> Student Performance
+            </h2>
+            <div class="card-glass p-6 rounded-xl shadow-lg">
+                <div class="chart-container">
+                    <canvas id="performance-chart"></canvas>
+                </div>
+            </div>
+        </section>
+
+        <!-- Forum Section -->
+        <section id="forum" class="section">
+            <div class="flex justify-between items-center mb-6">
+                <h2 class="text-2xl font-bold text-white">
+                    <i class="fas fa-comments mr-2 text-blue-400"></i> Discussion Forum
+                </h2>
+                <button id="new-post-btn"
+                    class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg transition-all duration-200 flex items-center shadow-lg hover:shadow-blue-500/20">
+                    <i class="fas fa-plus mr-2"></i> New Post
+                </button>
+            </div>
+
+            <div id="post-modal"
+                class="fixed inset-0 bg-black bg-opacity-70 hidden items-center justify-center z-50 p-4">
+                <div class="modal-glass rounded-xl p-6 w-full max-w-md text-white">
+                    <div class="flex justify-between items-center mb-4">
+                        <h3 class="text-xl font-bold text-blue-400">New Post</h3>
+                        <button id="close-post-modal"
+                            class="text-gray-400 hover:text-white transition-colors duration-200">
+                            <i class="fas fa-times text-xl"></i>
+                        </button>
+                    </div>
+                    <form id="post-form" class="space-y-4">
+                        <div>
+                            <label for="post-title" class="block mb-2 font-medium">Title</label>
+                            <input type="text" id="post-title" required
+                                class="w-full px-4 py-2 bg-slate-800 border border-slate-700 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-white placeholder-slate-400 transition-all duration-200">
+                        </div>
+                        <div>
+                            <label for="post-content" class="block mb-2 font-medium">Content</label>
+                            <textarea id="post-content" required
+                                class="w-full px-4 py-2 bg-slate-800 border border-slate-700 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-white placeholder-slate-400 transition-all duration-200"
+                                rows="4"></textarea>
+                        </div>
+                        <div class="flex justify-end space-x-3 pt-2">
+                            <button type="button" id="cancel-post-btn"
+                                class="px-4 py-2 border border-slate-700 rounded-lg hover:bg-slate-700/50 focus:ring-2 focus:ring-blue-500 transition-colors duration-200">
+                                Cancel
+                            </button>
+                            <button type="submit"
+                                class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 focus:ring-2 focus:ring-blue-500 transition-colors duration-200 flex items-center">
+                                <i class="fas fa-paper-plane mr-2"></i> Post
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <div id="forum-posts" class="space-y-4">
+                <!-- Posts will be dynamically inserted here -->
+            </div>
+        </section>
+
+        <!-- Calendar Section -->
+        <section id="calendar" class="section">
+            <h2 class="text-2xl font-bold mb-6 text-white">
+                <i class="fas fa-calendar-alt mr-2 text-blue-400"></i> Calendar
+            </h2>
+            <div class="card-glass p-4 rounded-xl shadow-lg">
+                <div id="calendar-container"></div>
+            </div>
+        </section>
+    </main>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            // Mobile menu toggle
+            const mobileMenuBtn = document.getElementById('mobile-menu-btn');
+            const mobileMenu = document.getElementById('mobile-menu');
+
+            mobileMenuBtn.addEventListener('click', function () {
+                const isExpanded = this.getAttribute('aria-expanded') === 'true';
+                mobileMenu.classList.toggle('hidden');
+                this.setAttribute('aria-expanded', !isExpanded);
+            });
+
+            // Section switching
+            const navLinks = document.querySelectorAll('.nav-link, #mobile-menu a');
+            const sections = document.querySelectorAll('.section');
+
+            function setActiveSection(sectionId) {
+                sections.forEach(section => {
+                    section.classList.toggle('active', section.id === sectionId);
+                });
+
+                navLinks.forEach(link => {
+                    const isActive = link.getAttribute('href') === `#${sectionId}`;
+                    link.setAttribute('aria-current', isActive ? 'page' : 'false');
+                });
+            }
+
+            navLinks.forEach(link => {
+                link.addEventListener('click', function (e) {
+                    e.preventDefault();
+                    const targetId = this.getAttribute('href').substring(1);
+                    setActiveSection(targetId);
+                    mobileMenu.classList.add('hidden');
+                    mobileMenuBtn.setAttribute('aria-expanded', 'false');
+                });
+            });
+
+            // Initialize with courses section active
+            setActiveSection('courses');
+
+            // Course Modal
+            const courseModal = document.getElementById('course-modal');
+            const newCourseBtn = document.getElementById('new-course-btn');
+            const closeCourseModal = document.getElementById('close-course-modal');
+            const cancelCourseBtn = document.getElementById('cancel-course-btn');
+
+            function openCourseModal() {
+                courseModal.classList.remove('hidden');
+                document.body.style.overflow = 'hidden';
+            }
+
+            function closeCourseModalFunc() {
+                courseModal.classList.add('hidden');
+                document.body.style.overflow = '';
+            }
+
+            newCourseBtn.addEventListener('click', openCourseModal);
+            closeCourseModal.addEventListener('click', closeCourseModalFunc);
+            cancelCourseBtn.addEventListener('click', closeCourseModalFunc);
+
+            courseModal.addEventListener('click', function (e) {
+                if (e.target === courseModal) {
+                    closeCourseModalFunc();
+                }
+            });
+
+            document.getElementById('course-form').addEventListener('submit', function (e) {
+                e.preventDefault();
+                const successMsg = document.getElementById('upload-success');
+                successMsg.classList.remove('hidden');
+
+                setTimeout(function () {
+                    successMsg.classList.add('hidden');
+                    closeCourseModalFunc();
+                    this.reset();
+                }.bind(this), 2000);
+            });
+
+            // Forum
+            const postModal = document.getElementById('post-modal');
+            const newPostBtn = document.getElementById('new-post-btn');
+            const closePostModal = document.getElementById('close-post-modal');
+            const cancelPostBtn = document.getElementById('cancel-post-btn');
+            const forumPosts = document.getElementById('forum-posts');
+
+            function openPostModal() {
+                postModal.classList.remove('hidden');
+                document.body.style.overflow = 'hidden';
+            }
+
+            function closePostModalFunc() {
+                postModal.classList.add('hidden');
+                document.body.style.overflow = '';
+            }
+
+            newPostBtn.addEventListener('click', openPostModal);
+            closePostModal.addEventListener('click', closePostModalFunc);
+            cancelPostBtn.addEventListener('click', closePostModalFunc);
+
+            postModal.addEventListener('click', function (e) {
+                if (e.target === postModal) {
+                    closePostModalFunc();
+                }
+            });
+
+            function savePost(title, content) {
+                const posts = JSON.parse(localStorage.getItem('forumPosts') || '[]');
+                posts.push({
+                    id: Date.now(),
+                    title,
+                    content,
+                    replies: [],
+                    date: new Date().toISOString()
+                });
+                localStorage.setItem('forumPosts', JSON.stringify(posts));
+                return posts;
+            }
+
+            function saveReply(postId, replyContent) {
+                const posts = JSON.parse(localStorage.getItem('forumPosts'));
+                const post = posts.find(p => p.id == postId);
+                if (post) {
+                    post.replies.push(replyContent);
+                    localStorage.setItem('forumPosts', JSON.stringify(posts));
+                }
+                return posts;
+            }
+
+            function renderPosts() {
+                const posts = JSON.parse(localStorage.getItem('forumPosts') || '[]');
+                forumPosts.innerHTML = posts.map(post => `
+                    <div class="card-glass p-6 rounded-xl" data-id="${post.id}">
+                        <h3 class="font-bold text-lg text-white">${post.title}</h3>
+                        <p class="my-3 text-slate-300">${post.content}</p>
+                        <p class="text-sm text-slate-500 flex items-center">
+                            <i class="far fa-clock mr-2"></i> ${new Date(post.date).toLocaleString()}
+                        </p>
+                        <div class="mt-4 space-y-3">
+                            ${post.replies.map(reply => `
+                                <div class="pl-4 border-l-2 border-slate-700">
+                                    <p class="text-slate-300">${reply}</p>
+                                </div>
+                            `).join('')}
+                        </div>
+                        <form class="reply-form mt-4">
+                            <textarea class="w-full p-3 bg-slate-800 border border-slate-700 rounded-lg focus:ring-2 focus:ring-blue-500 text-white placeholder-slate-400" 
+                                    placeholder="Write your reply..." required></textarea>
+                            <button type="submit" class="mt-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors duration-200 flex items-center">
+                                <i class="fas fa-reply mr-2"></i> Post Reply
+                            </button>
+                        </form>
+                    </div>
+                `).join('');
+            }
+
+            document.getElementById('post-form').addEventListener('submit', function (e) {
+                e.preventDefault();
+                const title = document.getElementById('post-title').value;
+                const content = document.getElementById('post-content').value;
+
+                savePost(title, content);
+                renderPosts();
+                this.reset();
+                closePostModalFunc();
+            });
+
+            forumPosts.addEventListener('submit', function (e) {
+                if (e.target.classList.contains('reply-form')) {
+                    e.preventDefault();
+                    const postId = e.target.closest('[data-id]').dataset.id;
+                    const replyContent = e.target.querySelector('textarea').value;
+
+                    saveReply(postId, replyContent);
+                    renderPosts();
+                }
+            });
+
+            // Initialize with sample post if empty
+            if (!localStorage.getItem('forumPosts')) {
+                savePost('Welcome to the Forum!', 'This is the first post in our discussion forum. Feel free to ask questions or share ideas.');
+            }
+            renderPosts();
+
+            // Analytics Chart
+            const chartCtx = document.getElementById('performance-chart').getContext('2d');
+            const gradient = chartCtx.createLinearGradient(0, 0, 0, 300);
+            gradient.addColorStop(0, 'rgba(59, 130, 246, 0.7)');
+            gradient.addColorStop(1, 'rgba(59, 130, 246, 0.1)');
+
+            new Chart(chartCtx, {
+                type: 'bar',
+                data: {
+                    labels: ['Student 1', 'Student 2', 'Student 3', 'Student 4', 'Student 5'],
+                    datasets: [{
+                        label: 'Quiz Scores',
+                        data: [85, 90, 78, 92, 88],
+                        backgroundColor: gradient,
+                        borderColor: 'rgba(99, 179, 237, 1)',
+                        borderWidth: 1,
+                        borderRadius: 6,
+                        hoverBackgroundColor: 'rgba(99, 179, 237, 0.8)',
+                        hoverBorderColor: 'rgba(99, 179, 237, 1)',
+                        hoverBorderWidth: 2
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            display: false
+                        },
+                        tooltip: {
+                            backgroundColor: 'rgba(30, 41, 59, 0.95)',
+                            titleColor: '#fff',
+                            bodyColor: '#e2e8f0',
+                            borderColor: 'rgba(255, 255, 255, 0.1)',
+                            borderWidth: 1,
+                            padding: 12,
+                            cornerRadius: 8,
+                            displayColors: false,
+                            callbacks: {
+                                label: function (context) {
+                                    return `Score: ${context.raw}%`;
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            max: 100,
+                            grid: {
+                                color: 'rgba(255, 255, 255, 0.05)',
+                                drawBorder: false
+                            },
+                            ticks: {
+                                color: 'rgba(255, 255, 255, 0.6)',
+                                callback: function (value) {
+                                    return value + '%';
+                                }
+                            },
+                            title: {
+                                display: true,
+                                text: 'Score',
+                                color: 'rgba(255, 255, 255, 0.7)',
+                                font: {
+                                    weight: 'bold'
+                                }
+                            }
+                        },
+                        x: {
+                            grid: {
+                                display: false,
+                                drawBorder: false
+                            },
+                            ticks: {
+                                color: 'rgba(255, 255, 255, 0.6)'
+                            },
+                            title: {
+                                display: true,
+                                text: 'Students',
+                                color: 'rgba(255, 255, 255, 0.7)',
+                                font: {
+                                    weight: 'bold'
+                                }
+                            }
+                        }
+                    },
+                    animation: {
+                        duration: 1000,
+                        easing: 'easeOutQuart'
+                    }
+                }
+            });
+
+            // Calendar
+            const calendarEl = document.getElementById('calendar-container');
+            const calendar = new FullCalendar.Calendar(calendarEl, {
+                initialView: 'dayGridMonth',
+                headerToolbar: {
+                    left: 'prev,next today',
+                    center: 'title',
+                    right: 'dayGridMonth,timeGridWeek,timeGridDay'
+                },
+                themeSystem: 'bootstrap5',
+                editable: true,
+                events: [
+                    {
+                        title: 'Lecture: Web Development',
+                        start: new Date(),
+                        end: new Date(new Date().setHours(new Date().getHours() + 2)),
+                        backgroundColor: '#3b82f6',
+                        borderColor: '#3b82f6'
+                    },
+                    {
+                        title: 'Assignment Due',
+                        start: new Date(new Date().setDate(new Date().getDate() + 3)),
+                        backgroundColor: '#ef4444',
+                        borderColor: '#ef4444'
+                    },
+                    {
+                        title: 'Office Hours',
+                        start: new Date(new Date().setDate(new Date().getDate() + 1)),
+                        end: new Date(new Date().setDate(new Date().getDate() + 1)),
+                        backgroundColor: '#10b981',
+                        borderColor: '#10b981'
+                    }
+                ],
+                eventClick: function (info) {
+                    alert(`Event: ${info.event.title}\nStart: ${info.event.start.toLocaleString()}`);
+                },
+                height: 'auto'
+            });
+            calendar.render();
+        });
+    </script>
+</body>
+
+</html>

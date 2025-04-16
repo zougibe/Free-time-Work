@@ -1,0 +1,1158 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>HealthConsult Booking</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+        href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&family=Open+Sans:wght@400;500;600&display=swap"
+        rel="stylesheet" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+    <style>
+        :root {
+            --primary: #2563eb;
+            --primary-hover: #1d4ed8;
+            --accent: #10b981;
+            --accent-hover: #059669;
+            --text: #1f2937;
+            --text-light: #6b7280;
+            --bg: #f9fafb;
+            --card-bg: #ffffff;
+            --border: #e5e7eb;
+            --success: #10b981;
+            --warning: #f59e0b;
+            --error: #ef4444;
+        }
+
+        body {
+            font-family: "Open Sans", sans-serif;
+            color: var(--text);
+            background-color: var(--bg);
+            line-height: 1.6;
+        }
+
+        h1,
+        h2,
+        h3,
+        h4,
+        h5,
+        h6 {
+            font-family: "Poppins", sans-serif;
+            font-weight: 600;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .animate-fadeIn {
+            animation: fadeIn 0.3s ease-out;
+        }
+
+        .hamburger {
+            width: 24px;
+            height: 20px;
+            position: relative;
+            cursor: pointer;
+        }
+
+        .hamburger span {
+            display: block;
+            position: absolute;
+            height: 3px;
+            width: 100%;
+            background: var(--primary);
+            opacity: 1;
+            left: 0;
+            transform: rotate(0deg);
+            transition: 0.25s ease-in-out;
+        }
+
+        .hamburger span:nth-child(1) {
+            top: 0px;
+        }
+
+        .hamburger span:nth-child(2),
+        .hamburger span:nth-child(3) {
+            top: 8px;
+        }
+
+        .hamburger span:nth-child(4) {
+            top: 16px;
+        }
+
+        .hamburger.open span:nth-child(1) {
+            top: 8px;
+            width: 0%;
+            left: 50%;
+        }
+
+        .hamburger.open span:nth-child(2) {
+            transform: rotate(45deg);
+        }
+
+        .hamburger.open span:nth-child(3) {
+            transform: rotate(-45deg);
+        }
+
+        .hamburger.open span:nth-child(4) {
+            top: 8px;
+            width: 0%;
+            left: 50%;
+        }
+
+        .doctor-card {
+            transition: all 0.3s ease;
+        }
+
+        .doctor-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1);
+        }
+
+        .loading-spinner {
+            border: 3px solid rgba(0, 0, 0, 0.1);
+            border-radius: 50%;
+            border-top: 3px solid var(--primary);
+            width: 24px;
+            height: 24px;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% {
+                transform: rotate(0deg);
+            }
+
+            100% {
+                transform: rotate(360deg);
+            }
+        }
+
+        .badge {
+            display: inline-flex;
+            align-items: center;
+            padding: 0.25rem 0.5rem;
+            border-radius: 9999px;
+            font-size: 0.75rem;
+            font-weight: 500;
+        }
+
+        .badge-primary {
+            background-color: #dbeafe;
+            color: var(--primary);
+        }
+
+        .badge-success {
+            background-color: #d1fae5;
+            color: var(--success);
+        }
+
+        .badge-warning {
+            background-color: #fef3c7;
+            color: var(--warning);
+        }
+
+        .badge-error {
+            background-color: #fee2e2;
+            color: var(--error);
+        }
+
+        .time-slot {
+            transition: all 0.2s ease;
+        }
+
+        .time-slot:hover {
+            background-color: var(--primary);
+            color: white;
+        }
+
+        .time-slot.selected {
+            background-color: var(--primary);
+            color: white;
+        }
+    </style>
+</head>
+
+<body class="pt-16">
+    <!-- Header -->
+    <header class="fixed top-0 left-0 right-0 bg-white shadow-md p-4 flex justify-between items-center z-50">
+        <div class="flex items-center space-x-2">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8 text-[var(--primary)]" viewBox="0 0 20 20"
+                fill="currentColor">
+                <path fill-rule="evenodd"
+                    d="M6.267 3.455a3.066 3.066 0 001.745-.723 3.066 3.066 0 013.976 0 3.066 3.066 0 001.745.723 3.066 3.066 0 012.812 2.812c.051.643.304 1.254.723 1.745a3.066 3.066 0 010 3.976 3.066 3.066 0 00-.723 1.745 3.066 3.066 0 01-2.812 2.812 3.066 3.066 0 00-1.745.723 3.066 3.066 0 01-3.976 0 3.066 3.066 0 00-1.745-.723 3.066 3.066 0 01-2.812-2.812 3.066 3.066 0 00-.723-1.745 3.066 3.066 0 010-3.976 3.066 3.066 0 00.723-1.745 3.066 3.066 0 012.812-2.812zm7.44 5.252a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
+                    clip-rule="evenodd" />
+            </svg>
+            <h1 class="text-2xl font-bold text-[var(--primary)]">HealthConsult</h1>
+        </div>
+        <div class="md:hidden">
+            <div class="hamburger" id="hamburger" onclick="toggleMenu()">
+                <span></span>
+                <span></span>
+                <span></span>
+                <span></span>
+            </div>
+        </div>
+        <nav class="hidden md:flex space-x-6 text-md font-medium items-center">
+            <a href="#" class="hover:text-[var(--primary)] transition-colors">Home</a>
+            <a href="#doctors" class="hover:text-[var(--primary)] transition-colors">Find Doctors</a>
+            <a href="#contact" class="hover:text-[var(--primary)] transition-colors">Contact</a>
+            <button
+                class="bg-[var(--primary)] hover:bg-[var(--primary-hover)] text-white px-4 py-2 rounded-lg transition-colors">
+                Sign In
+            </button>
+        </nav>
+    </header>
+
+    <!-- Mobile Menu -->
+    <div id="mobileMenu" class="fixed top-16 left-0 right-0 bg-white shadow-lg hidden md:hidden z-40">
+        <div class="flex flex-col p-4 space-y-3">
+            <a href="#" class="hover:text-[var(--primary)] py-2 transition-colors" onclick="toggleMenu()">Home</a>
+            <a href="#doctors" class="hover:text-[var(--primary)] py-2 transition-colors" onclick="toggleMenu()">Find
+                Doctors</a>
+            <a href="#contact" class="hover:text-[var(--primary)] py-2 transition-colors"
+                onclick="toggleMenu()">Contact</a>
+            <button
+                class="bg-[var(--primary)] hover:bg-[var(--primary-hover)] text-white px-4 py-2 rounded-lg transition-colors mt-2">
+                Sign In
+            </button>
+        </div>
+    </div>
+
+    <!-- Hero Section -->
+    <section class="bg-gradient-to-r from-[var(--primary)] to-[var(--accent)] text-white py-12 md:py-20">
+        <div class="container mx-auto px-6">
+            <div class="max-w-3xl mx-auto text-center">
+                <h1 class="text-3xl md:text-4xl font-bold mb-4">Find & Book Appointments with Top Doctors</h1>
+                <p class="text-lg md:text-xl mb-8 opacity-90">Virtual consultations from the comfort of your home.
+                    Quality healthcare made accessible.</p>
+                <a href="#doctors"
+                    class="bg-white text-[var(--primary)] hover:bg-gray-100 font-semibold px-6 py-3 rounded-lg inline-block transition-colors">
+                    Find a Doctor
+                </a>
+            </div>
+        </div>
+    </section>
+
+    <!-- Search Filters -->
+    <section id="doctors" class="py-8 bg-white">
+        <div class="container mx-auto px-6">
+            <h2 class="text-2xl font-bold mb-6 text-[var(--text)]">Find Your Doctor</h2>
+            <div class="bg-[var(--bg)] p-6 rounded-lg shadow-sm">
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                    <div class="relative">
+                        <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                            <i class="fas fa-search text-gray-400"></i>
+                        </div>
+                        <input type="text" id="searchInput" placeholder="Search doctors..."
+                            class="pl-10 p-3 border border-gray-300 rounded-lg w-full shadow-sm focus:outline-none focus:ring-2 focus:ring-[var(--primary)] focus:border-transparent" />
+                    </div>
+                    <select id="specialtyFilter"
+                        class="p-3 border border-gray-300 rounded-lg w-full shadow-sm focus:outline-none focus:ring-2 focus:ring-[var(--primary)] focus:border-transparent">
+                        <option value="">All Specialties</option>
+                        <option value="Cardiologist">Cardiologist</option>
+                        <option value="Dermatologist">Dermatologist</option>
+                        <option value="Pediatrician">Pediatrician</option>
+                        <option value="Neurologist">Neurologist</option>
+                        <option value="Orthopedist">Orthopedist</option>
+                        <option value="Gynecologist">Gynecologist</option>
+                        <option value="Ophthalmologist">Ophthalmologist</option>
+                        <option value="General Physician">General Physician</option>
+                        <option value="Psychiatrist">Psychiatrist</option>
+                        <option value="Endocrinologist">Endocrinologist</option>
+                    </select>
+                    <select id="locationFilter"
+                        class="p-3 border border-gray-300 rounded-lg w-full shadow-sm focus:outline-none focus:ring-2 focus:ring-[var(--primary)] focus:border-transparent">
+                        <option value="">All Locations</option>
+                        <option value="Delhi">Delhi</option>
+                        <option value="Mumbai">Mumbai</option>
+                        <option value="Bangalore">Bangalore</option>
+                        <option value="Hyderabad">Hyderabad</option>
+                        <option value="Chennai">Chennai</option>
+                        <option value="Kolkata">Kolkata</option>
+                        <option value="New York">New York</option>
+                        <option value="London">London</option>
+                        <option value="Sydney">Sydney</option>
+                        <option value="Toronto">Toronto</option>
+                    </select>
+                    <select id="ratingFilter"
+                        class="p-3 border border-gray-300 rounded-lg w-full shadow-sm focus:outline-none focus:ring-2 focus:ring-[var(--primary)] focus:border-transparent">
+                        <option value="0">All Ratings</option>
+                        <option value="4">⭐ 4.0+</option>
+                        <option value="4.3">⭐ 4.3+</option>
+                        <option value="4.5">⭐ 4.5+</option>
+                        <option value="4.7">⭐ 4.7+</option>
+                    </select>
+                </div>
+                <div class="flex justify-between items-center mt-4">
+                    <p id="resultsCount" class="text-sm text-gray-600">Loading doctors...</p>
+                    <button onclick="resetFilters()" class="text-sm text-[var(--primary)] hover:underline">
+                        Reset filters
+                    </button>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Doctor Cards -->
+    <section class="py-8 bg-[var(--bg)]">
+        <div class="container mx-auto px-6">
+            <div id="loadingIndicator" class="flex justify-center py-12">
+                <div class="loading-spinner"></div>
+            </div>
+            <div id="doctorList" class="grid gap-6 grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
+                <!-- Populated by JS -->
+            </div>
+        </div>
+    </section>
+
+    <!-- Booking Modal -->
+    <div id="bookingModal"
+        class="fixed inset-0 bg-black bg-opacity-50 hidden z-50 flex items-center justify-center p-4">
+        <div
+            class="bg-white rounded-xl p-6 w-full max-w-2xl relative shadow-xl animate-fadeIn overflow-y-auto max-h-[90vh]">
+            <button onclick="closeModal()"
+                class="absolute top-4 right-4 text-2xl text-gray-500 hover:text-black transition-colors">
+                &times;
+            </button>
+            <div class="flex flex-col md:flex-row gap-6">
+                <div class="md:w-1/3">
+                    <div class="bg-gray-100 rounded-lg p-4 mb-4">
+                        <div id="doctorAvatar"
+                            class="w-20 h-20 rounded-full bg-[var(--primary)] text-white flex items-center justify-center text-2xl font-bold mb-3 mx-auto">
+                        </div>
+                        <h2 class="text-xl font-semibold text-center" id="doctorName"></h2>
+                        <p class="text-center text-gray-600 mb-2" id="doctorSpecialty"></p>
+                        <div class="flex items-center justify-center space-x-1 mb-3" id="doctorRating"></div>
+                        <p class="text-center text-gray-600" id="doctorLocation"></p>
+                    </div>
+                    <div class="bg-blue-50 rounded-lg p-4">
+                        <h3 class="font-medium text-[var(--primary)] mb-2">Consultation Info</h3>
+                        <p class="text-sm text-gray-600 mb-1"><i class="fas fa-clock mr-2"></i> <span
+                                id="consultationDuration">30 mins</span></p>
+                        <p class="text-sm text-gray-600"><i class="fas fa-video mr-2"></i> Video Consultation</p>
+                    </div>
+                </div>
+                <div class="md:w-2/3">
+                    <h3 class="text-lg font-semibold mb-4 text-[var(--primary)]">Select Date & Time</h3>
+
+                    <div class="mb-4">
+                        <label class="block mb-2 font-medium">Choose date:</label>
+                        <div class="flex space-x-2 overflow-x-auto pb-2" id="dateTabs">
+                            <!-- Date tabs will be populated here -->
+                        </div>
+                    </div>
+
+                    <div class="mb-4">
+                        <label class="block mb-2 font-medium">Available time slots:</label>
+                        <div class="grid grid-cols-3 gap-2" id="timeSlots">
+                            <!-- Time slots will be populated here -->
+                        </div>
+                    </div>
+
+                    <div class="bg-gray-50 p-4 rounded-lg mb-4">
+                        <h4 class="font-medium mb-2">Patient Information</h4>
+                        <input type="text" id="patientName" placeholder="Your Full Name"
+                            class="w-full p-2 border rounded mb-2 focus:outline-none focus:ring-2 focus:ring-[var(--primary)]"
+                            required />
+                        <input type="email" id="patientEmail" placeholder="Your Email"
+                            class="w-full p-2 border rounded mb-2 focus:outline-none focus:ring-2 focus:ring-[var(--primary)]"
+                            required />
+                        <input type="tel" id="patientPhone" placeholder="Your Phone Number"
+                            class="w-full p-2 border rounded focus:outline-none focus:ring-2 focus:ring-[var(--primary)]" />
+                    </div>
+
+                    <div class="bg-gray-50 p-4 rounded-lg mb-4">
+                        <h4 class="font-medium mb-2">Reason for Consultation</h4>
+                        <textarea id="consultationReason" placeholder="Briefly describe your reason for consultation..."
+                            rows="3"
+                            class="w-full p-2 border rounded focus:outline-none focus:ring-2 focus:ring-[var(--primary)]"></textarea>
+                    </div>
+
+                    <button onclick="confirmBooking()" id="confirmBookingBtn"
+                        class="w-full py-3 bg-[var(--accent)] hover:bg-[var(--accent-hover)] text-white rounded-lg font-medium transition-colors flex items-center justify-center">
+                        <span id="confirmBtnText">Confirm Booking</span>
+                        <div id="confirmBtnSpinner" class="loading-spinner hidden ml-2"></div>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Confirmation Modal -->
+    <div id="confirmationModal"
+        class="fixed inset-0 bg-black bg-opacity-50 hidden z-50 flex items-center justify-center p-4">
+        <div class="bg-white rounded-xl p-6 w-full max-w-md relative shadow-xl animate-fadeIn">
+            <button onclick="closeConfirmationModal()"
+                class="absolute top-4 right-4 text-2xl text-gray-500 hover:text-black transition-colors">
+                &times;
+            </button>
+            <div class="text-center">
+                <div class="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-10 w-10 text-green-600" fill="none"
+                        viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+                    </svg>
+                </div>
+                <h2 class="text-xl font-semibold mb-2 text-[var(--primary)]">
+                    Appointment Confirmed!
+                </h2>
+                <p id="confirmationMessage" class="text-gray-600 mb-4"></p>
+                <div class="bg-gray-50 p-4 rounded-lg mb-4 text-left">
+                    <p class="font-medium" id="confirmationDoctor"></p>
+                    <p class="text-sm text-gray-600" id="confirmationDateTime"></p>
+                    <p class="text-sm text-gray-600" id="confirmationType"></p>
+                </div>
+                <p class="text-sm text-gray-500 mb-4">A confirmation has been sent to your email.</p>
+                <button onclick="closeConfirmationModal()"
+                    class="w-full py-2 bg-[var(--primary)] hover:bg-[var(--primary-hover)] text-white rounded-lg transition-colors">
+                    Close
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Features Section -->
+    <section class="py-12 bg-white">
+        <div class="container mx-auto px-6">
+            <h2 class="text-2xl font-bold mb-8 text-center">Why Choose HealthConsult?</h2>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+                <div class="bg-[var(--bg)] p-6 rounded-lg shadow-sm">
+                    <div
+                        class="bg-[var(--primary)] text-white w-12 h-12 rounded-full flex items-center justify-center mb-4 mx-auto">
+                        <i class="fas fa-user-md text-xl"></i>
+                    </div>
+                    <h3 class="text-xl font-semibold mb-2 text-center">Expert Doctors</h3>
+                    <p class="text-gray-600 text-center">Consult with board-certified specialists from top hospitals
+                        around the world.</p>
+                </div>
+                <div class="bg-[var(--bg)] p-6 rounded-lg shadow-sm">
+                    <div
+                        class="bg-[var(--primary)] text-white w-12 h-12 rounded-full flex items-center justify-center mb-4 mx-auto">
+                        <i class="fas fa-clock text-xl"></i>
+                    </div>
+                    <h3 class="text-xl font-semibold mb-2 text-center">24/7 Availability</h3>
+                    <p class="text-gray-600 text-center">Book appointments anytime, anywhere with our round-the-clock
+                        scheduling system.</p>
+                </div>
+                <div class="bg-[var(--bg)] p-6 rounded-lg shadow-sm">
+                    <div
+                        class="bg-[var(--primary)] text-white w-12 h-12 rounded-full flex items-center justify-center mb-4 mx-auto">
+                        <i class="fas fa-shield-alt text-xl"></i>
+                    </div>
+                    <h3 class="text-xl font-semibold mb-2 text-center">Secure & Private</h3>
+                    <p class="text-gray-600 text-center">HIPAA-compliant platform ensuring your medical data remains
+                        confidential.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Contact Section -->
+    <section id="contact" class="py-12 bg-[var(--bg)]">
+        <div class="container mx-auto px-6 max-w-4xl">
+            <div class="bg-white rounded-xl shadow-md overflow-hidden">
+                <div class="md:flex">
+                    <div class="md:w-1/2 bg-[var(--primary)] p-8 text-white">
+                        <h2 class="text-2xl font-bold mb-4">Contact Information</h2>
+                        <p class="mb-6">Have questions? Reach out to our support team for assistance.</p>
+
+                        <div class="flex items-start mb-4">
+                            <i class="fas fa-map-marker-alt mt-1 mr-4"></i>
+                            <div>
+                                <h4 class="font-semibold">Our Office</h4>
+                                <p class="text-sm opacity-90">123 Health Street, Medical District, Bangalore 560001</p>
+                            </div>
+                        </div>
+
+                        <div class="flex items-start mb-4">
+                            <i class="fas fa-phone-alt mt-1 mr-4"></i>
+                            <div>
+                                <h4 class="font-semibold">Phone</h4>
+                                <p class="text-sm opacity-90">+91 80 1234 5678</p>
+                            </div>
+                        </div>
+
+                        <div class="flex items-start">
+                            <i class="fas fa-envelope mt-1 mr-4"></i>
+                            <div>
+                                <h4 class="font-semibold">Email</h4>
+                                <p class="text-sm opacity-90">support@healthconsult.com</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="md:w-1/2 p-8">
+                        <h2 class="text-2xl font-bold mb-6 text-[var(--primary)]">Get In Touch</h2>
+                        <form id="contactForm" class="space-y-4">
+                            <div>
+                                <label for="contactName" class="block text-sm font-medium text-gray-700 mb-1">Your
+                                    Name</label>
+                                <input type="text" id="contactName" placeholder="John Doe"
+                                    class="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[var(--primary)] focus:border-transparent"
+                                    required />
+                            </div>
+                            <div>
+                                <label for="contactEmail" class="block text-sm font-medium text-gray-700 mb-1">Your
+                                    Email</label>
+                                <input type="email" id="contactEmail" placeholder="john@example.com"
+                                    class="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[var(--primary)] focus:border-transparent"
+                                    required />
+                            </div>
+                            <div>
+                                <label for="contactSubject"
+                                    class="block text-sm font-medium text-gray-700 mb-1">Subject</label>
+                                <input type="text" id="contactSubject" placeholder="How can we help?"
+                                    class="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[var(--primary)] focus:border-transparent"
+                                    required />
+                            </div>
+                            <div>
+                                <label for="contactMessage"
+                                    class="block text-sm font-medium text-gray-700 mb-1">Message</label>
+                                <textarea id="contactMessage" placeholder="Your message here..." rows="4"
+                                    class="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[var(--primary)] focus:border-transparent"
+                                    required></textarea>
+                            </div>
+                            <button type="submit" id="contactSubmitBtn"
+                                class="w-full bg-[var(--primary)] hover:bg-[var(--primary-hover)] text-white font-medium py-3 px-4 rounded-lg transition-colors flex items-center justify-center">
+                                <span id="contactBtnText">Send Message</span>
+                                <div id="contactBtnSpinner" class="loading-spinner hidden ml-2"></div>
+                            </button>
+                            <p id="contactStatus"
+                                class="hidden text-center py-2 px-4 rounded-lg bg-green-50 text-green-700"></p>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- FAQ Section -->
+    <section class="py-12 bg-white">
+        <div class="container mx-auto px-6 max-w-4xl">
+            <h2 class="text-2xl font-bold mb-8 text-center">Frequently Asked Questions</h2>
+
+            <div class="space-y-4">
+                <div class="border border-gray-200 rounded-lg overflow-hidden">
+                    <button class="w-full p-4 text-left font-medium flex justify-between items-center"
+                        onclick="toggleFAQ(1)">
+                        <span>How do I book an appointment?</span>
+                        <i class="fas fa-chevron-down transition-transform" id="faqIcon1"></i>
+                    </button>
+                    <div class="px-4 pb-4 hidden" id="faqContent1">
+                        <p class="text-gray-600">Booking an appointment is simple. Search for a doctor using our
+                            filters, select an available time slot, and complete the booking form. You'll receive a
+                            confirmation email with all the details.</p>
+                    </div>
+                </div>
+
+                <div class="border border-gray-200 rounded-lg overflow-hidden">
+                    <button class="w-full p-4 text-left font-medium flex justify-between items-center"
+                        onclick="toggleFAQ(2)">
+                        <span>What technology do I need for a virtual consultation?</span>
+                        <i class="fas fa-chevron-down transition-transform" id="faqIcon2"></i>
+                    </button>
+                    <div class="px-4 pb-4 hidden" id="faqContent2">
+                        <p class="text-gray-600">You'll need a smartphone, tablet, or computer with a stable internet
+                            connection, a webcam, and a microphone. Our platform works on all modern browsers without
+                            requiring additional software.</p>
+                    </div>
+                </div>
+
+                <div class="border border-gray-200 rounded-lg overflow-hidden">
+                    <button class="w-full p-4 text-left font-medium flex justify-between items-center"
+                        onclick="toggleFAQ(3)">
+                        <span>Can I reschedule or cancel my appointment?</span>
+                        <i class="fas fa-chevron-down transition-transform" id="faqIcon3"></i>
+                    </button>
+                    <div class="px-4 pb-4 hidden" id="faqContent3">
+                        <p class="text-gray-600">Yes, you can reschedule or cancel your appointment up to 24 hours
+                            before the scheduled time. Simply go to your appointments section in your account or contact
+                            our support team for assistance.</p>
+                    </div>
+                </div>
+
+                <div class="border border-gray-200 rounded-lg overflow-hidden">
+                    <button class="w-full p-4 text-left font-medium flex justify-between items-center"
+                        onclick="toggleFAQ(4)">
+                        <span>Is my medical information kept private?</span>
+                        <i class="fas fa-chevron-down transition-transform" id="faqIcon4"></i>
+                    </button>
+                    <div class="px-4 pb-4 hidden" id="faqContent4">
+                        <p class="text-gray-600">Absolutely. We adhere to strict HIPAA compliance standards. All your
+                            medical data is encrypted and stored securely. We never share your information without your
+                            consent.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="bg-gray-900 text-white py-8">
+        <div class="container mx-auto px-6">
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-8">
+                <div>
+                    <h3 class="text-lg font-semibold mb-4">HealthConsult</h3>
+                    <p class="text-gray-400">Making quality healthcare accessible to everyone through technology.</p>
+                    <div class="flex space-x-4 mt-4">
+                        <a href="#" class="text-gray-400 hover:text-white transition-colors"><i
+                                class="fab fa-facebook-f"></i></a>
+                        <a href="#" class="text-gray-400 hover:text-white transition-colors"><i
+                                class="fab fa-twitter"></i></a>
+                        <a href="#" class="text-gray-400 hover:text-white transition-colors"><i
+                                class="fab fa-linkedin-in"></i></a>
+                        <a href="#" class="text-gray-400 hover:text-white transition-colors"><i
+                                class="fab fa-instagram"></i></a>
+                    </div>
+                </div>
+                <div>
+                    <h3 class="text-lg font-semibold mb-4">Quick Links</h3>
+                    <ul class="space-y-2">
+                        <li><a href="#" class="text-gray-400 hover:text-white transition-colors">Home</a></li>
+                        <li><a href="#doctors" class="text-gray-400 hover:text-white transition-colors">Find Doctors</a>
+                        </li>
+                        <li><a href="#contact" class="text-gray-400 hover:text-white transition-colors">Contact</a></li>
+                        <li><a href="#" class="text-gray-400 hover:text-white transition-colors">About Us</a></li>
+                    </ul>
+                </div>
+                <div>
+                    <h3 class="text-lg font-semibold mb-4">Services</h3>
+                    <ul class="space-y-2">
+                        <li><a href="#" class="text-gray-400 hover:text-white transition-colors">Video Consultation</a>
+                        </li>
+                        <li><a href="#" class="text-gray-400 hover:text-white transition-colors">Second Opinion</a></li>
+                        <li><a href="#" class="text-gray-400 hover:text-white transition-colors">Health Checkups</a>
+                        </li>
+                        <li><a href="#" class="text-gray-400 hover:text-white transition-colors">Medicine Delivery</a>
+                        </li>
+                    </ul>
+                </div>
+                <div>
+                    <h3 class="text-lg font-semibold mb-4">Newsletter</h3>
+                    <p class="text-gray-400 mb-4">Subscribe to our newsletter for health tips and updates.</p>
+                    <form class="flex">
+                        <input type="email" placeholder="Your email"
+                            class="px-3 py-2 bg-gray-800 text-white rounded-l-lg focus:outline-none w-full">
+                        <button type="submit"
+                            class="bg-[var(--primary)] hover:bg-[var(--primary-hover)] px-4 py-2 rounded-r-lg transition-colors">
+                            <i class="fas fa-paper-plane"></i>
+                        </button>
+                    </form>
+                </div>
+            </div>
+            <div class="border-t border-gray-800 mt-8 pt-6 text-center text-gray-400 text-sm">
+                <p>&copy; 2025 HealthConsult. All rights reserved. | <a href="#"
+                        class="hover:text-white transition-colors">Privacy Policy</a> | <a href="#"
+                        class="hover:text-white transition-colors">Terms of Service</a></p>
+            </div>
+        </div>
+    </footer>
+
+    <!-- JS Logic -->
+    <script>
+        let doctors = [];
+        let selectedDoctor = null;
+        let selectedDate = null;
+        let selectedTime = null;
+
+        // Toggle mobile menu
+        function toggleMenu() {
+            const menu = document.getElementById("mobileMenu");
+            const hamburger = document.getElementById("hamburger");
+            menu.classList.toggle("hidden");
+            hamburger.classList.toggle("open");
+        }
+
+        // Toggle FAQ items
+        function toggleFAQ(index) {
+            const content = document.getElementById(`faqContent${index}`);
+            const icon = document.getElementById(`faqIcon${index}`);
+            content.classList.toggle("hidden");
+            icon.classList.toggle("transform");
+            icon.classList.toggle("rotate-180");
+        }
+
+        // Generate unique available dates for each doctor
+        function generateAvailableDates(daysToAdd) {
+            const dates = [];
+            const today = new Date();
+
+            // Generate 7 possible dates starting from daysToAdd
+            for (let i = 0; i < 7; i++) {
+                const date = new Date();
+                date.setDate(today.getDate() + daysToAdd + i);
+
+                // Make sure it's a weekday (Mon-Fri)
+                if (date.getDay() !== 0 && date.getDay() !== 6) {
+                    // Generate 4-6 time slots per day between 9AM and 5PM
+                    const timeSlots = [];
+                    const startHour = 9;
+                    const endHour = 17;
+                    const slotDuration = 30; // minutes
+                    const slotsPerDay = 4 + Math.floor(Math.random() * 3); // 4-6 slots
+
+                    for (let j = 0; j < slotsPerDay; j++) {
+                        const hour = startHour + Math.floor(Math.random() * (endHour - startHour));
+                        const minute = Math.random() > 0.5 ? 0 : 30;
+                        const timeString = `${hour.toString().padStart(2, '0')}:${minute.toString().padStart(2, '0')}`;
+
+                        timeSlots.push({
+                            time: timeString,
+                            formatted: `${hour}:${minute.toString().padStart(2, '0')} ${hour >= 12 ? 'PM' : 'AM'}`,
+                            available: Math.random() > 0.2 // 80% chance of being available
+                        });
+                    }
+
+                    // Sort time slots chronologically
+                    timeSlots.sort((a, b) => {
+                        const [aHour, aMinute] = a.time.split(':').map(Number);
+                        const [bHour, bMinute] = b.time.split(':').map(Number);
+                        return aHour - bHour || aMinute - bMinute;
+                    });
+
+                    dates.push({
+                        date: date.toISOString().split("T")[0],
+                        display: date.toLocaleDateString("en-US", {
+                            weekday: "short",
+                            month: "short",
+                            day: "numeric",
+                        }),
+                        fullDisplay: date.toLocaleDateString("en-US", {
+                            weekday: "long",
+                            month: "long",
+                            day: "numeric",
+                            year: "numeric"
+                        }),
+                        timeSlots: timeSlots
+                    });
+                }
+            }
+
+            return dates;
+        }
+
+        // Simulated API fetch with 15 doctors
+        async function fetchDoctors() {
+            // Show loading indicator
+            document.getElementById('loadingIndicator').classList.remove('hidden');
+            document.getElementById('doctorList').innerHTML = '';
+
+            return new Promise((resolve) => {
+                setTimeout(() => {
+                    const specialties = [
+                        "Cardiologist", "Dermatologist", "Pediatrician", "Neurologist",
+                        "Orthopedist", "Gynecologist", "Ophthalmologist", "General Physician",
+                        "Psychiatrist", "Endocrinologist"
+                    ];
+
+                    const locations = [
+                        "Delhi", "Mumbai", "Bangalore", "Hyderabad", "Chennai", "Kolkata",
+                        "New York", "London", "Sydney", "Toronto"
+                    ];
+
+                    const doctors = [];
+
+                    for (let i = 1; i <= 15; i++) {
+                        const firstName = [
+                            "Ayesha", "John", "Emily", "Raj", "Priya", "Michael", "Sarah",
+                            "David", "Ananya", "Robert", "Nisha", "James", "Lisa", "Amit", "Sophia"
+                        ][i - 1];
+
+                        const lastName = [
+                            "Khan", "Smith", "Rose", "Mehta", "Sharma", "Chen", "Johnson",
+                            "Wilson", "Patel", "Brown", "Gupta", "Wilson", "Ray", "Singh", "Lee"
+                        ][i - 1];
+
+                        const specialty = specialties[Math.floor(Math.random() * specialties.length)];
+                        const location = locations[Math.floor(Math.random() * locations.length)];
+                        const rating = (4 + Math.random()).toFixed(1); // 4.0 to 5.0
+
+                        doctors.push({
+                            id: i,
+                            name: `Dr. ${firstName} ${lastName}`,
+                            specialty: specialty,
+                            location: location,
+                            rating: parseFloat(rating),
+                            experience: 5 + Math.floor(Math.random() * 20), // 5-25 years
+                            languages: ["English"].concat(
+                                Math.random() > 0.7 ? ["Hindi"] : [],
+                                Math.random() > 0.5 ? ["Spanish"] : [],
+                                Math.random() > 0.3 ? ["French"] : []
+                            ),
+                            availableDates: generateAvailableDates(i),
+                            consultationFee: 500 + Math.floor(Math.random() * 1500), // 500-2000
+                            avatarInitials: firstName.charAt(0) + lastName.charAt(0)
+                        });
+                    }
+
+                    resolve(doctors);
+                }, 800); // Simulate network delay
+            });
+        }
+
+        async function init() {
+            doctors = await fetchDoctors();
+            renderDoctors();
+            document.getElementById('loadingIndicator').classList.add('hidden');
+        }
+
+        function renderDoctors() {
+            const container = document.getElementById("doctorList");
+            const search = document
+                .getElementById("searchInput")
+                .value.toLowerCase();
+            const specialty = document.getElementById("specialtyFilter").value;
+            const location = document.getElementById("locationFilter").value;
+            const minRating = parseFloat(
+                document.getElementById("ratingFilter").value
+            );
+
+            container.innerHTML = "";
+
+            const filteredDoctors = doctors.filter(
+                (d) =>
+                    d.name.toLowerCase().includes(search) &&
+                    (specialty === "" || d.specialty === specialty) &&
+                    (location === "" || d.location === location) &&
+                    (minRating === 0 || d.rating >= minRating)
+            );
+
+            // Update results count
+            const resultsCount = document.getElementById("resultsCount");
+            if (filteredDoctors.length === 0) {
+                resultsCount.textContent = "No doctors found";
+            } else {
+                resultsCount.textContent = `${filteredDoctors.length} doctor${filteredDoctors.length !== 1 ? 's' : ''} found`;
+            }
+
+            if (filteredDoctors.length === 0) {
+                container.innerHTML = `
+            <div class="col-span-full text-center py-10">
+              <svg xmlns="http://www.w3.org/2000/svg" class="h-16 w-16 mx-auto text-gray-400 mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9.172 16.172a4 4 0 015.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+              <p class="text-gray-500 text-lg mb-2">No doctors found matching your criteria.</p>
+              <button onclick="resetFilters()" class="text-[var(--primary)] font-medium hover:underline">
+                Reset filters
+              </button>
+            </div>
+          `;
+                return;
+            }
+
+            filteredDoctors.forEach((d) => {
+                const card = document.createElement("div");
+                card.className =
+                    "doctor-card bg-white rounded-lg p-5 shadow-md hover:shadow-lg transition-all border-t-4 border-[var(--primary)]";
+                card.innerHTML = `
+            <div class="flex items-start">
+              <div class="bg-[var(--primary)] text-white w-12 h-12 rounded-full flex items-center justify-center text-lg font-bold mr-4">
+                ${d.avatarInitials}
+              </div>
+              <div class="flex-1">
+                <div class="flex justify-between items-start">
+                  <h3 class="text-xl font-bold text-[var(--text)]">${d.name}</h3>
+                  <span class="badge badge-primary">$${d.consultationFee}</span>
+                </div>
+                <p class="text-sm text-gray-600 mt-1">${d.specialty}</p>
+                <div class="flex items-center mt-1">
+                  <div class="text-yellow-500 mr-1">
+                    ${renderStars(d.rating)}
+                  </div>
+                  <span class="text-sm text-gray-600">${d.rating}</span>
+                </div>
+                <div class="flex items-center mt-2 text-sm text-gray-600">
+                  <i class="fas fa-map-marker-alt mr-2 text-[var(--primary)]"></i>
+                  ${d.location}
+                </div>
+                <div class="flex items-center mt-1 text-sm text-gray-600">
+                  <i class="fas fa-briefcase mr-2 text-[var(--primary)]"></i>
+                  ${d.experience} years experience
+                </div>
+                <div class="mt-3 flex flex-wrap gap-1">
+                  ${d.languages.map(lang => `<span class="text-xs bg-gray-100 text-gray-600 px-2 py-1 rounded">${lang}</span>`).join('')}
+                </div>
+                <button onclick="openModal(${d.id})" class="mt-4 w-full bg-[var(--primary)] hover:bg-[var(--primary-hover)] text-white px-4 py-2 rounded-lg transition-colors">
+                  Book Appointment
+                </button>
+              </div>
+            </div>
+          `;
+                container.appendChild(card);
+            });
+        }
+
+        function renderStars(rating) {
+            let stars = '';
+            const fullStars = Math.floor(rating);
+            const hasHalfStar = rating % 1 >= 0.5;
+
+            for (let i = 0; i < fullStars; i++) {
+                stars += '<i class="fas fa-star"></i>';
+            }
+
+            if (hasHalfStar) {
+                stars += '<i class="fas fa-star-half-alt"></i>';
+            }
+
+            const emptyStars = 5 - fullStars - (hasHalfStar ? 1 : 0);
+            for (let i = 0; i < emptyStars; i++) {
+                stars += '<i class="far fa-star"></i>';
+            }
+
+            return stars;
+        }
+
+        function resetFilters() {
+            document.getElementById("searchInput").value = "";
+            document.getElementById("specialtyFilter").value = "";
+            document.getElementById("locationFilter").value = "";
+            document.getElementById("ratingFilter").value = "0";
+            renderDoctors();
+        }
+
+        function openModal(id) {
+            selectedDoctor = doctors.find((d) => d.id === id);
+            selectedDate = null;
+            selectedTime = null;
+
+            document.getElementById("doctorName").innerText = selectedDoctor.name;
+            document.getElementById("doctorSpecialty").innerText = selectedDoctor.specialty;
+            document.getElementById("doctorLocation").innerText = selectedDoctor.location;
+            document.getElementById("doctorRating").innerHTML = renderStars(selectedDoctor.rating) +
+                `<span class="ml-1 text-gray-600">${selectedDoctor.rating}</span>`;
+            document.getElementById("doctorAvatar").innerText = selectedDoctor.avatarInitials;
+
+            // Populate date tabs
+            const dateTabs = document.getElementById("dateTabs");
+            dateTabs.innerHTML = "";
+
+            if (selectedDoctor.availableDates.length === 0) {
+                dateTabs.innerHTML = '<p class="text-gray-500">No available dates</p>';
+            } else {
+                selectedDoctor.availableDates.forEach((date, index) => {
+                    const button = document.createElement("button");
+                    button.className = `flex-shrink-0 px-4 py-2 rounded-lg border ${index === 0 ? 'bg-[var(--primary)] text-white border-[var(--primary)]' : 'bg-white border-gray-300 hover:border-[var(--primary)]'}`;
+                    button.innerHTML = `
+              <div class="text-sm font-medium">${date.display.split(' ')[0]}</div>
+              <div class="text-lg font-bold">${date.display.split(' ')[1]} ${date.display.split(' ')[2]}</div>
+            `;
+                    button.onclick = () => selectDate(index);
+                    dateTabs.appendChild(button);
+                });
+
+                // Select first date by default
+                selectDate(0);
+            }
+
+            document.getElementById("bookingModal").classList.remove("hidden");
+            document.body.style.overflow = 'hidden';
+        }
+
+        function selectDate(dateIndex) {
+            selectedDate = dateIndex;
+            selectedTime = null;
+
+            // Update active tab
+            const dateTabs = document.getElementById("dateTabs").children;
+            for (let i = 0; i < dateTabs.length; i++) {
+                if (i === dateIndex) {
+                    dateTabs[i].className = "flex-shrink-0 px-4 py-2 rounded-lg border bg-[var(--primary)] text-white border-[var(--primary)]";
+                } else {
+                    dateTabs[i].className = "flex-shrink-0 px-4 py-2 rounded-lg border bg-white border-gray-300 hover:border-[var(--primary)]";
+                }
+            }
+
+            // Populate time slots
+            const timeSlotsContainer = document.getElementById("timeSlots");
+            timeSlotsContainer.innerHTML = "";
+
+            const date = selectedDoctor.availableDates[dateIndex];
+            date.timeSlots.forEach((slot, index) => {
+                const button = document.createElement("button");
+                button.className = `time-slot p-2 rounded-lg border text-sm font-medium ${slot.available ? 'border-gray-300 hover:bg-[var(--primary)] hover:text-white' : 'border-gray-200 bg-gray-100 text-gray-400 cursor-not-allowed'}`;
+                button.disabled = !slot.available;
+                button.innerText = slot.formatted;
+                button.onclick = () => selectTime(index);
+                timeSlotsContainer.appendChild(button);
+            });
+        }
+
+        function selectTime(timeIndex) {
+            selectedTime = timeIndex;
+
+            // Update selected time slot
+            const timeSlots = document.getElementById("timeSlots").children;
+            for (let i = 0; i < timeSlots.length; i++) {
+                if (i === timeIndex) {
+                    timeSlots[i].classList.add("selected");
+                } else {
+                    timeSlots[i].classList.remove("selected");
+                }
+            }
+        }
+
+        function closeModal() {
+            document.getElementById("bookingModal").classList.add("hidden");
+            document.body.style.overflow = 'auto';
+        }
+
+        function closeConfirmationModal() {
+            document.getElementById("confirmationModal").classList.add("hidden");
+            document.body.style.overflow = 'auto';
+        }
+
+        function confirmBooking() {
+            // Validate form
+            const patientName = document.getElementById("patientName").value.trim();
+            const patientEmail = document.getElementById("patientEmail").value.trim();
+
+            if (!patientName || !patientEmail) {
+                alert("Please fill in all required fields");
+                return;
+            }
+
+            if (!selectedDate || selectedTime === null) {
+                alert("Please select a date and time for your appointment");
+                return;
+            }
+
+            // Show loading state
+            const confirmBtn = document.getElementById("confirmBookingBtn");
+            const confirmBtnText = document.getElementById("confirmBtnText");
+            const confirmBtnSpinner = document.getElementById("confirmBtnSpinner");
+
+            confirmBtn.disabled = true;
+            confirmBtnText.textContent = "Processing...";
+            confirmBtnSpinner.classList.remove("hidden");
+
+            // Simulate API call
+            setTimeout(() => {
+                const date = selectedDoctor.availableDates[selectedDate];
+                const timeSlot = date.timeSlots[selectedTime];
+
+                document.getElementById("confirmationMessage").innerHTML = `
+            Your appointment has been successfully scheduled.
+          `;
+
+                document.getElementById("confirmationDoctor").innerHTML = `
+            <i class="fas fa-user-md text-[var(--primary)] mr-2"></i>
+            <strong>${selectedDoctor.name}</strong> - ${selectedDoctor.specialty}
+          `;
+
+                document.getElementById("confirmationDateTime").innerHTML = `
+            <i class="far fa-calendar-alt text-[var(--primary)] mr-2"></i>
+            ${date.fullDisplay} at ${timeSlot.formatted}
+          `;
+
+                document.getElementById("confirmationType").innerHTML = `
+            <i class="fas fa-video text-[var(--primary)] mr-2"></i>
+            Video Consultation (30 mins)
+          `;
+
+                closeModal();
+                document.getElementById("confirmationModal").classList.remove("hidden");
+
+                // Reset button state
+                confirmBtn.disabled = false;
+                confirmBtnText.textContent = "Confirm Booking";
+                confirmBtnSpinner.classList.add("hidden");
+            }, 1500);
+        }
+
+        document
+            .getElementById("contactForm")
+            .addEventListener("submit", function (e) {
+                e.preventDefault();
+
+                // Get form values
+                const name = document.getElementById("contactName").value.trim();
+                const email = document.getElementById("contactEmail").value.trim();
+                const subject = document.getElementById("contactSubject").value.trim();
+                const message = document.getElementById("contactMessage").value.trim();
+
+                // Validate
+                if (!name || !email || !subject || !message) {
+                    alert("Please fill all required fields.");
+                    return;
+                }
+
+                // Show loading state
+                const submitBtn = document.getElementById("contactSubmitBtn");
+                const submitBtnText = document.getElementById("contactBtnText");
+                const submitBtnSpinner = document.getElementById("contactBtnSpinner");
+                const statusElement = document.getElementById("contactStatus");
+
+                submitBtn.disabled = true;
+                submitBtnText.textContent = "Sending...";
+                submitBtnSpinner.classList.remove("hidden");
+
+                // Simulate API call
+                setTimeout(() => {
+                    console.log("Message sent:", { name, email, subject, message });
+
+                    // Show success message
+                    statusElement.textContent = "Your message has been sent successfully!";
+                    statusElement.classList.remove("hidden");
+
+                    // Reset form
+                    this.reset();
+
+                    // Reset button state
+                    submitBtn.disabled = false;
+                    submitBtnText.textContent = "Send Message";
+                    submitBtnSpinner.classList.add("hidden");
+
+                    // Hide status message after 5 seconds
+                    setTimeout(() => {
+                        statusElement.classList.add("hidden");
+                    }, 5000);
+                }, 1200);
+            });
+
+        // Add event listeners for all filters
+        document
+            .getElementById("searchInput")
+            .addEventListener("input", renderDoctors);
+        document
+            .getElementById("specialtyFilter")
+            .addEventListener("change", renderDoctors);
+        document
+            .getElementById("locationFilter")
+            .addEventListener("change", renderDoctors);
+        document
+            .getElementById("ratingFilter")
+            .addEventListener("change", renderDoctors);
+
+        // Close mobile menu when clicking outside
+        document.addEventListener("click", function (event) {
+            const header = document.querySelector("header");
+            const mobileMenu = document.getElementById("mobileMenu");
+            const hamburger = document.getElementById("hamburger");
+
+            if (!header.contains(event.target)) {
+                mobileMenu.classList.add("hidden");
+                hamburger.classList.remove("open");
+            }
+        });
+
+        // Initialize the app
+        init();
+    </script>
+</body>
+
+</html>

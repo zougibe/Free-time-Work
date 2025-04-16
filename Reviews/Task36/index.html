@@ -1,0 +1,725 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="description" content="Visualize function inverses with interactive charts">
+    <title>Function Inversion Visualizer</title>
+    <!-- Load Chart.js from a CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- Load Chart.js zoom plugin -->
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-zoom"></script>
+
+    <style>
+        :root {
+            --primary: #4f46e5;
+            --primary-hover: #4338ca;
+            --primary-light: #e0e7ff;
+            --secondary: #f59e0b;
+            --error: #dc2626;
+            --success: #16a34a;
+            --gray-100: #f3f4f6;
+            --gray-200: #e5e7eb;
+            --gray-300: #d1d5db;
+            --gray-700: #374151;
+            --white: #ffffff;
+            --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+            --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+            --radius-sm: 0.375rem;
+            --radius-md: 0.5rem;
+            --transition: all 0.2s ease-in-out;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            margin: 0;
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: var(--gray-100);
+            color: var(--gray-700);
+            line-height: 1.5;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        header {
+            background: var(--primary);
+            text-align: center;
+            padding: 1.5rem;
+            color: var(--white);
+            box-shadow: var(--shadow-sm);
+        }
+
+        h1 {
+            margin: 0;
+            font-size: 1.75rem;
+            font-weight: 600;
+        }
+
+        .container {
+            max-width: 900px;
+            margin: 2rem auto;
+            padding: 0 1.5rem;
+            width: 100%;
+            flex: 1;
+        }
+
+        .card {
+            background: var(--white);
+            border-radius: var(--radius-md);
+            box-shadow: var(--shadow-md);
+            padding: 1.5rem;
+            margin-bottom: 2rem;
+        }
+
+        .input-section {
+            display: flex;
+            flex-direction: column;
+            gap: 1.25rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .input-group {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        label {
+            min-width: 80px;
+            font-weight: 500;
+            color: var(--gray-700);
+        }
+
+        input[type="text"] {
+            flex: 1;
+            min-width: 200px;
+            padding: 0.75rem;
+            border: 1px solid var(--gray-300);
+            border-radius: var(--radius-sm);
+            font-size: 1rem;
+            transition: var(--transition);
+        }
+
+        input[type="text"]:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px var(--primary-light);
+        }
+
+        .button-group {
+            display: flex;
+            gap: 0.75rem;
+            flex-wrap: wrap;
+        }
+
+        button {
+            padding: 0.75rem 1.5rem;
+            background: var(--primary);
+            border: none;
+            border-radius: var(--radius-sm);
+            color: var(--white);
+            cursor: pointer;
+            transition: var(--transition);
+            font-size: 1rem;
+            font-weight: 500;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        button:hover {
+            background: var(--primary-hover);
+            transform: translateY(-1px);
+        }
+
+        button:active {
+            transform: translateY(0);
+        }
+
+        button:disabled {
+            opacity: 0.7;
+            cursor: not-allowed;
+            background: var(--gray-300);
+        }
+
+        button.secondary {
+            background: var(--gray-200);
+            color: var(--gray-700);
+        }
+
+        button.secondary:hover {
+            background: var(--gray-300);
+        }
+
+        #error-msg {
+            color: var(--error);
+            font-weight: 500;
+            padding: 0.5rem 0;
+            min-height: 1.5rem;
+        }
+
+        #success-msg {
+            color: var(--success);
+            font-weight: 500;
+            padding: 0.5rem 0;
+            min-height: 1.5rem;
+        }
+
+        .chart-container {
+            background: var(--white);
+            border-radius: var(--radius-md);
+            padding: 1rem;
+            margin-bottom: 1.5rem;
+            position: relative;
+            height: 500px;
+        }
+
+        .equation-display {
+            font-size: 1.1rem;
+            margin: 1.5rem 0;
+            padding: 1rem;
+            background: var(--primary-light);
+            border-radius: var(--radius-sm);
+            border-left: 4px solid var(--primary);
+        }
+
+        .help-text {
+            color: var(--gray-700);
+            font-size: 0.9rem;
+            margin-top: 0.5rem;
+        }
+
+        footer {
+            text-align: center;
+            font-size: 0.9rem;
+            padding: 1.5rem;
+            color: var(--gray-700);
+            background: var(--white);
+            margin-top: auto;
+        }
+
+        .loading-spinner {
+            display: inline-block;
+            width: 1rem;
+            height: 1rem;
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            border-radius: 50%;
+            border-top-color: var(--white);
+            animation: spin 1s ease-in-out infinite;
+        }
+
+        @keyframes spin {
+            to {
+                transform: rotate(360deg);
+            }
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                padding: 0 1rem;
+                margin: 1rem auto;
+            }
+
+            .chart-container {
+                height: 400px;
+            }
+
+            h1 {
+                font-size: 1.5rem;
+            }
+
+            .input-group {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+
+            input[type="text"] {
+                width: 100%;
+            }
+        }
+
+        /* Animation for chart loading */
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .chart-loaded {
+            animation: fadeIn 0.3s ease-out;
+        }
+    </style>
+</head>
+
+<body>
+    <header>
+        <h1>Function Inversion Visualizer</h1>
+    </header>
+
+    <div class="container">
+        <div class="card">
+            <div class="input-section">
+                <div class="input-group">
+                    <label for="function-input">f(x) =</label>
+                    <input type="text" id="function-input" placeholder="e.g. 2x+3, x^2-4x+4, 5x-2"
+                        aria-describedby="help-text" />
+                </div>
+                <p id="help-text" class="help-text">
+                    Enter a linear (ax+b) or quadratic (ax²+bx+c) function. Examples: 3x+5, -2x+1, x^2-4, 2x^2+3x-1
+                </p>
+
+                <div class="button-group">
+                    <button id="plotBtn">
+                        <span id="plotBtnText">Plot & Invert</span>
+                        <span id="plotBtnSpinner" class="loading-spinner" style="display: none;"></span>
+                    </button>
+                    <button id="resetBtn" class="secondary">Reset</button>
+                </div>
+
+                <div id="error-msg" role="alert" aria-live="assertive"></div>
+                <div id="success-msg" role="status" aria-live="polite"></div>
+            </div>
+
+            <div id="inverse-output" class="equation-display">
+                Enter a function above to see its inverse
+            </div>
+        </div>
+
+        <div class="chart-container">
+            <canvas id="myChart"></canvas>
+        </div>
+    </div>
+
+    <footer>
+        &copy; 2025 Function Inversion Visualizer | Made with Chart.js
+    </footer>
+
+    <script>
+        // DOM Elements
+        const plotBtn = document.getElementById("plotBtn");
+        const plotBtnText = document.getElementById("plotBtnText");
+        const plotBtnSpinner = document.getElementById("plotBtnSpinner");
+        const resetBtn = document.getElementById("resetBtn");
+        const errorMsg = document.getElementById("error-msg");
+        const successMsg = document.getElementById("success-msg");
+        const funcInput = document.getElementById("function-input");
+        const inverseOutput = document.getElementById("inverse-output");
+        const chartContainer = document.querySelector(".chart-container");
+
+        // Chart instance
+        let myChart = null;
+
+        /**************************************************************
+         * 1) Enhanced Parsing with better error handling
+         **************************************************************/
+        function parseFunction(expr) {
+            if (!expr) return null;
+
+            // Remove spaces and optional f(x)= prefix
+            let cleaned = expr.replace(/\s+/g, '').replace(/^f\(x\)=/i, '');
+
+            // Helper to parse coefficient
+            const parseCoefficient = (str, defaultVal = 1) => {
+                if (!str || str === '+') return defaultVal;
+                if (str === '-') return -defaultVal;
+                return parseFloat(str) || defaultVal;
+            };
+
+            // Linear: ax + b
+            const linearMatch = cleaned.match(/^([+-]?\d*\.?\d*)x([+-]\d+\.?\d*)?$/i);
+            if (linearMatch) {
+                const a = parseCoefficient(linearMatch[1]);
+                const b = linearMatch[2] ? parseFloat(linearMatch[2]) : 0;
+                return { type: "linear", a, b };
+            }
+
+            // Quadratic: ax^2 + bx + c
+            const quadMatch = cleaned.match(/^([+-]?\d*\.?\d*)x\^2([+-]\d*\.?\d*x)?([+-]\d+\.?\d*)?$/i);
+            if (quadMatch) {
+                const a = parseCoefficient(quadMatch[1]);
+
+                let b = 0;
+                if (quadMatch[2]) {
+                    const bPart = quadMatch[2].replace('x', '');
+                    b = parseCoefficient(bPart, 0);
+                }
+
+                let c = 0;
+                if (quadMatch[3]) {
+                    c = parseFloat(quadMatch[3]);
+                }
+
+                return { type: "quadratic", a, b, c };
+            }
+
+            return null;
+        }
+
+        /**************************************************************
+         * 2) Inversion Logic with domain validation
+         **************************************************************/
+        function invertFunction(fObj) {
+            if (!fObj) return null;
+
+            if (fObj.type === 'linear') {
+                if (fObj.a === 0) return null; // Not invertible (horizontal line)
+                return {
+                    type: 'linear',
+                    a: 1 / fObj.a,
+                    b: -fObj.b / fObj.a
+                };
+            }
+
+            if (fObj.type === 'quadratic') {
+                // For quadratics, we need to consider the domain restriction
+                // We'll use the positive branch by default
+                return {
+                    type: 'quadInv',
+                    a: fObj.a,
+                    b: fObj.b,
+                    c: fObj.c,
+                    vertex: {
+                        x: -fObj.b / (2 * fObj.a),
+                        y: fObj.c - (fObj.b * fObj.b) / (4 * fObj.a)
+                    }
+                };
+            }
+
+            return null;
+        }
+
+        /**************************************************************
+         * 3) Evaluation Functions
+         **************************************************************/
+        function evaluateFunction(fObj, xVal) {
+            if (!fObj) return null;
+
+            if (fObj.type === 'linear') {
+                return fObj.a * xVal + fObj.b;
+            }
+
+            if (fObj.type === 'quadratic') {
+                return fObj.a * xVal * xVal + fObj.b * xVal + fObj.c;
+            }
+
+            return null;
+        }
+
+        function evaluateQuadInverse(a, b, c, yVal, branch = 'plus') {
+            const discriminant = b * b - 4 * a * (c - yVal);
+            if (discriminant < 0) return null;
+
+            const sqrtDiscriminant = Math.sqrt(discriminant);
+            return branch === 'plus'
+                ? (-b + sqrtDiscriminant) / (2 * a)
+                : (-b - sqrtDiscriminant) / (2 * a);
+        }
+
+        /**************************************************************
+         * 4) Chart Rendering with better visualization
+         **************************************************************/
+        function plotBoth(fObj, invObj) {
+            showLoading(true);
+
+            // Generate data points
+            const step = 0.2;
+            const range = 10;
+
+            // Original function data
+            const fData = [];
+            for (let x = -range; x <= range; x += step) {
+                const y = evaluateFunction(fObj, x);
+                if (y !== null) {
+                    fData.push({ x, y });
+                }
+            }
+
+            // Inverse function data
+            const invData = [];
+            if (invObj) {
+                if (invObj.type === 'linear') {
+                    for (let x = -range; x <= range; x += step) {
+                        const y = invObj.a * x + invObj.b;
+                        if (y !== null) {
+                            invData.push({ x, y });
+                        }
+                    }
+                } else if (invObj.type === 'quadInv') {
+                    // For quadratic inverse, we need to consider the domain
+                    const yStart = invObj.vertex.y;
+                    const yEnd = evaluateFunction(fObj, range);
+                    const yStep = (yEnd - yStart) / 100;
+
+                    for (let y = yStart; y <= yEnd; y += yStep) {
+                        const x = evaluateQuadInverse(invObj.a, invObj.b, invObj.c, y, 'plus');
+                        if (x !== null) {
+                            invData.push({ x: y, y: x });
+                        }
+                    }
+                }
+            }
+
+            // Identity line (y = x)
+            const identityData = [];
+            for (let x = -range; x <= range; x += step) {
+                identityData.push({ x, y: x });
+            }
+
+            // Prepare chart data
+            const datasets = [
+                {
+                    label: "Original f(x)",
+                    data: fData,
+                    borderColor: "#4f46e5",
+                    backgroundColor: "transparent",
+                    borderWidth: 3,
+                    tension: 0.1,
+                    pointRadius: 0,
+                    showLine: true
+                },
+                {
+                    label: "Identity y = x",
+                    data: identityData,
+                    borderColor: "#9ca3af",
+                    backgroundColor: "transparent",
+                    borderWidth: 1.5,
+                    borderDash: [5, 5],
+                    pointRadius: 0,
+                    showLine: true
+                }
+            ];
+
+            if (invObj && invData.length > 0) {
+                datasets.unshift({
+                    label: "Inverse f⁻¹(x)",
+                    data: invData,
+                    borderColor: "#f59e0b",
+                    backgroundColor: "transparent",
+                    borderWidth: 3,
+                    tension: 0.1,
+                    pointRadius: 0,
+                    showLine: true
+                });
+            }
+
+            // Destroy old chart if exists
+            if (myChart) {
+                myChart.destroy();
+            }
+
+            // Create new chart
+            const ctx = document.getElementById("myChart").getContext("2d");
+            myChart = new Chart(ctx, {
+                type: "scatter",
+                data: { datasets },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    animation: {
+                        duration: 1000,
+                        easing: 'easeOutQuart'
+                    },
+                    scales: {
+                        x: {
+                            type: 'linear',
+                            position: 'center',
+                            title: {
+                                display: true,
+                                text: 'x',
+                                font: { weight: 'bold' }
+                            },
+                            min: -range,
+                            max: range,
+                            grid: {
+                                color: '#e5e7eb'
+                            }
+                        },
+                        y: {
+                            type: 'linear',
+                            position: 'center',
+                            title: {
+                                display: true,
+                                text: 'y',
+                                font: { weight: 'bold' }
+                            },
+                            min: -range,
+                            max: range,
+                            grid: {
+                                color: '#e5e7eb'
+                            }
+                        }
+                    },
+                    plugins: {
+                        legend: {
+                            position: 'top',
+                            labels: {
+                                font: { size: 14 },
+                                usePointStyle: true,
+                                padding: 20
+                            }
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: (context) => {
+                                    const label = context.dataset.label || '';
+                                    const value = context.parsed;
+                                    return `${label}: (${value.x.toFixed(2)}, ${value.y.toFixed(2)})`;
+                                }
+                            }
+                        },
+                        zoom: {
+                            zoom: {
+                                wheel: { enabled: true },
+                                pinch: { enabled: true },
+                                mode: 'xy',
+                                speed: 0.1
+                            },
+                            pan: {
+                                enabled: true,
+                                mode: 'xy'
+                            },
+                            limits: {
+                                x: { min: -20, max: 20 },
+                                y: { min: -20, max: 20 }
+                            }
+                        }
+                    }
+                }
+            });
+
+            // Add loaded class for animation
+            chartContainer.classList.add('chart-loaded');
+            showLoading(false);
+            showSuccess("Function plotted successfully!");
+        }
+
+        /**************************************************************
+         * 5) Display Functions
+         **************************************************************/
+        function displayInverseExpression(fObj, invObj) {
+            if (!fObj || !invObj) {
+                inverseOutput.textContent = "No inverse function could be determined for the given input.";
+                return;
+            }
+
+            if (invObj.type === "linear") {
+                inverseOutput.innerHTML = `
+                    <p><strong>Original Function:</strong> f(x) = ${formatCoefficient(fObj.a)}x ${formatConstant(fObj.b)}</p>
+                    <p><strong>Inverse Function:</strong> f⁻¹(x) = ${formatCoefficient(invObj.a)}x ${formatConstant(invObj.b)}</p>
+                `;
+            } else if (invObj.type === "quadInv") {
+                inverseOutput.innerHTML = `
+                    <p><strong>Original Function:</strong> f(x) = ${formatCoefficient(fObj.a)}x² ${formatCoefficient(fObj.b, true)}x ${formatConstant(fObj.c)}</p>
+                    <p><strong>Inverse Function (principal branch):</strong> 
+                    f⁻¹(x) = [−b + √(b² − 4a(c − x))] / 2a</p>
+                    <p class="help-text">Note: Quadratic functions are not one-to-one over their entire domain. 
+                    The inverse shown is restricted to x ≥ ${invObj.vertex.x.toFixed(2)}.</p>
+                `;
+            }
+        }
+
+        function formatCoefficient(value, includeSign = false) {
+            if (value === 1) return includeSign ? '+' : '';
+            if (value === -1) return '-';
+            if (value > 0 && includeSign) return `+ ${value}`;
+            if (value < 0) return `- ${Math.abs(value)}`;
+            return value.toString();
+        }
+
+        function formatConstant(value) {
+            if (value === 0) return '';
+            return value > 0 ? `+ ${value}` : `- ${Math.abs(value)}`;
+        }
+
+        /**************************************************************
+         * 6) UI Helpers
+         **************************************************************/
+        function showLoading(isLoading) {
+            if (isLoading) {
+                plotBtn.disabled = true;
+                plotBtnText.textContent = "Processing...";
+                plotBtnSpinner.style.display = "inline-block";
+            } else {
+                plotBtn.disabled = false;
+                plotBtnText.textContent = "Plot & Invert";
+                plotBtnSpinner.style.display = "none";
+            }
+        }
+
+        function showError(message) {
+            errorMsg.textContent = message;
+            successMsg.textContent = "";
+        }
+
+        function showSuccess(message) {
+            successMsg.textContent = message;
+            errorMsg.textContent = "";
+        }
+
+        function resetUI() {
+            funcInput.value = "";
+            inverseOutput.textContent = "Enter a function above to see its inverse";
+            errorMsg.textContent = "";
+            successMsg.textContent = "";
+
+            if (myChart) {
+                myChart.destroy();
+                myChart = null;
+            }
+
+            // Focus the input for better UX
+            funcInput.focus();
+        }
+
+        /**************************************************************
+         * 7) Event Listeners
+         **************************************************************/
+        plotBtn.addEventListener("click", () => {
+            const expr = funcInput.value.trim();
+
+            if (!expr) {
+                showError("Please enter a function to visualize");
+                return;
+            }
+
+            const fObj = parseFunction(expr);
+            if (!fObj) {
+                showError("Unsupported function format. Please enter a linear (ax+b) or quadratic (ax²+bx+c) function.");
+                return;
+            }
+
+            const invObj = invertFunction(fObj);
+
+            plotBoth(fObj, invObj);
+            displayInverseExpression(fObj, invObj);
+        });
+
+        resetBtn.addEventListener("click", resetUI);
+
+        // Allow submitting with Enter key
+        funcInput.addEventListener("keydown", (e) => {
+            if (e.key === "Enter") {
+                plotBtn.click();
+            }
+        });
+
+        // Initial focus on input
+        funcInput.focus();
+    </script>
+</body>
+
+</html>

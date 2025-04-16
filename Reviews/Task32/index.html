@@ -1,0 +1,579 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sales Forecasting Dashboard</title>
+    <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        .tooltip {
+            position: relative;
+            display: inline-block;
+        }
+
+        .tooltip .tooltiptext {
+            visibility: hidden;
+            width: 200px;
+            background-color: #333;
+            color: #fff;
+            text-align: center;
+            border-radius: 6px;
+            padding: 5px;
+            position: absolute;
+            z-index: 1;
+            bottom: 125%;
+            left: 50%;
+            margin-left: -100px;
+            opacity: 0;
+            transition: opacity 0.3s;
+            font-size: 14px;
+        }
+
+        .tooltip:hover .tooltiptext {
+            visibility: visible;
+            opacity: 1;
+        }
+
+        input[type="range"] {
+            -webkit-appearance: none;
+            height: 6px;
+            background: #e5e7eb;
+            border-radius: 3px;
+            outline: none;
+        }
+
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 18px;
+            height: 18px;
+            background: #3b82f6;
+            border-radius: 50%;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        input[type="range"]::-webkit-slider-thumb:hover {
+            background: #2563eb;
+            transform: scale(1.1);
+        }
+
+        .chart-container {
+            transition: all 0.3s ease;
+        }
+
+        .chart-container:hover {
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1);
+        }
+
+        .loading {
+            position: relative;
+            background-color: #e2e8f0;
+            overflow: hidden;
+        }
+
+        .loading::after {
+            content: "";
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.6), transparent);
+            animation: loading 1.5s infinite;
+        }
+
+        @keyframes loading {
+            0% {
+                transform: translateX(-100%);
+            }
+
+            100% {
+                transform: translateX(100%);
+            }
+        }
+    </style>
+</head>
+
+<body class="bg-gray-50 text-gray-800 font-sans antialiased">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <header class="mb-8">
+            <div class="flex items-center justify-between">
+                <div>
+                    <h1 class="text-3xl font-bold text-gray-900 flex items-center">
+                        <span class="bg-blue-100 text-blue-800 p-2 rounded-lg mr-3">
+                            <i class="fas fa-chart-line"></i>
+                        </span>
+                        Sales Forecasting Dashboard
+                    </h1>
+                    <p class="text-gray-600 mt-2">Interactive forecast based on historical data using advanced analytics
+                    </p>
+                </div>
+                <div class="flex items-center space-x-4">
+                    <button id="exportBtn"
+                        class="px-4 py-2 bg-white border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 flex items-center">
+                        <i class="fas fa-file-export mr-2"></i> Export
+                    </button>
+                    <div class="tooltip">
+                        <button class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 flex items-center">
+                            <i class="fas fa-question-circle mr-2"></i> Help
+                        </button>
+                        <span class="tooltiptext">Adjust parameters using the controls below. Hover over charts for
+                            detailed data.</span>
+                    </div>
+                </div>
+            </div>
+        </header>
+
+        <div
+            class="bg-white p-6 rounded-xl shadow-sm border border-gray-100 mb-8 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+            <div class="space-y-1">
+                <label for="productSelect" class="block font-medium text-gray-700 flex items-center">
+                    <i class="fas fa-box-open mr-2 text-blue-500"></i> Select Product
+                </label>
+                <select id="productSelect"
+                    class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition">
+                    <option value="A">Product A - Premium Line</option>
+                    <option value="B">Product B - Standard Line</option>
+                    <option value="C">Product C - Budget Line</option>
+                </select>
+            </div>
+
+            <div class="space-y-2">
+                <label for="horizonSlider" class="block font-medium text-gray-700 flex items-center">
+                    <i class="fas fa-calendar-alt mr-2 text-blue-500"></i> Forecast Horizon
+                    <span class="ml-auto font-normal text-gray-500" id="horizonValue">6 months</span>
+                </label>
+                <input type="range" id="horizonSlider" min="1" max="12" value="6" class="w-full">
+                <div class="flex justify-between text-xs text-gray-500">
+                    <span>1 mo</span>
+                    <span>6 mo</span>
+                    <span>12 mo</span>
+                </div>
+            </div>
+
+            <div class="space-y-1">
+                <label for="growthInput" class="block font-medium text-gray-700 flex items-center">
+                    <i class="fas fa-chart-pie mr-2 text-blue-500"></i> Growth Rate
+                </label>
+                <div class="relative">
+                    <input type="number" id="growthInput" min="-20" max="50" step="0.5" value="5"
+                        class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition pr-10">
+                    <span class="absolute right-3 top-2.5 text-gray-400">%</span>
+                </div>
+            </div>
+
+            <div class="flex items-center space-x-4">
+                <div class="flex items-center">
+                    <input type="checkbox" id="seasonalCheck" checked
+                        class="h-5 w-5 text-blue-600 rounded focus:ring-blue-500 border-gray-300 transition">
+                    <label for="seasonalCheck" class="ml-2 font-medium text-gray-700 flex items-center">
+                        <i class="fas fa-snowflake mr-2 text-blue-500"></i> Seasonality
+                    </label>
+                </div>
+                <div class="flex items-center">
+                    <input type="checkbox" id="trendCheck"
+                        class="h-5 w-5 text-blue-600 rounded focus:ring-blue-500 border-gray-300 transition">
+                    <label for="trendCheck" class="ml-2 font-medium text-gray-700 flex items-center">
+                        <i class="fas fa-trend-up mr-2 text-blue-500"></i> Trend
+                    </label>
+                </div>
+            </div>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
+            <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-100 chart-container">
+                <div class="flex justify-between items-center mb-4">
+                    <h3 class="text-lg font-semibold text-gray-900 flex items-center">
+                        <i class="fas fa-chart-line mr-2 text-blue-500"></i> Sales Forecast
+                    </h3>
+                    <div class="flex space-x-2">
+                        <button class="chart-action-btn active" data-chart="lineChart">
+                            <i class="fas fa-chart-line"></i>
+                        </button>
+                        <button class="chart-action-btn" data-chart="lineChartBar">
+                            <i class="fas fa-chart-bar"></i>
+                        </button>
+                    </div>
+                </div>
+                <div id="lineChart" class="h-80"></div>
+            </div>
+
+            <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-100 chart-container">
+                <div class="flex justify-between items-center mb-4">
+                    <h3 class="text-lg font-semibold text-gray-900 flex items-center">
+                        <i class="fas fa-boxes mr-2 text-blue-500"></i> Product Comparison
+                    </h3>
+                    <div class="flex space-x-2">
+                        <button class="chart-action-btn active" data-chart="barChart">
+                            <i class="fas fa-chart-bar"></i>
+                        </button>
+                        <button class="chart-action-btn" data-chart="barChartPie">
+                            <i class="fas fa-chart-pie"></i>
+                        </button>
+                    </div>
+                </div>
+                <div id="barChart" class="h-80"></div>
+            </div>
+        </div>
+
+        <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-100 mb-8 chart-container">
+            <div class="flex justify-between items-center mb-4">
+                <h3 class="text-lg font-semibold text-gray-900 flex items-center">
+                    <i class="fas fa-dollar-sign mr-2 text-blue-500"></i> Revenue Projection
+                </h3>
+                <div class="flex items-center space-x-4">
+                    <div class="flex items-center">
+                        <div class="w-3 h-3 rounded-full bg-green-500 mr-2"></div>
+                        <span class="text-sm text-gray-600">Revenue</span>
+                    </div>
+                    <div class="flex items-center">
+                        <div class="w-3 h-3 rounded-full bg-green-200 mr-2"></div>
+                        <span class="text-sm text-gray-600">Confidence</span>
+                    </div>
+                </div>
+            </div>
+            <div id="areaChart" class="h-80"></div>
+        </div>
+
+        <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
+            <h3 class="text-lg font-semibold text-gray-900 mb-4 flex items-center">
+                <i class="fas fa-table mr-2 text-blue-500"></i> Forecast Data
+            </h3>
+            <div class="overflow-x-auto">
+                <table class="min-w-full divide-y divide-gray-200" id="forecastTable">
+                    <thead class="bg-gray-50">
+                        <tr>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                Period</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                Units</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                Revenue</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                Growth</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                Confidence</th>
+                        </tr>
+                    </thead>
+                    <tbody class="bg-white divide-y divide-gray-200" id="forecastTableBody">
+                        <!-- Data will be inserted here -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Enhanced historical data with more months and realistic patterns
+        const historicalData = {
+            A: [120, 135, 125, 145, 140, 160, 155, 170, 165, 180, 175, 190],
+            B: [85, 90, 88, 92, 95, 100, 98, 105, 102, 108, 110, 115],
+            C: [65, 70, 68, 75, 80, 85, 82, 88, 90, 95, 92, 100]
+        };
+
+        const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+
+        // More sophisticated forecasting algorithm
+        const movingAverageForecast = (data, horizon, growthRate, seasonal, trend) => {
+            const windowSize = 3;
+            const forecasted = [];
+            let currentData = [...data];
+            const growthFactor = 1 + (growthRate / 100);
+
+            for (let i = 0; i < horizon; i++) {
+                const window = currentData.slice(-windowSize);
+                let avg = window.reduce((a, b) => a + b, 0) / window.length;
+
+                // Apply growth rate
+                avg = avg * growthFactor;
+
+                // Apply seasonality (simulated with sine wave)
+                if (seasonal) {
+                    const seasonalFactor = 1 + 0.15 * Math.sin((i + data.length) * Math.PI / 6);
+                    avg = avg * seasonalFactor;
+                }
+
+                // Apply trend (if enabled)
+                if (trend) {
+                    const trendFactor = 1 + (0.01 * i);
+                    avg = avg * trendFactor;
+                }
+
+                forecasted.push(Math.round(avg));
+                currentData.push(avg);
+            }
+            return forecasted;
+        };
+
+        const getForecastMonths = (n) => {
+            const future = [];
+            const currentDate = new Date();
+            for (let i = 0; i < n; i++) {
+                const date = new Date(currentDate);
+                date.setMonth(currentDate.getMonth() + i + 1);
+                future.push(date.toLocaleString('default', { month: 'short' }) + " '" + date.getFullYear().toString().slice(-2));
+            }
+            return future;
+        };
+
+        // Format numbers with commas
+        const formatNumber = (num) => {
+            return num.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+        };
+
+        // Generate random confidence data
+        const generateConfidence = (value) => {
+            const variation = value * 0.1 * (1 + Math.random() * 0.2);
+            return {
+                lower: Math.round(value - variation),
+                upper: Math.round(value + variation)
+            };
+        };
+
+        // Calculate growth percentage
+        const calculateGrowth = (current, previous) => {
+            if (!previous || previous === 0) return 'N/A';
+            const growth = ((current - previous) / previous) * 100;
+            return growth.toFixed(1) + '%';
+        };
+
+        // Show loading state
+        const showLoading = (show) => {
+            const charts = ['lineChart', 'barChart', 'areaChart'];
+            charts.forEach(id => {
+                const element = document.getElementById(id);
+                if (show) {
+                    element.classList.add('loading');
+                } else {
+                    element.classList.remove('loading');
+                }
+            });
+        };
+
+        // Render data table
+        const renderDataTable = (forecasted, forecastMonths) => {
+            const tableBody = document.getElementById('forecastTableBody');
+            tableBody.innerHTML = '';
+
+            let previousValue = null;
+            const revenueData = forecasted.map(v => v * 10);
+
+            forecasted.forEach((value, i) => {
+                const row = document.createElement('tr');
+                row.className = i % 2 === 0 ? 'bg-white' : 'bg-gray-50';
+
+                const confidence = generateConfidence(revenueData[i]);
+                const growth = calculateGrowth(value, previousValue || historicalData[document.getElementById('productSelect').value].slice(-1)[0]);
+
+                row.innerHTML = `
+          <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">${forecastMonths[i]}</td>
+          <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${formatNumber(value)}</td>
+          <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">$${formatNumber(revenueData[i])}</td>
+          <td class="px-6 py-4 whitespace-nowrap text-sm ${growth.includes('-') ? 'text-red-500' : 'text-green-500'}">${growth}</td>
+          <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">$${formatNumber(confidence.lower)} - $${formatNumber(confidence.upper)}</td>
+        `;
+
+                tableBody.appendChild(row);
+                previousValue = value;
+            });
+        };
+
+        // Render all charts
+        const renderCharts = () => {
+            showLoading(true);
+
+            // Small delay to simulate processing and show loading state
+            setTimeout(() => {
+                const product = document.getElementById("productSelect").value;
+                const horizon = parseInt(document.getElementById("horizonSlider").value);
+                const growthRate = parseFloat(document.getElementById("growthInput").value);
+                const seasonal = document.getElementById("seasonalCheck").checked;
+                const trend = document.getElementById("trendCheck").checked;
+
+                document.getElementById("horizonValue").innerText = horizon + (horizon === 1 ? " month" : " months");
+
+                const history = historicalData[product];
+                const forecastMonths = getForecastMonths(horizon);
+                const forecasted = movingAverageForecast(history, horizon, growthRate, seasonal, trend);
+
+                // Line Chart
+                Plotly.newPlot("lineChart", [
+                    {
+                        x: months.slice(-12),
+                        y: history.slice(-12),
+                        mode: 'lines+markers',
+                        name: 'Historical',
+                        line: { color: '#3b82f6', width: 3 },
+                        marker: { size: 8 }
+                    },
+                    {
+                        x: forecastMonths,
+                        y: forecasted,
+                        mode: 'lines+markers',
+                        name: 'Forecasted',
+                        line: { color: '#f97316', width: 3, dash: 'dot' },
+                        marker: { size: 8, symbol: 'diamond' }
+                    }
+                ], {
+                    title: false,
+                    xaxis: { title: 'Timeline', showgrid: false },
+                    yaxis: { title: 'Units Sold', showgrid: true, gridcolor: '#f3f4f6' },
+                    hovermode: 'x unified',
+                    plot_bgcolor: 'rgba(0,0,0,0)',
+                    paper_bgcolor: 'rgba(0,0,0,0)',
+                    margin: { t: 0 },
+                    legend: { orientation: 'h', y: 1.1 }
+                }, { responsive: true });
+
+                // Bar Chart (Product Comparison)
+                const products = ["A", "B", "C"];
+                const productNames = ["Premium", "Standard", "Budget"];
+                const totals = products.map(p =>
+                    movingAverageForecast(historicalData[p], horizon, growthRate, seasonal, trend)
+                        .reduce((sum, val) => sum + val, 0)
+                );
+
+                Plotly.newPlot("barChart", [
+                    {
+                        x: productNames,
+                        y: totals,
+                        type: 'bar',
+                        marker: {
+                            color: ['#60a5fa', '#34d399', '#fbbf24'],
+                            line: { width: 2, color: '#fff' }
+                        },
+                        text: totals.map(v => formatNumber(v)),
+                        textposition: 'auto'
+                    }
+                ], {
+                    title: false,
+                    yaxis: { title: 'Total Forecasted Units', showgrid: false },
+                    xaxis: { title: 'Product Line' },
+                    hovermode: 'closest',
+                    plot_bgcolor: 'rgba(0,0,0,0)',
+                    paper_bgcolor: 'rgba(0,0,0,0)',
+                    margin: { t: 0 }
+                }, { responsive: true });
+
+                // Area Chart (Revenue Projection)
+                const revenue = forecasted.map(v => v * 10);
+                const lower = revenue.map(v => v * 0.85);
+                const upper = revenue.map(v => v * 1.15);
+
+                Plotly.newPlot("areaChart", [
+                    {
+                        x: forecastMonths,
+                        y: upper,
+                        mode: 'lines',
+                        line: { width: 0 },
+                        showlegend: false,
+                        hoverinfo: 'none'
+                    },
+                    {
+                        x: forecastMonths,
+                        y: lower,
+                        fill: 'tonexty',
+                        fillcolor: 'rgba(34,197,94,0.2)',
+                        line: { width: 0 },
+                        name: 'Confidence Interval',
+                        hoverinfo: 'none'
+                    },
+                    {
+                        x: forecastMonths,
+                        y: revenue,
+                        mode: 'lines+markers',
+                        name: 'Revenue Forecast',
+                        line: { color: '#22c55e', width: 3 },
+                        marker: { size: 8 },
+                        hovertemplate: '%{y:$,.0f}<extra></extra>'
+                    }
+                ], {
+                    title: false,
+                    yaxis: {
+                        title: 'Revenue ($)',
+                        showgrid: true,
+                        gridcolor: '#f3f4f6',
+                        tickprefix: '$',
+                        tickformat: ',.0f'
+                    },
+                    xaxis: { title: 'Forecast Period', showgrid: false },
+                    hovermode: 'x unified',
+                    plot_bgcolor: 'rgba(0,0,0,0)',
+                    paper_bgcolor: 'rgba(0,0,0,0)',
+                    margin: { t: 0 },
+                    showlegend: false
+                }, { responsive: true });
+
+                // Render data table
+                renderDataTable(forecasted, forecastMonths);
+
+                showLoading(false);
+            }, 500);
+        };
+
+        // Export functionality
+        document.getElementById('exportBtn').addEventListener('click', () => {
+            const product = document.getElementById("productSelect").value;
+            const horizon = parseInt(document.getElementById("horizonSlider").value);
+            const growthRate = parseFloat(document.getElementById("growthInput").value);
+
+            const data = {
+                product,
+                horizon,
+                growthRate,
+                timestamp: new Date().toISOString()
+            };
+
+            alert(`Exporting forecast data for ${product} (${horizon} months at ${growthRate}% growth)`);
+            // In a real app, this would generate a CSV/PDF or call an API
+        });
+
+        // Chart view toggle buttons
+        document.querySelectorAll('.chart-action-btn').forEach(btn => {
+            btn.addEventListener('click', function () {
+                const chartId = this.getAttribute('data-chart');
+                const container = this.closest('.chart-container');
+
+                // Remove active class from all buttons in this container
+                container.querySelectorAll('.chart-action-btn').forEach(b => {
+                    b.classList.remove('active', 'bg-blue-100', 'text-blue-600');
+                    b.classList.add('text-gray-500');
+                });
+
+                // Add active class to clicked button
+                this.classList.add('active', 'bg-blue-100', 'text-blue-600');
+                this.classList.remove('text-gray-500');
+
+                // Here you would switch chart views in a real implementation
+                console.log(`Switching to ${chartId} view`);
+            });
+        });
+
+        // Initialize with event listeners
+        document.querySelectorAll("select, input").forEach(el => {
+            el.addEventListener("input", renderCharts);
+            el.addEventListener("change", renderCharts);
+        });
+
+        // Initialize tooltips
+        document.querySelectorAll('.tooltip').forEach(el => {
+            el.addEventListener('mouseenter', function () {
+                this.querySelector('.tooltiptext').style.visibility = 'visible';
+                this.querySelector('.tooltiptext').style.opacity = '1';
+            });
+            el.addEventListener('mouseleave', function () {
+                this.querySelector('.tooltiptext').style.visibility = 'hidden';
+                this.querySelector('.tooltiptext').style.opacity = '0';
+            });
+        });
+
+        // Initial render
+        renderCharts();
+    </script>
+</body>
+
+</html>

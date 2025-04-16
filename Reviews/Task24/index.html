@@ -1,0 +1,1136 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BookHaven - Your Online Bookstore</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <style>
+        /* Global Styles */
+        :root {
+            --primary-color: #4a6fa5;
+            --secondary-color: #166088;
+            --accent-color: #4fc3f7;
+            --light-color: #f8f9fa;
+            --dark-color: #343a40;
+            --success-color: #28a745;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        body {
+            background-color: #f5f5f5;
+            color: #333;
+            line-height: 1.6;
+        }
+
+        a {
+            text-decoration: none;
+            color: var(--primary-color);
+        }
+
+        .container {
+            width: 100%;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 15px;
+        }
+
+        .btn {
+            display: inline-block;
+            background: var(--primary-color);
+            color: #fff;
+            padding: 8px 16px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: all 0.3s ease;
+        }
+
+        .btn:hover {
+            background: var(--secondary-color);
+            transform: translateY(-2px);
+        }
+
+        .btn-outline {
+            background: transparent;
+            border: 1px solid var(--primary-color);
+            color: var(--primary-color);
+        }
+
+        .btn-outline:hover {
+            background: var(--primary-color);
+            color: #fff;
+        }
+
+        /* Header Styles */
+        header {
+            background-color: #fff;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        .header-container {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 15px 0;
+        }
+
+        .logo {
+            font-size: 24px;
+            font-weight: bold;
+            color: var(--primary-color);
+            display: flex;
+            align-items: center;
+        }
+
+        .logo i {
+            margin-right: 10px;
+            color: var(--accent-color);
+        }
+
+        .search-bar {
+            flex-grow: 1;
+            margin: 0 20px;
+            position: relative;
+        }
+
+        .search-bar input {
+            width: 100%;
+            padding: 10px 15px;
+            border: 1px solid #ddd;
+            border-radius: 25px;
+            font-size: 14px;
+            outline: none;
+            transition: all 0.3s ease;
+        }
+
+        .search-bar input:focus {
+            border-color: var(--accent-color);
+            box-shadow: 0 0 5px rgba(79, 195, 247, 0.3);
+        }
+
+        .search-bar button {
+            position: absolute;
+            right: 10px;
+            top: 50%;
+            transform: translateY(-50%);
+            background: none;
+            border: none;
+            color: var(--primary-color);
+            cursor: pointer;
+        }
+
+        .nav-links {
+            display: flex;
+            align-items: center;
+        }
+
+        .nav-links a {
+            margin-left: 20px;
+            color: var(--dark-color);
+            font-size: 14px;
+            position: relative;
+        }
+
+        .nav-links a:hover {
+            color: var(--primary-color);
+        }
+
+        .nav-links .wishlist-count {
+            position: absolute;
+            top: -8px;
+            right: -8px;
+            background-color: var(--accent-color);
+            color: white;
+            border-radius: 50%;
+            width: 16px;
+            height: 16px;
+            font-size: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        /* Wishlist Dropdown */
+        .wishlist {
+            position: relative;
+        }
+
+        .wishlist-dropdown {
+            display: none;
+            position: absolute;
+            top: 100%;
+            right: 0;
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+            min-width: 300px;
+            max-height: 400px;
+            overflow-y: auto;
+            z-index: 10;
+            padding: 15px;
+        }
+
+        .wishlist:hover .wishlist-dropdown {
+            display: block;
+        }
+
+        .wishlist-item {
+            display: flex;
+            align-items: center;
+            padding: 10px 0;
+            border-bottom: 1px solid #eee;
+        }
+
+        .wishlist-item:last-child {
+            border-bottom: none;
+        }
+
+        .wishlist-item img {
+            width: 50px;
+            height: 75px;
+            object-fit: cover;
+            margin-right: 15px;
+            border-radius: 4px;
+        }
+
+        .wishlist-item-info h4 {
+            font-size: 14px;
+            color: var(--dark-color);
+            margin-bottom: 5px;
+        }
+
+        .wishlist-item-info p {
+            font-size: 12px;
+            color: #666;
+        }
+
+        .empty-wishlist {
+            text-align: center;
+            color: #666;
+            font-size: 14px;
+            padding: 20px 0;
+        }
+
+        .mobile-menu-btn {
+            display: none;
+            background: none;
+            border: none;
+            font-size: 24px;
+            color: var(--dark-color);
+            cursor: pointer;
+        }
+
+        /* Hero Carousel */
+        .hero {
+            margin: 20px 0;
+            position: relative;
+            overflow: hidden;
+            border-radius: 8px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+        }
+
+        .carousel {
+            display: flex;
+            transition: transform 0.5s ease;
+        }
+
+        .carousel-slide {
+            min-width: 100%;
+            position: relative;
+        }
+
+        .carousel-slide img {
+            width: 100%;
+            height: 400px;
+            object-fit: cover;
+        }
+
+        .slide-content {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: linear-gradient(to top, rgba(0, 0, 0, 0.8), transparent);
+            color: white;
+            padding: 30px;
+        }
+
+        .slide-content h2 {
+            font-size: 28px;
+            margin-bottom: 10px;
+        }
+
+        .slide-content p {
+            margin-bottom: 15px;
+            max-width: 600px;
+        }
+
+        .carousel-nav {
+            position: absolute;
+            top: 50%;
+            width: 100%;
+            display: flex;
+            justify-content: space-between;
+            transform: translateY(-50%);
+            padding: 0 15px;
+        }
+
+        .carousel-nav button {
+            background: rgba(255, 255, 255, 0.7);
+            border: none;
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--dark-color);
+            font-size: 20px;
+            transition: all 0.3s ease;
+        }
+
+        .carousel-nav button:hover {
+            background: rgba(255, 255, 255, 0.9);
+        }
+
+        .carousel-dots {
+            position: absolute;
+            bottom: 15px;
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+        }
+
+        .carousel-dots button {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            border: none;
+            background: rgba(255, 255, 255, 0.5);
+            margin: 0 5px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .carousel-dots button.active {
+            background: white;
+            transform: scale(1.2);
+        }
+
+        /* Categories Section */
+        .section-title {
+            font-size: 24px;
+            margin: 30px 0 20px;
+            color: var(--dark-color);
+            position: relative;
+            padding-bottom: 10px;
+        }
+
+        .section-title::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 60px;
+            height: 3px;
+            background: var(--accent-color);
+        }
+
+        .categories-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin-bottom: 40px;
+        }
+
+        .category-card {
+            background: white;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 3px 10px rgba(0, 0, 0, 0.1);
+            transition: all 0.3s ease;
+            display: flex;
+            flex-direction: column;
+            min-height: 320px;
+            /* Ensure consistent height */
+        }
+
+        .category-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+        }
+
+        .category-card img {
+            width: 100%;
+            height: 180px;
+            object-fit: cover;
+        }
+
+        .category-info {
+            padding: 15px;
+            flex-grow: 1;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+        }
+
+        .category-info h3 {
+            margin-bottom: 10px;
+            color: var(--dark-color);
+            font-size: 18px;
+        }
+
+        .category-info p {
+            color: #666;
+            font-size: 14px;
+            margin-bottom: 15px;
+            flex-grow: 1;
+        }
+
+        .category-info .btn {
+            align-self: flex-start;
+            padding: 8px 14px;
+            font-size: 14px;
+            border-radius: 4px;
+            text-decoration: none;
+        }
+
+        /* Book Cards */
+        .books-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 20px;
+            margin-bottom: 40px;
+        }
+
+        .book-card {
+            background: white;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 3px 10px rgba(0, 0, 0, 0.1);
+            transition: all 0.3s ease;
+            display: flex;
+            flex-direction: column;
+            min-height: 400px;
+            /* Consistent height for books */
+        }
+
+        .book-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+        }
+
+        .book-card img {
+            width: 100%;
+            height: 220px;
+            object-fit: cover;
+        }
+
+        .book-info {
+            padding: 15px;
+            flex-grow: 1;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .book-info h3 {
+            font-size: 16px;
+            margin-bottom: 8px;
+            color: var(--dark-color);
+            line-height: 1.4;
+            min-height: 48px;
+            /* Ensure title consistency */
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+        }
+
+        .book-info .author {
+            color: #666;
+            font-size: 14px;
+            margin-bottom: 8px;
+        }
+
+        .book-info .price {
+            font-weight: bold;
+            color: var(--primary-color);
+            margin-bottom: 10px;
+        }
+
+        .book-actions {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding-top: 10px;
+            border-top: 1px solid #eee;
+            margin-top: auto;
+        }
+
+        /* Rating System */
+        .rating {
+            display: flex;
+            align-items: center;
+        }
+
+        .rating .fa-star {
+            color: #e4e5e9;
+            cursor: pointer;
+            font-size: 14px;
+            transition: color 0.2s;
+            margin-right: 2px;
+        }
+
+        .rating .fas.fa-star {
+            color: #ffc107;
+        }
+
+        .rating-text {
+            margin-left: 5px;
+            font-size: 12px;
+            color: #666;
+            min-width: 30px;
+        }
+
+        .review-count {
+            margin-left: 3px;
+            font-size: 12px;
+            color: #666;
+            white-space: nowrap;
+        }
+
+        .wishlist-btn {
+            background: none;
+            border: none;
+            color: #ccc;
+            cursor: pointer;
+            font-size: 20px;
+            transition: all 0.3s ease;
+        }
+
+        .wishlist-btn.active {
+            color: #ff4081;
+        }
+
+        .wishlist-btn:hover {
+            transform: scale(1.2);
+        }
+
+        /* Footer */
+        footer {
+            background: var(--dark-color);
+            color: white;
+            padding: 40px 0 20px;
+            margin-top: 50px;
+        }
+
+        .footer-content {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 30px;
+            margin-bottom: 30px;
+        }
+
+        .footer-column h3 {
+            font-size: 18px;
+            margin-bottom: 20px;
+            position: relative;
+            padding-bottom: 10px;
+        }
+
+        .footer-column h3::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 40px;
+            height: 2px;
+            background: var(--accent-color);
+        }
+
+        .footer-column ul {
+            list-style: none;
+        }
+
+        .footer-column ul li {
+            margin-bottom: 10px;
+        }
+
+        .footer-column ul li a {
+            color: #ddd;
+            transition: all 0.3s ease;
+        }
+
+        .footer-column ul li a:hover {
+            color: var(--accent-color);
+            padding-left: 5px;
+        }
+
+        .social-links {
+            display: flex;
+            gap: 15px;
+            margin-top: 15px;
+        }
+
+        .social-links a {
+            color: white;
+            background: rgba(255, 255, 255, 0.1);
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s ease;
+        }
+
+        .social-links a:hover {
+            background: var(--accent-color);
+            transform: translateY(-3px);
+        }
+
+        .footer-bottom {
+            text-align: center;
+            padding-top: 20px;
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+            font-size: 14px;
+            color: #aaa;
+        }
+
+        /* Mobile Styles */
+        @media (max-width: 768px) {
+            .header-container {
+                flex-wrap: wrap;
+            }
+
+            .logo {
+                order: 1;
+            }
+
+            .mobile-menu-btn {
+                display: block;
+                order: 2;
+            }
+
+            .nav-links {
+                display: none;
+                order: 4;
+                width: 100%;
+                flex-direction: column;
+                margin-top: 15px;
+            }
+
+            .nav-links.active {
+                display: flex;
+            }
+
+            .nav-links a {
+                margin: 10px 0;
+            }
+
+            .search-bar {
+                order: 3;
+                width: 100%;
+                margin: 15px 0;
+            }
+
+            .carousel-slide img {
+                height: 300px;
+            }
+
+            .slide-content {
+                padding: 20px;
+            }
+
+            .slide-content h2 {
+                font-size: 22px;
+            }
+
+            .categories-grid {
+                grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            }
+
+            .books-grid {
+                grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            }
+
+            .book-card img {
+                height: 200px;
+            }
+
+            .wishlist-dropdown {
+                min-width: 250px;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .carousel-slide img {
+                height: 200px;
+            }
+
+            .slide-content h2 {
+                font-size: 18px;
+            }
+
+            .categories-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .books-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .book-card img {
+                height: 180px;
+            }
+
+            .wishlist-dropdown {
+                min-width: 200px;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <!-- Header with Search -->
+    <header>
+        <div class="container header-container">
+            <a href="#" class="logo">
+                <i class="fas fa-book-open"></i>
+                BookHaven
+            </a>
+            <div class="search-bar">
+                <input type="text" placeholder="Search for books, authors, genres...">
+                <button type="submit"><i class="fas fa-search"></i></button>
+            </div>
+            <button class="mobile-menu-btn" id="mobileMenuBtn">
+                <i class="fas fa-bars"></i>
+            </button>
+            <div class="nav-links" id="navLinks">
+                <a href="#"><i class="fas fa-home"></i> Home</a>
+                <a href="#"><i class="fas fa-list"></i> Categories</a>
+                <a href="#"><i class="fas fa-fire"></i> Bestsellers</a>
+                <a href="#" class="wishlist">
+                    <i class="fas fa-heart"></i> Wishlist
+                    <span class="wishlist-count">3</span>
+                    <div class="wishlist-dropdown">
+                        <div class="wishlist-items"></div>
+                        <p class="empty-wishlist" style="display: none;">Your wishlist is empty</p>
+                    </div>
+                </a>
+                <a href="#"><i class="fas fa-user"></i> Account</a>
+            </div>
+        </div>
+    </header>
+
+    <!-- Hero Carousel -->
+    <section class="hero">
+        <div class="carousel" id="carousel">
+            <div class="carousel-slide">
+                <img src="https://images.unsplash.com/photo-1544947950-fa07a98d237f?ixlib=rb-1.2.1&auto=format&fit=crop&w=1350&q=80"
+                    alt="Featured Book 1">
+                <div class="slide-content">
+                    <h2>Summer Reading Collection</h2>
+                    <p>Discover our handpicked selection of books perfect for your summer vacation.</p>
+                    <a href="#" class="btn">Explore Now</a>
+                </div>
+            </div>
+            <div class="carousel-slide">
+                <img src="https://images.unsplash.com/photo-1507842217343-583bb7270b66?ixlib=rb-1.2.1&auto=format&fit=crop&w=1350&q=80"
+                    alt="Featured Book 2">
+                <div class="slide-content">
+                    <h2>New Releases This Week</h2>
+                    <p>Get the hottest new books from your favorite authors before they sell out.</p>
+                    <a href="#" class="btn">Shop New Releases</a>
+                </div>
+            </div>
+            <div class="carousel-slide">
+                <img src="https://images.unsplash.com/photo-1589998059171-988d887df646?ixlib=rb-1.2.1&auto=format&fit=crop&w=1350&q=80"
+                    alt="Featured Book 3">
+                <div class="slide-content">
+                    <h2>Limited Time Offers</h2>
+                    <p>Save up to 50% on selected titles. Offer ends soon!</p>
+                    <a href="#" class="btn">View Deals</a>
+                </div>
+            </div>
+        </div>
+        <div class="carousel-nav">
+            <button id="prevBtn"><i class="fas fa-chevron-left"></i></button>
+            <button id="nextBtn"><i class="fas fa-chevron-right"></i></button>
+        </div>
+        <div class="carousel-dots">
+            <button class="active" data-index="0"></button>
+            <button data-index="1"></button>
+            <button data-index="2"></button>
+        </div>
+    </section>
+
+    <!-- Categories Section -->
+    <section class="container">
+        <h2 class="section-title">Browse Categories</h2>
+        <div class="categories-grid">
+            <div class="category-card">
+                <img src="https://images.unsplash.com/photo-1535905557558-afc4877a26fc?ixlib=rb-1.2.1&auto=format&fit=crop&w=1350&q=80"
+                    alt="Fiction">
+                <div class="category-info">
+                    <h3>Fiction</h3>
+                    <p>Explore imaginative worlds and compelling stories</p>
+                    <a href="#" class="btn btn-outline">View Books</a>
+                </div>
+            </div>
+            <div class="category-card">
+                <img src="https://images.unsplash.com/photo-1456513080510-7bf3a84b82f8?ixlib=rb-1.2.1&auto=format&fit=crop&w=1350&q=80"
+                    alt="Science">
+                <div class="category-info">
+                    <h3>Science</h3>
+                    <p>Discover the wonders of the universe</p>
+                    <a href="#" class="btn btn-outline">View Books</a>
+                </div>
+            </div>
+            <div class="category-card">
+                <img src="https://images.unsplash.com/photo-1551029506-0807df4e2031?ixlib=rb-1.2.1&auto=format&fit=crop&w=1350&q=80"
+                    alt="History">
+                <div class="category-info">
+                    <h3>History</h3>
+                    <p>Learn from the past to understand the present</p>
+                    <a href="#" class="btn btn-outline">View Books</a>
+                </div>
+            </div>
+            <div class="category-card">
+                <img src="https://images.unsplash.com/photo-1544717305-2782549b5136?ixlib=rb-1.2.1&auto=format&fit=crop&w=1350&q=80"
+                    alt="Biography">
+                <div class="category-info">
+                    <h3>Biography</h3>
+                    <p>Inspiring stories of remarkable lives</p>
+                    <a href="#" class="btn btn-outline">View Books</a>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Featured Books Section -->
+    <section class="container">
+        <h2 class="section-title">Featured Books</h2>
+        <div class="books-grid">
+            <div class="book-card">
+                <img src="https://images.unsplash.com/photo-1541963463532-d68292c34b19?ixlib=rb-1.2.1&auto=format&fit=crop&w=634&q=80"
+                    alt="The Silent Patient">
+                <div class="book-info">
+                    <h3>The Silent Patient</h3>
+                    <p class="author">Alex Michaelides</p>
+                    <p class="price">$12.99</p>
+                    <div class="book-actions">
+                        <div class="rating" data-rating="0">
+                            <i class="far fa-star" data-value="1"></i>
+                            <i class="far fa-star" data-value="2"></i>
+                            <i class="far fa-star" data-value="3"></i>
+                            <i class="far fa-star" data-value="4"></i>
+                            <i class="far fa-star" data-value="5"></i>
+                            <span class="rating-text">0.0</span>
+                            <span class="review-count">(421)</span>
+                        </div>
+                        <button class="wishlist-btn" data-book-id="1">
+                            <i class="far fa-heart"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+            <div class="book-card">
+                <img src="https://images.unsplash.com/photo-1544947950-fa07a98d237f?ixlib=rb-1.2.1&auto=format&fit=crop&w=634&q=80"
+                    alt="Where the Crawdads Sing">
+                <div class="book-info">
+                    <h3>Where the Crawdads Sing</h3>
+                    <p class="author">Delia Owens</p>
+                    <p class="price">$14.99</p>
+                    <div class="book-actions">
+                        <div class="rating" data-rating="0">
+                            <i class="far fa-star" data-value="1"></i>
+                            <i class="far fa-star" data-value="2"></i>
+                            <i class="far fa-star" data-value="3"></i>
+                            <i class="far fa-star" data-value="4"></i>
+                            <i class="far fa-star" data-value="5"></i>
+                            <span class="rating-text">0.0</span>
+                            <span class="review-count">(421)</span>
+                        </div>
+                        <button class="wishlist-btn" data-book-id="2">
+                            <i class="far fa-heart"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+            <div class="book-card">
+                <img src="https://images.unsplash.com/photo-1589998059171-988d887df646?ixlib=rb-1.2.1&auto=format&fit=crop&w=634&q=80"
+                    alt="Educated">
+                <div class="book-info">
+                    <h3>Educated</h3>
+                    <p class="author">Tara Westover</p>
+                    <p class="price">$13.49</p>
+                    <div class="book-actions">
+                        <div class="rating" data-rating="0">
+                            <i class="far fa-star" data-value="1"></i>
+                            <i class="far fa-star" data-value="2"></i>
+                            <i class="far fa-star" data-value="3"></i>
+                            <i class="far fa-star" data-value="4"></i>
+                            <i class="far fa-star" data-value="5"></i>
+                            <span class="rating-text">0.0</span>
+                            <span class="review-count">(421)</span>
+                        </div>
+                        <button class="wishlist-btn active" data-book-id="3">
+                            <i class="fas fa-heart"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+            <div class="book-card">
+                <img src="https://images.unsplash.com/photo-1531346878377-a5be20888e57?ixlib=rb-1.2.1&auto=format&fit=crop&w=634&q=80"
+                    alt="The Vanishing Half">
+                <div class="book-info">
+                    <h3>The Vanishing Half</h3>
+                    <p class="author">Brit Bennett</p>
+                    <p class="price">$15.99</p>
+                    <div class="book-actions">
+                        <div class="rating" data-rating="0">
+                            <i class="far fa-star" data-value="1"></i>
+                            <i class="far fa-star" data-value="2"></i>
+                            <i class="far fa-star" data-value="3"></i>
+                            <i class="far fa-star" data-value="4"></i>
+                            <i class="far fa-star" data-value="5"></i>
+                            <span class="rating-text">0.0</span>
+                            <span class="review-count">(421)</span>
+                        </div>
+                        <button class="wishlist-btn" data-book-id="4">
+                            <i class="far fa-heart"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer>
+        <div class="container">
+            <div class="footer-content">
+                <div class="footer-column">
+                    <h3>BookHaven</h3>
+                    <p>Your one-stop destination for all your reading needs. Discover new worlds between the pages.</p>
+                    <div class="social-links">
+                        <a href="#"><i class="fab fa-facebook-f"></i></a>
+                        <a href="#"><i class="fab fa-twitter"></i></a>
+                        <a href="#"><i class="fab fa-instagram"></i></a>
+                        <a href="#"><i class="fab fa-pinterest"></i></a>
+                    </div>
+                </div>
+                <div class="footer-column">
+                    <h3>Quick Links</h3>
+                    <ul>
+                        <li><a href="#">Home</a></li>
+                        <li><a href="#">About Us</a></li>
+                        <li><a href="#">Books</a></li>
+                        <li><a href="#">New Releases</a></li>
+                        <li><a href="#">Contact</a></li>
+                    </ul>
+                </div>
+                <div class="footer-column">
+                    <h3>Customer Service</h3>
+                    <ul>
+                        <li><a href="#">Shipping Policy</a></li>
+                        <li><a href="#">Return Policy</a></li>
+                        <li><a href="#">FAQ</a></li>
+                        <li><a href="#">Privacy Policy</a></li>
+                        <li><a href="#">Terms & Conditions</a></li>
+                    </ul>
+                </div>
+                <div class="footer-column">
+                    <h3>Contact Us</h3>
+                    <ul>
+                        <li><i class="fas fa-map-marker-alt"></i> 123 Book Street, Library City</li>
+                        <li><i class="fas fa-phone"></i> (123) 456-7890</li>
+                        <li><i class="fas fa-envelope"></i> info@bookhaven.com</li>
+                    </ul>
+                </div>
+            </div>
+            <div class="footer-bottom">
+                <p>© 2023 BookHaven. All Rights Reserved.</p>
+            </div>
+        </div>
+    </footer>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            // Book data for wishlist display
+            const bookData = {
+                '1': { title: 'The Silent Patient', author: 'Alex Michaelides', image: 'https://images.unsplash.com/photo-1541963463532-d68292c34b19?ixlib=rb-1.2.1&auto=format&fit=crop&w=634&q=80' },
+                '2': { title: 'Where the Crawdads Sing', author: 'Delia Owens', image: 'https://images.unsplash.com/photo-1544947950-fa07a98d237f?ixlib=rb-1.2.1&auto=format&fit=crop&w=634&q=80' },
+                '3': { title: 'Educated', author: 'Tara Westover', image: 'https://images.unsplash.com/photo-1589998059171-988d887df646?ixlib=rb-1.2.1&auto=format&fit=crop&w=634&q=80' },
+                '4': { title: 'The Vanishing Half', author: 'Brit Bennett', image: 'https://images.unsplash.com/photo-1531346878377-a5be20888e57?ixlib=rb-1.2.1&auto=format&fit=crop&w=634&q=80' }
+            };
+
+            // Mobile Menu Toggle
+            const mobileMenuBtn = document.getElementById('mobileMenuBtn');
+            const navLinks = document.getElementById('navLinks');
+
+            mobileMenuBtn.addEventListener('click', () => {
+                navLinks.classList.toggle('active');
+                mobileMenuBtn.classList.toggle('active');
+            });
+
+            // Carousel Functionality
+            const carousel = document.getElementById('carousel');
+            const prevBtn = document.getElementById('prevBtn');
+            const nextBtn = document.getElementById('nextBtn');
+            const dots = document.querySelectorAll('.carousel-dots button');
+            let currentIndex = 0;
+            let carouselInterval;
+
+            function updateCarousel() {
+                carousel.style.transform = `translateX(-${currentIndex * 100}%)`;
+                dots.forEach((dot, index) => {
+                    dot.classList.toggle('active', index === currentIndex);
+                });
+            }
+
+            function nextSlide() {
+                currentIndex = (currentIndex + 1) % dots.length;
+                updateCarousel();
+                resetInterval();
+            }
+
+            function prevSlide() {
+                currentIndex = (currentIndex - 1 + dots.length) % dots.length;
+                updateCarousel();
+                resetInterval();
+            }
+
+            function resetInterval() {
+                clearInterval(carouselInterval);
+                carouselInterval = setInterval(nextSlide, 5000);
+            }
+
+            prevBtn.addEventListener('click', prevSlide);
+            nextBtn.addEventListener('click', nextSlide);
+
+            dots.forEach((dot, index) => {
+                dot.addEventListener('click', () => {
+                    currentIndex = index;
+                    updateCarousel();
+                    resetInterval();
+                });
+            });
+
+            resetInterval();
+
+            carousel.parentElement.addEventListener('mouseenter', () => clearInterval(carouselInterval));
+            carousel.parentElement.addEventListener('mouseleave', resetInterval);
+
+            // Wishlist Functionality with LocalStorage
+            const wishlistButtons = document.querySelectorAll('.wishlist-btn');
+            const wishlistCount = document.querySelector('.wishlist-count');
+            const wishlistItemsContainer = document.querySelector('.wishlist-items');
+            const emptyWishlistMessage = document.querySelector('.empty-wishlist');
+            let wishlistItems = new Set(JSON.parse(localStorage.getItem('wishlist')) || []);
+
+            function updateWishlistDisplay() {
+                wishlistCount.textContent = wishlistItems.size;
+                wishlistButtons.forEach(button => {
+                    const bookId = button.dataset.bookId;
+                    button.classList.toggle('active', wishlistItems.has(bookId));
+                    button.innerHTML = wishlistItems.has(bookId)
+                        ? '<i class="fas fa-heart"></i>'
+                        : '<i class="far fa-heart"></i>';
+                });
+                updateWishlistDropdown();
+            }
+
+            function updateWishlistDropdown() {
+                wishlistItemsContainer.innerHTML = '';
+                if (wishlistItems.size === 0) {
+                    emptyWishlistMessage.style.display = 'block';
+                } else {
+                    emptyWishlistMessage.style.display = 'none';
+                    wishlistItems.forEach(bookId => {
+                        const book = bookData[bookId];
+                        if (book) {
+                            const item = document.createElement('div');
+                            item.className = 'wishlist-item';
+                            item.innerHTML = `
+                                <img src="${book.image}" alt="${book.title}">
+                                <div class="wishlist-item-info">
+                                    <h4>${book.title}</h4>
+                                    <p>${book.author}</p>
+                                </div>
+                            `;
+                            wishlistItemsContainer.appendChild(item);
+                        }
+                    });
+                }
+            }
+
+            function toggleWishlist(bookId) {
+                wishlistItems.has(bookId)
+                    ? wishlistItems.delete(bookId)
+                    : wishlistItems.add(bookId);
+                localStorage.setItem('wishlist', JSON.stringify([...wishlistItems]));
+                updateWishlistDisplay();
+            }
+
+            wishlistButtons.forEach(button => {
+                button.addEventListener('click', () => toggleWishlist(button.dataset.bookId));
+            });
+
+            // Rating System with LocalStorage
+            document.querySelectorAll('.rating').forEach(ratingEl => {
+                const bookId = ratingEl.closest('.book-card').querySelector('.wishlist-btn').dataset.bookId;
+                const stars = ratingEl.querySelectorAll('.fa-star');
+                const ratingText = ratingEl.querySelector('.rating-text');
+                const savedRating = localStorage.getItem(`rating-${bookId}`) || 0;
+
+                function updateRatingDisplay(rating) {
+                    stars.forEach((star, index) => {
+                        star.classList.toggle('fas', index < rating);
+                        star.classList.toggle('far', index >= rating);
+                    });
+                    ratingText.textContent = rating.toFixed(1);
+                }
+
+                function saveRating(rating) {
+                    localStorage.setItem(`rating-${bookId}`, rating);
+                    updateRatingDisplay(rating);
+                }
+
+                stars.forEach((star, index) => {
+                    star.addEventListener('click', () => saveRating(index + 1));
+                });
+
+                updateRatingDisplay(parseFloat(savedRating));
+            });
+
+            // Initialize displays
+            updateWishlistDisplay();
+
+            // Add ARIA labels for accessibility
+            document.querySelectorAll('.carousel-nav button').forEach(btn => {
+                btn.setAttribute('aria-label', btn.id.includes('prev') ? 'Previous slide' : 'Next slide');
+            });
+
+            document.querySelectorAll('.carousel-dots button').forEach((dot, index) => {
+                dot.setAttribute('aria-label', `Slide ${index + 1}`);
+            });
+        });
+    </script>
+</body>
+
+</html>

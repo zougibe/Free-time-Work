@@ -1,0 +1,426 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Festival Booth Designer</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <style>
+        body {
+            margin: 0;
+            overflow: hidden;
+        }
+
+        #canvas {
+            width: 100vw;
+            height: 100vh;
+            display: block;
+        }
+
+        #sidebar {
+            transition: transform 0.3s;
+        }
+
+        #score-popup,
+        #invalid-popup {
+            transition: opacity 0.5s;
+        }
+
+        .item-highlight {
+            box-shadow: 0 0 15px rgba(255, 255, 255, 0.8);
+        }
+    </style>
+</head>
+
+<body class="bg-gray-100 dark:bg-gray-900 text-gray-900 dark:text-gray-100">
+    <div class="flex h-screen items-center justify-center bg-gray-200 dark:bg-gray-800">
+        <canvas id="canvas" class="flex-1 h-full"></canvas>
+
+        <!-- Sidebar -->
+        <div id="sidebar"
+            class="fixed sm:top-0 sm:left-0 sm:h-full sm:w-72 w-full bottom-0 bg-white dark:bg-gray-800 shadow-lg p-4 overflow-y-auto hidden sm:block z-40">
+            <h2 class="text-xl font-bold mb-4">Booth Designer</h2>
+
+            <label class="block mb-2 text-sm font-medium">Event Type:</label>
+            <select id="event-type"
+                class="w-full p-2 mb-4 bg-gray-100 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded">
+                <option value="comic-con">Comic Con</option>
+                <option value="music-festival">Music Festival</option>
+                <option value="gaming-expo">Gaming Expo</option>
+            </select>
+
+            <h3 class="text-lg font-semibold mb-2">Items</h3>
+            <div id="items" class="grid gap-2">
+                <div class="flex items-center gap-2 p-2 bg-blue-500 text-white rounded cursor-pointer hover:scale-105 transition"
+                    draggable="true" data-id="poster"><i data-lucide="image"></i> Poster</div>
+                <div class="flex items-center gap-2 p-2 bg-green-500 text-white rounded cursor-pointer hover:scale-105 transition"
+                    draggable="true" data-id="merch-table"><i data-lucide="table"></i> Merch Table</div>
+                <div class="flex items-center gap-2 p-2 bg-purple-500 text-white rounded cursor-pointer hover:scale-105 transition"
+                    draggable="true" data-id="display"><i data-lucide="monitor-smartphone"></i> Interactive Display
+                </div>
+                <div class="flex items-center gap-2 p-2 bg-red-500 text-white rounded cursor-pointer hover:scale-105 transition"
+                    draggable="true" data-id="banner"><i data-lucide="flag"></i> Banner</div>
+                <div class="flex items-center gap-2 p-2 bg-yellow-500 text-white rounded cursor-pointer hover:scale-105 transition"
+                    draggable="true" data-id="seating"><i data-lucide="chair"></i> Seating Area</div>
+                <div class="flex items-center gap-2 p-2 bg-pink-500 text-white rounded cursor-pointer hover:scale-105 transition"
+                    draggable="true" data-id="demo-station"><i data-lucide="gamepad-2"></i> Demo Station</div>
+            </div>
+
+            <div class="grid gap-2 mt-6">
+                <button id="save-design"
+                    class="flex items-center justify-center gap-2 bg-green-600 text-white px-4 py-2 rounded shadow hover:scale-105 transition"><i
+                        data-lucide="save"></i> Save Design</button>
+                <button id="load-design"
+                    class="flex items-center justify-center gap-2 bg-yellow-500 text-white px-4 py-2 rounded shadow hover:scale-105 transition"><i
+                        data-lucide="folder-open"></i> Load Design</button>
+                <button id="snapshot"
+                    class="flex items-center justify-center gap-2 bg-purple-600 text-white px-4 py-2 rounded shadow hover:scale-105 transition"><i
+                        data-lucide="camera"></i> Take Snapshot</button>
+                <button id="toggle-crowd"
+                    class="flex items-center justify-center gap-2 bg-red-600 text-white px-4 py-2 rounded shadow hover:scale-105 transition"><i
+                        data-lucide="users"></i> Toggle Crowd</button>
+                <button id="undo"
+                    class="flex items-center justify-center gap-2 bg-blue-600 text-white px-4 py-2 rounded shadow hover:scale-105 transition"><i
+                        data-lucide="undo"></i> Undo</button>
+                <button id="reset-design"
+                    class="flex items-center justify-center gap-2 bg-gray-500 text-white px-4 py-2 rounded shadow hover:scale-105 transition">
+                    <i data-lucide="trash-2"></i> Reset Design
+                </button>
+            </div>
+
+            <label class="flex items-center gap-3 mt-6 cursor-pointer">
+                <span class="text-sm">Dark Mode</span>
+                <div class="relative">
+                    <input type="checkbox" id="toggle-theme" class="sr-only peer">
+                    <div class="w-12 h-6 bg-gray-300 rounded-full peer-checked:bg-blue-600 transition-colors"></div>
+                    <div
+                        class="absolute top-0.5 left-0.5 w-5 h-5 bg-white rounded-full transition-transform duration-300 transform peer-checked:translate-x-6">
+                    </div>
+                </div>
+            </label>
+        </div>
+    </div>
+
+    <!-- Popups -->
+    <div id="score-popup"
+        class="fixed top-6 left-1/2 transform -translate-x-1/2 bg-blue-600 text-white px-6 py-4 text-lg rounded shadow-lg opacity-0 z-50">
+        <h3 class="font-bold">Visitor Excitement Score</h3>
+        <p id="score-text">0/100</p>
+    </div>
+
+    <div id="invalid-popup"
+        class="fixed top-6 left-1/2 transform -translate-x-1/2 bg-red-600 text-white px-6 py-3 text-lg rounded shadow-lg opacity-0 z-50">
+        Invalid placement
+    </div>
+
+    <script>
+        lucide.createIcons();
+
+        const boothItems = {
+            'poster': { name: 'Poster', color: 0x60a5fa, size: [1, 1, 0.1], excitement: 20, wallOnly: true },
+            'merch-table': { name: 'Merch Table', color: 0x4ade80, size: [2, 0.5, 1], excitement: 30, wallOnly: false },
+            'display': { name: 'Interactive Display', color: 0xc084fc, size: [1.5, 1.5, 0.3], excitement: 40, wallOnly: false },
+            'banner': { name: 'Banner', color: 0xf87171, size: [2, 0.5, 0.1], excitement: 15, wallOnly: true },
+            'seating': { name: 'Seating Area', color: 0xfacc15, size: [2, 0.3, 1.5], excitement: 25, wallOnly: false },
+            'demo-station': { name: 'Demo Station', color: 0xf472b6, size: [1.8, 1, 1.2], excitement: 50, wallOnly: false }
+        };
+
+        const canvas = document.getElementById('canvas');
+        const width = canvas.clientWidth;
+        const height = canvas.clientHeight;
+
+        const scene = new THREE.Scene();
+        const camera = new THREE.PerspectiveCamera(75, width / height, 0.1, 1000);
+        const renderer = new THREE.WebGLRenderer({ canvas: document.getElementById('canvas'), antialias: true });
+        renderer.setSize(width, height);
+        camera.position.set(0, 5, 10);
+        camera.lookAt(0, 0, 0);
+
+        const ambientLight = new THREE.AmbientLight(0xffffff, 0.5);
+        scene.add(ambientLight);
+        const directionalLight = new THREE.DirectionalLight(0xffffff, 0.5);
+        directionalLight.position.set(5, 5, 5);
+        scene.add(directionalLight);
+
+        const textureLoader = new THREE.TextureLoader();
+
+        const floorTexture = textureLoader.load("https://threejs.org/examples/textures/hardwood2_diffuse.jpg");
+        floorTexture.wrapS = THREE.RepeatWrapping;
+        floorTexture.wrapT = THREE.RepeatWrapping;
+        floorTexture.repeat.set(2, 2);
+
+        const wallTextures = {
+            'comic-con': textureLoader.load("https://static.vecteezy.com/system/resources/thumbnails/002/153/150/small_2x/comic-halftone-flat-background-free-vector.jpg"),
+            'music-festival': textureLoader.load("https://i.ibb.co/4gjxzKd2/cartoon-style-musical-notes-background-23-2151056773.jpg"),
+            'gaming-expo': textureLoader.load("https://i.ibb.co/qMXTc9SH/dark-hexagonal-background-with-gradient-color-79603-1409.jpg")
+        };
+
+        const floor = new THREE.Mesh(
+            new THREE.PlaneGeometry(10, 10),
+            new THREE.MeshStandardMaterial({ map: floorTexture })
+        );
+        floor.rotation.x = -Math.PI / 2;
+        scene.add(floor);
+
+        const wallMaterial = new THREE.MeshStandardMaterial({ map: wallTextures['comic-con'] });
+
+        const wall1 = new THREE.Mesh(new THREE.PlaneGeometry(10, 5), wallMaterial);
+        wall1.position.set(0, 2.5, -5);
+        scene.add(wall1);
+
+        const wall2 = new THREE.Mesh(new THREE.PlaneGeometry(10, 5), wallMaterial.clone());
+        wall2.position.set(-5, 2.5, 0);
+        wall2.rotation.y = Math.PI / 2;
+        scene.add(wall2);
+
+        const wall3 = new THREE.Mesh(new THREE.PlaneGeometry(10, 5), wallMaterial.clone());
+        wall3.position.set(5, 2.5, 0);
+        wall3.rotation.y = -Math.PI / 2;
+        scene.add(wall3);
+
+        const placedItems = [];
+        let draggedItemId = null;
+
+        document.querySelectorAll('[draggable=true]').forEach(el => {
+            el.addEventListener('dragstart', e => {
+                draggedItemId = e.target.dataset.id;
+            });
+        });
+
+        // Improved Crowd (Simple Human Shapes)
+        const crowd = [];
+        let crowdVisible = false;
+
+        for (let i = 0; i < 15; i++) {
+            const group = new THREE.Group();
+
+            // Body
+            const body = new THREE.Mesh(
+                new THREE.BoxGeometry(0.3, 0.5, 0.2),
+                new THREE.MeshBasicMaterial({ color: 0x3498db })
+            );
+            body.position.y = 0.25;
+            group.add(body);
+
+            // Head
+            const head = new THREE.Mesh(
+                new THREE.SphereGeometry(0.15, 16, 16),
+                new THREE.MeshBasicMaterial({ color: 0xffdbac })
+            );
+            head.position.y = 0.65;
+            group.add(head);
+
+            // Random position
+            group.position.set(
+                Math.random() * 8 - 4,
+                0,
+                Math.random() * 8 - 4
+            );
+
+            scene.add(group);
+            crowd.push(group);
+            group.visible = false;
+        }
+
+        document.getElementById('toggle-crowd').addEventListener('click', () => {
+            crowdVisible = !crowdVisible;
+            crowd.forEach(person => (person.visible = crowdVisible));
+        });
+
+        const raycaster = new THREE.Raycaster();
+        const mouse = new THREE.Vector2();
+        renderer.domElement.addEventListener('dragover', e => e.preventDefault());
+        renderer.domElement.addEventListener('drop', e => {
+            e.preventDefault();
+            if (!draggedItemId || !boothItems[draggedItemId]) return;
+
+            mouse.x = (e.clientX / window.innerWidth) * 2 - 1;
+            mouse.y = -(e.clientY / window.innerHeight) * 2 + 1;
+            raycaster.setFromCamera(mouse, camera);
+
+            const targets = boothItems[draggedItemId].wallOnly ? [wall1, wall2, wall3] : [floor];
+            const intersects = raycaster.intersectObjects(targets);
+            if (intersects.length > 0) {
+                const point = intersects[0].point;
+                const normal = intersects[0].face.normal;
+                const wall = intersects[0].object;
+                const { size, color, excitement } = boothItems[draggedItemId];
+                const mesh = new THREE.Mesh(
+                    new THREE.BoxGeometry(...size),
+                    new THREE.MeshStandardMaterial({ color })
+                );
+
+                let position = point.clone();
+                let valid = true;
+
+                if (boothItems[draggedItemId].wallOnly) {
+                    const halfWidth = 5 - size[0] / 2;
+                    if (wall === wall1) position.x = Math.max(-halfWidth, Math.min(halfWidth, position.x));
+                    if (wall === wall2) position.z = Math.max(-halfWidth, Math.min(halfWidth, position.z));
+                    if (wall === wall3) position.z = Math.max(-halfWidth, Math.min(halfWidth, position.z));
+
+                    for (const obj of placedItems) {
+                        if (!obj.item.wallOnly) continue;
+                        if (obj.mesh.position.distanceTo(position) < 1.1) valid = false;
+                    }
+                    if (!valid) return showInvalid();
+
+                    mesh.position.copy(position).add(normal.clone().multiplyScalar(0.05));
+                    if (wall === wall1) mesh.rotation.set(0, 0, 0);
+                    else if (wall === wall2) mesh.rotation.set(0, Math.PI / 2, 0);
+                    else if (wall === wall3) mesh.rotation.set(0, -Math.PI / 2, 0);
+                } else {
+                    const clampedX = Math.max(-4.5 + size[0] / 2, Math.min(4.5 - size[0] / 2, position.x));
+                    const clampedZ = Math.max(-4.5 + size[2] / 2, Math.min(4.5 - size[2] / 2, position.z));
+
+                    position.set(clampedX, size[1] / 2, clampedZ);
+                    for (const obj of placedItems) {
+                        if (obj.item.wallOnly) continue;
+                        const dist = obj.mesh.position.distanceTo(position);
+                        const threshold = (size[0] + obj.item.size[0]) / 2;
+                        if (dist < threshold) valid = false;
+                    }
+                    if (!valid) return showInvalid();
+
+                    mesh.position.copy(position);
+                }
+
+                scene.add(mesh);
+                placedItems.push({ mesh, item: boothItems[draggedItemId] });
+                updateExcitementScore();
+            }
+            draggedItemId = null;
+        });
+
+        function updateExcitementScore() {
+            const eventType = document.getElementById('event-type').value;
+            let score = placedItems.reduce((sum, { item }) => {
+                let multiplier = 1;
+                if (eventType === 'comic-con' && item.name === 'Poster') multiplier = 1.5;
+                if (eventType === 'music-festival' && item.name === 'Merch Table') multiplier = 1.5;
+                if (eventType === 'gaming-expo' && item.name === 'Demo Station') multiplier = 1.5;
+
+                // Bonus for grouped items (encourages clustering)
+                const nearbyItems = placedItems.filter(obj =>
+                    !obj.item.wallOnly &&
+                    obj.mesh.position.distanceTo(item.mesh?.position || 0) < 2
+                ).length;
+
+                return sum + (item.excitement * multiplier) + (nearbyItems * 5);
+            }, 0);
+
+            score = Math.min(Math.round(score), 100);
+            const popup = document.getElementById('score-popup');
+            document.getElementById('score-text').textContent = `${score}/100`;
+            popup.style.opacity = '1';
+            setTimeout(() => { popup.style.opacity = '0'; }, 2000);
+        }
+
+        function showInvalid() {
+            const invalidPopup = document.getElementById('invalid-popup');
+            invalidPopup.style.opacity = '1';
+            setTimeout(() => { invalidPopup.style.opacity = '0'; }, 1500);
+        }
+
+        document.getElementById('event-type').addEventListener('change', (e) => {
+            const tex = wallTextures[e.target.value];
+            wall1.material.map = tex;
+            wall2.material.map = tex;
+            wall3.material.map = tex;
+            wall1.material.needsUpdate = wall2.material.needsUpdate = wall3.material.needsUpdate = true;
+            updateExcitementScore();
+        });
+
+        document.getElementById('save-design').addEventListener('click', () => {
+            const design = placedItems.map(({ mesh, item }) => ({
+                id: Object.keys(boothItems).find(key => boothItems[key].name === item.name),
+                position: mesh.position.toArray(),
+                rotation: mesh.rotation.toArray()
+            }));
+            localStorage.setItem('boothDesign', JSON.stringify(design));
+            alert('Design saved!');
+        });
+
+        document.getElementById('load-design').addEventListener('click', () => {
+            const design = JSON.parse(localStorage.getItem('boothDesign') || '[]');
+            placedItems.forEach(({ mesh }) => scene.remove(mesh));
+            placedItems.length = 0;
+
+            design.forEach(({ id, position, rotation }) => {
+                const item = boothItems[id];
+                if (!item) return;
+
+                const mesh = new THREE.Mesh(
+                    new THREE.BoxGeometry(...item.size),
+                    new THREE.MeshStandardMaterial({ color: item.color })
+                );
+                mesh.position.fromArray(position);
+                if (rotation) {
+                    mesh.rotation.fromArray(rotation);
+                }
+                scene.add(mesh);
+                placedItems.push({ mesh, item });
+            });
+
+            alert('Design loaded!');
+            updateExcitementScore();
+        });
+
+        document.getElementById('snapshot').addEventListener('click', () => {
+            renderer.render(scene, camera);
+            const dataURL = renderer.domElement.toDataURL('image/png');
+            const link = document.createElement('a');
+            link.href = dataURL;
+            link.download = 'booth-design.png';
+            link.click();
+        });
+
+        document.getElementById('toggle-theme').addEventListener('click', () => {
+            document.body.classList.toggle('dark');
+            ambientLight.intensity = document.body.classList.contains('dark') ? 0.3 : 0.5;
+            directionalLight.intensity = document.body.classList.contains('dark') ? 0.3 : 0.5;
+        });
+
+        document.getElementById("undo").addEventListener("click", () => {
+            if (placedItems.length > 0) {
+                const lastItem = placedItems.pop();
+                scene.remove(lastItem.mesh);
+                updateExcitementScore();
+            }
+        });
+
+        document.getElementById("reset-design").addEventListener("click", () => {
+            placedItems.forEach(({ mesh }) => scene.remove(mesh));
+            placedItems.length = 0;
+            updateExcitementScore();
+        });
+
+        window.addEventListener('resize', () => {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        });
+
+        function animate() {
+            requestAnimationFrame(animate);
+            renderer.render(scene, camera);
+            if (crowdVisible) {
+                crowd.forEach(person => {
+                    person.position.x += (Math.random() - 0.5) * 0.02;
+                    person.position.z += (Math.random() - 0.5) * 0.02;
+                    person.position.x = Math.max(-4, Math.min(4, person.position.x));
+                    person.position.z = Math.max(-4, Math.min(4, person.position.z));
+
+                    // Slight head bobbing for realism
+                    person.children[1].position.y = 0.65 + Math.sin(Date.now() * 0.005 + person.id) * 0.03;
+                });
+            }
+        }
+        animate();
+    </script>
+</body>
+
+</html>

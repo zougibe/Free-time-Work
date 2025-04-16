@@ -1,0 +1,720 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Workflow Orchestrator</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <style>
+        body {
+            background: linear-gradient(135deg, #6366f1 0%, #0ea5e9 100%);
+            min-height: 100vh;
+            transition: background 0.5s ease;
+        }
+
+        .dark body {
+            background: linear-gradient(135deg, #1e1b4b 0%, #0c4a6e 100%);
+        }
+
+        .glass {
+            background: rgba(255, 255, 255, 0.15);
+            backdrop-filter: blur(12px);
+            border-radius: 1rem;
+            border: 1px solid rgba(255, 255, 255, 0.18);
+        }
+
+        .dark .glass {
+            background: rgba(30, 41, 59, 0.35);
+        }
+
+        #mermaidChart {
+            min-height: 400px;
+            background-color: rgba(255, 255, 255, 0.3);
+        }
+
+        .dark #mermaidChart {
+            background-color: rgba(30, 41, 59, 0.3);
+        }
+
+        .error-message {
+            color: #dc2626;
+            font-size: 0.875rem;
+        }
+
+        .notification {
+            animation: slideIn 0.3s, fadeOut 0.5s 2.5s forwards;
+        }
+
+        @keyframes slideIn {
+            from {
+                transform: translateY(20px);
+                opacity: 0;
+            }
+
+            to {
+                transform: translateY(0);
+                opacity: 1;
+            }
+        }
+
+        @keyframes fadeOut {
+            to {
+                opacity: 0;
+            }
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+        }
+
+        .modal-content {
+            background: white;
+            padding: 2rem;
+            border-radius: 0.75rem;
+            max-width: 500px;
+            width: 90%;
+        }
+
+        .dark .modal-content {
+            background: #1f2937;
+            color: #f3f4f6;
+        }
+
+        .dependency-list {
+            max-height: 150px;
+            overflow-y: auto;
+            border: 1px solid rgba(255, 255, 255, 0.18);
+            border-radius: 0.5rem;
+            padding: 0.5rem;
+        }
+    </style>
+</head>
+
+<body class="text-slate-800 dark:text-gray-100">
+    <header class="glass p-4 mx-4 mt-4 mb-2 flex justify-between items-center">
+        <div class="flex items-center gap-3">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8 text-indigo-200" viewBox="0 0 20 20"
+                fill="currentColor">
+                <path fill-rule="evenodd"
+                    d="M3 4a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm0 4a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm0 4a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm0 4a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1z"
+                    clip-rule="evenodd" />
+            </svg>
+            <h1 class="text-2xl font-bold">Workflow Orchestrator</h1>
+        </div>
+        <div class="flex items-center gap-4">
+            <select id="industrySelect" class="p-2 bg-white/30 dark:bg-slate-700/50 rounded-lg">
+                <option value="publishing">Publishing</option>
+                <option value="construction">Construction</option>
+                <option value="event">Event Management</option>
+                <option value="software">Software Development</option>
+                <option value="manufacturing">Manufacturing</option>
+            </select>
+            <button id="themeToggle" class="p-2 rounded-full bg-white/30">
+                <svg id="themeIcon" xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24"
+                    stroke="currentColor">
+                    <path id="themeIconPath" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M12 3v1m0 16v1m8.66-13.66l-.71.71M4.05 19.95l-.71.71M21 12h-1M4 12H3m16.66 5.66l-.71-.71M4.05 4.05l-.71-.71M16 12a4 4 0 11-8 0 4 4 0 018 0z" />
+                </svg>
+            </button>
+        </div>
+    </header>
+
+    <main class="p-4 grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <!-- Task Form -->
+        <div class="glass p-6 rounded-xl">
+            <h2 class="text-xl font-semibold mb-4">Add Task</h2>
+            <form id="taskForm" class="space-y-4">
+                <div>
+                    <label for="taskName" class="block mb-1">Task Name</label>
+                    <input id="taskName" type="text" class="w-full p-2 bg-white/60 dark:bg-slate-700/60 rounded-lg"
+                        required>
+                    <div id="taskNameError" class="error-message"></div>
+                </div>
+                <div>
+                    <label for="taskDuration" class="block mb-1">Duration (days)</label>
+                    <input id="taskDuration" type="number" min="1"
+                        class="w-full p-2 bg-white/60 dark:bg-slate-700/60 rounded-lg" required>
+                    <div id="taskDurationError" class="error-message"></div>
+                </div>
+                <div>
+                    <label for="taskProgress" class="block mb-1">Progress (%)</label>
+                    <input id="taskProgress" type="number" min="0" max="100"
+                        class="w-full p-2 bg-white/60 dark:bg-slate-700/60 rounded-lg" value="0">
+                </div>
+                <div>
+                    <label class="block mb-1">Dependencies</label>
+                    <div id="taskDependencies" class="dependency-list"></div>
+                </div>
+                <button type="submit" class="w-full p-2 bg-indigo-500 text-white rounded-lg hover:bg-indigo-600">
+                    Add Task
+                </button>
+            </form>
+
+            <div class="mt-6">
+                <h3 class="text-lg font-semibold mb-2">Task List</h3>
+                <div id="taskList" class="space-y-2 max-h-60 overflow-y-auto"></div>
+            </div>
+        </div>
+
+        <!-- Workflow Visualization -->
+        <div class="glass p-6 rounded-xl lg:col-span-2">
+            <div class="flex justify-between items-center mb-4">
+                <h2 class="text-xl font-semibold">Workflow Chart</h2>
+                <div class="flex gap-2">
+                    <button id="exportPNG" class="px-3 py-1 bg-purple-500 text-white rounded-lg hover:bg-purple-600">
+                        Export
+                    </button>
+                    <button id="simulateDelay" class="px-3 py-1 bg-red-500 text-white rounded-lg hover:bg-red-600">
+                        Simulate Delay
+                    </button>
+                </div>
+            </div>
+            <div id="mermaidChart" class="rounded-lg p-4"></div>
+
+            <div class="mt-4 grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div class="glass p-4 rounded-lg">
+                    <div class="text-sm mb-1">Estimated Completion</div>
+                    <div id="completionTime" class="text-xl font-bold">0 days</div>
+                </div>
+                <div class="glass p-4 rounded-lg">
+                    <div class="text-sm mb-1">Critical Path</div>
+                    <div id="criticalPath" class="font-medium">None</div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <div id="modal" class="modal">
+        <div class="modal-content"></div>
+    </div>
+
+    <script>
+        // Initialize Mermaid
+        mermaid.initialize({
+            startOnLoad: false,
+            theme: 'default',
+            flowchart: { useMaxWidth: true }
+        });
+
+        // Industry Templates
+        const industryTemplates = {
+            publishing: [
+                { name: "Write Manuscript", duration: 30, dependencies: [], progress: 0 },
+                { name: "Edit Manuscript", duration: 15, dependencies: ["Write Manuscript"], progress: 0 },
+                { name: "Design Cover", duration: 10, dependencies: [], progress: 0 },
+                { name: "Print Book", duration: 20, dependencies: ["Edit Manuscript", "Design Cover"], progress: 0 }
+            ],
+            construction: [
+                { name: "Site Prep", duration: 10, dependencies: [], progress: 0 },
+                { name: "Foundation", duration: 15, dependencies: ["Site Prep"], progress: 0 },
+                { name: "Framing", duration: 20, dependencies: ["Foundation"], progress: 0 },
+                { name: "Roofing", duration: 10, dependencies: ["Framing"], progress: 0 }
+            ],
+            event: [
+                { name: "Book Venue", duration: 5, dependencies: [], progress: 0 },
+                { name: "Hire Caterer", duration: 7, dependencies: [], progress: 0 },
+                { name: "Send Invites", duration: 3, dependencies: ["Book Venue"], progress: 0 },
+                { name: "Setup Event", duration: 2, dependencies: ["Hire Caterer", "Send Invites"], progress: 0 }
+            ],
+            software: [
+                { name: "Requirements", duration: 10, dependencies: [], progress: 0 },
+                { name: "UI Design", duration: 15, dependencies: ["Requirements"], progress: 0 },
+                { name: "Backend Dev", duration: 30, dependencies: ["Requirements"], progress: 0 },
+                { name: "Frontend Dev", duration: 25, dependencies: ["UI Design"], progress: 0 },
+                { name: "Testing", duration: 20, dependencies: ["Backend Dev", "Frontend Dev"], progress: 0 },
+                { name: "Deployment", duration: 5, dependencies: ["Testing"], progress: 0 }
+            ],
+            manufacturing: [
+                { name: "Design Product", duration: 20, dependencies: [], progress: 0 },
+                { name: "Source Materials", duration: 15, dependencies: ["Design Product"], progress: 0 },
+                { name: "Prototype", duration: 25, dependencies: ["Design Product"], progress: 0 },
+                { name: "Testing", duration: 15, dependencies: ["Prototype"], progress: 0 },
+                { name: "Manufacture", duration: 30, dependencies: ["Source Materials", "Testing"], progress: 0 },
+                { name: "Distribution", duration: 10, dependencies: ["Manufacture"], progress: 0 }
+            ]
+        };
+
+        // App State
+        let tasks = [];
+        let isDarkMode = localStorage.getItem('theme') === 'dark';
+        if (isDarkMode) document.body.classList.add('dark');
+
+        // DOM Elements
+        const elements = {
+            industrySelect: document.getElementById('industrySelect'),
+            taskForm: document.getElementById('taskForm'),
+            taskName: document.getElementById('taskName'),
+            taskDuration: document.getElementById('taskDuration'),
+            taskProgress: document.getElementById('taskProgress'),
+            taskDependencies: document.getElementById('taskDependencies'),
+            taskNameError: document.getElementById('taskNameError'),
+            taskDurationError: document.getElementById('taskDurationError'),
+            taskList: document.getElementById('taskList'),
+            mermaidChart: document.getElementById('mermaidChart'),
+            completionTime: document.getElementById('completionTime'),
+            criticalPath: document.getElementById('criticalPath'),
+            themeToggle: document.getElementById('themeToggle'),
+            themeIconPath: document.getElementById('themeIconPath'),
+            exportPNG: document.getElementById('exportPNG'),
+            simulateDelay: document.getElementById('simulateDelay'),
+            modal: document.getElementById('modal'),
+            modalContent: document.querySelector('.modal-content')
+        };
+
+        // Core Functions
+        function updateDependencies() {
+            elements.taskDependencies.innerHTML = '';
+            tasks.forEach(task => {
+                const div = document.createElement('div');
+                div.className = 'flex items-center';
+                div.innerHTML = `
+                <input type="checkbox" id="dep-${task.name}" value="${task.name}" class="mr-2">
+                <label for="dep-${task.name}">${task.name}</label>
+            `;
+                elements.taskDependencies.appendChild(div);
+            });
+        }
+
+        function updateTaskList() {
+            elements.taskList.innerHTML = '';
+            tasks.forEach(task => {
+                const taskEl = document.createElement('div');
+                taskEl.className = 'flex justify-between items-center p-2 bg-white/30 dark:bg-slate-700/30 rounded-lg';
+                taskEl.innerHTML = `
+                <div>
+                    <span class="font-medium">${task.name}</span>
+                    <span class="text-xs block">${task.duration}d, ${task.progress}%</span>
+                </div>
+                <div class="flex items-center gap-2">
+                    <button class="edit-task p-1 hover:bg-white/20 rounded" data-task="${task.name}">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                        </svg>
+                    </button>
+                    <button class="delete-task p-1 hover:bg-white/20 rounded" data-task="${task.name}">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                        </svg>
+                    </button>
+                    <input type="number" class="progress-input w-16 p-1 text-sm border-none bg-white/60 dark:bg-slate-700/60 rounded" 
+                        value="${task.progress}" min="0" max="100" data-task="${task.name}">
+                </div>
+            `;
+                elements.taskList.appendChild(taskEl);
+            });
+        }
+
+        function showError(input, message) {
+            if (input === 'name') elements.taskNameError.textContent = message;
+            else if (input === 'duration') elements.taskDurationError.textContent = message;
+        }
+
+        function clearErrors() {
+            elements.taskNameError.textContent = '';
+            elements.taskDurationError.textContent = '';
+        }
+
+        function calculateCriticalPath() {
+            if (tasks.length === 0) return { criticalPath: [], totalDuration: 0 };
+
+            const nameToIndex = Object.fromEntries(tasks.map((t, i) => [t.name, i]));
+            const adj = tasks.map(task =>
+                task.dependencies.map(dep => nameToIndex[dep]).filter(i => i !== undefined)
+            );
+
+            // Topological sort
+            const visited = Array(tasks.length).fill(false);
+            const order = [];
+
+            function dfs(u) {
+                visited[u] = true;
+                adj[u].forEach(v => { if (!visited[v]) dfs(v); });
+                order.push(u);
+            }
+
+            for (let i = 0; i < tasks.length; i++) if (!visited[i]) dfs(i);
+            order.reverse();
+
+            // Longest path calculation
+            const dist = Array(tasks.length).fill(0);
+            const prev = Array(tasks.length).fill(null);
+
+            for (const u of order) {
+                tasks[u].dependencies.forEach(dep => {
+                    const v = nameToIndex[dep];
+                    if (v !== undefined && dist[u] < dist[v] + tasks[u].duration) {
+                        dist[u] = dist[v] + tasks[u].duration;
+                        prev[u] = v;
+                    }
+                });
+
+                if (tasks[u].dependencies.length === 0) dist[u] = tasks[u].duration;
+            }
+
+            const maxIdx = dist.indexOf(Math.max(...dist));
+            const criticalPath = [];
+            let cur = maxIdx;
+            while (cur !== null) {
+                criticalPath.unshift(tasks[cur].name);
+                cur = prev[cur];
+            }
+
+            return { criticalPath, totalDuration: dist[maxIdx] || 0 };
+        }
+
+        function renderChart() {
+            if (tasks.length === 0) {
+                elements.mermaidChart.innerHTML = '<p class="text-center py-8">Add tasks to visualize workflow</p>';
+                elements.completionTime.textContent = '0 days';
+                elements.criticalPath.textContent = 'None';
+                return;
+            }
+
+            const { criticalPath, totalDuration } = calculateCriticalPath();
+
+            // Generate Mermaid syntax
+            let mermaidSyntax = 'graph TD\n';
+            tasks.forEach(task => {
+                const isCritical = criticalPath.includes(task.name);
+                const nodeStyle = isCritical ? ':::critical' : '';
+                mermaidSyntax += `    ${task.name.replace(/\s+/g, '_')}["${task.name}\\n${task.duration}d (${task.progress}%)"]${nodeStyle}\n`;
+
+                task.dependencies.forEach(dep => {
+                    mermaidSyntax += `    ${dep.replace(/\s+/g, '_')} --> ${task.name.replace(/\s+/g, '_')}\n`;
+                });
+            });
+
+            // Add critical path styling
+            mermaidSyntax += '    classDef critical fill:#ef4444,stroke:#b91c1c,color:white\n';
+
+            // Render the chart
+            elements.mermaidChart.innerHTML = '<div class="mermaid">' + mermaidSyntax + '</div>';
+
+            try {
+                mermaid.init(undefined, document.querySelector('.mermaid'));
+            } catch (e) {
+                console.error('Mermaid error:', e);
+                elements.mermaidChart.innerHTML = '<p class="text-red-500">Error rendering chart</p>';
+            }
+
+            // Update stats
+            elements.completionTime.textContent = `${totalDuration} days`;
+            elements.criticalPath.textContent = criticalPath.join(' → ') || 'None';
+        }
+
+        function showNotification(message, type = 'success') {
+            const notification = document.createElement('div');
+            notification.className = `fixed bottom-4 right-4 px-4 py-2 rounded-lg shadow-lg flex items-center ${type === 'success' ? 'bg-green-500' :
+                    type === 'error' ? 'bg-red-500' : 'bg-yellow-500'
+                } text-white`;
+            notification.innerHTML = `
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" viewBox="0 0 20 20" fill="currentColor">
+                <path fill-rule="evenodd" d="${type === 'success' ?
+                    'M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z' :
+                    type === 'error' ?
+                        'M10 18a8 8 0 100-16 8 8 0 000 16zM8.28 7.22a.75.75 0 00-1.06 1.06L8.94 10l-1.72 1.72a.75.75 0 001.06 1.06L10 11.06l1.72 1.72a.75.75 0 001.06-1.06L11.06 10l1.72-1.72a.75.75 0 00-1.06-1.06L10 8.94 8.28 7.22z' :
+                        'M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.415-1.415L11 9.586V6z'
+                }" clip-rule="evenodd" />
+            </svg>
+            ${message}
+        `;
+            document.body.appendChild(notification);
+            setTimeout(() => notification.remove(), 3000);
+        }
+
+        function showModal(title, message, onConfirm) {
+            elements.modalContent.innerHTML = `
+            <h3 class="text-lg font-semibold mb-4">${title}</h3>
+            <p class="mb-4">${message}</p>
+            <div class="flex justify-end space-x-2">
+                <button id="modalCancel" class="px-4 py-2 bg-gray-300 dark:bg-gray-600 rounded-lg">Cancel</button>
+                <button id="modalConfirm" class="px-4 py-2 bg-red-500 text-white rounded-lg">Confirm</button>
+            </div>
+        `;
+
+            // Clear previous event listeners
+            const confirmBtn = elements.modalContent.querySelector('#modalConfirm');
+            const cancelBtn = elements.modalContent.querySelector('#modalCancel');
+
+            confirmBtn.onclick = null;
+            cancelBtn.onclick = null;
+
+            // Add new event listeners
+            confirmBtn.addEventListener('click', () => {
+                onConfirm();
+                hideModal();
+            });
+
+            cancelBtn.addEventListener('click', hideModal);
+
+            // Show modal
+            elements.modal.style.display = 'flex';
+            document.body.style.overflow = 'hidden';
+
+            // Add keyboard listener
+            const handleKeyDown = (e) => {
+                if (e.key === 'Escape') hideModal();
+            };
+            document.addEventListener('keydown', handleKeyDown);
+
+            // Store handler for cleanup
+            elements.modal._keydownHandler = handleKeyDown;
+        }
+
+        function hideModal() {
+            elements.modal.style.display = 'none';
+            document.body.style.overflow = '';
+            document.removeEventListener('keydown', elements.modal._keydownHandler);
+        }
+
+        function saveWorkflow() {
+            try {
+                const data = JSON.stringify({
+                    version: '1.0',
+                    tasks,
+                    industry: elements.industrySelect.value,
+                    timestamp: new Date().toISOString()
+                });
+                localStorage.setItem('workflow', data);
+                showNotification('Workflow saved successfully!');
+                return true;
+            } catch (e) {
+                console.error('Save failed:', e);
+                showNotification('Failed to save workflow.', 'error');
+                return false;
+            }
+        }
+
+        function loadWorkflow() {
+            try {
+                const data = localStorage.getItem('workflow');
+                if (!data) {
+                    showNotification('No saved workflow found.', 'error');
+                    return false;
+                }
+
+                const parsed = JSON.parse(data);
+                if (!parsed.version || !Array.isArray(parsed.tasks)) {
+                    throw new Error('Invalid workflow data');
+                }
+
+                tasks = parsed.tasks;
+                elements.industrySelect.value = parsed.industry || 'publishing';
+                updateDependencies();
+                updateTaskList();
+                renderChart();
+                showNotification('Workflow loaded successfully!');
+                return true;
+            } catch (e) {
+                console.error('Load failed:', e);
+                showNotification('Failed to load workflow.', 'error');
+                return false;
+            }
+        }
+
+        function clearWorkflow() {
+            showModal(
+                'Clear Workflow',
+                'Are you sure you want to clear the current workflow? This action cannot be undone.',
+                () => {
+                    tasks = [];
+                    localStorage.removeItem('workflow');
+                    updateDependencies();
+                    updateTaskList();
+                    renderChart();
+                    showNotification('Workflow cleared successfully!');
+                }
+            );
+        }
+
+        function exportPNG() {
+            const chartElement = document.querySelector('#mermaidChart .mermaid');
+            if (!chartElement) {
+                showNotification('No chart to export. Please create a workflow first.', 'error');
+                return;
+            }
+
+            showNotification('Exporting chart...', 'info');
+            html2canvas(chartElement, {
+                backgroundColor: isDarkMode ? '#1f2937' : '#ffffff',
+                scale: 2
+            }).then(canvas => {
+                const link = document.createElement('a');
+                link.href = canvas.toDataURL('image/png');
+                link.download = 'workflow-diagram.png';
+                link.click();
+                showNotification('Chart exported successfully!');
+            }).catch(e => {
+                console.error('Export failed:', e);
+                showNotification('Failed to export chart.', 'error');
+            });
+        }
+
+        function simulateDelay() {
+            if (tasks.length === 0) {
+                showNotification('No tasks to delay.', 'error');
+                return;
+            }
+
+            const delayedTasks = [];
+            const tasksToDelay = Math.min(Math.floor(Math.random() * 3) + 1, tasks.length);
+            const indices = new Set();
+
+            while (indices.size < tasksToDelay) {
+                const idx = Math.floor(Math.random() * tasks.length);
+                indices.add(idx);
+            }
+
+            indices.forEach(idx => {
+                const delay = Math.floor(Math.random() * 5) + 1;
+                tasks[idx].duration += delay;
+                delayedTasks.push({ name: tasks[idx].name, delay });
+            });
+
+            updateTaskList();
+            renderChart();
+
+            const message = `Delayed ${delayedTasks.map(t => `${t.name} by ${t.delay} days`).join(', ')}`;
+            showNotification(message, 'info');
+        }
+
+        // Event Listeners
+        elements.taskForm.addEventListener('submit', (e) => {
+            e.preventDefault();
+            clearErrors();
+
+            const name = elements.taskName.value.trim();
+            const duration = parseInt(elements.taskDuration.value);
+            const progress = parseInt(elements.taskProgress.value) || 0;
+            const dependencies = Array.from(elements.taskDependencies.querySelectorAll('input:checked')).map(input => input.value);
+
+            // Validation
+            if (!name) {
+                showError('name', 'Task name is required');
+                return;
+            }
+            if (tasks.some(t => t.name === name)) {
+                showError('name', 'Task name must be unique');
+                return;
+            }
+            if (!duration || duration < 1) {
+                showError('duration', 'Duration must be ≥1 day');
+                return;
+            }
+            if (dependencies.includes(name)) {
+                showError('name', 'Task cannot depend on itself');
+                return;
+            }
+
+            // Add task
+            tasks.push({ name, duration, dependencies, progress });
+            elements.taskForm.reset();
+            updateDependencies();
+            updateTaskList();
+            renderChart();
+        });
+
+        elements.industrySelect.addEventListener('change', (e) => {
+            tasks = JSON.parse(JSON.stringify(industryTemplates[e.target.value]));
+            updateDependencies();
+            updateTaskList();
+            renderChart();
+        });
+
+        elements.themeToggle.addEventListener('click', () => {
+            isDarkMode = !isDarkMode;
+            document.body.classList.toggle('dark');
+            localStorage.setItem('theme', isDarkMode ? 'dark' : 'light');
+
+            // Update Mermaid theme
+            mermaid.initialize({ theme: isDarkMode ? 'dark' : 'default' });
+
+            // Update icon
+            elements.themeIconPath.setAttribute('d', isDarkMode ?
+                'M21.752 15.002A9.718 9.718 0 0112 21.75c-5.385 0-9.75-4.365-9.75-9.75 0-4.136 2.635-7.64 6.375-9.09a.75.75 0 01.977.977A7.501 7.501 0 0019.5 12c0 1.61-.488 3.106-1.326 4.352a.75.75 0 01.977.977z' :
+                'M12 3v1m0 16v1m8.66-13.66l-.71.71M4.05 19.95l-.71.71M21 12h-1M4 12H3m16.66 5.66l-.71-.71M4.05 4.05l-.71-.71M16 12a4 4 0 11-8 0 4 4 0 018 0z'
+            );
+
+            renderChart();
+        });
+
+        elements.taskList.addEventListener('click', (e) => {
+            const target = e.target.closest('button, input');
+            if (!target) return;
+
+            const taskName = target.dataset.task;
+
+            if (target.classList.contains('delete-task')) {
+                tasks = tasks.filter(task => task.name !== taskName);
+                tasks.forEach(task => {
+                    task.dependencies = task.dependencies.filter(dep => dep !== taskName);
+                });
+                updateDependencies();
+                updateTaskList();
+                renderChart();
+            } else if (target.classList.contains('edit-task')) {
+                const task = tasks.find(t => t.name === taskName);
+                if (!task) return;
+
+                elements.taskName.value = task.name;
+                elements.taskDuration.value = task.duration;
+                elements.taskProgress.value = task.progress;
+                updateDependencies();
+                elements.taskDependencies.querySelectorAll('input').forEach(input => {
+                    input.checked = task.dependencies.includes(input.value);
+                });
+
+                tasks = tasks.filter(t => t.name !== taskName);
+                updateTaskList();
+                renderChart();
+                elements.taskName.focus();
+            } else if (target.classList.contains('progress-input')) {
+                const progress = parseInt(target.value);
+                if (!isNaN(progress)) {
+                    const task = tasks.find(t => t.name === taskName);
+                    if (task) task.progress = Math.max(0, Math.min(100, progress));
+                    updateTaskList();
+                    renderChart();
+                }
+            }
+        });
+
+        document.getElementById('saveWorkflow').addEventListener('click', saveWorkflow);
+        document.getElementById('loadWorkflow').addEventListener('click', loadWorkflow);
+        document.getElementById('clearWorkflow').addEventListener('click', clearWorkflow);
+        document.getElementById('exportPNG').addEventListener('click', exportPNG);
+        document.getElementById('simulateDelay').addEventListener('click', simulateDelay);
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', () => {
+            if (isDarkMode) {
+                elements.themeIconPath.setAttribute('d', 'M21.752 15.002A9.718 9.718 0 0112 21.75c-5.385 0-9.75-4.365-9.75-9.75 0-4.136 2.635-7.64 6.375-9.09a.75.75 0 01.977.977A7.501 7.501 0 0019.5 12c0 1.61-.488 3.106-1.326 4.352a.75.75 0 01.977.977z');
+                mermaid.initialize({ theme: 'dark' });
+            }
+
+            // Load initial industry or saved workflow
+            if (localStorage.getItem('workflow') && confirm('A saved workflow was found. Would you like to load it?')) {
+                loadWorkflow();
+            } else {
+                tasks = JSON.parse(JSON.stringify(industryTemplates[elements.industrySelect.value]));
+                updateDependencies();
+                updateTaskList();
+                renderChart();
+            }
+        });
+    </script>
+</body>
+
+</html>

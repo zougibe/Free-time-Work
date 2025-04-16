@@ -1,0 +1,1068 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Local News App</title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css" />
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <style>
+        .leaflet-container {
+            height: 500px;
+            width: 100%;
+            position: relative;
+            z-index: 0;
+        }
+
+        .navbar {
+            position: sticky;
+            top: 0;
+            z-index: 10;
+        }
+
+        .post-button {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background-color: #3b82f6;
+            color: white;
+            border-radius: 0.375rem;
+            padding: 0.5rem 1rem;
+            font-weight: 500;
+            transition: background-color 0.2s;
+        }
+
+        .post-button:hover {
+            background-color: #2563eb;
+        }
+
+        .post-icon {
+            margin-right: 0.5rem;
+        }
+
+        .calendar-container {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            gap: 2px;
+        }
+
+        .calendar-header {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            text-align: center;
+            font-weight: 600;
+            margin-bottom: 4px;
+        }
+
+        .calendar-day {
+            aspect-ratio: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            border: 1px solid #e5e7eb;
+            border-radius: 0.25rem;
+            position: relative;
+            cursor: pointer;
+        }
+
+        .calendar-day:hover {
+            background-color: #f3f4f6;
+        }
+
+        .calendar-day.has-event {
+            background-color: #dbeafe;
+        }
+
+        .calendar-day.has-event:hover {
+            background-color: #bfdbfe;
+        }
+
+        .calendar-day.today {
+            border-color: #3b82f6;
+            font-weight: bold;
+        }
+
+        .event-dot {
+            position: absolute;
+            bottom: 4px;
+            width: 4px;
+            height: 4px;
+            border-radius: 50%;
+            background-color: #3b82f6;
+        }
+
+        /* Add this to your existing styles */
+        @media (max-width: 767px) {
+            .navbar {
+                position: relative;
+            }
+
+            #mobileMenu {
+                display: none;
+            }
+
+            #mobileMenu.flex {
+                display: flex;
+                z-index: 20;
+            }
+
+            .post-button {
+                justify-content: flex-start;
+            }
+        }
+
+        @media (min-width: 768px) {
+            #mobileMenuButton {
+                display: none;
+            }
+        }
+    </style>
+</head>
+
+<body class="bg-gray-50 min-h-screen">
+    <header class="navbar bg-white shadow-md">
+        <div class="container mx-auto px-4 py-4">
+            <div class="flex justify-between items-center">
+                <div class="flex items-center">
+                    <button id="mobileMenuButton" class="md:hidden mr-4">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24"
+                            stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M4 6h16M4 12h16M4 18h16" />
+                        </svg>
+                    </button>
+                    <h1 class="text-2xl font-bold text-blue-600 flex items-center">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 mr-2" fill="none" viewBox="0 0 24 24"
+                            stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M19 20H5a2 2 0 01-2-2V6a2 2 0 012-2h10a2 2 0 012 2v1m2 13a2 2 0 01-2-2V7m2 13a2 2 0 002-2V9a2 2 0 00-2-2h-2m-4-3H9M7 16h6M7 8h6v4H7V8z" />
+                        </svg>
+                        LocalNews
+                    </h1>
+                </div>
+
+                <div id="mobileMenu" class="hidden md:flex items-center gap-2">
+                    <div id="authButtons" class="mr-4">
+                        <button id="loginBtn" class="text-blue-600 hover:text-blue-800 mr-4">Login</button>
+                        <button id="registerBtn"
+                            class="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700">Register</button>
+                    </div>
+                    <div id="userInfo" class="mr-4 hidden">
+                        <span id="welcomeMessage" class="mr-2">Welcome, </span>
+                        <button id="logoutBtn" class="text-blue-600 hover:text-blue-800">Logout</button>
+                    </div>
+                    <div class="flex flex-col md:flex-row gap-2">
+                        <button id="postNewsBtn" class="post-button">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 post-icon" fill="none"
+                                viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                            </svg>
+                            <span class="hidden sm:inline">Post News</span>
+                        </button>
+                        <button id="postEventBtn"
+                            class="bg-white border border-gray-300 text-gray-700 hover:bg-gray-50 rounded-md px-4 py-2 flex items-center">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24"
+                                stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                            </svg>
+                            <span class="hidden sm:inline">Post Event</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <div id="urgentAlert" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+        <div class="bg-white rounded-lg max-w-md w-full p-6">
+            <div class="flex items-center text-red-600 mb-4">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 mr-2" fill="none" viewBox="0 0 24 24"
+                    stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
+                </svg>
+                <h3 class="font-bold text-lg">Urgent Community Alert</h3>
+            </div>
+            <p id="urgentAlertContent" class="mb-6 text-gray-700"></p>
+            <button id="acknowledgeBtn"
+                class="w-full bg-blue-600 text-white py-2 rounded-md hover:bg-blue-700">Acknowledge</button>
+        </div>
+    </div>
+
+    <div class="container mx-auto px-4 py-8">
+        <div class="mb-6 bg-white p-4 rounded-lg shadow">
+            <div class="flex flex-col md:flex-row gap-4 items-start md:items-center">
+                <div class="flex items-center">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2 text-gray-500" fill="none"
+                        viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z" />
+                    </svg>
+                    <span class="font-medium">Filters:</span>
+                </div>
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4 w-full">
+                    <input id="neighborhoodFilter" type="text" placeholder="Enter neighborhood"
+                        class="w-full border border-gray-300 rounded-md px-3 py-2">
+                    <input id="zipCodeFilter" type="text" placeholder="Enter ZIP code"
+                        class="w-full border border-gray-300 rounded-md px-3 py-2">
+                    <input id="searchInput" type="text" placeholder="Search news..."
+                        class="w-full border border-gray-300 rounded-md px-3 py-2">
+                </div>
+            </div>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <div class="lg:col-span-2">
+                <div class="bg-white rounded-lg shadow">
+                    <div class="border-b">
+                        <div class="flex">
+                            <button id="newsTab"
+                                class="px-4 py-3 border-b-2 border-blue-500 text-blue-600 font-medium">Local
+                                News</button>
+                            <button id="eventsTab" class="px-4 py-3 text-gray-500 font-medium">Events Calendar</button>
+                        </div>
+                    </div>
+
+                    <div id="newsContent" class="p-4">
+                        <div id="newsList" class="space-y-4">
+                        </div>
+                    </div>
+
+                    <div id="eventsContent" class="p-4 hidden">
+                        <div class="mb-4 border rounded-md p-4">
+                            <div class="flex justify-between items-center mb-4">
+                                <button id="prevMonth" class="p-2 hover:bg-gray-100 rounded-full">
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none"
+                                        viewBox="0 0 24 24" stroke="currentColor">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                            d="M15 19l-7-7 7-7" />
+                                    </svg>
+                                </button>
+                                <h3 id="currentMonthYear" class="text-lg font-medium">October 2023</h3>
+                                <button id="nextMonth" class="p-2 hover:bg-gray-100 rounded-full">
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none"
+                                        viewBox="0 0 24 24" stroke="currentColor">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                            d="M9 5l7 7-7 7" />
+                                    </svg>
+                                </button>
+                            </div>
+                            <div class="calendar-header">
+                                <div>Sun</div>
+                                <div>Mon</div>
+                                <div>Tue</div>
+                                <div>Wed</div>
+                                <div>Thu</div>
+                                <div>Fri</div>
+                                <div>Sat</div>
+                            </div>
+                            <div id="calendar" class="calendar-container">
+                            </div>
+                        </div>
+                        <div id="eventsList" class="space-y-4">
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="lg:col-span-1">
+                <div class="bg-white rounded-lg shadow">
+                    <div class="p-4 border-b">
+                        <h2 class="text-lg font-medium flex items-center">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24"
+                                stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                            </svg>
+                            News Map
+                        </h2>
+                        <p class="text-sm text-gray-500">See where local news is happening</p>
+                    </div>
+                    <div id="map"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="loginModal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+        <div class="bg-white rounded-lg max-w-md w-full p-6">
+            <h2 class="text-xl font-bold mb-1">Login</h2>
+            <p class="text-gray-500 mb-4">Sign in to your account to post news and events.</p>
+            <form id="loginForm">
+                <div class="space-y-4">
+                    <div>
+                        <label for="loginEmail" class="block text-sm font-medium text-gray-700 mb-1">Email</label>
+                        <input type="email" id="loginEmail" name="email" required
+                            class="w-full border border-gray-300 rounded-md px-3 py-2">
+                    </div>
+                    <div>
+                        <label for="loginPassword" class="block text-sm font-medium text-gray-700 mb-1">Password</label>
+                        <input type="password" id="loginPassword" name="password" required
+                            class="w-full border border-gray-300 rounded-md px-3 py-2">
+                    </div>
+                </div>
+                <div class="mt-6 flex justify-end space-x-3">
+                    <button type="button" id="closeLoginModal"
+                        class="px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50">Cancel</button>
+                    <button type="submit"
+                        class="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700">Login</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div id="registerModal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+        <div class="bg-white rounded-lg max-w-md w-full p-6">
+            <h2 class="text-xl font-bold mb-1">Register</h2>
+            <p class="text-gray-500 mb-4">Create an account to post news and events.</p>
+            <form id="registerForm">
+                <div class="space-y-4">
+                    <div>
+                        <label for="registerName" class="block text-sm font-medium text-gray-700 mb-1">Full Name</label>
+                        <input type="text" id="registerName" name="name" required
+                            class="w-full border border-gray-300 rounded-md px-3 py-2">
+                    </div>
+                    <div>
+                        <label for="registerEmail" class="block text-sm font-medium text-gray-700 mb-1">Email</label>
+                        <input type="email" id="registerEmail" name="email" required
+                            class="w-full border border-gray-300 rounded-md px-3 py-2">
+                    </div>
+                    <div>
+                        <label for="registerPassword"
+                            class="block text-sm font-medium text-gray-700 mb-1">Password</label>
+                        <input type="password" id="registerPassword" name="password" required
+                            class="w-full border border-gray-300 rounded-md px-3 py-2">
+                    </div>
+                    <div>
+                        <label for="registerConfirmPassword"
+                            class="block text-sm font-medium text-gray-700 mb-1">Confirm Password</label>
+                        <input type="password" id="registerConfirmPassword" name="confirmPassword" required
+                            class="w-full border border-gray-300 rounded-md px-3 py-2">
+                    </div>
+                </div>
+                <div class="mt-6 flex justify-end space-x-3">
+                    <button type="button" id="closeRegisterModal"
+                        class="px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50">Cancel</button>
+                    <button type="submit"
+                        class="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700">Register</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div id="postNewsModal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+        <div class="bg-white rounded-lg max-w-md w-full p-6">
+            <h2 class="text-xl font-bold mb-1">Post Local News</h2>
+            <p class="text-gray-500 mb-4">Share important news with your community.</p>
+            <form id="postNewsForm">
+                <div class="space-y-4">
+                    <div>
+                        <label for="newsTitle" class="block text-sm font-medium text-gray-700 mb-1">Title</label>
+                        <input type="text" id="newsTitle" name="title" required
+                            class="w-full border border-gray-300 rounded-md px-3 py-2">
+                    </div>
+                    <div>
+                        <label for="newsContent" class="block text-sm font-medium text-gray-700 mb-1">Content</label>
+                        <textarea id="newsContent" name="content" rows="4" required
+                            class="w-full border border-gray-300 rounded-md px-3 py-2"></textarea>
+                    </div>
+                    <div>
+                        <label for="newsAuthor" class="block text-sm font-medium text-gray-700 mb-1">Your Name</label>
+                        <input type="text" id="newsAuthor" name="author" required
+                            class="w-full border border-gray-300 rounded-md px-3 py-2">
+                    </div>
+                    <div class="grid grid-cols-2 gap-4">
+                        <div>
+                            <label for="newsNeighborhood"
+                                class="block text-sm font-medium text-gray-700 mb-1">Neighborhood</label>
+                            <input type="text" id="newsNeighborhood" name="neighborhood" required
+                                class="w-full border border-gray-300 rounded-md px-3 py-2">
+                        </div>
+                        <div>
+                            <label for="newsZipCode" class="block text-sm font-medium text-gray-700 mb-1">ZIP
+                                Code</label>
+                            <input type="text" id="newsZipCode" name="zipCode" required
+                                class="w-full border border-gray-300 rounded-md px-3 py-2">
+                        </div>
+                    </div>
+                    <div class="flex items-center">
+                        <input type="checkbox" id="newsUrgent" name="urgent"
+                            class="h-4 w-4 text-blue-600 border-gray-300 rounded">
+                        <label for="newsUrgent" class="ml-2 block text-sm text-gray-700">Mark as urgent alert</label>
+                    </div>
+                </div>
+                <div class="mt-6 flex justify-end space-x-3">
+                    <button type="button" id="closeNewsModal"
+                        class="px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50">Cancel</button>
+                    <button type="submit" class="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700">Post
+                        News</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div id="postEventModal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+        <div class="bg-white rounded-lg max-w-md w-full p-6">
+            <h2 class="text-xl font-bold mb-1">Post Community Event</h2>
+            <p class="text-gray-500 mb-4">Share upcoming events with your community.</p>
+            <form id="postEventForm">
+                <div class="space-y-4">
+                    <div>
+                        <label for="eventTitle" class="block text-sm font-medium text-gray-700 mb-1">Event Title</label>
+                        <input type="text" id="eventTitle" name="title" required
+                            class="w-full border border-gray-300 rounded-md px-3 py-2">
+                    </div>
+                    <div>
+                        <label for="eventDate" class="block text-sm font-medium text-gray-700 mb-1">Date</label>
+                        <input type="date" id="eventDate" name="date" required
+                            class="w-full border border-gray-300 rounded-md px-3 py-2">
+                    </div>
+                    <div>
+                        <label for="eventLocation" class="block text-sm font-medium text-gray-700 mb-1">Location</label>
+                        <input type="text" id="eventLocation" name="location" required
+                            class="w-full border border-gray-300 rounded-md px-3 py-2">
+                    </div>
+                    <div>
+                        <label for="eventDescription"
+                            class="block text-sm font-medium text-gray-700 mb-1">Description</label>
+                        <textarea id="eventDescription" name="description" rows="4" required
+                            class="w-full border border-gray-300 rounded-md px-3 py-2"></textarea>
+                    </div>
+                </div>
+                <div class="mt-6 flex justify-end space-x-3">
+                    <button type="button" id="closeEventModal"
+                        class="px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50">Cancel</button>
+                    <button type="submit" class="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700">Post
+                        Event</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
+    <script>
+        const initialNews = [
+            {
+                id: 1,
+                title: "New Community Center Opening",
+                content: "The new community center will be opening next week with free activities for all residents.",
+                author: "John Smith",
+                date: "2023-10-15",
+                neighborhood: "Downtown",
+                zipCode: "12345",
+                location: [40.7128, -74.006],
+                urgent: false,
+                comments: [
+                    { id: 1, author: "Jane Doe", content: "This is great news! Will there be activities for children?", date: "2023-10-15" },
+                    { id: 2, author: "Bob Johnson", content: "I'm looking forward to the opening. What are the hours?", date: "2023-10-16" }
+                ]
+            },
+            {
+                id: 2,
+                title: "Road Closure on Main Street",
+                content: "Main Street will be closed for repairs from Monday to Wednesday next week.",
+                author: "Jane Doe",
+                date: "2023-10-14",
+                neighborhood: "Westside",
+                zipCode: "12346",
+                location: [40.7148, -74.016],
+                urgent: true,
+                comments: [
+                    { id: 1, author: "Mike Wilson", content: "Is there an alternative route suggested?", date: "2023-10-14" }
+                ]
+            },
+            {
+                id: 3,
+                title: "Farmers Market Extended Hours",
+                content: "The weekend farmers market will now be open until 4pm throughout October.",
+                author: "Sam Johnson",
+                date: "2023-10-13",
+                neighborhood: "Eastside",
+                zipCode: "12347",
+                location: [40.7108, -73.996],
+                urgent: false,
+                comments: []
+            },
+        ];
+
+        const initialEvents = [
+            {
+                id: 1,
+                title: "Community Cleanup",
+                date: "2023-10-20",
+                location: "Central Park",
+                description: "Join us for our monthly community cleanup event.",
+            },
+            {
+                id: 2,
+                title: "Local Business Networking",
+                date: "2023-10-25",
+                location: "Town Hall",
+                description: "Network with local business owners and entrepreneurs.",
+            },
+            {
+                id: 3,
+                title: "Fall Festival",
+                date: "2023-11-05",
+                location: "Main Street",
+                description: "Annual fall festival with food, music, and activities.",
+            },
+        ];
+
+        const users = [
+            { id: 1, name: "John Smith", email: "john@example.com", password: "password123" },
+            { id: 2, name: "Jane Doe", email: "jane@example.com", password: "password456" }
+        ];
+
+        let currentUser = null;
+        let news = [...initialNews];
+        let events = [...initialEvents];
+        let filteredNews = [...initialNews];
+        let selectedNeighborhood = "";
+        let selectedZipCode = "";
+        let searchQuery = "";
+        let urgentNews = initialNews.filter(item => item.urgent);
+        let map;
+        let markers = [];
+        let currentDate = new Date();
+        let currentMonth = currentDate.getMonth();
+        let currentYear = currentDate.getFullYear();
+
+        const newsTab = document.getElementById('newsTab');
+        const eventsTab = document.getElementById('eventsTab');
+        const newsContent = document.getElementById('newsContent');
+        const eventsContent = document.getElementById('eventsContent');
+        const newsList = document.getElementById('newsList');
+        const eventsList = document.getElementById('eventsList');
+        const neighborhoodFilter = document.getElementById('neighborhoodFilter');
+        const zipCodeFilter = document.getElementById('zipCodeFilter');
+        const searchInput = document.getElementById('searchInput');
+        const postNewsBtn = document.getElementById('postNewsBtn');
+        const postEventBtn = document.getElementById('postEventBtn');
+        const postNewsModal = document.getElementById('postNewsModal');
+        const postEventModal = document.getElementById('postEventModal');
+        const closeNewsModal = document.getElementById('closeNewsModal');
+        const closeEventModal = document.getElementById('closeEventModal');
+        const postNewsForm = document.getElementById('postNewsForm');
+        const postEventForm = document.getElementById('postEventForm');
+        const urgentAlert = document.getElementById('urgentAlert');
+        const urgentAlertContent = document.getElementById('urgentAlertContent');
+        const acknowledgeBtn = document.getElementById('acknowledgeBtn');
+        const loginBtn = document.getElementById('loginBtn');
+        const registerBtn = document.getElementById('registerBtn');
+        const loginModal = document.getElementById('loginModal');
+        const registerModal = document.getElementById('registerModal');
+        const closeLoginModal = document.getElementById('closeLoginModal');
+        const closeRegisterModal = document.getElementById('closeRegisterModal');
+        const loginForm = document.getElementById('loginForm');
+        const registerForm = document.getElementById('registerForm');
+        const authButtons = document.getElementById('authButtons');
+        const userInfo = document.getElementById('userInfo');
+        const welcomeMessage = document.getElementById('welcomeMessage');
+        const logoutBtn = document.getElementById('logoutBtn');
+        const prevMonth = document.getElementById('prevMonth');
+        const nextMonth = document.getElementById('nextMonth');
+        const currentMonthYear = document.getElementById('currentMonthYear');
+        const calendar = document.getElementById('calendar');
+
+        function initMap() {
+            map = L.map('map').setView([40.7128, -74.006], 13);
+
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+            }).addTo(map);
+
+            updateMapMarkers();
+        }
+
+        function updateMapMarkers() {
+            markers.forEach(marker => map.removeLayer(marker));
+            markers = [];
+
+            news.forEach(item => {
+                const marker = L.marker(item.location).addTo(map);
+                marker.bindPopup(`
+          <div>
+            <h3 class="font-bold">${item.title}</h3>
+            <p class="text-sm">${item.content}</p>
+            <p class="text-xs mt-1">${item.neighborhood}, ${item.zipCode}</p>
+          </div>
+        `);
+                markers.push(marker);
+            });
+        }
+
+        function renderNewsList() {
+            newsList.innerHTML = '';
+
+            if (filteredNews.length === 0) {
+                newsList.innerHTML = `
+          <div class="text-center py-8">
+            <p class="text-gray-500">No news found.</p>
+          </div>
+        `;
+                return;
+            }
+
+            filteredNews.forEach(item => {
+                const newsCard = document.createElement('div');
+                newsCard.className = 'bg-white border rounded-lg shadow-sm overflow-hidden mb-4';
+                newsCard.innerHTML = `
+          <div class="p-4">
+            <div class="flex justify-between items-start">
+              <h3 class="font-bold text-lg">${item.title}</h3>
+              ${item.urgent ? '<span class="bg-red-100 text-red-800 text-xs px-2 py-1 rounded-full">Urgent</span>' : ''}
+            </div>
+            <p class="text-sm text-gray-500 mt-1">Posted by ${item.author} on ${item.date}</p>
+            <p class="mt-3">${item.content}</p>
+            <div class="flex items-center mt-4 text-sm text-gray-500">
+              <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+              </svg>
+              ${item.neighborhood}, ${item.zipCode}
+            </div>
+          </div>
+          <div class="border-t p-4">
+            <h4 class="font-medium mb-2">Comments (${item.comments.length})</h4>
+            <div class="space-y-3 mb-4">
+              ${item.comments.map(comment => `
+                <div class="bg-gray-50 p-3 rounded">
+                  <div class="flex justify-between">
+                    <p class="font-medium text-sm">${comment.author}</p>
+                    <p class="text-xs text-gray-500">${comment.date}</p>
+                  </div>
+                  <p class="text-sm mt-1">${comment.content}</p>
+                </div>
+              `).join('')}
+            </div>
+            ${currentUser ? `
+              <form class="comment-form" data-news-id="${item.id}">
+                <textarea class="w-full border border-gray-300 rounded-md px-3 py-2 text-sm" rows="2" placeholder="Add a comment..."></textarea>
+                <div class="flex justify-end mt-2">
+                  <button type="submit" class="px-3 py-1 bg-blue-600 text-white text-sm rounded-md hover:bg-blue-700">Post Comment</button>
+                </div>
+              </form>
+            ` : `
+              <p class="text-sm text-gray-500 italic">Please <a href="#" class="text-blue-600 login-prompt">login</a> to comment</p>
+            `}
+          </div>
+        `;
+                newsList.appendChild(newsCard);
+            });
+
+            document.querySelectorAll('.comment-form').forEach(form => {
+                form.addEventListener('submit', function (e) {
+                    e.preventDefault();
+                    if (!currentUser) return;
+
+                    const newsId = parseInt(this.dataset.newsId);
+                    const commentText = this.querySelector('textarea').value.trim();
+
+                    if (commentText) {
+                        addComment(newsId, commentText);
+                        this.querySelector('textarea').value = '';
+                    }
+                });
+            });
+
+            document.querySelectorAll('.login-prompt').forEach(link => {
+                link.addEventListener('click', function (e) {
+                    e.preventDefault();
+                    showLoginModal();
+                });
+            });
+        }
+
+        function addComment(newsId, commentText) {
+            const newsItem = news.find(item => item.id === newsId);
+            if (newsItem) {
+                const newComment = {
+                    id: newsItem.comments.length + 1,
+                    author: currentUser.name,
+                    content: commentText,
+                    date: new Date().toISOString().split('T')[0]
+                };
+
+                newsItem.comments.push(newComment);
+                renderNewsList();
+            }
+        }
+
+        function renderEventsList() {
+            eventsList.innerHTML = '';
+
+            events.forEach(event => {
+                const eventCard = document.createElement('div');
+                eventCard.className = 'bg-white border rounded-lg shadow-sm overflow-hidden mb-4';
+                eventCard.innerHTML = `
+          <div class="p-4">
+            <h3 class="font-bold text-lg">${event.title}</h3>
+            <p class="text-sm text-gray-500 mt-1">${event.date} at ${event.location}</p>
+            <p class="mt-3">${event.description}</p>
+          </div>
+        `;
+                eventsList.appendChild(eventCard);
+            });
+        }
+
+        function filterNews() {
+            filteredNews = news.filter(item => {
+                const matchesNeighborhood = !selectedNeighborhood ||
+                    item.neighborhood.toLowerCase().includes(selectedNeighborhood.toLowerCase());
+                const matchesZipCode = !selectedZipCode ||
+                    item.zipCode.includes(selectedZipCode);
+                const matchesSearch = !searchQuery ||
+                    item.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                    item.content.toLowerCase().includes(searchQuery.toLowerCase());
+
+                return matchesNeighborhood && matchesZipCode && matchesSearch;
+            });
+
+            renderNewsList();
+        }
+
+        function showUrgentAlert(alertNews) {
+            urgentAlertContent.textContent = `${alertNews.title}: ${alertNews.content}`;
+            urgentAlert.classList.remove('hidden');
+        }
+
+        function updateCalendar() {
+            const monthNames = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
+            currentMonthYear.textContent = `${monthNames[currentMonth]} ${currentYear}`;
+
+            calendar.innerHTML = '';
+
+            const firstDay = new Date(currentYear, currentMonth, 1).getDay();
+            const daysInMonth = new Date(currentYear, currentMonth + 1, 0).getDate();
+
+            for (let i = 0; i < firstDay; i++) {
+                const emptyDay = document.createElement('div');
+                emptyDay.className = 'calendar-day bg-gray-50';
+                calendar.appendChild(emptyDay);
+            }
+
+            for (let day = 1; day <= daysInMonth; day++) {
+                const dayElement = document.createElement('div');
+                dayElement.className = 'calendar-day';
+                dayElement.textContent = day;
+
+                const dateString = `${currentYear}-${String(currentMonth + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+                const hasEvents = events.some(event => event.date === dateString);
+
+                if (hasEvents) {
+                    dayElement.classList.add('has-event');
+                    const eventDot = document.createElement('div');
+                    eventDot.className = 'event-dot';
+                    dayElement.appendChild(eventDot);
+                }
+
+                const today = new Date();
+                if (day === today.getDate() && currentMonth === today.getMonth() && currentYear === today.getFullYear()) {
+                    dayElement.classList.add('today');
+                }
+
+                dayElement.addEventListener('click', () => {
+                    const clickedDate = `${currentYear}-${String(currentMonth + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+                    const dayEvents = events.filter(event => event.date === clickedDate);
+
+                    eventsList.innerHTML = '';
+
+                    if (dayEvents.length === 0) {
+                        eventsList.innerHTML = `
+              <div class="text-center py-4">
+                <p class="text-gray-500">No events on ${monthNames[currentMonth]} ${day}, ${currentYear}</p>
+              </div>
+            `;
+                    } else {
+                        dayEvents.forEach(event => {
+                            const eventCard = document.createElement('div');
+                            eventCard.className = 'bg-white border rounded-lg shadow-sm overflow-hidden mb-4';
+                            eventCard.innerHTML = `
+                <div class="p-4">
+                  <h3 class="font-bold text-lg">${event.title}</h3>
+                  <p class="text-sm text-gray-500 mt-1">${event.date} at ${event.location}</p>
+                  <p class="mt-3">${event.description}</p>
+                </div>
+              `;
+                            eventsList.appendChild(eventCard);
+                        });
+                    }
+                });
+
+                calendar.appendChild(dayElement);
+            }
+        }
+
+        function showLoginModal() {
+            loginModal.classList.remove('hidden');
+        }
+
+        function showRegisterModal() {
+            registerModal.classList.remove('hidden');
+        }
+
+        function login(email, password) {
+            const user = users.find(u => u.email === email && u.password === password);
+            if (user) {
+                currentUser = user;
+                updateAuthUI();
+                return true;
+            }
+            return false;
+        }
+
+        function register(name, email, password) {
+            if (users.some(u => u.email === email)) {
+                return false;
+            }
+
+            const newUser = {
+                id: users.length + 1,
+                name,
+                email,
+                password
+            };
+
+            users.push(newUser);
+            currentUser = newUser;
+            updateAuthUI();
+            return true;
+        }
+
+        function logout() {
+            currentUser = null;
+            updateAuthUI();
+        }
+
+        function updateAuthUI() {
+            if (currentUser) {
+                authButtons.classList.add('hidden');
+                userInfo.classList.remove('hidden');
+                welcomeMessage.textContent = `Welcome, ${currentUser.name}`;
+
+                postNewsBtn.disabled = false;
+                postEventBtn.disabled = false;
+                postNewsBtn.classList.remove('opacity-50', 'cursor-not-allowed');
+                postEventBtn.classList.remove('opacity-50', 'cursor-not-allowed');
+            } else {
+                authButtons.classList.remove('hidden');
+                userInfo.classList.add('hidden');
+
+                postNewsBtn.disabled = true;
+                postEventBtn.disabled = true;
+                postNewsBtn.classList.add('opacity-50', 'cursor-not-allowed');
+                postEventBtn.classList.add('opacity-50', 'cursor-not-allowed');
+            }
+
+            renderNewsList();
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            initMap();
+            renderNewsList();
+            renderEventsList();
+            updateCalendar();
+            updateAuthUI();
+
+            if (urgentNews.length > 0) {
+                showUrgentAlert(urgentNews[urgentNews.length - 1]);
+            }
+
+            newsTab.addEventListener('click', () => {
+                newsTab.classList.add('border-b-2', 'border-blue-500', 'text-blue-600');
+                eventsTab.classList.remove('border-b-2', 'border-blue-500', 'text-blue-600');
+                eventsTab.classList.add('text-gray-500');
+                newsContent.classList.remove('hidden');
+                eventsContent.classList.add('hidden');
+            });
+
+            eventsTab.addEventListener('click', () => {
+                eventsTab.classList.add('border-b-2', 'border-blue-500', 'text-blue-600');
+                newsTab.classList.remove('border-b-2', 'border-blue-500', 'text-blue-600');
+                newsTab.classList.add('text-gray-500');
+                eventsContent.classList.remove('hidden');
+                newsContent.classList.add('hidden');
+            });
+
+            neighborhoodFilter.addEventListener('input', () => {
+                selectedNeighborhood = neighborhoodFilter.value;
+                filterNews();
+            });
+
+            zipCodeFilter.addEventListener('input', () => {
+                selectedZipCode = zipCodeFilter.value;
+                filterNews();
+            });
+
+            searchInput.addEventListener('input', () => {
+                searchQuery = searchInput.value;
+                filterNews();
+            });
+
+            postNewsBtn.addEventListener('click', () => {
+                if (!currentUser) {
+                    showLoginModal();
+                    return;
+                }
+                postNewsModal.classList.remove('hidden');
+            });
+
+            closeNewsModal.addEventListener('click', () => {
+                postNewsModal.classList.add('hidden');
+            });
+
+            postNewsForm.addEventListener('submit', (e) => {
+                e.preventDefault();
+
+                if (!currentUser) return;
+
+                const formData = new FormData(postNewsForm);
+                const newNewsItem = {
+                    id: news.length + 1,
+                    title: formData.get('title'),
+                    content: formData.get('content'),
+                    author: currentUser.name,
+                    date: new Date().toISOString().split('T')[0],
+                    neighborhood: formData.get('neighborhood'),
+                    zipCode: formData.get('zipCode'),
+                    location: [40.71 + Math.random() * 0.01, -74.0 + Math.random() * 0.02],
+                    urgent: formData.get('urgent') === 'on',
+                    comments: []
+                };
+
+                news = [newNewsItem, ...news];
+
+                if (newNewsItem.urgent) {
+                    urgentNews.push(newNewsItem);
+                    showUrgentAlert(newNewsItem);
+                }
+
+                filterNews();
+                updateMapMarkers();
+                postNewsModal.classList.add('hidden');
+                postNewsForm.reset();
+            });
+
+            postEventBtn.addEventListener('click', () => {
+                if (!currentUser) {
+                    showLoginModal();
+                    return;
+                }
+                postEventModal.classList.remove('hidden');
+            });
+
+            closeEventModal.addEventListener('click', () => {
+                postEventModal.classList.add('hidden');
+            });
+
+            postEventForm.addEventListener('submit', (e) => {
+                e.preventDefault();
+
+                if (!currentUser) return;
+
+                const formData = new FormData(postEventForm);
+                const newEvent = {
+                    id: events.length + 1,
+                    title: formData.get('title'),
+                    date: formData.get('date'),
+                    location: formData.get('location'),
+                    description: formData.get('description'),
+                };
+
+                events = [newEvent, ...events];
+                renderEventsList();
+                updateCalendar();
+                postEventModal.classList.add('hidden');
+                postEventForm.reset();
+            });
+
+            loginBtn.addEventListener('click', showLoginModal);
+            registerBtn.addEventListener('click', showRegisterModal);
+            closeLoginModal.addEventListener('click', () => loginModal.classList.add('hidden'));
+            closeRegisterModal.addEventListener('click', () => registerModal.classList.add('hidden'));
+            logoutBtn.addEventListener('click', logout);
+
+            loginForm.addEventListener('submit', (e) => {
+                e.preventDefault();
+                const email = document.getElementById('loginEmail').value;
+                const password = document.getElementById('loginPassword').value;
+
+                if (login(email, password)) {
+                    loginModal.classList.add('hidden');
+                    loginForm.reset();
+                } else {
+                    alert('Invalid email or password');
+                }
+            });
+
+            registerForm.addEventListener('submit', (e) => {
+                e.preventDefault();
+                const name = document.getElementById('registerName').value;
+                const email = document.getElementById('registerEmail').value;
+                const password = document.getElementById('registerPassword').value;
+                const confirmPassword = document.getElementById('registerConfirmPassword').value;
+
+                if (password !== confirmPassword) {
+                    alert('Passwords do not match');
+                    return;
+                }
+
+                if (register(name, email, password)) {
+                    registerModal.classList.add('hidden');
+                    registerForm.reset();
+                } else {
+                    alert('Email already exists');
+                }
+            });
+
+            // Add this to your existing JavaScript
+            const mobileMenuButton = document.getElementById('mobileMenuButton');
+            const mobileMenu = document.getElementById('mobileMenu');
+
+            mobileMenuButton.addEventListener('click', () => {
+                mobileMenu.classList.toggle('hidden');
+                mobileMenu.classList.toggle('flex');
+                mobileMenu.classList.toggle('flex-col');
+                mobileMenu.classList.toggle('absolute');
+                mobileMenu.classList.toggle('top-16');
+                mobileMenu.classList.toggle('left-0');
+                mobileMenu.classList.toggle('right-0');
+                mobileMenu.classList.toggle('bg-white');
+                mobileMenu.classList.toggle('p-4');
+                mobileMenu.classList.toggle('shadow-md');
+                mobileMenu.classList.toggle('gap-4');
+            });
+
+            prevMonth.addEventListener('click', () => {
+                currentMonth--;
+                if (currentMonth < 0) {
+                    currentMonth = 11;
+                    currentYear--;
+                }
+                updateCalendar();
+            });
+
+            nextMonth.addEventListener('click', () => {
+                currentMonth++;
+                if (currentMonth > 11) {
+                    currentMonth = 0;
+                    currentYear++;
+                }
+                updateCalendar();
+            });
+
+            acknowledgeBtn.addEventListener('click', () => {
+                urgentAlert.classList.add('hidden');
+            });
+        });
+    </script>
+</body>
+
+</html>

@@ -1,0 +1,701 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Coffee Mixer App</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
+        crossorigin="anonymous" referrerpolicy="no-referrer" />
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet" />
+    <style>
+        body {
+            font-family: "Poppins", sans-serif;
+            background: linear-gradient(135deg, #f5f7fa 0%, #e4e8f0 100%);
+        }
+
+        .container {
+            max-width: 1200px;
+        }
+
+        .jug {
+            width: 150px;
+            height: 250px;
+            padding-top: 1.75rem;
+            border: 3px solid #2d3748;
+            border-radius: 0 0 15px 15px;
+            position: relative;
+            overflow: hidden;
+            margin: 5px;
+            background-color: #fff;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+            transition: transform 0.3s ease;
+        }
+
+        .jug:hover {
+            transform: translateY(-5px);
+        }
+
+        .jug::before {
+            content: "";
+            position: absolute;
+            top: -12px;
+            left: 0;
+            width: 100%;
+            height: 24px;
+            background: linear-gradient(to right, #e2e8f0, #cbd5e0);
+            border-bottom: 3px solid #a0aec0;
+            border-radius: 15px 15px 0 0;
+            z-index: 0;
+        }
+
+        .jug-label {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            text-align: center;
+            background: linear-gradient(to right, #4a5568, #2d3748);
+            color: #fff;
+            font-size: 0.9rem;
+            font-weight: 600;
+            padding: 6px 0;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.3);
+            z-index: 5;
+            text-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+            letter-spacing: 0.5px;
+        }
+
+        .glass {
+            width: 150px;
+            height: 250px;
+            padding-top: 1.75rem;
+            border: 3px solid rgba(160, 174, 192, 0.8);
+            border-radius: 20px;
+            position: relative;
+            overflow: hidden;
+            margin: 5px;
+            background: linear-gradient(to bottom, rgba(255, 255, 255, 0.3), transparent 100%);
+            box-shadow: 0 6px 15px rgba(0, 0, 0, 0.15);
+            transition: transform 0.3s ease;
+        }
+
+        .glass:hover {
+            transform: translateY(-5px);
+        }
+
+        .glass::after {
+            content: "";
+            position: absolute;
+            top: 10%;
+            left: 5%;
+            width: 80%;
+            height: 30%;
+            background: linear-gradient(to bottom, rgba(255, 255, 255, 0.8), transparent);
+            transform: skewY(-10deg);
+            border-radius: 50%;
+            pointer-events: none;
+            filter: blur(2px);
+        }
+
+        .glass-label {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            text-align: center;
+            background: linear-gradient(to right, #ed8936, #dd6b20);
+            color: #fff;
+            font-size: 0.9rem;
+            font-weight: 600;
+            padding: 6px 0;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.3);
+            z-index: 5;
+            text-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+            letter-spacing: 0.5px;
+        }
+
+        .jug .liquid {
+            position: absolute;
+            bottom: 0;
+            width: 100%;
+            transition: height 0.8s cubic-bezier(0.65, 0, 0.35, 1);
+        }
+
+        .jug .coffee {
+            background: linear-gradient(to bottom, #6b3e26, #8b4513);
+        }
+
+        .jug .milk {
+            background: linear-gradient(to bottom, #f7fafc, #e2e8f0);
+        }
+
+        .jug .water {
+            background: linear-gradient(to bottom, rgba(0, 191, 255, 0.5), rgba(135, 206, 250, 0.3));
+        }
+
+        .glass .mixture {
+            position: absolute;
+            bottom: 0;
+            width: 100%;
+            transition: all 0.8s cubic-bezier(0.65, 0, 0.35, 1);
+            border-radius: 0 0 17px 17px;
+        }
+
+        .pouring {
+            position: absolute;
+            width: 24px;
+            height: 60px;
+            top: -70px;
+            left: 40px;
+            opacity: 0;
+            transition: all 0.8s cubic-bezier(0.68, -0.6, 0.32, 1.6);
+            z-index: 10;
+            filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.2));
+        }
+
+        .pouring.active {
+            top: 0;
+            opacity: 1;
+        }
+
+        .pouring.coffee {
+            background: linear-gradient(to bottom, transparent, #6b3e26 80%);
+        }
+
+        .pouring.milk {
+            background: linear-gradient(to bottom, transparent, #f7fafc 80%);
+        }
+
+        .pouring.water {
+            background: linear-gradient(to bottom, transparent, rgba(0, 191, 255, 0.5) 80%);
+        }
+
+        #customAlert {
+            position: fixed;
+            top: 30px;
+            left: 50%;
+            transform: translateX(-50%);
+            background-color: #f56565;
+            color: #fff;
+            padding: 0.85rem 1.5rem;
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+            z-index: 50;
+            opacity: 0;
+            transition: opacity 0.4s ease, transform 0.4s ease;
+            font-weight: 500;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        #customAlert.show {
+            opacity: 1;
+            transform: translateX(-50%) translateY(0);
+        }
+
+        #customAlert.hide {
+            opacity: 0;
+            transform: translateX(-50%) translateY(-20px);
+        }
+
+        .text-coffee {
+            color: #6b3e26;
+            font-weight: 600;
+        }
+
+        .text-milk {
+            color: #4a5568;
+            font-weight: 600;
+        }
+
+        .text-water {
+            color: #3182ce;
+            font-weight: 600;
+        }
+
+        .btn-mix {
+            background: linear-gradient(to right, #4a5568, #2d3748);
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+
+        .btn-mix:hover {
+            background: linear-gradient(to right, #2d3748, #1a202c);
+            transform: translateY(-2px);
+        }
+
+        .btn-reset {
+            background: linear-gradient(to right, #e53e3e, #c53030);
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+
+        .btn-reset:hover {
+            background: linear-gradient(to right, #c53030, #9b2c2c);
+            transform: translateY(-2px);
+        }
+
+        .btn {
+            transition: all 0.3s ease;
+        }
+
+        .btn:active {
+            transform: translateY(1px);
+        }
+
+        .input-field {
+            transition: all 0.3s ease;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+        }
+
+        .input-field:focus {
+            box-shadow: 0 0 0 3px rgba(66, 153, 225, 0.5);
+        }
+
+        @keyframes glassPulse {
+            0% {
+                transform: scale(1);
+            }
+
+            50% {
+                transform: scale(1.03);
+            }
+
+            100% {
+                transform: scale(1);
+            }
+        }
+
+        .glass.animate {
+            animation: glassPulse 0.6s cubic-bezier(0.68, -0.6, 0.32, 1.6);
+        }
+
+        .ingredient-count {
+            background: rgba(255, 255, 255, 0.8);
+            padding: 0.5rem 1rem;
+            border-radius: 9999px;
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+            font-weight: 600;
+        }
+
+        .glass-count {
+            font-size: 1.5rem;
+            background: rgba(255, 255, 255, 0.8);
+            padding: 0.5rem 1.5rem;
+            border-radius: 9999px;
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+        }
+
+        .percentage-display {
+            backdrop-filter: blur(8px);
+            background: rgba(255, 255, 255, 0.85);
+            border: 1px solid rgba(160, 174, 192, 0.3);
+        }
+
+        .floating-label {
+            position: absolute;
+            top: -10px;
+            left: 10px;
+            background: white;
+            padding: 0 5px;
+            font-size: 0.75rem;
+            color: #4a5568;
+            font-weight: 500;
+        }
+
+        .input-container {
+            position: relative;
+            border-radius: 8px;
+            padding-top: 10px;
+        }
+    </style>
+</head>
+
+<body class="min-h-screen flex flex-col items-center justify-center py-8 px-4">
+    <!-- Alert Toast -->
+    <div id="customAlert" class="hide">
+        <i class="fas fa-exclamation-circle"></i>
+        <span id="alertMessage"></span>
+    </div>
+
+    <!-- Main Title -->
+    <h1 class="text-4xl font-bold mb-2 text-center text-gray-800">Coffee Mixer</h1>
+    <p class="text-gray-600 mb-8 text-center max-w-md">Create your perfect coffee blend by mixing ingredients</p>
+
+    <div class="container mx-auto px-4 py-6">
+        <!-- Visual Jugs and Glass -->
+        <div class="flex flex-wrap justify-center items-end mb-8 gap-4">
+            <!-- Coffee Jar -->
+            <div class="jug flex flex-col items-center relative">
+                <div class="jug-label"><i class="fa-solid fa-mug-hot mr-2"></i>Coffee</div>
+                <div class="liquid coffee" id="jug-liquid-coffee" style="height: 100%;"></div>
+            </div>
+            <!-- Milk Jar -->
+            <div class="jug flex flex-col items-center relative">
+                <div class="jug-label"><i class="fa-solid fa-mug-saucer mr-2"></i>Milk</div>
+                <div class="liquid milk" id="jug-liquid-milk" style="height: 100%;"></div>
+            </div>
+            <!-- Water Jar -->
+            <div class="jug flex flex-col items-center relative">
+                <div class="jug-label"><i class="fa-solid fa-glass-water mr-2"></i>Water</div>
+                <div class="liquid water" id="jug-liquid-water" style="height: 100%;"></div>
+            </div>
+            <!-- Glass -->
+            <div id="glassContainer" class="glass flex flex-col items-center relative">
+                <div class="glass-label"><i class="fa-solid fa-wine-glass-alt mr-2"></i>Your Blend</div>
+                <!-- Mixed liquid layer -->
+                <div id="glass-mixture" class="mixture" style="height: 0%; bottom: 0%; background-color: transparent;">
+                </div>
+                <div id="pouring" class="pouring"></div>
+            </div>
+        </div>
+
+        <!-- Ingredient and Glass Counts -->
+        <div class="flex flex-col items-center mb-8">
+            <div class="flex flex-wrap justify-center gap-4 mb-6">
+                <span class="ingredient-count"><i class="fa-solid fa-mug-hot mr-2 text-coffee"></i> Coffee: <span
+                        id="coffeeCount">10</span> units</span>
+                <span class="ingredient-count"><i class="fa-solid fa-mug-saucer mr-2 text-milk"></i> Milk: <span
+                        id="milkCount">10</span> units</span>
+                <span class="ingredient-count"><i class="fa-solid fa-glass-water mr-2 text-water"></i> Water: <span
+                        id="waterCount">10</span> units</span>
+            </div>
+            <div class="text-center">
+                <span class="glass-count"><i class="fa-solid fa-wine-glass-alt mr-2"></i>Glass: <span
+                        id="glassCount">0</span>/10 units</span>
+            </div>
+        </div>
+
+        <!-- Input Fields -->
+        <div class="flex flex-col sm:flex-row justify-center items-center gap-8 mb-8">
+            <div class="input-container">
+                <div class="floating-label">Coffee Parts</div>
+                <input id="coffeeInput" type="number" min="0" max="10" placeholder="0"
+                    class="input-field p-3 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:border-blue-500 w-28 text-center text-lg" />
+            </div>
+            <div class="input-container">
+                <div class="floating-label">Milk Parts</div>
+                <input id="milkInput" type="number" min="0" max="10" placeholder="0"
+                    class="input-field p-3 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:border-blue-500 w-28 text-center text-lg" />
+            </div>
+            <div class="input-container">
+                <div class="floating-label">Water Parts</div>
+                <input id="waterInput" type="number" min="0" max="10" placeholder="0"
+                    class="input-field p-3 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:border-blue-500 w-28 text-center text-lg" />
+            </div>
+        </div>
+
+        <!-- Buttons -->
+        <div class="flex flex-col sm:flex-row justify-center items-center gap-6 mb-8">
+            <button id="submit"
+                class="btn btn-mix px-6 py-3 text-white rounded-lg hover:shadow-md transition-all duration-300 w-36">
+                <i class="fa-solid fa-play mr-2"></i> Mix
+            </button>
+            <button id="reset"
+                class="btn btn-reset px-6 py-3 text-white rounded-lg hover:shadow-md transition-all duration-300 w-36">
+                <i class="fa-solid fa-rotate-right mr-2"></i> Reset
+            </button>
+        </div>
+
+        <!-- Percentage Breakdown Display -->
+        <div id="percentages"
+            class="mx-auto w-full max-w-md percentage-display rounded-lg shadow-md p-5 text-xl text-center border border-gray-200 mb-8 transition-all duration-500"
+            style="min-height: 4rem;"></div>
+    </div>
+
+    <script>
+        // State management
+        const jugs = { coffee: 10, milk: 10, water: 10 };
+        let glass = { coffee: 0, milk: 0, water: 0 };
+        const maxGlass = 10;
+        let isAnimating = false;
+
+        // DOM References
+        const submitBtn = document.getElementById("submit");
+        const resetBtn = document.getElementById("reset");
+        const percentagesDiv = document.getElementById("percentages");
+        const pouring = document.getElementById("pouring");
+        const customAlertDiv = document.getElementById("customAlert");
+        const alertMessage = document.getElementById("alertMessage");
+        const coffeeCountEl = document.getElementById("coffeeCount");
+        const milkCountEl = document.getElementById("milkCount");
+        const waterCountEl = document.getElementById("waterCount");
+        const glassCountEl = document.getElementById("glassCount");
+        const glassContainer = document.getElementById("glassContainer");
+        const glassMixture = document.getElementById("glass-mixture");
+
+        // Jug liquid elements 
+        const jugLiquidCoffee = document.getElementById("jug-liquid-coffee");
+        const jugLiquidMilk = document.getElementById("jug-liquid-milk");
+        const jugLiquidWater = document.getElementById("jug-liquid-water");
+
+        // Input Fields
+        const coffeeInput = document.getElementById("coffeeInput");
+        const milkInput = document.getElementById("milkInput");
+        const waterInput = document.getElementById("waterInput");
+
+        // Custom Alert Function
+        function showAlert(message, type = 'error') {
+            if (type === 'error') {
+                customAlertDiv.style.backgroundColor = '#f56565';
+            } else {
+                customAlertDiv.style.backgroundColor = '#48bb78';
+            }
+
+            alertMessage.textContent = message;
+            customAlertDiv.classList.remove('hide');
+            customAlertDiv.classList.add('show');
+
+            setTimeout(() => {
+                customAlertDiv.classList.remove('show');
+                customAlertDiv.classList.add('hide');
+            }, 3000);
+        }
+
+        // Animate the pouring indicator for an ingredient
+        function animatePour(ingredient, amount, callback) {
+            if (isAnimating) return;
+            isAnimating = true;
+
+            pouring.style.height = `${Math.min(amount * 10, 100)}px`;
+            pouring.classList.remove("coffee", "milk", "water");
+            pouring.classList.add(ingredient, "active");
+
+            setTimeout(() => {
+                pouring.classList.remove("active");
+                isAnimating = false;
+                if (callback) callback();
+            }, 800);
+        }
+
+        // Calculate the mixed color based on ingredient ratios
+        function mixColors(coffee, milk, water) {
+            const total = coffee + milk + water;
+            if (total === 0) return "transparent";
+
+            // Calculate weighted average of RGB components
+            const r = Math.round((coffee * 107 + milk * 247 + water * 222) / total);
+            const g = Math.round((coffee * 62 + milk * 247 + water * 184) / total);
+            const b = Math.round((coffee * 38 + milk * 247 + water * 135) / total);
+
+            // Adjust saturation based on water content
+            const saturation = 1 - (water / total) * 0.5;
+            const hsv = rgbToHsv(r, g, b);
+            hsv[1] *= saturation;
+            const adjusted = hsvToRgb(hsv[0], hsv[1], hsv[2]);
+
+            return `rgb(${adjusted[0]}, ${adjusted[1]}, ${adjusted[2]})`;
+        }
+
+        // RGB to HSV conversion
+        function rgbToHsv(r, g, b) {
+            r /= 255, g /= 255, b /= 255;
+            const max = Math.max(r, g, b), min = Math.min(r, g, b);
+            let h, s, v = max;
+            const d = max - min;
+            s = max === 0 ? 0 : d / max;
+            if (max === min) {
+                h = 0;
+            } else {
+                switch (max) {
+                    case r: h = (g - b) / d + (g < b ? 6 : 0); break;
+                    case g: h = (b - r) / d + 2; break;
+                    case b: h = (r - g) / d + 4; break;
+                }
+                h /= 6;
+            }
+            return [h, s, v];
+        }
+
+        // HSV to RGB conversion
+        function hsvToRgb(h, s, v) {
+            let r, g, b;
+            const i = Math.floor(h * 6);
+            const f = h * 6 - i;
+            const p = v * (1 - s);
+            const q = v * (1 - f * s);
+            const t = v * (1 - (1 - f) * s);
+            switch (i % 6) {
+                case 0: r = v, g = t, b = p; break;
+                case 1: r = q, g = v, b = p; break;
+                case 2: r = p, g = v, b = t; break;
+                case 3: r = p, g = q, b = v; break;
+                case 4: r = t, g = p, b = v; break;
+                case 5: r = v, g = p, b = q; break;
+            }
+            return [Math.round(r * 255), Math.round(g * 255), Math.round(b * 255)];
+        }
+
+        // Handle the mix operation
+        async function handleMix() {
+            if (isAnimating) return;
+
+            const coffeeVal = parseInt(coffeeInput.value) || 0;
+            const milkVal = parseInt(milkInput.value) || 0;
+            const waterVal = parseInt(waterInput.value) || 0;
+            const totalNew = coffeeVal + milkVal + waterVal;
+            const totalInGlass = glass.coffee + glass.milk + glass.water;
+
+            // Validate input amounts
+            if (totalNew <= 0) {
+                showAlert("Please enter amounts to mix");
+                return;
+            }
+
+            if (coffeeVal < 0 || milkVal < 0 || waterVal < 0) {
+                showAlert("Please enter positive numbers");
+                return;
+            }
+
+            if (coffeeVal > jugs.coffee) {
+                showAlert(`Only ${jugs.coffee} unit(s) of Coffee available`);
+                return;
+            }
+
+            if (milkVal > jugs.milk) {
+                showAlert(`Only ${jugs.milk} unit(s) of Milk available`);
+                return;
+            }
+
+            if (waterVal > jugs.water) {
+                showAlert(`Only ${jugs.water} unit(s) of Water available`);
+                return;
+            }
+
+            if (totalInGlass + totalNew > maxGlass) {
+                showAlert(`Glass will overflow! Only ${maxGlass - totalInGlass} unit(s) left`);
+                return;
+            }
+
+            // Disable buttons during animation
+            submitBtn.disabled = true;
+            resetBtn.disabled = true;
+
+            // Create pouring sequence
+            const pours = [];
+            if (coffeeVal > 0) pours.push({ ingredient: 'coffee', amount: coffeeVal });
+            if (milkVal > 0) pours.push({ ingredient: 'milk', amount: milkVal });
+            if (waterVal > 0) pours.push({ ingredient: 'water', amount: waterVal });
+
+            // Execute pours sequentially
+            for (const pour of pours) {
+                await new Promise(resolve => {
+                    // Update state first
+                    jugs[pour.ingredient] -= pour.amount;
+                    glass[pour.ingredient] += pour.amount;
+
+                    // Animate the pour
+                    animatePour(pour.ingredient, pour.amount, () => {
+                        updateAll();
+                        resolve();
+                    });
+                });
+            }
+
+            // Clear input fields
+            coffeeInput.value = "";
+            milkInput.value = "";
+            waterInput.value = "";
+
+            // Re-enable buttons
+            submitBtn.disabled = false;
+            resetBtn.disabled = false;
+
+            // Show success message if glass is full
+            if (totalInGlass + totalNew === maxGlass) {
+                showAlert("Your glass is now full!", 'success');
+            }
+        }
+
+        // Update all visual elements
+        function updateAll() {
+            const total = glass.coffee + glass.milk + glass.water;
+
+            // Update glass mixture
+            const mixtureHeight = (total / maxGlass) * 100;
+            glassMixture.style.height = `${mixtureHeight}%`;
+            glassMixture.style.backgroundColor = mixColors(glass.coffee, glass.milk, glass.water);
+
+            // Update jug fill levels
+            jugLiquidCoffee.style.height = `${(jugs.coffee / 10) * 100}%`;
+            jugLiquidMilk.style.height = `${(jugs.milk / 10) * 100}%`;
+            jugLiquidWater.style.height = `${(jugs.water / 10) * 100}%`;
+
+            // Update counts
+            coffeeCountEl.textContent = jugs.coffee;
+            milkCountEl.textContent = jugs.milk;
+            waterCountEl.textContent = jugs.water;
+            glassCountEl.textContent = total;
+
+            // Animate glass
+            glassContainer.classList.add("animate");
+            setTimeout(() => glassContainer.classList.remove("animate"), 600);
+
+            // Update percentage display
+            if (total > 0) {
+                const coffeePct = ((glass.coffee / total) * 100).toFixed(1);
+                const milkPct = ((glass.milk / total) * 100).toFixed(1);
+                const waterPct = ((glass.water / total) * 100).toFixed(1);
+
+                percentagesDiv.innerHTML = `
+          <div class="flex flex-col sm:flex-row sm:justify-evenly items-center gap-4">
+            <span class="text-coffee"><i class="fa-solid fa-mug-hot mr-2"></i>Coffee: ${coffeePct}%</span>
+            <span class="text-milk"><i class="fa-solid fa-mug-saucer mr-2"></i>Milk: ${milkPct}%</span>
+            <span class="text-water"><i class="fa-solid fa-glass-water mr-2"></i>Water: ${waterPct}%</span>
+          </div>
+          ${total === maxGlass ? '<p class="mt-2 text-sm text-green-600 font-medium"><i class="fas fa-glass-cheers mr-1"></i>Your glass is full!</p>' : ''}
+        `;
+            } else {
+                percentagesDiv.innerHTML = '<p class="text-gray-500">Your blend will appear here</p>';
+            }
+        }
+
+        // Reset the glass and refill jugs
+        function resetGlass() {
+            if (isAnimating) return;
+
+            const totalInGlass = glass.coffee + glass.milk + glass.water;
+            if (totalInGlass === 0) {
+                showAlert("Glass is already empty");
+                return;
+            }
+
+            // Return ingredients to jugs
+            jugs.coffee += glass.coffee;
+            jugs.milk += glass.milk;
+            jugs.water += glass.water;
+
+            // Empty glass
+            glass = { coffee: 0, milk: 0, water: 0 };
+
+            // Update visuals
+            updateAll();
+
+            // Clear inputs
+            coffeeInput.value = "";
+            milkInput.value = "";
+            waterInput.value = "";
+
+            showAlert("Glass has been reset", 'success');
+        }
+
+        // Event Listeners
+        submitBtn.addEventListener("click", handleMix);
+        resetBtn.addEventListener("click", resetGlass);
+
+        // Input validation
+        [coffeeInput, milkInput, waterInput].forEach(input => {
+            input.addEventListener('input', (e) => {
+                let value = parseInt(e.target.value) || 0;
+                if (value < 0) e.target.value = 0;
+                if (value > 10) e.target.value = 10;
+            });
+        });
+
+        // Initialize
+        updateAll();
+    </script>
+</body>
+
+</html>

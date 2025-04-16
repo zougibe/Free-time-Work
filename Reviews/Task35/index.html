@@ -1,0 +1,824 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Virtual Pet Simulator</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            border: none;
+        }
+
+        body {
+            font-family: 'Press Start 2P', 'Courier New', monospace;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            gap: 1.5rem;
+            min-height: 100vh;
+            color: #333;
+            background-color: #323264;
+            padding: 1rem;
+        }
+
+        h1 {
+            color: #f8f8f8;
+            font-size: 2rem;
+            text-shadow: 3px 3px 0 #000;
+            margin-bottom: 0.5rem;
+        }
+
+        #game-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: space-between;
+            width: 100%;
+            max-width: 400px;
+            min-height: 500px;
+            background-color: #fff;
+            border-radius: 1rem;
+            padding: 1.5rem;
+            text-align: center;
+            box-shadow: 0 8px 0 rgba(0, 0, 0, 0.3);
+            border: 4px solid #000;
+            position: relative;
+        }
+
+        canvas {
+            image-rendering: pixelated;
+            margin: 1rem 0;
+            border: 4px solid #000;
+            background-color: #f0f0f0;
+        }
+
+        .stats {
+            display: flex;
+            justify-content: space-around;
+            width: 100%;
+            font-size: 0.8rem;
+            margin-bottom: 1rem;
+            gap: 0.5rem;
+        }
+
+        .stat-item {
+            display: flex;
+            flex-direction: column;
+            gap: 0.25rem;
+            background-color: #f0f0f0;
+            padding: 0.5rem;
+            border-radius: 0.5rem;
+            border: 2px solid #000;
+            flex: 1;
+        }
+
+        .stat-label {
+            font-size: 0.7rem;
+        }
+
+        .stat-value {
+            font-size: 1.2rem;
+            font-weight: bold;
+            margin-top: 0.2rem;
+        }
+
+        .stat-bar {
+            height: 8px;
+            background-color: #ddd;
+            border-radius: 4px;
+            overflow: hidden;
+            margin-top: 0.25rem;
+        }
+
+        .stat-bar-fill {
+            height: 100%;
+            width: 50%;
+            background-color: #4CAF50;
+            transition: width 0.3s;
+        }
+
+        .options {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 1rem;
+            width: 100%;
+        }
+
+        .buttons {
+            width: 100%;
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 0.5rem;
+            margin-top: 1rem;
+        }
+
+        button {
+            background-color: #335c67;
+            color: white;
+            padding: 12px 0;
+            font-size: 0.8rem;
+            cursor: pointer;
+            border-radius: 0.5rem;
+            transition: all 0.2s;
+            border: 2px solid #000;
+            box-shadow: 0 3px 0 #000;
+            font-family: inherit;
+        }
+
+        button:hover {
+            background-color: #264653;
+            transform: translateY(-2px);
+        }
+
+        button:active {
+            transform: translateY(1px);
+            box-shadow: 0 1px 0 #000;
+        }
+
+        .skin-buttons {
+            display: flex;
+            gap: 0.8rem;
+            margin: 0.5rem 0;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+
+        .skin-button {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            cursor: pointer;
+            border: 3px solid transparent;
+            transition: all 0.2s;
+            box-shadow: 0 3px 0 rgba(0, 0, 0, 0.2);
+        }
+
+        .skin-button:hover {
+            transform: scale(1.1);
+        }
+
+        .skin-button.selected {
+            border-color: #000;
+            transform: scale(1.1);
+            box-shadow: 0 0 0 2px #fff, 0 0 0 4px #000;
+        }
+
+        #warning {
+            color: #d32f2f;
+            font-weight: bold;
+            display: none;
+            width: 100%;
+            text-align: center;
+            background-color: #ffebee;
+            padding: 0.5rem;
+            border-radius: 0.5rem;
+            border: 2px solid #d32f2f;
+            margin-bottom: 1rem;
+            font-size: 0.8rem;
+            animation: pulse 1.5s infinite;
+        }
+
+        @keyframes pulse {
+            0% {
+                transform: scale(1);
+            }
+
+            50% {
+                transform: scale(1.05);
+            }
+
+            100% {
+                transform: scale(1);
+            }
+        }
+
+        .type-buttons {
+            display: flex;
+            gap: 0.5rem;
+            margin-bottom: 1rem;
+            justify-content: center;
+            width: 100%;
+        }
+
+        .type-button {
+            padding: 0.5rem 1rem;
+            border-radius: 2rem;
+            background-color: #e0e0e0;
+            cursor: pointer;
+            font-size: 0.8rem;
+            transition: all 0.2s;
+            border: 2px solid #000;
+            box-shadow: 0 3px 0 #000;
+            flex: 1;
+        }
+
+        .type-button:hover {
+            background-color: #d0d0d0;
+            transform: translateY(-2px);
+        }
+
+        .type-button:active {
+            transform: translateY(1px);
+            box-shadow: 0 1px 0 #000;
+        }
+
+        .type-button.selected {
+            background-color: #335c67;
+            color: white;
+        }
+
+        .pet-name {
+            font-size: 1.2rem;
+            margin-bottom: 0.5rem;
+            font-weight: bold;
+        }
+
+        .blue {
+            background-color: #8db6f7;
+        }
+
+        .red {
+            background-color: #f29696;
+        }
+
+        .green {
+            background-color: #b1f5a3;
+        }
+
+        .yellow {
+            background-color: #eff38d;
+        }
+
+        .purple {
+            background-color: #9b8bf6;
+        }
+
+        .mood-indicator {
+            font-size: 0.8rem;
+            margin-top: 0.5rem;
+            font-weight: bold;
+        }
+
+        .status-effects {
+            display: flex;
+            gap: 0.5rem;
+            justify-content: center;
+            margin-top: 0.5rem;
+            flex-wrap: wrap;
+        }
+
+        .status-effect {
+            background-color: #ffeb3b;
+            padding: 0.25rem 0.5rem;
+            border-radius: 1rem;
+            font-size: 0.7rem;
+            border: 2px solid #000;
+        }
+    </style>
+    <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
+</head>
+
+<body>
+    <h1>PET SIMULATOR</h1>
+    <div id="game-container">
+        <div class="pet-name" id="pet-name">FIDO</div>
+
+        <div class="type-buttons">
+            <div class="type-button selected" data-type="dog">DOG</div>
+            <div class="type-button" data-type="cat">CAT</div>
+            <div class="type-button" data-type="rabbit">BUNNY</div>
+        </div>
+
+        <div class="skin-buttons">
+            <div class="skin-button blue selected" data-skin="blue"></div>
+            <div class="skin-button red" data-skin="red"></div>
+            <div class="skin-button green" data-skin="green"></div>
+            <div class="skin-button yellow" data-skin="yellow"></div>
+            <div class="skin-button purple" data-skin="purple"></div>
+        </div>
+
+        <canvas id="pet-canvas" width="160" height="160"></canvas>
+
+        <div class="mood-indicator" id="mood">HAPPY</div>
+
+        <div id="warning">WARNING! YOUR PET NEEDS ATTENTION!</div>
+
+        <div class="stats" id="stats">
+            <div class="stat-item">
+                <span class="stat-label">HUNGER</span>
+                <span class="stat-value">50</span>
+                <div class="stat-bar">
+                    <div class="stat-bar-fill" id="hunger-bar"></div>
+                </div>
+            </div>
+            <div class="stat-item">
+                <span class="stat-label">HAPPINESS</span>
+                <span class="stat-value">50</span>
+                <div class="stat-bar">
+                    <div class="stat-bar-fill" id="happiness-bar"></div>
+                </div>
+            </div>
+            <div class="stat-item">
+                <span class="stat-label">ENERGY</span>
+                <span class="stat-value">50</span>
+                <div class="stat-bar">
+                    <div class="stat-bar-fill" id="energy-bar"></div>
+                </div>
+            </div>
+        </div>
+
+        <div class="status-effects" id="status-effects"></div>
+
+        <div class="buttons">
+            <button onclick="feed()">FEED</button>
+            <button onclick="play()">PLAY</button>
+            <button onclick="rest()">REST</button>
+        </div>
+    </div>
+
+    <script>
+        // DOM Elements
+        const canvas = document.getElementById('pet-canvas');
+        const ctx = canvas.getContext('2d');
+        const statsDisplay = document.getElementById('stats');
+        const warning = document.getElementById('warning');
+        const skinButtons = document.querySelectorAll('.skin-button');
+        const typeButtons = document.querySelectorAll('.type-button');
+        const moodIndicator = document.getElementById('mood');
+        const statusEffectsContainer = document.getElementById('status-effects');
+        const petNameDisplay = document.getElementById('pet-name');
+        const hungerBar = document.getElementById('hunger-bar');
+        const happinessBar = document.getElementById('happiness-bar');
+        const energyBar = document.getElementById('energy-bar');
+
+        // Pet object with initial state
+        let pet = {
+            type: 'dog',
+            skin: 'blue',
+            name: 'FIDO',
+            hunger: 50,
+            happiness: 50,
+            energy: 50,
+            statusEffects: [],
+            lastUpdated: Date.now()
+        };
+
+        // Pet names by type
+        const petNames = {
+            dog: ['FIDO', 'REX', 'MAX', 'BUDDY', 'ROCKY'],
+            cat: ['WHISKERS', 'LUCKY', 'BELLA', 'SIMBA', 'LOLA'],
+            rabbit: ['BUN BUN', 'HOPPER', 'COTTON', 'THUMPER', 'FLUFFY']
+        };
+
+        // Status effects
+        const statusEffects = {
+            hungry: { name: 'HUNGRY', threshold: 80, color: '#ff9800' },
+            starving: { name: 'STARVING', threshold: 90, color: '#f44336' },
+            sad: { name: 'SAD', threshold: 30, color: '#2196f3' },
+            depressed: { name: 'DEPRESSED', threshold: 15, color: '#673ab7' },
+            tired: { name: 'TIRED', threshold: 30, color: '#607d8b' },
+            exhausted: { name: 'EXHAUSTED', threshold: 15, color: '#795548' }
+        };
+
+        // Load pet from localStorage
+        function loadPet() {
+            const savedPet = localStorage.getItem('virtualPet');
+            if (savedPet) {
+                const parsedPet = JSON.parse(savedPet);
+                pet = {
+                    ...pet,
+                    ...parsedPet,
+                    lastUpdated: parsedPet.lastUpdated || Date.now()
+                };
+
+                // Update UI based on loaded pet
+                updateSelectedButtons();
+                updateStats();
+                applyTimeDecay();
+            }
+        }
+
+        // Save pet to localStorage
+        function savePet() {
+            pet.lastUpdated = Date.now();
+            localStorage.setItem('virtualPet', JSON.stringify(pet));
+        }
+
+        // Update selected buttons based on pet state
+        function updateSelectedButtons() {
+            skinButtons.forEach(button => {
+                button.classList.toggle('selected', button.dataset.skin === pet.skin);
+            });
+            typeButtons.forEach(button => {
+                button.classList.toggle('selected', button.dataset.type === pet.type);
+            });
+        }
+
+        // Draw pixel-art pet
+        function drawPet() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            ctx.imageSmoothingEnabled = false;
+
+            // Determine mood
+            let mood = 'neutral';
+            let moodText = 'OKAY';
+
+            if (pet.happiness > 70 && pet.hunger < 30 && pet.energy > 70) {
+                mood = 'happy';
+                moodText = 'HAPPY';
+            } else if (pet.hunger > 70 || pet.happiness < 30 || pet.energy < 30) {
+                mood = 'sad';
+                moodText = 'SAD';
+            } else if (pet.energy < 50) {
+                mood = 'tired';
+                moodText = 'TIRED';
+            }
+
+            moodIndicator.textContent = moodText;
+
+            // Colors based on skin
+            const bodyColors = {
+                blue: '#8db6f7',
+                red: '#f29696',
+                green: '#b1f5a3',
+                yellow: '#eff38d',
+                purple: '#9b8bf6'
+            };
+            const bodyColor = bodyColors[pet.skin] || '#8db6f7';
+            const eyeColor = '#000';
+            const mouthColor = mood === 'sad' ? '#f22' : '#000';
+
+            // Draw based on pet type
+            if (pet.type === 'dog') {
+                drawDog(bodyColor, eyeColor, mouthColor, mood);
+            } else if (pet.type === 'cat') {
+                drawCat(bodyColor, eyeColor, mouthColor, mood);
+            } else if (pet.type === 'rabbit') {
+                drawRabbit(bodyColor, eyeColor, mouthColor, mood);
+            }
+        }
+
+        function drawDog(bodyColor, eyeColor, mouthColor, mood) {
+            // Body (16x16 grid with 10x10 pixels)
+            ctx.fillStyle = bodyColor;
+
+            // Body
+            for (let y = 4; y < 14; y++) {
+                for (let x = 4; x < 14; x++) {
+                    ctx.fillRect(x * 10, y * 10, 10, 10);
+                }
+            }
+
+            // Head
+            for (let y = 2; y < 6; y++) {
+                for (let x = 6; x < 12; x++) {
+                    ctx.fillRect(x * 10, y * 10, 10, 10);
+                }
+            }
+
+            // Ears
+            ctx.fillRect(5 * 10, 1 * 10, 10, 20);
+            ctx.fillRect(11 * 10, 1 * 10, 10, 20);
+
+            // Tail
+            ctx.fillRect(13 * 10, 12 * 10, 10, 20);
+
+            // Eyes
+            ctx.fillStyle = eyeColor;
+            ctx.fillRect(7 * 10, 4 * 10, 10, 10);
+            ctx.fillRect(10 * 10, 4 * 10, 10, 10);
+
+            // Mouth based on mood
+            ctx.fillStyle = mouthColor;
+            if (mood === 'happy') {
+                // Smile
+                for (let x = 7; x < 11; x++) {
+                    ctx.fillRect(x * 10, 6 * 10, 10, 10);
+                }
+            } else if (mood === 'sad') {
+                // Frown
+                for (let x = 7; x < 11; x++) {
+                    ctx.fillRect(x * 10, 7 * 10, 10, 10);
+                }
+            } else {
+                // Neutral
+                for (let x = 7; x < 11; x++) {
+                    ctx.fillRect(x * 10, 6 * 10, 10, 5);
+                }
+            }
+        }
+
+        function drawCat(bodyColor, eyeColor, mouthColor, mood) {
+            // Body
+            ctx.fillStyle = bodyColor;
+
+            // Body
+            for (let y = 4; y < 14; y++) {
+                for (let x = 4; x < 14; x++) {
+                    ctx.fillRect(x * 10, y * 10, 10, 10);
+                }
+            }
+
+            // Head
+            for (let y = 2; y < 6; y++) {
+                for (let x = 6; x < 12; x++) {
+                    ctx.fillRect(x * 10, y * 10, 10, 10);
+                }
+            }
+
+            // Pointy ears
+            ctx.beginPath();
+            ctx.moveTo(6 * 10, 2 * 10);
+            ctx.lineTo(8 * 10, 1 * 10);
+            ctx.lineTo(6 * 10, 1 * 10);
+            ctx.fill();
+            ctx.beginPath();
+            ctx.moveTo(12 * 10, 2 * 10);
+            ctx.lineTo(10 * 10, 1 * 10);
+            ctx.lineTo(12 * 10, 1 * 10);
+            ctx.fill();
+
+            // Tail
+            ctx.fillRect(13 * 10, 10 * 10, 10, 30);
+
+            // Eyes - slanted
+            ctx.fillStyle = eyeColor;
+            // Left eye
+            ctx.fillRect(7 * 10, 4 * 10, 5, 10);
+            ctx.fillRect(7 * 10 + 5, 4 * 10, 5, 10);
+            // Right eye
+            ctx.fillRect(10 * 10, 4 * 10, 5, 10);
+            ctx.fillRect(10 * 10 + 5, 4 * 10, 5, 10);
+
+            // Mouth based on mood
+            ctx.fillStyle = mouthColor;
+            if (mood === 'happy') {
+                // Smile
+                ctx.fillRect(8 * 10, 6 * 10, 10, 5);
+                ctx.fillRect(9 * 10, 6 * 10 + 5, 10, 5);
+            } else if (mood === 'sad') {
+                // Frown
+                ctx.fillRect(8 * 10, 7 * 10, 10, 5);
+                ctx.fillRect(7 * 10, 6 * 10 + 5, 10, 5);
+            } else {
+                // Neutral
+                ctx.fillRect(8 * 10, 6 * 10, 10, 5);
+            }
+        }
+
+        function drawRabbit(bodyColor, eyeColor, mouthColor, mood) {
+            // Body
+            ctx.fillStyle = bodyColor;
+
+            // Body
+            for (let y = 4; y < 14; y++) {
+                for (let x = 4; x < 14; x++) {
+                    ctx.fillRect(x * 10, y * 10, 10, 10);
+                }
+            }
+
+            // Head
+            for (let y = 2; y < 6; y++) {
+                for (let x = 6; x < 12; x++) {
+                    ctx.fillRect(x * 10, y * 10, 10, 10);
+                }
+            }
+
+            // Long ears
+            ctx.fillRect(6 * 10, 0 * 10, 10, 30);
+            ctx.fillRect(10 * 10, 0 * 10, 10, 30);
+
+            // Eyes
+            ctx.fillStyle = eyeColor;
+            ctx.fillRect(7 * 10, 4 * 10, 10, 10);
+            ctx.fillRect(10 * 10, 4 * 10, 10, 10);
+
+            // Mouth based on mood
+            ctx.fillStyle = mouthColor;
+            if (mood === 'happy') {
+                // Smile with teeth
+                ctx.fillRect(8 * 10, 6 * 10, 10, 10);
+                ctx.fillStyle = '#fff';
+                ctx.fillRect(8 * 10 + 2, 6 * 10, 6, 5);
+                ctx.fillRect(8 * 10 + 2, 6 * 10 + 5, 6, 5);
+            } else if (mood === 'sad') {
+                // Frown
+                ctx.fillRect(8 * 10, 7 * 10, 10, 5);
+            } else {
+                // Neutral
+                ctx.fillRect(8 * 10, 6 * 10, 10, 5);
+            }
+        }
+
+        // Update stats display
+        function updateStats() {
+            // Update numeric values
+            document.querySelectorAll('.stat-item')[0].querySelector('.stat-value').textContent = Math.round(pet.hunger);
+            document.querySelectorAll('.stat-item')[1].querySelector('.stat-value').textContent = Math.round(pet.happiness);
+            document.querySelectorAll('.stat-item')[2].querySelector('.stat-value').textContent = Math.round(pet.energy);
+
+            // Update progress bars
+            hungerBar.style.width = `${100 - pet.hunger}%`;
+            happinessBar.style.width = `${pet.happiness}%`;
+            energyBar.style.width = `${pet.energy}%`;
+
+            // Update bar colors based on value
+            hungerBar.style.backgroundColor = pet.hunger > 70 ? '#f44336' : pet.hunger > 50 ? '#ff9800' : '#4CAF50';
+            happinessBar.style.backgroundColor = pet.happiness < 30 ? '#f44336' : pet.happiness < 50 ? '#ff9800' : '#4CAF50';
+            energyBar.style.backgroundColor = pet.energy < 30 ? '#f44336' : pet.energy < 50 ? '#ff9800' : '#4CAF50';
+
+            // Update status effects
+            updateStatusEffects();
+
+            // Check for warnings
+            checkWarning();
+
+            // Redraw pet
+            drawPet();
+
+            // Save state
+            savePet();
+        }
+
+        // Update status effects
+        function updateStatusEffects() {
+            pet.statusEffects = [];
+
+            // Check for each status effect
+            if (pet.hunger >= statusEffects.starving.threshold) {
+                pet.statusEffects.push(statusEffects.starving);
+            } else if (pet.hunger >= statusEffects.hungry.threshold) {
+                pet.statusEffects.push(statusEffects.hungry);
+            }
+
+            if (pet.happiness <= statusEffects.depressed.threshold) {
+                pet.statusEffects.push(statusEffects.depressed);
+            } else if (pet.happiness <= statusEffects.sad.threshold) {
+                pet.statusEffects.push(statusEffects.sad);
+            }
+
+            if (pet.energy <= statusEffects.exhausted.threshold) {
+                pet.statusEffects.push(statusEffects.exhausted);
+            } else if (pet.energy <= statusEffects.tired.threshold) {
+                pet.statusEffects.push(statusEffects.tired);
+            }
+
+            // Update UI
+            statusEffectsContainer.innerHTML = '';
+            pet.statusEffects.forEach(effect => {
+                const element = document.createElement('div');
+                element.className = 'status-effect';
+                element.textContent = effect.name;
+                element.style.backgroundColor = effect.color;
+                statusEffectsContainer.appendChild(element);
+            });
+        }
+
+        // Check for warning
+        function checkWarning() {
+            if (pet.hunger > 80 || pet.happiness < 20 || pet.energy < 20) {
+                warning.style.display = 'block';
+            } else {
+                warning.style.display = 'none';
+            }
+        }
+
+        // Interaction functions
+        function feed() {
+            pet.hunger = Math.max(0, pet.hunger - 20);
+            pet.energy = Math.min(100, pet.energy + 10);
+            pet.happiness = Math.min(100, pet.happiness + 5);
+            updateStats();
+
+            // Add temporary "FED" status
+            showTemporaryStatus('FED', '#4CAF50');
+        }
+
+        function play() {
+            pet.happiness = Math.min(100, pet.happiness + 20);
+            pet.energy = Math.max(0, pet.energy - 15);
+            pet.hunger = Math.min(100, pet.hunger + 10);
+            updateStats();
+
+            // Add temporary "PLAYED" status
+            showTemporaryStatus('PLAYED!', '#2196F3');
+        }
+
+        function rest() {
+            pet.energy = Math.min(100, pet.energy + 20);
+            pet.hunger = Math.min(100, pet.hunger + 5);
+            pet.happiness = Math.max(0, pet.happiness - 5);
+            updateStats();
+
+            // Add temporary "RESTED" status
+            showTemporaryStatus('RESTED', '#9C27B0');
+        }
+
+        // Show temporary status effect
+        function showTemporaryStatus(text, color) {
+            const element = document.createElement('div');
+            element.className = 'status-effect';
+            element.textContent = text;
+            element.style.backgroundColor = color;
+            element.style.animation = 'fadeOut 2s forwards';
+            statusEffectsContainer.appendChild(element);
+
+            // Remove after animation
+            setTimeout(() => {
+                element.remove();
+            }, 2000);
+        }
+
+        // Change skin
+        function changeSkin(skin) {
+            pet.skin = skin;
+            updateSelectedButtons();
+            updateStats();
+
+            // Change pet name when changing skin (just for fun)
+            const names = petNames[pet.type];
+            pet.name = names[Math.floor(Math.random() * names.length)];
+            petNameDisplay.textContent = pet.name;
+        }
+
+        // Change type
+        function changeType(type) {
+            pet.type = type;
+
+            // Change to a random name for the new type
+            const names = petNames[type];
+            pet.name = names[Math.floor(Math.random() * names.length)];
+            petNameDisplay.textContent = pet.name;
+
+            updateSelectedButtons();
+            updateStats();
+        }
+
+        // Apply time decay based on time passed
+        function applyTimeDecay() {
+            const now = Date.now();
+            const minutesPassed = Math.floor((now - pet.lastUpdated) / (1000 * 60));
+
+            if (minutesPassed > 0) {
+                // Decay stats based on time passed (capped at 24 hours)
+                const effectiveMinutes = Math.min(minutesPassed, 24 * 60);
+
+                pet.hunger = Math.min(100, pet.hunger + (effectiveMinutes * 0.5));
+                pet.happiness = Math.max(0, pet.happiness - (effectiveMinutes * 0.5));
+                pet.energy = Math.max(0, pet.energy - (effectiveMinutes * 0.5));
+
+                pet.lastUpdated = now - ((minutesPassed - effectiveMinutes) * 60 * 1000);
+                updateStats();
+            }
+        }
+
+        // Decay stats over time
+        function decayStats() {
+            pet.hunger = Math.min(100, pet.hunger + 1);
+            pet.happiness = Math.max(0, pet.happiness - 1);
+            pet.energy = Math.max(0, pet.energy - 1);
+            updateStats();
+        }
+
+        // Add event listeners to skin buttons
+        skinButtons.forEach(button => {
+            button.addEventListener('click', () => {
+                changeSkin(button.dataset.skin);
+            });
+        });
+
+        // Add event listeners to type buttons
+        typeButtons.forEach(button => {
+            button.addEventListener('click', () => {
+                changeType(button.dataset.type);
+            });
+        });
+
+        // Initialize
+        loadPet();
+        drawPet();
+
+        // Decay stats every minute
+        setInterval(decayStats, 60000);
+
+        // Add CSS for fadeOut animation
+        const style = document.createElement('style');
+        style.textContent = `
+            @keyframes fadeOut {
+                0% { opacity: 1; transform: scale(1); }
+                50% { opacity: 1; transform: scale(1.1); }
+                100% { opacity: 0; transform: scale(0.9); }
+            }
+        `;
+        document.head.appendChild(style);
+    </script>
+</body>
+
+</html>

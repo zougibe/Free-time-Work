@@ -1,0 +1,650 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Production Line Error Logger</title>
+    <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root {
+            --primary: #2c3e50;
+            --secondary: #3498db;
+            --success: #27ae60;
+            --danger: #e74c3c;
+            --warning: #f39c12;
+            --light: #ecf0f1;
+            --dark: #2c3e50;
+            --gray: #95a5a6;
+            --white: #ffffff;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f5f7fa;
+            color: var(--dark);
+            line-height: 1.6;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+            background-color: var(--white);
+            padding: 25px;
+            border-radius: 10px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        }
+
+        h2 {
+            color: var(--primary);
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        h2 i {
+            color: var(--secondary);
+        }
+
+        .panel {
+            background-color: var(--light);
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+
+        .form-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            align-items: end;
+        }
+
+        .form-group {
+            margin-bottom: 0;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: 600;
+            color: var(--primary);
+        }
+
+        select,
+        button {
+            width: 100%;
+            padding: 10px 12px;
+            font-size: 16px;
+            border-radius: 6px;
+            border: 1px solid #ddd;
+            transition: all 0.3s ease;
+        }
+
+        select {
+            background-color: var(--white);
+            cursor: pointer;
+        }
+
+        select:focus {
+            border-color: var(--secondary);
+            outline: none;
+            box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.2);
+        }
+
+        button {
+            cursor: pointer;
+            font-weight: 600;
+            border: none;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+        }
+
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        button:active {
+            transform: translateY(0);
+        }
+
+        .btn-primary {
+            background-color: var(--secondary);
+            color: var(--white);
+        }
+
+        .btn-danger {
+            background-color: var(--danger);
+            color: var(--white);
+        }
+
+        .btn-success {
+            background-color: var(--success);
+            color: var(--white);
+        }
+
+        #chart {
+            margin-top: 30px;
+            width: 100%;
+            height: 500px;
+        }
+
+        .stats-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-top: 20px;
+        }
+
+        .stat-card {
+            background-color: var(--white);
+            border-radius: 8px;
+            padding: 15px;
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
+            text-align: center;
+        }
+
+        .stat-value {
+            font-size: 24px;
+            font-weight: 700;
+            color: var(--primary);
+            margin: 5px 0;
+        }
+
+        .stat-label {
+            font-size: 14px;
+            color: var(--gray);
+        }
+
+        .alert {
+            padding: 12px 15px;
+            border-radius: 6px;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            animation: fadeIn 0.3s ease;
+        }
+
+        .alert-success {
+            background-color: rgba(39, 174, 96, 0.1);
+            border-left: 4px solid var(--success);
+            color: var(--success);
+        }
+
+        .alert-danger {
+            background-color: rgba(231, 76, 60, 0.1);
+            border-left: 4px solid var(--danger);
+            color: var(--danger);
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(-10px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @keyframes fadeOut {
+            from {
+                opacity: 1;
+                transform: translateY(0);
+            }
+
+            to {
+                opacity: 0;
+                transform: translateY(-10px);
+            }
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                padding: 15px;
+            }
+
+            .form-grid {
+                grid-template-columns: 1fr;
+            }
+
+            #chart {
+                height: 400px;
+            }
+        }
+
+        .loading {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid rgba(255, 255, 255, .3);
+            border-radius: 50%;
+            border-top-color: var(--white);
+            animation: spin 1s ease-in-out infinite;
+        }
+
+        @keyframes spin {
+            to {
+                transform: rotate(360deg);
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <h2><i class="fas fa-industry"></i> Production Line Error Logger</h2>
+
+        <div id="alertContainer"></div>
+
+        <div class="panel">
+            <form id="errorForm">
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label for="errorType">Error Type</label>
+                        <select id="errorType" required>
+                            <option value="">Select Error Type</option>
+                            <option value="Mechanical">Mechanical</option>
+                            <option value="Electrical">Electrical</option>
+                            <option value="Software">Software</option>
+                            <option value="Quality">Quality</option>
+                            <option value="Operational">Operational</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="errorStation">Station</label>
+                        <select id="errorStation" required>
+                            <option value="">Select Station</option>
+                            <option value="Assembly">Assembly</option>
+                            <option value="Testing">Testing</option>
+                            <option value="Packaging">Packaging</option>
+                            <option value="Inspection">Inspection</option>
+                            <option value="Shipping">Shipping</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="errorSeverity">Severity</label>
+                        <select id="errorSeverity" required>
+                            <option value="">Select Severity</option>
+                            <option value="Low">Low</option>
+                            <option value="Medium">Medium</option>
+                            <option value="High">High</option>
+                            <option value="Critical">Critical</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <button type="submit" class="btn-primary" id="submitBtn">
+                            <i class="fas fa-plus-circle"></i> Add Error
+                        </button>
+                    </div>
+
+                    <div class="form-group">
+                        <button type="button" class="btn-danger" onclick="resetData()">
+                            <i class="fas fa-trash-alt"></i> Reset Data
+                        </button>
+                    </div>
+                </div>
+            </form>
+        </div>
+
+        <div class="stats-container" id="statsContainer">
+            <!-- Stats will be populated by JavaScript -->
+        </div>
+
+        <div id="chart"></div>
+    </div>
+
+    <script>
+        // Error data structure with localStorage persistence
+        let errors = JSON.parse(localStorage.getItem('productionErrors')) || [];
+
+        // DOM elements
+        const errorForm = document.getElementById('errorForm');
+        const chartDiv = document.getElementById('chart');
+        const alertContainer = document.getElementById('alertContainer');
+        const statsContainer = document.getElementById('statsContainer');
+        const submitBtn = document.getElementById('submitBtn');
+
+        // Track active alerts to prevent duplicates
+        let activeAlerts = new Set();
+
+        // Initialize the application
+        document.addEventListener('DOMContentLoaded', function () {
+            generateChart();
+            updateStats();
+
+            // Load any saved data
+            if (errors.length > 0) {
+                showAlert(`Loaded ${errors.length} saved error(s) from previous session`, 'success');
+            }
+        });
+
+        // Form submission handler
+        errorForm.addEventListener('submit', function (e) {
+            e.preventDefault();
+
+            const type = document.getElementById('errorType').value;
+            const station = document.getElementById('errorStation').value;
+            const severity = document.getElementById('errorSeverity').value;
+
+            // Clear any existing alerts before showing new ones
+            clearAlerts();
+
+            // Validate form
+            if (!type || !station || !severity) {
+                showAlert('Please fill in all fields', 'danger');
+                return;
+            }
+
+            // Disable button during processing
+            submitBtn.disabled = true;
+            submitBtn.innerHTML = '<span class="loading"></span> Processing...';
+
+            // Simulate processing delay
+            setTimeout(() => {
+                // Add error with timestamp
+                const error = {
+                    type,
+                    station,
+                    severity,
+                    timestamp: new Date().toISOString()
+                };
+
+                errors.push(error);
+                saveData();
+                generateChart();
+                updateStats();
+                errorForm.reset();
+
+                showAlert(`Error logged successfully at ${new Date().toLocaleTimeString()}`, 'success');
+
+                // Re-enable button
+                submitBtn.disabled = false;
+                submitBtn.innerHTML = '<i class="fas fa-plus-circle"></i> Add Error';
+            }, 500);
+        });
+
+        // Reset data
+        function resetData() {
+            if (errors.length === 0) {
+                showAlert('No data to reset', 'danger');
+                return;
+            }
+
+            if (confirm('Are you sure you want to delete all error data? This cannot be undone.')) {
+                errors = [];
+                saveData();
+                generateChart();
+                updateStats();
+                showAlert('All error data has been reset', 'success');
+            }
+        }
+
+        // Save data to localStorage
+        function saveData() {
+            try {
+                localStorage.setItem('productionErrors', JSON.stringify(errors));
+            } catch (error) {
+                showAlert('Failed to save data locally', 'danger');
+                console.error('Storage error:', error);
+            }
+        }
+
+        // Clear all alerts
+        function clearAlerts() {
+            alertContainer.querySelectorAll('.alert').forEach(alert => {
+                alert.style.animation = 'fadeOut 0.3s ease forwards';
+                setTimeout(() => alert.remove(), 300);
+            });
+            activeAlerts.clear();
+        }
+
+        // Generate Pareto chart
+        function generateChart() {
+            try {
+                if (errors.length === 0) {
+                    chartDiv.innerHTML = '<div class="alert alert-danger"><i class="fas fa-info-circle"></i> No error data available. Please log some errors to see the chart.</div>';
+                    return;
+                } else {
+                    chartDiv.innerHTML = ''
+                }
+
+                // Count errors by type and station
+                const count = {};
+                errors.forEach(({ type, station }) => {
+                    const key = `${type} (${station})`;
+                    count[key] = (count[key] || 0) + 1;
+                });
+
+                // Sort by frequency (descending)
+                const sortedEntries = Object.entries(count).sort((a, b) => b[1] - a[1]);
+                const categories = sortedEntries.map(entry => entry[0]);
+                const frequencies = sortedEntries.map(entry => entry[1]);
+
+                // Calculate cumulative percentage
+                const total = frequencies.reduce((sum, val) => sum + val, 0);
+                const cumulative = frequencies.reduce((acc, val, i) => {
+                    acc.push((acc[i - 1] || 0) + val);
+                    return acc;
+                }, []);
+
+                const cumulativePercentage = cumulative.map(val => (val / total) * 100);
+
+                // Create 80% threshold line
+                const thresholdLine = {
+                    type: 'line',
+                    x0: categories[0],
+                    x1: categories[categories.length - 1],
+                    y0: 80,
+                    y1: 80,
+                    line: {
+                        color: 'red',
+                        width: 2,
+                        dash: 'dot'
+                    }
+                };
+
+                // Create traces
+                const traceBar = {
+                    x: categories,
+                    y: frequencies,
+                    type: 'bar',
+                    name: 'Error Count',
+                    marker: {
+                        color: '#3498db'
+                    },
+                    text: frequencies.map(val => val),
+                    textposition: 'auto',
+                    hoverinfo: 'x+y'
+                };
+
+                const traceLine = {
+                    x: categories,
+                    y: cumulativePercentage,
+                    type: 'scatter',
+                    mode: 'lines+markers',
+                    yaxis: 'y2',
+                    name: 'Cumulative %',
+                    line: {
+                        color: '#2c3e50',
+                        width: 3
+                    },
+                    marker: {
+                        color: '#e74c3c',
+                        size: 8
+                    },
+                    text: cumulativePercentage.map(val => `${val.toFixed(1)}%`),
+                    textposition: 'top center',
+                    hoverinfo: 'x+y+text'
+                };
+
+                const layout = {
+                    title: {
+                        text: 'Production Error Pareto Analysis',
+                        font: {
+                            size: 20
+                        }
+                    },
+                    xaxis: {
+                        title: 'Error Type (Station)',
+                        tickangle: -45
+                    },
+                    yaxis: {
+                        title: 'Error Count',
+                        gridcolor: '#eee'
+                    },
+                    yaxis2: {
+                        title: 'Cumulative Percentage',
+                        overlaying: 'y',
+                        side: 'right',
+                        range: [0, 105],
+                        gridcolor: '#eee'
+                    },
+                    plot_bgcolor: 'rgba(0,0,0,0)',
+                    paper_bgcolor: 'rgba(0,0,0,0)',
+                    margin: {
+                        l: 60,
+                        r: 60,
+                        b: 100,
+                        t: 80,
+                        pad: 10
+                    },
+                    shapes: [thresholdLine],
+                    annotations: [
+                        {
+                            x: categories[categories.length - 1],
+                            y: 80,
+                            xref: 'x',
+                            yref: 'y2',
+                            text: '80% Threshold',
+                            showarrow: true,
+                            arrowhead: 5,
+                            ax: 0,
+                            ay: -30,
+                            font: {
+                                color: 'red'
+                            }
+                        }
+                    ],
+                    legend: {
+                        orientation: 'h',
+                        y: 1.1
+                    }
+                };
+
+                const config = {
+                    responsive: true,
+                    displayModeBar: true
+                };
+
+                Plotly.newPlot('chart', [traceBar, traceLine], layout, config);
+            } catch (error) {
+                chartDiv.innerHTML = `<div class="alert alert-danger">
+          <i class="fas fa-exclamation-triangle"></i>
+          Chart rendering failed: ${error.message}
+        </div>`;
+                console.error('Chart error:', error);
+            }
+        }
+
+        // Update statistics cards
+        function updateStats() {
+            if (errors.length === 0) {
+                statsContainer.innerHTML = '<div class="stat-card"><div class="stat-value">0</div><div class="stat-label">Total Errors</div></div>';
+                return;
+            }
+
+            // Calculate stats
+            const totalErrors = errors.length;
+
+            // Count by type
+            const typeCounts = {};
+            errors.forEach(error => {
+                typeCounts[error.type] = (typeCounts[error.type] || 0) + 1;
+            });
+
+            // Count by station
+            const stationCounts = {};
+            errors.forEach(error => {
+                stationCounts[error.station] = (stationCounts[error.station] || 0) + 1;
+            });
+
+            // Count by severity
+            const severityCounts = {};
+            errors.forEach(error => {
+                severityCounts[error.severity] = (severityCounts[error.severity] || 0) + 1;
+            });
+
+            // Find most common error
+            const mostCommonError = Object.entries(typeCounts).sort((a, b) => b[1] - a[1])[0];
+
+            // Generate HTML for stats
+            statsContainer.innerHTML = `
+        <div class="stat-card">
+          <div class="stat-value">${totalErrors}</div>
+          <div class="stat-label">Total Errors</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-value">${mostCommonError ? mostCommonError[1] : 0}</div>
+          <div class="stat-label">${mostCommonError ? mostCommonError[0] : 'N/A'} Errors</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-value">${Object.keys(typeCounts).length}</div>
+          <div class="stat-label">Error Types</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-value">${Object.keys(stationCounts).length}</div>
+          <div class="stat-label">Stations Affected</div>
+        </div>
+      `;
+        }
+
+        // Show alert message
+        function showAlert(message, type) {
+            // Clear any existing alerts of the same type
+            const existingAlerts = Array.from(alertContainer.querySelectorAll(`.alert-${type}`));
+            existingAlerts.forEach(alert => {
+                alert.style.animation = 'fadeOut 0.3s ease forwards';
+                setTimeout(() => alert.remove(), 300);
+            });
+
+            const alert = document.createElement('div');
+            alert.className = `alert alert-${type}`;
+            alert.innerHTML = `
+        <i class="fas fa-${type === 'success' ? 'check-circle' : 'exclamation-circle'}"></i>
+        ${message}
+      `;
+
+            alertContainer.appendChild(alert);
+
+            // Remove alert after 5 seconds
+            setTimeout(() => {
+                if (alert.parentNode) {
+                    alert.style.animation = 'fadeOut 0.3s ease forwards';
+                    setTimeout(() => alert.remove(), 300);
+                }
+            }, 5000);
+        }
+    </script>
+</body>
+
+</html>

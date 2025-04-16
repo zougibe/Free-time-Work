@@ -1,0 +1,313 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Time & Attendance System</title>
+    <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background: #f5f7fa;
+            color: #333;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 20px;
+        }
+
+        .card {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+            flex: 1;
+            min-width: 300px;
+        }
+
+        h1 {
+            color: #2c3e50;
+            text-align: center;
+        }
+
+        h2 {
+            color: #34495e;
+            margin-top: 0;
+        }
+
+        button {
+            padding: 8px 16px;
+            background: #3498db;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+
+        button:hover {
+            background: #2980b9;
+        }
+
+        select,
+        input {
+            padding: 8px;
+            margin: 5px 0;
+            border-radius: 4px;
+            border: 1px solid #ddd;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 10px;
+        }
+
+        th,
+        td {
+            padding: 8px;
+            text-align: left;
+            border-bottom: 1px solid #eee;
+        }
+
+        .chart {
+            height: 300px;
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                flex-direction: column;
+            }
+
+            .card {
+                width: 100%;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <h1>Time & Attendance System</h1>
+    <div class="container">
+        <div class="card">
+            <h2>Clock In/Out</h2>
+            <select id="employeeSelect"></select>
+            <button onclick="clockInOut()">Clock In/Out</button>
+            <p id="clockStatus"></p>
+        </div>
+        <div class="card">
+            <h2>Timesheet Management</h2>
+            <button onclick="toggleManagerMode()">Toggle Manager Mode</button>
+            <div id="managerControls" style="display: none;">
+                <select id="timesheetEmployee"></select>
+                <button onclick="approveTimesheet()">Approve</button>
+                <button onclick="rejectTimesheet()">Reject</button>
+            </div>
+            <table id="timesheetTable"></table>
+        </div>
+        <div class="card">
+            <h2>Payroll Report</h2>
+            <input type="date" id="startDate">
+            <input type="date" id="endDate">
+            <select id="filterSelect"></select>
+            <button onclick="generateReport()">Generate Report</button>
+            <table id="reportTable"></table>
+        </div>
+        <div class="card">
+            <h2>Visualizations</h2>
+            <div id="barChart" class="chart"></div>
+            <div id="lineChart" class="chart"></div>
+            <div id="pieChart" class="chart"></div>
+        </div>
+    </div>
+
+    <script>
+        // Employee data
+        let employees = [
+            {
+                id: 1, name: "John Doe", dept: "Engineering", timesheets: [
+                    { date: "2025-04-07", in: "09:00", out: "17:00", status: "pending" },
+                    { date: "2025-04-08", in: "09:15", out: "17:30", status: "pending" }
+                ]
+            },
+            {
+                id: 2, name: "Jane Smith", dept: "Marketing", timesheets: [
+                    { date: "2025-04-07", in: "08:45", out: "16:45", status: "approved" }
+                ]
+            }
+        ];
+        const hourlyRate = 30;
+        let managerMode = false;
+
+        // Initialize dropdowns
+        function populateDropdowns() {
+            const empSelect = document.getElementById("employeeSelect");
+            const tsSelect = document.getElementById("timesheetEmployee");
+            const filterSelect = document.getElementById("filterSelect");
+            empSelect.innerHTML = tsSelect.innerHTML = filterSelect.innerHTML = "<option value=''>All</option>";
+            employees.forEach(emp => {
+                const option = `<option value="${emp.id}">${emp.name} - ${emp.dept}</option>`;
+                empSelect.innerHTML += option;
+                tsSelect.innerHTML += option;
+            });
+            filterSelect.innerHTML += "<option value='Engineering'>Engineering</option><option value='Marketing'>Marketing</option>";
+        }
+
+        // Clock In/Out
+        function clockInOut() {
+            const empId = parseInt(document.getElementById("employeeSelect").value);
+            if (!empId) return;
+            const emp = employees.find(e => e.id === empId);
+            const now = new Date();
+            const time = now.toTimeString().slice(0, 5);
+            const date = now.toISOString().slice(0, 10);
+            const lastTs = emp.timesheets[emp.timesheets.length - 1];
+            if (!lastTs || lastTs.out) {
+                emp.timesheets.push({ date, in: time, out: null, status: "pending" });
+                document.getElementById("clockStatus").textContent = `Clocked in at ${time}`;
+            } else {
+                lastTs.out = time;
+                document.getElementById("clockStatus").textContent = `Clocked out at ${time}`;
+            }
+            updateTimesheets();
+            updateCharts();
+        }
+
+        // Manager Mode
+        function toggleManagerMode() {
+            managerMode = !managerMode;
+            document.getElementById("managerControls").style.display = managerMode ? "block" : "none";
+        }
+
+        function approveTimesheet() {
+            updateTimesheetStatus("approved");
+        }
+
+        function rejectTimesheet() {
+            updateTimesheetStatus("rejected");
+        }
+
+        function updateTimesheetStatus(status) {
+            if (!managerMode) return;
+            const empId = parseInt(document.getElementById("timesheetEmployee").value);
+            if (!empId) return;
+            const emp = employees.find(e => e.id === empId);
+            emp.timesheets.forEach(ts => {
+                if (ts.status === "pending") ts.status = status;
+            });
+            updateTimesheets();
+            updateCharts();
+        }
+
+        // Timesheet Table
+        function updateTimesheets() {
+            const table = document.getElementById("timesheetTable");
+            table.innerHTML = "<tr><th>Name</th><th>Date</th><th>In</th><th>Out</th><th>Hours</th><th>Status</th></tr>";
+            employees.forEach(emp => {
+                emp.timesheets.forEach(ts => {
+                    const hours = ts.out ? calculateHours(ts.in, ts.out) : "-";
+                    table.innerHTML += `<tr>
+                        <td>${emp.name}</td>
+                        <td>${ts.date}</td>
+                        <td>${ts.in}</td>
+                        <td>${ts.out || "-"}</td>
+                        <td>${hours}</td>
+                        <td>${ts.status}</td>
+                    </tr>`;
+                });
+            });
+        }
+
+        function calculateHours(inTime, outTime) {
+            const [inH, inM] = inTime.split(":").map(Number);
+            const [outH, outM] = outTime.split(":").map(Number);
+            return ((outH * 60 + outM) - (inH * 60 + inM)) / 60;
+        }
+
+        // Payroll Report
+        function generateReport() {
+            const start = document.getElementById("startDate").value;
+            const end = document.getElementById("endDate").value;
+            const filter = document.getElementById("filterSelect").value;
+            const table = document.getElementById("reportTable");
+            table.innerHTML = "<tr><th>Name</th><th>Dept</th><th>Hours</th><th>Cost</th></tr>";
+            let totalHours = 0, totalCost = 0;
+
+            employees.filter(emp => !filter || emp.dept === filter || emp.id === parseInt(filter)).forEach(emp => {
+                let empHours = 0;
+                emp.timesheets.forEach(ts => {
+                    if ((!start || ts.date >= start) && (!end || ts.date <= end) && ts.out) {
+                        empHours += calculateHours(ts.in, ts.out);
+                    }
+                });
+                const cost = empHours * hourlyRate;
+                table.innerHTML += `<tr>
+                    <td>${emp.name}</td>
+                    <td>${emp.dept}</td>
+                    <td>${empHours.toFixed(2)}</td>
+                    <td>$${cost.toFixed(2)}</td>
+                </tr>`;
+                totalHours += empHours;
+                totalCost += cost;
+            });
+            table.innerHTML += `<tr><td colspan="2"><b>Total</b></td><td><b>${totalHours.toFixed(2)}</b></td><td><b>$${totalCost.toFixed(2)}</b></td></tr>`;
+        }
+
+        // Plotly Charts
+        function updateCharts() {
+            // Bar Chart: Hours by Department
+            const deptHours = {};
+            employees.forEach(emp => {
+                deptHours[emp.dept] = (deptHours[emp.dept] || 0) + emp.timesheets.reduce((sum, ts) =>
+                    ts.out ? sum + calculateHours(ts.in, ts.out) : sum, 0);
+            });
+            Plotly.newPlot("barChart", [{
+                x: Object.keys(deptHours),
+                y: Object.values(deptHours),
+                type: "bar",
+                marker: { color: "#3498db" }
+            }], { title: "Hours by Department", height: 300 });
+
+            // Line Chart: Attendance Trends
+            const dates = [...new Set(employees.flatMap(emp => emp.timesheets.map(ts => ts.date)))].sort();
+            const hoursByDate = dates.map(date => {
+                return employees.reduce((sum, emp) => {
+                    const ts = emp.timesheets.find(t => t.date === date);
+                    return sum + (ts && ts.out ? calculateHours(ts.in, ts.out) : 0);
+                }, 0);
+            });
+            Plotly.newPlot("lineChart", [{
+                x: dates,
+                y: hoursByDate,
+                type: "scatter",
+                mode: "lines+markers",
+                line: { color: "#2ecc71" }
+            }], { title: "Attendance Trends", height: 300 });
+
+            // Pie Chart: Approval Status
+            const statusCount = { approved: 0, pending: 0, rejected: 0 };
+            employees.forEach(emp => {
+                emp.timesheets.forEach(ts => statusCount[ts.status]++);
+            });
+            Plotly.newPlot("pieChart", [{
+                values: Object.values(statusCount),
+                labels: Object.keys(statusCount),
+                type: "pie",
+                marker: { colors: ["#2ecc71", "#f1c40f", "#e74c3c"] }
+            }], { title: "Timesheet Status", height: 300 });
+        }
+
+        // Initialize
+        populateDropdowns();
+        updateTimesheets();
+        updateCharts();
+    </script>
+</body>
+
+</html>

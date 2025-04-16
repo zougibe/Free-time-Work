@@ -1,0 +1,291 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Custom Packaging Designer</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r134/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.134.0/examples/js/controls/OrbitControls.js"></script>
+    <style>
+        body {
+            margin: 0;
+            overflow: hidden;
+        }
+
+        #canvas {
+            width: 100vw;
+            height: 100vh;
+        }
+
+        .dark .cost-panel {
+            background: rgba(0, 0, 0, 0.7);
+            color: white;
+        }
+
+        .cost-panel {
+            background: rgba(255, 255, 255, 0.7);
+        }
+    </style>
+</head>
+
+<body class="bg-gray-100 dark:bg-gray-900 text-gray-900 dark:text-gray-100 transition-colors duration-300 font-sans">
+    <div class="flex h-screen">
+        <!-- Sidebar -->
+        <div class="w-1/4 bg-white dark:bg-gray-800 p-4 overflow-y-auto shadow-lg">
+            <h1 class="text-2xl font-bold mb-4">Packaging Designer</h1>
+            <form id="design-form">
+                <div class="mb-4">
+                    <label class="block text-sm font-medium mb-1">Industry</label>
+                    <select id="industry" class="w-full p-2 border rounded dark:bg-gray-700 dark:border-gray-600">
+                        <option value="cosmetics">Cosmetics</option>
+                        <option value="food">Food</option>
+                        <option value="ecommerce">E-commerce</option>
+                    </select>
+                </div>
+                <div class="mb-4">
+                    <label class="block text-sm font-medium mb-1">Shape</label>
+                    <select id="shape" class="w-full p-2 border rounded dark:bg-gray-700 dark:border-gray-600">
+                        <!-- Populated dynamically -->
+                    </select>
+                </div>
+                <div class="mb-4">
+                    <label class="block text-sm font-medium mb-1">Color</label>
+                    <input type="color" id="color" value="#ffffff" class="w-full h-10 p-1 border rounded">
+                </div>
+                <div class="mb-4">
+                    <label class="block text-sm font-medium mb-1">Material</label>
+                    <select id="material" class="w-full p-2 border rounded dark:bg-gray-700 dark:border-gray-600">
+                        <option value="cardboard">Cardboard ($0.5/cm²)</option>
+                        <option value="plastic">Plastic ($0.7/cm²)</option>
+                        <option value="metal">Metal ($1.0/cm²)</option>
+                    </select>
+                </div>
+                <div class="mb-4">
+                    <label class="block text-sm font-medium mb-1">Logo</label>
+                    <select id="logo" class="w-full p-2 border rounded dark:bg-gray-700 dark:border-gray-600">
+                        <!-- Populated dynamically -->
+                    </select>
+                </div>
+                <button type="button" id="save-btn"
+                    class="w-full bg-blue-500 text-white p-2 rounded hover:bg-blue-600 mb-2">Save Design</button>
+                <button type="button" id="export-btn"
+                    class="w-full bg-green-500 text-white p-2 rounded hover:bg-green-600 mb-2">Export PNG</button>
+                <button type="button" id="mode-toggle"
+                    class="w-full bg-gray-500 text-white p-2 rounded hover:bg-gray-600">Toggle Dark Mode</button>
+            </form>
+        </div>
+
+        <!-- Canvas and Cost Panel -->
+        <div class="w-3/4">
+            <!-- Canvas -->
+            <canvas id="canvas"></canvas>
+            <!-- Cost Panel -->
+            <div class="cost-panel absolute bottom-4 right-4 p-4 rounded-lg shadow-lg">
+                <h2 class="text-lg font-semibold">Cost Estimate</h2>
+                <p id="cost">Material: $0.00</p>
+                <p id="dimensions">Dimensions: 0 x 0 x 0 cm</p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Mock Data
+        const packagingData = {
+            cosmetics: {
+                shapes: [
+                    { name: "Box", geometry: "BoxGeometry", args: [5, 5, 5], area: 150 },
+                    { name: "Cylinder", geometry: "CylinderGeometry", args: [2, 2, 6, 32], area: 125.6 }
+                ],
+                logos: ["Logo1", "Logo2", "None"]
+            },
+            food: {
+                shapes: [
+                    { name: "Box", geometry: "BoxGeometry", args: [6, 4, 3], area: 108 },
+                    { name: "Can", geometry: "CylinderGeometry", args: [2, 2, 8, 32], area: 150.7 }
+                ],
+                logos: ["LogoA", "LogoB", "None"]
+            },
+            ecommerce: {
+                shapes: [
+                    { name: "Box", geometry: "BoxGeometry", args: [8, 6, 4], area: 208 },
+                    { name: "Pouch", geometry: "BoxGeometry", args: [5, 3, 1], area: 46 }
+                ],
+                logos: ["LogoX", "LogoY", "None"]
+            }
+        };
+
+        const materialCosts = {
+            cardboard: 0.5,
+            plastic: 0.7,
+            metal: 1.0
+        };
+
+        // Three.js Setup
+        const canvas = document.getElementById('canvas');
+        const scene = new THREE.Scene();
+        const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+        const renderer = new THREE.WebGLRenderer({ canvas, antialias: true });
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        camera.position.z = 10;
+
+        const controls = new THREE.OrbitControls(camera, renderer.domElement);
+        controls.enableDamping = true;
+        controls.dampingFactor = 0.05;
+
+        // Lighting
+        const ambientLight = new THREE.AmbientLight(0xffffff, 1.0);
+        scene.add(ambientLight);
+        const directionalLight = new THREE.DirectionalLight(0xffffff, 0.5);
+        directionalLight.position.set(5, 5, 5);
+        scene.add(directionalLight);
+
+        // Package Mesh
+        let packageMesh;
+        let logoTexture;
+
+        // Form Elements
+        const industrySelect = document.getElementById('industry');
+        const shapeSelect = document.getElementById('shape');
+        const colorInput = document.getElementById('color');
+        const materialSelect = document.getElementById('material');
+        const logoSelect = document.getElementById('logo');
+        const saveBtn = document.getElementById('save-btn');
+        const exportBtn = document.getElementById('export-btn');
+        const modeToggle = document.getElementById('mode-toggle');
+        const costDisplay = document.getElementById('cost');
+        const dimensionsDisplay = document.getElementById('dimensions');
+
+        // Initialize Form
+        function updateShapeOptions() {
+            const industry = industrySelect.value;
+            shapeSelect.innerHTML = packagingData[industry].shapes.map(s => `<option value="${s.name}">${s.name}</option>`).join('');
+            logoSelect.innerHTML = packagingData[industry].logos.map(l => `<option value="${l}">${l}</option>`).join('');
+            updatePackage();
+        }
+
+        industrySelect.addEventListener('change', updateShapeOptions);
+        shapeSelect.addEventListener('change', updatePackage);
+        colorInput.addEventListener('input', updatePackage);
+        materialSelect.addEventListener('change', updatePackage);
+        logoSelect.addEventListener('change', updatePackage);
+
+        // Update Package
+        function updatePackage() {
+            if (packageMesh) scene.remove(packageMesh);
+
+            const industry = industrySelect.value;
+            const shapeName = shapeSelect.value;
+            const shapeData = packagingData[industry].shapes.find(s => s.name === shapeName);
+            const color = colorInput.value;
+            const material = materialSelect.value;
+            const logo = logoSelect.value;
+
+            // Create Geometry
+            let geometry;
+            if (shapeData.geometry === "BoxGeometry") {
+                geometry = new THREE.BoxGeometry(...shapeData.args);
+            } else if (shapeData.geometry === "CylinderGeometry") {
+                geometry = new THREE.CylinderGeometry(...shapeData.args);
+            }
+
+            // Material
+            const materialProps = {
+                color: color,
+                metalness: material === "metal" ? 0.8 : 0.2,
+                roughness: material === "plastic" ? 0.3 : 0.7
+            };
+            if (logo !== "None") {
+                // Placeholder texture (in practice, load actual logo image)
+                const canvas = document.createElement('canvas');
+                canvas.width = 256;
+                canvas.height = 256;
+                const ctx = canvas.getContext('2d');
+                ctx.fillStyle = 'white';
+                ctx.fillRect(0, 0, 256, 256);
+                ctx.fillStyle = 'black';
+                ctx.font = '40px Arial';
+                ctx.fillText(logo, 50, 128);
+                logoTexture = new THREE.CanvasTexture(canvas);
+                materialProps.map = logoTexture;
+            }
+            const threeMaterial = new THREE.MeshStandardMaterial(materialProps);
+
+            packageMesh = new THREE.Mesh(geometry, threeMaterial);
+            scene.add(packageMesh);
+
+            // Update Cost and Dimensions
+            const cost = (shapeData.area * materialCosts[material]).toFixed(2);
+            costDisplay.textContent = `Material: $${cost}`;
+            dimensionsDisplay.textContent = `Dimensions: ${shapeData.args[0]} x ${shapeData.args[1]} x ${shapeData.args[2]} cm`;
+        }
+
+        // Save Design
+        saveBtn.addEventListener('click', () => {
+            const design = {
+                industry: industrySelect.value,
+                shape: shapeSelect.value,
+                color: colorInput.value,
+                material: materialSelect.value,
+                logo: logoSelect.value
+            };
+            localStorage.setItem('savedDesign', JSON.stringify(design));
+            alert('Design saved!');
+        });
+
+        // Load Saved Design
+        function loadSavedDesign() {
+            const saved = localStorage.getItem('savedDesign');
+            if (saved) {
+                const design = JSON.parse(saved);
+                industrySelect.value = design.industry;
+                updateShapeOptions();
+                shapeSelect.value = design.shape;
+                colorInput.value = design.color;
+                materialSelect.value = design.material;
+                logoSelect.value = design.logo;
+                updatePackage();
+            } else {
+                updateShapeOptions();
+            }
+        }
+
+        // Export PNG
+        exportBtn.addEventListener('click', () => {
+            renderer.render(scene, camera);
+            const dataURL = renderer.domElement.toDataURL('image/png');
+            const link = document.createElement('a');
+            link.href = dataURL;
+            link.download = 'package_design.png';
+            link.click();
+        });
+
+        // Dark Mode Toggle
+        modeToggle.addEventListener('click', () => {
+            document.body.classList.toggle('dark');
+            scene.background = document.body.classList.contains('dark') ? new THREE.Color(0x333333) : new THREE.Color(0xeeeeee);
+        });
+
+        // Animation Loop
+        function animate() {
+            requestAnimationFrame(animate);
+            controls.update();
+            renderer.render(scene, camera);
+        }
+
+        // Resize Handler
+        window.addEventListener('resize', () => {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        });
+
+        // Initialize
+        scene.background = new THREE.Color(0xeeeeee);
+        loadSavedDesign();
+        animate();
+    </script>
+</body>
+
+</html>

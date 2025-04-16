@@ -1,0 +1,705 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Financial Goals Tracker</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root {
+            --primary: #4361ee;
+            --primary-dark: #3a56d4;
+            --success: #4cc9f0;
+            --danger: #f72585;
+            --warning: #f8961e;
+            --light: #f8f9fa;
+            --dark: #212529;
+            --gray: #6c757d;
+            --border-radius: 8px;
+            --box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            --transition: all 0.3s ease;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+            background-color: #f5f7ff;
+            color: var(--dark);
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 0 15px;
+        }
+
+        h1 {
+            text-align: center;
+            margin-bottom: 30px;
+            color: var(--primary);
+            font-weight: 700;
+            position: relative;
+            padding-bottom: 10px;
+        }
+
+        h1::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 100px;
+            height: 4px;
+            background: linear-gradient(to right, var(--primary), var(--success));
+            border-radius: 2px;
+        }
+
+        .card {
+            background: white;
+            border-radius: var(--border-radius);
+            box-shadow: var(--box-shadow);
+            padding: 25px;
+            margin-bottom: 25px;
+            transition: var(--transition);
+        }
+
+        .card:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1);
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: var(--dark);
+        }
+
+        .form-control {
+            width: 100%;
+            padding: 12px 15px;
+            border: 1px solid #ddd;
+            border-radius: var(--border-radius);
+            font-size: 16px;
+            transition: var(--transition);
+        }
+
+        .form-control:focus {
+            border-color: var(--primary);
+            outline: none;
+            box-shadow: 0 0 0 3px rgba(67, 97, 238, 0.2);
+        }
+
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            padding: 12px 20px;
+            border: none;
+            border-radius: var(--border-radius);
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: var(--transition);
+            gap: 8px;
+        }
+
+        .btn-primary {
+            background-color: var(--primary);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background-color: var(--primary-dark);
+        }
+
+        .btn-success {
+            background-color: var(--success);
+            color: white;
+        }
+
+        .btn-danger {
+            background-color: var(--danger);
+            color: white;
+        }
+
+        .btn-warning {
+            background-color: var(--warning);
+            color: white;
+        }
+
+        .btn-sm {
+            padding: 8px 12px;
+            font-size: 14px;
+        }
+
+        .goals-list {
+            display: grid;
+            gap: 20px;
+        }
+
+        .goal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+
+        .goal-title {
+            font-size: 20px;
+            font-weight: 700;
+            color: var(--primary);
+        }
+
+        .goal-amount {
+            font-size: 18px;
+            font-weight: 600;
+            color: var(--dark);
+            margin-bottom: 10px;
+        }
+
+        .progress-container {
+            margin: 15px 0;
+        }
+
+        .progress-info {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 5px;
+            font-size: 14px;
+        }
+
+        .progress-bar {
+            height: 12px;
+            background: #e9ecef;
+            border-radius: 6px;
+            overflow: hidden;
+        }
+
+        .progress {
+            height: 100%;
+            background: linear-gradient(to right, var(--primary), var(--success));
+            transition: width 0.6s ease;
+            position: relative;
+        }
+
+        .progress::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: linear-gradient(to right,
+                    rgba(255, 255, 255, 0.1) 0%,
+                    rgba(255, 255, 255, 0.5) 50%,
+                    rgba(255, 255, 255, 0.1) 100%);
+            animation: shimmer 2s infinite;
+        }
+
+        @keyframes shimmer {
+            0% {
+                transform: translateX(-100%);
+            }
+
+            100% {
+                transform: translateX(100%);
+            }
+        }
+
+        .goal-actions {
+            display: flex;
+            gap: 10px;
+            margin-top: 20px;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 40px 20px;
+            color: var(--gray);
+        }
+
+        .empty-state i {
+            font-size: 50px;
+            margin-bottom: 20px;
+            color: #dee2e6;
+        }
+
+        .empty-state h3 {
+            margin-bottom: 10px;
+            color: var(--gray);
+        }
+
+        .notification {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            padding: 15px 20px;
+            background: var(--primary);
+            color: white;
+            border-radius: var(--border-radius);
+            box-shadow: var(--box-shadow);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            transform: translateX(150%);
+            transition: transform 0.3s ease;
+            z-index: 1000;
+        }
+
+        .notification.show {
+            transform: translateX(0);
+        }
+
+        .notification i {
+            font-size: 20px;
+        }
+
+        .tabs {
+            display: flex;
+            margin-bottom: 25px;
+            border-bottom: 1px solid #dee2e6;
+        }
+
+        .tab {
+            padding: 12px 20px;
+            cursor: pointer;
+            font-weight: 600;
+            color: var(--gray);
+            border-bottom: 3px solid transparent;
+            transition: var(--transition);
+        }
+
+        .tab.active {
+            color: var(--primary);
+            border-bottom-color: var(--primary);
+        }
+
+        .tab:hover:not(.active) {
+            color: var(--dark);
+        }
+
+        .currency-input {
+            position: relative;
+        }
+
+        .currency-input::before {
+            content: '$';
+            position: absolute;
+            left: 12px;
+            top: 50%;
+            transform: translateY(-50%);
+            font-weight: 600;
+            color: var(--gray);
+        }
+
+        .currency-input input {
+            padding-left: 30px !important;
+        }
+
+        @media (max-width: 768px) {
+            .goal-actions {
+                flex-direction: column;
+            }
+
+            .btn {
+                width: 100%;
+            }
+        }
+
+        /* Animation for goal cards */
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .goal-card {
+            animation: fadeIn 0.5s ease forwards;
+        }
+
+        .mainContent {
+            display: flex;
+            justify-content: space-around;
+            gap: 20px
+        }
+
+        @media (max-width:906px) {
+            .mainContent {
+                display: block;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <h1>Financial Goals Tracker</h1>
+
+        <div class="tabs">
+            <div class="tab active" onclick="switchTab('all')">All Goals</div>
+            <div class="tab" onclick="switchTab('active')">Active</div>
+            <div class="tab" onclick="switchTab('completed')">Completed</div>
+        </div>
+        <div class="mainContent">
+            <div class="card goal-form" style="width: 450px">
+                <h2 style="margin-bottom: 20px; color: var(--primary);">Add New Goal</h2>
+                <div class="form-group">
+                    <label for="goalName">Goal Name</label>
+                    <input type="text" id="goalName" class="form-control"
+                        placeholder="e.g., Emergency Fund, Vacation Savings">
+                </div>
+                <div class="form-group currency-input">
+                    <label for="targetAmount">Target Amount</label>
+                    <input type="number" id="targetAmount" class="form-control" min="1" step="0.01"
+                        placeholder="1000.00">
+                </div>
+                <div class="form-group currency-input">
+                    <label for="currentAmount">Current Amount</label>
+                    <input type="number" id="currentAmount" class="form-control" min="0" step="0.01" placeholder="0.00">
+                </div>
+                <div class="form-group">
+                    <label for="targetDate">Target Date (Optional)</label>
+                    <input type="date" id="targetDate" class="form-control">
+                </div>
+                <button class="btn btn-primary" onclick="addGoal()">
+                    <i class="fas fa-plus"></i> Add Goal
+                </button>
+            </div>
+            <div class="goals-list" id="goalsList" style="width: 450px">
+                <!-- Goals will be rendered here -->
+            </div>
+        </div>
+
+
+        <div class="notification" id="notification">
+            <i class="fas fa-check-circle"></i>
+            <span id="notification-message">Goal added successfully!</span>
+        </div>
+    </div>
+
+    <script>
+        let goals = JSON.parse(localStorage.getItem('financialGoals')) || [];
+        let currentTab = 'all';
+
+        // DOM Ready
+        document.addEventListener('DOMContentLoaded', function () {
+            renderGoals();
+            setupFormValidation();
+        });
+
+        function setupFormValidation() {
+            const form = document.querySelector('.goal-form');
+            const inputs = form.querySelectorAll('input');
+
+            inputs.forEach(input => {
+                input.addEventListener('input', function () {
+                    if (this.checkValidity()) {
+                        this.classList.remove('invalid');
+                    }
+                });
+            });
+        }
+
+        function validateForm() {
+            let isValid = true;
+            const nameInput = document.getElementById('goalName');
+            const targetInput = document.getElementById('targetAmount');
+            const currentInput = document.getElementById('currentAmount');
+
+            if (!nameInput.value.trim()) {
+                nameInput.classList.add('invalid');
+                nameInput.focus();
+                showNotification('Please enter a goal name', 'error');
+                isValid = false;
+            }
+
+            if (!targetInput.value || parseFloat(targetInput.value) <= 0) {
+                targetInput.classList.add('invalid');
+                if (isValid) targetInput.focus();
+                showNotification('Please enter a valid target amount', 'error');
+                isValid = false;
+            }
+
+            if (!currentInput.value || parseFloat(currentInput.value) < 0) {
+                currentInput.classList.add('invalid');
+                if (isValid) currentInput.focus();
+                showNotification('Please enter a valid current amount', 'error');
+                isValid = false;
+            }
+
+            return isValid;
+        }
+
+        function addGoal() {
+            if (!validateForm()) return;
+
+            const name = document.getElementById('goalName').value.trim();
+            const target = parseFloat(document.getElementById('targetAmount').value);
+            const current = parseFloat(document.getElementById('currentAmount').value);
+            const targetDate = document.getElementById('targetDate').value || null;
+
+            const newGoal = {
+                id: Date.now(),
+                name,
+                target,
+                current,
+                targetDate,
+                createdAt: new Date().toISOString(),
+                completed: false
+            };
+
+            goals.unshift(newGoal); // Add to beginning of array
+            saveGoals();
+
+            // Reset form
+            document.getElementById('goalName').value = '';
+            document.getElementById('targetAmount').value = '';
+            document.getElementById('currentAmount').value = '';
+            document.getElementById('targetDate').value = '';
+
+            showNotification('Goal added successfully!', 'success');
+        }
+
+        function editGoal(id) {
+            const goal = goals.find(g => g.id === id);
+            if (!goal) return;
+
+            const newCurrent = prompt(`Update current amount for "${goal.name}" (Target: $${goal.target.toFixed(2)})`, goal.current);
+
+            if (newCurrent === null || isNaN(newCurrent)) return;
+
+            const newValue = parseFloat(newCurrent);
+            if (newValue < 0) {
+                showNotification('Amount cannot be negative', 'error');
+                return;
+            }
+
+            goal.current = newValue;
+
+            // Check if goal is now completed
+            const wasCompleted = goal.completed;
+            goal.completed = goal.current >= goal.target;
+
+            // Show appropriate notifications
+            const progress = (goal.current / goal.target) * 100;
+
+            if (!wasCompleted && goal.completed) {
+                showNotification(`Congratulations! You've reached your ${goal.name} goal! 🎉`, 'success');
+            } else if (progress >= 50 && progress < 51) {
+                showNotification(`You're halfway to your ${goal.name} goal! Keep going!`, 'info');
+            } else if (progress >= 75 && progress < 76) {
+                showNotification(`You're 75% there on your ${goal.name} goal! Almost there!`, 'info');
+            }
+
+            saveGoals();
+        }
+
+        function deleteGoal(id) {
+            const goal = goals.find(g => g.id === id);
+            if (!goal) return;
+
+            if (confirm(`Are you sure you want to delete "${goal.name}" goal?`)) {
+                goals = goals.filter(g => g.id !== id);
+                saveGoals();
+                showNotification('Goal deleted successfully', 'success');
+            }
+        }
+
+        function saveGoals() {
+            localStorage.setItem('financialGoals', JSON.stringify(goals));
+            renderGoals();
+        }
+
+        function switchTab(tab) {
+            currentTab = tab;
+
+            // Update active tab UI
+            document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+            event.target.classList.add('active');
+
+            renderGoals();
+        }
+
+        function renderGoals() {
+            const goalsList = document.getElementById('goalsList');
+
+            // Filter goals based on current tab
+            let filteredGoals = [];
+            switch (currentTab) {
+                case 'active':
+                    filteredGoals = goals.filter(g => !g.completed);
+                    break;
+                case 'completed':
+                    filteredGoals = goals.filter(g => g.completed);
+                    break;
+                default:
+                    filteredGoals = [...goals];
+            }
+
+            // Sort by completion status (active first) then by creation date (newest first)
+            filteredGoals.sort((a, b) => {
+                if (a.completed !== b.completed) {
+                    return a.completed ? 1 : -1;
+                }
+                return new Date(b.createdAt) - new Date(a.createdAt);
+            });
+
+            if (filteredGoals.length === 0) {
+                let message = '';
+                switch (currentTab) {
+                    case 'active':
+                        message = 'No active goals. Add a new goal to get started!';
+                        break;
+                    case 'completed':
+                        message = 'No completed goals yet. Keep working on your goals!';
+                        break;
+                    default:
+                        message = 'No goals yet. Add your first financial goal!';
+                }
+
+                goalsList.innerHTML = `
+                    <div class="empty-state">
+                        <i class="fas fa-piggy-bank"></i>
+                        <h3>${message}</h3>
+                        <p>Start by adding a new goal above</p>
+                    </div>
+                `;
+                return;
+            }
+
+            goalsList.innerHTML = '';
+
+            filteredGoals.forEach(goal => {
+                const progress = Math.min((goal.current / goal.target) * 100, 100);
+                const daysLeft = goal.targetDate ? calculateDaysLeft(goal.targetDate) : null;
+
+                const goalCard = document.createElement('div');
+                goalCard.className = `card goal-card ${goal.completed ? 'completed' : ''}`;
+
+                goalCard.innerHTML = `
+                    <div class="goal-header">
+                        <h3 class="goal-title">${goal.name}</h3>
+                        ${goal.completed ?
+                        '<span class="badge" style="background: var(--success); color: white; padding: 4px 8px; border-radius: 12px; font-size: 12px;">Completed</span>' :
+                        ''}
+                    </div>
+                    
+                    <div class="goal-amount">
+                        $${goal.current.toFixed(2)} of $${goal.target.toFixed(2)}
+                    </div>
+                    
+                    <div class="progress-container">
+                        <div class="progress-info">
+                            <span>${progress.toFixed(1)}%</span>
+                            ${daysLeft !== null ?
+                        `<span>${daysLeft > 0 ? `${daysLeft} days left` : 'Past due'}</span>` :
+                        ''}
+                        </div>
+                        <div class="progress-bar">
+                            <div class="progress" style="width: ${progress}%"></div>
+                        </div>
+                    </div>
+                    
+                    <div class="goal-actions">
+                        <button class="btn btn-success btn-sm" onclick="editGoal(${goal.id})">
+                            <i class="fas fa-edit"></i> Update
+                        </button>
+                        <button class="btn btn-danger btn-sm" onclick="deleteGoal(${goal.id})">
+                            <i class="fas fa-trash-alt"></i> Delete
+                        </button>
+                        ${!goal.completed ? `
+                        <button class="btn btn-primary btn-sm" onclick="quickAdd(${goal.id})">
+                            <i class="fas fa-plus"></i> Quick Add
+                        </button>` : ''}
+                    </div>
+                `;
+
+                goalsList.appendChild(goalCard);
+            });
+        }
+
+        function quickAdd(id) {
+            const goal = goals.find(g => g.id === id);
+            if (!goal) return;
+
+            const amount = prompt(`How much to add to "${goal.name}"? (Current: $${goal.current.toFixed(2)} / Target: $${goal.target.toFixed(2)})`, "0");
+
+            if (amount === null || isNaN(amount)) return;
+
+            const addAmount = parseFloat(amount);
+            if (addAmount <= 0) {
+                showNotification('Please enter a positive amount', 'error');
+                return;
+            }
+
+            goal.current += addAmount;
+
+            // Check if goal is now completed
+            const wasCompleted = goal.completed;
+            goal.completed = goal.current >= goal.target;
+
+            if (!wasCompleted && goal.completed) {
+                showNotification(`Congratulations! You've reached your ${goal.name} goal! 🎉`, 'success');
+            }
+
+            saveGoals();
+        }
+
+        function calculateDaysLeft(targetDate) {
+            const today = new Date();
+            const target = new Date(targetDate);
+            const diffTime = target - today;
+            return Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+        }
+
+        function showNotification(message, type = 'success') {
+            const notification = document.getElementById('notification');
+            const notificationMsg = document.getElementById('notification-message');
+
+            // Set notification style based on type
+            notification.className = 'notification';
+            notification.classList.add('show');
+
+            switch (type) {
+                case 'success':
+                    notification.style.backgroundColor = 'var(--primary)';
+                    notification.innerHTML = `<i class="fas fa-check-circle"></i> <span id="notification-message">${message}</span>`;
+                    break;
+                case 'error':
+                    notification.style.backgroundColor = 'var(--danger)';
+                    notification.innerHTML = `<i class="fas fa-exclamation-circle"></i> <span id="notification-message">${message}</span>`;
+                    break;
+                case 'info':
+                    notification.style.backgroundColor = 'var(--warning)';
+                    notification.innerHTML = `<i class="fas fa-info-circle"></i> <span id="notification-message">${message}</span>`;
+                    break;
+            }
+
+            // Auto-hide after 3 seconds
+            setTimeout(() => {
+                notification.classList.remove('show');
+            }, 3000);
+        }
+    </script>
+</body>
+
+</html>

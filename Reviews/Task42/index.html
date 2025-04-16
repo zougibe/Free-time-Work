@@ -1,0 +1,1096 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Park Pulse: Ultimate Attendance Tracker</title>
+    <script src="https://cdn.plot.ly/plotly-2.30.0.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&family=Fredoka+One&display=swap"
+        rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root {
+            --primary: #FF5E5B;
+            --secondary: #00CECB;
+            --accent: #FFED66;
+            --dark: #2D3047;
+            --light: #F8F8F8;
+            --success: #5CB85C;
+            --warning: #F0AD4E;
+            --danger: #D9534F;
+            --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.1);
+            --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.15);
+            --shadow-lg: 0 8px 24px rgba(0, 0, 0, 0.2);
+            --transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+            --border-radius: 12px;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Poppins', sans-serif;
+            line-height: 1.6;
+            color: var(--dark);
+            background: linear-gradient(rgba(45, 48, 71, 0.85), rgba(45, 48, 71, 0.9)),
+                url('https://images.unsplash.com/photo-1551632436-cbf8dd35adfa?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=2071&q=80') no-repeat center center fixed;
+            background-size: cover;
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            background: rgba(255, 255, 255, 0.97);
+            border-radius: var(--border-radius);
+            box-shadow: var(--shadow-lg);
+            overflow: hidden;
+        }
+
+        header {
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            color: white;
+            padding: 2rem;
+            text-align: center;
+            position: relative;
+            overflow: hidden;
+        }
+
+        header::before {
+            content: "";
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: radial-gradient(circle, rgba(255, 255, 255, 0.2) 0%, rgba(255, 255, 255, 0) 70%);
+            transform: rotate(30deg);
+            animation: shine 8s infinite linear;
+        }
+
+        @keyframes shine {
+            0% {
+                transform: rotate(30deg) translate(-30%, -30%);
+            }
+
+            100% {
+                transform: rotate(30deg) translate(30%, 30%);
+            }
+        }
+
+        h1 {
+            font-family: 'Fredoka One', cursive;
+            font-size: 2.8rem;
+            margin-bottom: 0.5rem;
+            position: relative;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.2);
+        }
+
+        .subtitle {
+            font-size: 1.2rem;
+            opacity: 0.9;
+            font-weight: 300;
+            max-width: 700px;
+            margin: 0 auto;
+            position: relative;
+        }
+
+        .dashboard-section {
+            padding: 2rem;
+            border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+        }
+
+        .section-title {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            font-size: 1.5rem;
+            margin-bottom: 1.5rem;
+            color: var(--dark);
+        }
+
+        .section-title i {
+            color: var(--primary);
+        }
+
+        .controls {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 20px;
+            margin-bottom: 2rem;
+            align-items: center;
+        }
+
+        .filter-group {
+            flex: 1;
+            min-width: 250px;
+        }
+
+        .filter-label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: var(--dark);
+            font-size: 0.9rem;
+        }
+
+        .select-wrapper {
+            position: relative;
+        }
+
+        .select-wrapper::after {
+            content: "▼";
+            position: absolute;
+            top: 50%;
+            right: 15px;
+            transform: translateY(-50%);
+            color: var(--primary);
+            pointer-events: none;
+            font-size: 0.8rem;
+        }
+
+        select {
+            width: 100%;
+            padding: 12px 16px;
+            border-radius: var(--border-radius);
+            border: 1px solid #ddd;
+            background-color: white;
+            font-family: 'Poppins', sans-serif;
+            font-size: 1rem;
+            appearance: none;
+            transition: var(--transition);
+            box-shadow: var(--shadow-sm);
+        }
+
+        select:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(255, 94, 91, 0.2);
+        }
+
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            padding: 12px 24px;
+            border-radius: var(--border-radius);
+            font-family: 'Poppins', sans-serif;
+            font-weight: 600;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: var(--transition);
+            border: none;
+            box-shadow: var(--shadow-sm);
+        }
+
+        .btn-primary {
+            background-color: var(--primary);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background-color: #ff4c48;
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-md);
+        }
+
+        .btn-primary:active {
+            transform: translateY(0);
+        }
+
+        .btn-outline {
+            background-color: transparent;
+            border: 2px solid var(--primary);
+            color: var(--primary);
+        }
+
+        .btn-outline:hover {
+            background-color: rgba(255, 94, 91, 0.1);
+        }
+
+        #chart {
+            height: 500px;
+            width: 100%;
+            margin: 2rem 0;
+            border-radius: var(--border-radius);
+            overflow: hidden;
+            box-shadow: var(--shadow-sm);
+        }
+
+        .stats-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin-bottom: 2rem;
+        }
+
+        .stat-card {
+            background: white;
+            border-radius: var(--border-radius);
+            padding: 1.5rem;
+            box-shadow: var(--shadow-sm);
+            transition: var(--transition);
+            border-top: 4px solid var(--primary);
+        }
+
+        .stat-card:hover {
+            transform: translateY(-5px);
+            box-shadow: var(--shadow-md);
+        }
+
+        .stat-card h3 {
+            font-size: 1rem;
+            color: #666;
+            margin-bottom: 0.5rem;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .stat-value {
+            font-size: 2.2rem;
+            font-weight: 700;
+            color: var(--dark);
+            margin: 0.5rem 0;
+        }
+
+        .stat-detail {
+            font-size: 0.9rem;
+            color: #777;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: separate;
+            border-spacing: 0;
+            margin: 2rem 0;
+            background: white;
+            border-radius: var(--border-radius);
+            overflow: hidden;
+            box-shadow: var(--shadow-sm);
+        }
+
+        th,
+        td {
+            padding: 15px;
+            text-align: left;
+            border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+        }
+
+        th {
+            background-color: var(--light);
+            font-weight: 600;
+            color: var(--dark);
+            position: sticky;
+            top: 0;
+            cursor: pointer;
+            transition: var(--transition);
+            user-select: none;
+        }
+
+        th:hover {
+            background-color: rgba(0, 206, 203, 0.1);
+        }
+
+        th.sort-asc::after {
+            content: " ↑";
+            font-weight: bold;
+            color: var(--primary);
+        }
+
+        th.sort-desc::after {
+            content: " ↓";
+            font-weight: bold;
+            color: var(--primary);
+        }
+
+        tr:not(:last-child) td {
+            border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+        }
+
+        tr:hover td {
+            background-color: rgba(255, 237, 102, 0.1);
+        }
+
+        .badge {
+            display: inline-block;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .badge-primary {
+            background-color: rgba(0, 206, 203, 0.1);
+            color: var(--secondary);
+        }
+
+        .badge-warning {
+            background-color: rgba(255, 237, 102, 0.2);
+            color: #E6C229;
+        }
+
+        .loading {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 200px;
+            font-size: 1.2rem;
+            color: var(--dark);
+        }
+
+        .tooltip {
+            position: relative;
+            display: inline-block;
+            cursor: pointer;
+        }
+
+        .tooltip .tooltiptext {
+            visibility: hidden;
+            width: 200px;
+            background-color: var(--dark);
+            color: white;
+            text-align: center;
+            border-radius: 6px;
+            padding: 8px;
+            position: absolute;
+            z-index: 1;
+            bottom: 125%;
+            left: 50%;
+            transform: translateX(-50%);
+            opacity: 0;
+            transition: opacity 0.3s;
+            font-size: 0.8rem;
+            font-weight: normal;
+        }
+
+        .tooltip:hover .tooltiptext {
+            visibility: visible;
+            opacity: 1;
+        }
+
+        footer {
+            text-align: center;
+            padding: 1.5rem;
+            color: #666;
+            font-size: 0.9rem;
+            background-color: var(--light);
+        }
+
+        @media (max-width: 768px) {
+            h1 {
+                font-size: 2rem;
+            }
+
+            .subtitle {
+                font-size: 1rem;
+            }
+
+            .controls {
+                flex-direction: column;
+                gap: 15px;
+            }
+
+            .filter-group {
+                min-width: 100%;
+            }
+
+            .stats-container {
+                grid-template-columns: 1fr;
+            }
+
+            th,
+            td {
+                padding: 12px 8px;
+            }
+        }
+
+        /* Animation for chart loading */
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .chart-container {
+            animation: fadeIn 0.5s ease-out;
+        }
+
+        /* Pulse animation for highlights */
+        @keyframes pulse {
+            0% {
+                transform: scale(1);
+            }
+
+            50% {
+                transform: scale(1.05);
+            }
+
+            100% {
+                transform: scale(1);
+            }
+        }
+
+        .pulse {
+            animation: pulse 2s infinite;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <header>
+            <h1><i class="fas fa-ticket-alt"></i> Park Pulse</h1>
+            <p class="subtitle">Track and analyze attendance trends across the world's most popular theme parks</p>
+        </header>
+
+        <div class="dashboard-section">
+            <div class="section-title">
+                <i class="fas fa-sliders-h"></i>
+                <h2>Dashboard Controls</h2>
+            </div>
+
+            <div class="controls">
+                <div class="filter-group">
+                    <label for="regionFilter" class="filter-label">Filter by Region</label>
+                    <div class="select-wrapper">
+                        <select id="regionFilter">
+                            <option value="all">All Regions</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="filter-group">
+                    <label for="seasonFilter" class="filter-label">Filter by Peak Season</label>
+                    <div class="select-wrapper">
+                        <select id="seasonFilter">
+                            <option value="all">All Seasons</option>
+                        </select>
+                    </div>
+                </div>
+
+                <button class="btn btn-primary" onclick="resetFilters()">
+                    <i class="fas fa-sync-alt"></i> Reset Filters
+                </button>
+            </div>
+
+            <div class="chart-container">
+                <div id="chart"></div>
+            </div>
+        </div>
+
+        <div class="dashboard-section">
+            <div class="section-title">
+                <i class="fas fa-chart-line"></i>
+                <h2>Key Metrics</h2>
+            </div>
+
+            <div class="stats-container" id="statsContainer"></div>
+        </div>
+
+        <div class="dashboard-section">
+            <div class="section-title">
+                <i class="fas fa-table"></i>
+                <h2>Park Attendance Data</h2>
+            </div>
+
+            <table id="avgTable">
+                <thead>
+                    <tr>
+                        <th onclick="sortTable(0)">Park Name</th>
+                        <th onclick="sortTable(1)">Avg Attendance <span class="tooltip">(M)<span
+                                    class="tooltiptext">Millions of visitors per year</span></span></th>
+                        <th onclick="sortTable(2)">Peak Year</th>
+                        <th onclick="sortTable(3)">Peak Attendance <span class="tooltip">(M)<span
+                                    class="tooltiptext">Highest recorded attendance in millions</span></span></th>
+                        <th onclick="sortTable(4)">Growth Trend</th>
+                    </tr>
+                </thead>
+                <tbody id="tableBody"></tbody>
+            </table>
+        </div>
+
+        <footer>
+            <p>© 2023 Park Pulse Dashboard | Data updated monthly | <a href="#" style="color: var(--primary);">Download
+                    Full Report</a></p>
+        </footer>
+    </div>
+
+    <script>
+        // Enhanced data model with more parks and realistic data
+        const parksData = [
+            {
+                name: "Disneyland",
+                baseAttendance: 18.0,
+                growthRate: 0.15,
+                regions: ["North America", "Europe", "Asia"],
+                seasons: ["Summer", "Winter", "Spring"],
+                icon: "fa-castle"
+            },
+            {
+                name: "Universal Studios",
+                baseAttendance: 13.5,
+                growthRate: 0.12,
+                regions: ["North America", "Asia"],
+                seasons: ["Summer", "Spring"],
+                icon: "fa-film"
+            },
+            {
+                name: "Six Flags",
+                baseAttendance: 10.0,
+                growthRate: 0.08,
+                regions: ["North America", "Europe"],
+                seasons: ["Summer", "Fall"],
+                icon: "fa-flag"
+            },
+            {
+                name: "Europa Park",
+                baseAttendance: 5.5,
+                growthRate: 0.1,
+                regions: ["Europe"],
+                seasons: ["Summer", "Winter"],
+                icon: "fa-umbrella-beach"
+            },
+            {
+                name: "Ocean Park",
+                baseAttendance: 7.0,
+                growthRate: 0.09,
+                regions: ["Asia"],
+                seasons: ["Summer", "Winter", "Spring"],
+                icon: "fa-fish"
+            },
+            {
+                name: "Legoland",
+                baseAttendance: 8.2,
+                growthRate: 0.11,
+                regions: ["North America", "Europe", "Asia"],
+                seasons: ["Summer", "Spring", "Fall"],
+                icon: "fa-cubes"
+            }
+        ];
+
+        // Generate realistic sample data with trends and fluctuations
+        function generateSampleData() {
+            const data = [];
+            const currentYear = new Date().getFullYear();
+
+            for (let year = 2015; year <= currentYear; year++) {
+                // Global factors affecting all parks (economy, tourism trends)
+                const globalFactor = 1 + (Math.random() * 0.1 - 0.05);
+                // Special events in certain years (Olympics, anniversaries)
+                const specialEventBoost = year === 2020 ? 0.9 : (year === 2021 ? 0.8 : 1); // COVID impact
+
+                parksData.forEach(park => {
+                    park.regions.forEach(region => {
+                        park.seasons.forEach(season => {
+                            // Base growth calculation
+                            let attendance = park.baseAttendance *
+                                Math.pow(1 + park.growthRate, year - 2015) *
+                                globalFactor *
+                                specialEventBoost;
+
+                            // Regional adjustments
+                            if (region === "Asia") attendance *= 1.15;
+                            if (region === "Europe") attendance *= 0.95;
+                            if (region === "North America") attendance *= 1.05;
+
+                            // Seasonal adjustments
+                            if (season === "Summer") attendance *= 1.25;
+                            if (season === "Winter") attendance *= 0.85;
+                            if (season === "Spring" || season === "Fall") attendance *= 1.05;
+
+                            // Random fluctuation
+                            attendance *= (1 + (Math.random() * 0.1 - 0.05));
+
+                            // Ensure attendance is positive
+                            attendance = Math.max(1, attendance);
+
+                            data.push({
+                                park: park.name,
+                                year,
+                                attendance: parseFloat(attendance.toFixed(1)),
+                                region,
+                                peakSeason: season,
+                                icon: park.icon
+                            });
+                        });
+                    });
+                });
+            }
+
+            return data;
+        }
+
+        let parkData = generateSampleData();
+        let currentSortColumn = 1; // Default sort by Avg Attendance
+        let currentSortDirection = -1; // Default descending
+
+        // Initialize the dashboard when DOM is loaded
+        document.addEventListener('DOMContentLoaded', function () {
+            initDashboard();
+
+            // Add event listeners for accessibility
+            document.querySelectorAll('th').forEach(th => {
+                th.addEventListener('keydown', (e) => {
+                    if (e.key === 'Enter' || e.key === ' ') {
+                        const index = Array.from(th.parentNode.children).indexOf(th);
+                        sortTable(index);
+                    }
+                });
+            });
+        });
+
+        function initDashboard() {
+            populateFilters();
+            updateStats();
+            updateTable();
+            updateChart();
+        }
+
+        function populateFilters() {
+            const regions = [...new Set(parkData.map(d => d.region))].sort();
+            const seasons = [...new Set(parkData.map(d => d.peakSeason))].sort();
+
+            const regionSelect = document.getElementById('regionFilter');
+            const seasonSelect = document.getElementById('seasonFilter');
+
+            // Clear existing options (keeping "All")
+            while (regionSelect.options.length > 1) regionSelect.remove(1);
+            while (seasonSelect.options.length > 1) seasonSelect.remove(1);
+
+            // Add new options
+            regions.forEach(r => {
+                const option = new Option(r, r);
+                regionSelect.add(option);
+            });
+
+            seasons.forEach(s => {
+                const option = new Option(s, s);
+                seasonSelect.add(option);
+            });
+
+            // Add event listeners with debounce to prevent multiple rapid updates
+            let debounceTimer;
+            const debounceTime = 300;
+
+            regionSelect.onchange = seasonSelect.onchange = function () {
+                clearTimeout(debounceTimer);
+                debounceTimer = setTimeout(() => {
+                    updateChart();
+                    updateTable();
+                    updateStats();
+                }, debounceTime);
+            };
+        }
+
+        function updateStats() {
+            const region = document.getElementById('regionFilter').value;
+            const season = document.getElementById('seasonFilter').value;
+
+            let filteredData = parkData;
+            if (region !== 'all') filteredData = filteredData.filter(d => d.region === region);
+            if (season !== 'all') filteredData = filteredData.filter(d => d.peakSeason === season);
+
+            // Calculate statistics
+            const totalAttendance = filteredData.reduce((sum, d) => sum + d.attendance, 0);
+            const avgAttendance = totalAttendance / filteredData.length;
+
+            const parks = [...new Set(filteredData.map(d => d.park))];
+            const years = [...new Set(filteredData.map(d => d.year))];
+
+            // Find park with highest average attendance
+            let highestPark = { name: "", avg: 0, icon: "" };
+            parks.forEach(park => {
+                const parkData = filteredData.filter(d => d.park === park);
+                const avg = parkData.reduce((sum, d) => sum + d.attendance, 0) / parkData.length;
+                if (avg > highestPark.avg) {
+                    highestPark = {
+                        name: park,
+                        avg: avg,
+                        icon: parkData[0]?.icon || "fa-park"
+                    };
+                }
+            });
+
+            // Find year with highest attendance
+            let highestYear = { year: 0, attendance: 0 };
+            years.forEach(year => {
+                const yearData = filteredData.filter(d => d.year === year);
+                const total = yearData.reduce((sum, d) => sum + d.attendance, 0);
+                if (total > highestYear.attendance) {
+                    highestYear = { year, attendance: total };
+                }
+            });
+
+            // Calculate growth percentage from first to last year
+            let growthPercentage = 0;
+            if (years.length > 1) {
+                const firstYear = Math.min(...years);
+                const lastYear = Math.max(...years);
+
+                const firstYearData = filteredData.filter(d => d.year === firstYear);
+                const lastYearData = filteredData.filter(d => d.year === lastYear);
+
+                const firstYearTotal = firstYearData.reduce((sum, d) => sum + d.attendance, 0);
+                const lastYearTotal = lastYearData.reduce((sum, d) => sum + d.attendance, 0);
+
+                growthPercentage = ((lastYearTotal - firstYearTotal) / firstYearTotal) * 100;
+            }
+
+            // Update stats container
+            const statsContainer = document.getElementById('statsContainer');
+            statsContainer.innerHTML = `
+                <div class="stat-card">
+                    <h3><i class="fas fa-users"></i> Total Visitors</h3>
+                    <div class="stat-value">${(totalAttendance / 1000).toFixed(1)}B</div>
+                    <p class="stat-detail">Across all selected parks</p>
+                </div>
+                <div class="stat-card">
+                    <h3><i class="fas fa-chart-bar"></i> Average Attendance</h3>
+                    <div class="stat-value">${avgAttendance.toFixed(1)}M</div>
+                    <p class="stat-detail">Per park per year</p>
+                </div>
+                <div class="stat-card">
+                    <h3><i class="fas fa-crown"></i> Top Performing Park</h3>
+                    <div class="stat-value"><i class="fas ${highestPark.icon}"></i> ${highestPark.name || "N/A"}</div>
+                    <p class="stat-detail">Avg ${highestPark.avg.toFixed(1)}M visitors</p>
+                </div>
+                <div class="stat-card">
+                    <h3><i class="fas fa-arrow-trend-up"></i> Overall Growth</h3>
+                    <div class="stat-value ${growthPercentage >= 0 ? 'text-success' : 'text-danger'}">${growthPercentage.toFixed(1)}%</div>
+                    <p class="stat-detail">From ${years[0]} to ${years[years.length - 1]}</p>
+                </div>
+            `;
+        }
+
+        function updateTable() {
+            const region = document.getElementById('regionFilter').value;
+            const season = document.getElementById('seasonFilter').value;
+
+            let filteredData = parkData;
+            if (region !== 'all') filteredData = filteredData.filter(d => d.region === region);
+            if (season !== 'all') filteredData = filteredData.filter(d => d.peakSeason === season);
+
+            const parks = [...new Set(filteredData.map(d => d.park))];
+            const tableData = [];
+
+            parks.forEach(park => {
+                const parkData = filteredData.filter(d => d.park === park);
+                const sum = parkData.reduce((acc, d) => acc + d.attendance, 0);
+                const count = parkData.length;
+                const avg = sum / count;
+
+                // Find peak year and attendance for this park
+                let peakYear = 0;
+                let peakAttendance = 0;
+                parkData.forEach(d => {
+                    if (d.attendance > peakAttendance) {
+                        peakAttendance = d.attendance;
+                        peakYear = d.year;
+                    }
+                });
+
+                // Calculate growth trend
+                const years = [...new Set(parkData.map(d => d.year))].sort();
+                let growthTrend = "stable";
+                if (years.length > 1) {
+                    const firstYearData = parkData.filter(d => d.year === years[0]);
+                    const lastYearData = parkData.filter(d => d.year === years[years.length - 1]);
+
+                    const firstYearAvg = firstYearData.reduce((sum, d) => sum + d.attendance, 0) / firstYearData.length;
+                    const lastYearAvg = lastYearData.reduce((sum, d) => sum + d.attendance, 0) / lastYearData.length;
+
+                    const growth = ((lastYearAvg - firstYearAvg) / firstYearAvg) * 100;
+
+                    if (growth > 5) growthTrend = "up";
+                    else if (growth < -5) growthTrend = "down";
+                }
+
+                tableData.push({
+                    park,
+                    icon: parkData[0]?.icon || "fa-park",
+                    avg,
+                    peakYear,
+                    peakAttendance,
+                    growthTrend
+                });
+            });
+
+            // Sort table data based on current sort settings
+            const sortKeys = ["park", "avg", "peakYear", "peakAttendance", "growthTrend"];
+            const sortKey = sortKeys[currentSortColumn];
+
+            tableData.sort((a, b) => {
+                if (a[sortKey] < b[sortKey]) return -1 * currentSortDirection;
+                if (a[sortKey] > b[sortKey]) return 1 * currentSortDirection;
+                return 0;
+            });
+
+            // Update table
+            const tableBody = document.getElementById('tableBody');
+            tableBody.innerHTML = '';
+
+            tableData.forEach(data => {
+                const row = document.createElement('tr');
+
+                // Determine growth trend indicator
+                let trendIcon = "";
+                let trendClass = "";
+                if (data.growthTrend === "up") {
+                    trendIcon = "<i class='fas fa-arrow-up'></i>";
+                    trendClass = "text-success";
+                } else if (data.growthTrend === "down") {
+                    trendIcon = "<i class='fas fa-arrow-down'></i>";
+                    trendClass = "text-danger";
+                } else {
+                    trendIcon = "<i class='fas fa-arrows-alt-h'></i>";
+                    trendClass = "text-warning";
+                }
+
+                row.innerHTML = `
+                    <td><i class="fas ${data.icon}"></i> ${data.park}</td>
+                    <td>${data.avg.toFixed(1)}</td>
+                    <td>${data.peakYear || "N/A"}</td>
+                    <td>${data.peakAttendance ? data.peakAttendance.toFixed(1) : "N/A"}</td>
+                    <td class="${trendClass}">${trendIcon} ${data.growthTrend}</td>
+                `;
+                tableBody.appendChild(row);
+            });
+
+            // Update sort indicators
+            const headers = document.querySelectorAll('#avgTable th');
+            headers.forEach((header, index) => {
+                header.classList.remove('sort-asc', 'sort-desc');
+                header.setAttribute('aria-sort', 'none');
+
+                if (index === currentSortColumn) {
+                    header.classList.add(currentSortDirection === 1 ? 'sort-asc' : 'sort-desc');
+                    header.setAttribute('aria-sort', currentSortDirection === 1 ? 'ascending' : 'descending');
+                }
+            });
+        }
+
+        function updateChart() {
+            const region = document.getElementById('regionFilter').value;
+            const season = document.getElementById('seasonFilter').value;
+
+            let filteredData = parkData;
+            if (region !== 'all') filteredData = filteredData.filter(d => d.region === region);
+            if (season !== 'all') filteredData = filteredData.filter(d => d.peakSeason === season);
+
+            const years = [...new Set(filteredData.map(d => d.year))].sort();
+            const parks = [...new Set(filteredData.map(d => d.park))];
+
+            // Show loading state
+            const chartDiv = document.getElementById('chart');
+            chartDiv.innerHTML = "<div class='loading'><i class='fas fa-spinner fa-spin'></i> Loading chart data...</div>";
+
+            // Use setTimeout to allow the DOM to update with loading state
+            setTimeout(() => {
+                // Prepare data for each park
+                const traces = parks.map(park => {
+                    const parkDataFiltered = filteredData.filter(d => d.park === park);
+                    const parkIcon = parkDataFiltered[0]?.icon || "fa-park";
+
+                    // Group by year and calculate average attendance per year
+                    const yearlyData = {};
+                    parkDataFiltered.forEach(d => {
+                        if (!yearlyData[d.year]) {
+                            yearlyData[d.year] = { sum: 0, count: 0 };
+                        }
+                        yearlyData[d.year].sum += d.attendance;
+                        yearlyData[d.year].count++;
+                    });
+
+                    const xValues = [];
+                    const yValues = [];
+
+                    years.forEach(year => {
+                        if (yearlyData[year]) {
+                            xValues.push(year);
+                            yValues.push(yearlyData[year].sum / yearlyData[year].count);
+                        }
+                    });
+
+                    // Determine if this park had the highest attendance in any year
+                    const isTopParkByYear = {};
+                    years.forEach(year => {
+                        const yearData = filteredData.filter(d => d.year === year);
+                        if (yearData.length > 0) {
+                            const maxAttendance = Math.max(...yearData.map(d => d.attendance));
+                            const parkAttendance = yearlyData[year] ? (yearlyData[year].sum / yearlyData[year].count) : 0;
+                            isTopParkByYear[year] = parkAttendance === maxAttendance;
+                        }
+                    });
+
+                    // Create marker colors array (gold for top parks)
+                    const markerColors = xValues.map(year =>
+                        isTopParkByYear[year] ? '#FFD700' : '#00CECB'
+                    );
+
+                    // Create line colors array (darker for top parks)
+                    const lineColors = xValues.map(year =>
+                        isTopParkByYear[year] ? '#FF5E5B' : '#00CECB'
+                    );
+
+                    return {
+                        x: xValues,
+                        y: yValues,
+                        name: park,
+                        type: 'scatter',
+                        mode: 'lines+markers',
+                        hovertemplate: `
+                            <b>%{fullData.name}</b><br>
+                            Year: %{x}<br>
+                            Attendance: %{y:.1f}M<br>
+                            <extra></extra>
+                        `,
+                        line: {
+                            color: '#00CECB',
+                            width: 2
+                        },
+                        marker: {
+                            color: markerColors,
+                            size: 10,
+                            line: {
+                                width: 1,
+                                color: 'rgba(0,0,0,0.3)'
+                            }
+                        },
+                        text: xValues.map(year => isTopParkByYear[year] ? '★ Top Park' : ''),
+                        textposition: 'top center'
+                    };
+                });
+
+                const layout = {
+                    title: {
+                        text: 'Theme Park Attendance Trends (Millions of Visitors)',
+                        font: {
+                            size: 18,
+                            family: "'Poppins', sans-serif",
+                            color: '#2D3047'
+                        },
+                        x: 0.05
+                    },
+                    xaxis: {
+                        title: 'Year',
+                        tickmode: 'linear',
+                        tick0: Math.min(...years),
+                        dtick: 1,
+                        gridcolor: 'rgba(0,0,0,0.05)'
+                    },
+                    yaxis: {
+                        title: 'Attendance (Millions)',
+                        rangemode: 'tozero',
+                        gridcolor: 'rgba(0,0,0,0.05)'
+                    },
+                    margin: { t: 80, b: 80, l: 80, r: 40 },
+                    hovermode: 'closest',
+                    plot_bgcolor: 'rgba(255, 255, 255, 0.9)',
+                    paper_bgcolor: 'rgba(255, 255, 255, 0.9)',
+                    legend: {
+                        orientation: 'h',
+                        y: -0.25,
+                        font: {
+                            family: "'Poppins', sans-serif"
+                        }
+                    },
+                    annotations: [{
+                        text: 'Gold markers indicate highest attendance for that year',
+                        showarrow: false,
+                        xref: 'paper',
+                        yref: 'paper',
+                        x: 0.5,
+                        y: -0.35,
+                        font: {
+                            size: 12,
+                            family: "'Poppins', sans-serif",
+                            color: '#666'
+                        }
+                    }],
+                    transition: {
+                        duration: 500,
+                        easing: 'cubic-in-out'
+                    }
+                };
+
+                const config = {
+                    responsive: true,
+                    displayModeBar: true,
+                    displaylogo: false,
+                    modeBarButtonsToRemove: ['toImage', 'sendDataToCloud'],
+                    modeBarButtonsToAdd: [{
+                        name: 'Download as PNG',
+                        icon: Plotly.Icons.camera,
+                        click: function (gd) {
+                            Plotly.downloadImage(gd, {
+                                format: 'png',
+                                width: 1200,
+                                height: 600,
+                                filename: 'park-attendance-chart'
+                            });
+                        }
+                    }]
+                };
+
+                Plotly.react('chart', traces, layout, config).then(() => {
+                    // Add animation class after chart is rendered
+                    chartDiv.classList.add('chart-container');
+                });
+            }, 100);
+        }
+
+        function sortTable(columnIndex) {
+            // If clicking the same column, reverse the direction
+            if (columnIndex === currentSortColumn) {
+                currentSortDirection *= -1;
+            } else {
+                currentSortColumn = columnIndex;
+                currentSortDirection = 1;
+            }
+
+            updateTable();
+
+            // Scroll to table if it's not in view
+            document.getElementById('avgTable').scrollIntoView({
+                behavior: 'smooth',
+                block: 'nearest'
+            });
+        }
+
+        function resetFilters() {
+            document.getElementById('regionFilter').value = 'all';
+            document.getElementById('seasonFilter').value = 'all';
+
+            // Add visual feedback
+            const resetBtn = document.querySelector('.btn-primary');
+            resetBtn.innerHTML = '<i class="fas fa-check"></i> Filters Reset';
+            resetBtn.style.backgroundColor = '#5CB85C';
+
+            setTimeout(() => {
+                resetBtn.innerHTML = '<i class="fas fa-sync-alt"></i> Reset Filters';
+                resetBtn.style.backgroundColor = '';
+            }, 2000);
+
+            updateChart();
+            updateTable();
+            updateStats();
+        }
+    </script>
+</body>
+
+</html>

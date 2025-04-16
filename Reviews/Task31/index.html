@@ -1,0 +1,673 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Tarot Card Reading</title>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Cinzel+Decorative:wght@700&family=Open+Sans&family=Playfair+Display:wght@600&display=swap"
+        rel="stylesheet" />
+    <script src="https://cdn.jsdelivr.net/npm/p5@1.6.0/lib/p5.min.js"></script>
+    <style>
+        :root {
+            --gold: #ffd700;
+            --purple-dark: #2e003e;
+            --purple-light: #4a1e6a;
+            --pink: #ff4d79;
+        }
+
+        body {
+            margin: 0;
+            padding: 0;
+            background: linear-gradient(135deg, var(--purple-dark), #100020);
+            font-family: "Open Sans", sans-serif;
+            color: #f5f5f5;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            overflow-x: hidden;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 1200px;
+            padding: 40px 20px;
+            box-sizing: border-box;
+            text-align: center;
+            position: relative;
+            z-index: 1;
+        }
+
+        h1 {
+            font-family: "Cinzel Decorative", serif;
+            font-size: 3.5em;
+            color: var(--gold);
+            margin-bottom: 40px;
+            text-shadow: 0 0 10px rgba(255, 215, 0, 0.5);
+            letter-spacing: 2px;
+            position: relative;
+            display: inline-block;
+        }
+
+        h1::before,
+        h1::after {
+            content: "✧";
+            position: absolute;
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--pink);
+            font-size: 0.8em;
+            opacity: 0.8;
+        }
+
+        h1::before {
+            left: -40px;
+        }
+
+        h1::after {
+            right: -40px;
+        }
+
+        .cards-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 40px;
+            justify-content: center;
+            margin: 30px 0;
+        }
+
+        .card {
+            perspective: 1000px;
+            border-radius: 15px;
+            transition: transform 0.6s;
+            position: relative;
+            height: 500px;
+        }
+
+        .card::before {
+            content: "";
+            position: absolute;
+            top: -5px;
+            left: -5px;
+            right: -5px;
+            bottom: -5px;
+            background: linear-gradient(45deg, var(--gold), var(--pink), var(--purple-light), var(--gold));
+            z-index: -1;
+            border-radius: 20px;
+            opacity: 0;
+            transition: opacity 0.5s;
+        }
+
+        .card:hover::before {
+            opacity: 0.7;
+            animation: rotateGradient 4s linear infinite;
+        }
+
+        @keyframes rotateGradient {
+            0% {
+                filter: hue-rotate(0deg);
+            }
+
+            100% {
+                filter: hue-rotate(360deg);
+            }
+        }
+
+        .card-inner {
+            position: relative;
+            width: 100%;
+            height: 100%;
+            background: rgba(20, 5, 35, 0.8);
+            border-radius: 20px;
+            padding: 25px;
+            backdrop-filter: blur(6px);
+            box-shadow: 0 8px 30px rgba(0, 0, 0, 0.6);
+            transform-style: preserve-3d;
+            transition: transform 1s;
+            transform: rotateY(0deg);
+            border: 1px solid rgba(255, 215, 0, 0.2);
+            overflow: hidden;
+        }
+
+        .card-inner::before {
+            content: "";
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: linear-gradient(90deg, var(--gold), var(--pink));
+        }
+
+        .card.flip .card-inner {
+            transform: rotateY(360deg);
+        }
+
+        .card-title {
+            font-family: "Cinzel Decorative", serif;
+            font-size: 1.8em;
+            margin-bottom: 15px;
+            color: var(--gold);
+            text-shadow: 0 0 10px rgba(255, 215, 0, 0.7);
+            position: relative;
+            padding-bottom: 10px;
+        }
+
+        .card-title::after {
+            content: "";
+            position: absolute;
+            bottom: 0;
+            left: 25%;
+            width: 50%;
+            height: 1px;
+            background: linear-gradient(90deg, transparent, var(--gold), transparent);
+        }
+
+        .card-orientation {
+            font-style: italic;
+            color: #ccc;
+            margin-bottom: 20px;
+            font-size: 1.1em;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .card-orientation::before,
+        .card-orientation::after {
+            content: "~";
+            margin: 0 5px;
+            color: var(--pink);
+        }
+
+        .card-description {
+            font-size: 1.1em;
+            line-height: 1.6;
+            margin-bottom: 20px;
+            color: #e0e0e0;
+        }
+
+        .card-meaning {
+            font-size: 1em;
+            line-height: 1.6;
+            padding: 15px;
+            background: rgba(255, 215, 0, 0.1);
+            border-radius: 10px;
+            border-left: 3px solid var(--gold);
+        }
+
+        button {
+            margin-top: 50px;
+            padding: 16px 40px;
+            font-size: 1.2em;
+            background: linear-gradient(45deg, var(--gold), #ffec80);
+            color: var(--purple-dark);
+            border: none;
+            border-radius: 30px;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-family: "Playfair Display", serif;
+            font-weight: bold;
+            letter-spacing: 1px;
+            position: relative;
+            overflow: hidden;
+            box-shadow: 0 5px 15px rgba(255, 215, 0, 0.4);
+        }
+
+        button:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 20px rgba(255, 215, 0, 0.6);
+        }
+
+        button::before {
+            content: "";
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+            transition: 0.5s;
+        }
+
+        button:hover::before {
+            left: 100%;
+        }
+
+        .moon {
+            position: absolute;
+            top: 50px;
+            right: 50px;
+            width: 80px;
+            height: 80px;
+            background: radial-gradient(circle at 30% 30%, #fff, #ffe066);
+            border-radius: 50%;
+            box-shadow: 0 0 30px #ffe066, 0 0 60px #ffd700;
+            opacity: 0.7;
+            z-index: 0;
+        }
+
+        @media (max-width: 1024px) {
+            .cards-container {
+                gap: 30px;
+            }
+
+            .card {
+                height: 450px;
+            }
+
+            .moon {
+                width: 60px;
+                height: 60px;
+                top: 30px;
+                right: 30px;
+            }
+        }
+
+        @media (max-width: 768px) {
+            h1 {
+                font-size: 2.5em;
+            }
+
+            .cards-container {
+                grid-template-columns: 1fr;
+                max-width: 500px;
+                margin: 0 auto;
+            }
+
+            .card {
+                height: auto;
+                min-height: 350px;
+            }
+
+            .moon {
+                display: none;
+            }
+        }
+
+        @media (max-width: 480px) {
+            h1 {
+                font-size: 2em;
+            }
+
+            h1::before,
+            h1::after {
+                display: none;
+            }
+
+            .card-title {
+                font-size: 1.5em;
+            }
+
+            button {
+                padding: 14px 30px;
+                font-size: 1em;
+            }
+        }
+
+        /* Floating animation for cards */
+        @keyframes float {
+            0% {
+                transform: translateY(0px);
+            }
+
+            50% {
+                transform: translateY(-15px);
+            }
+
+            100% {
+                transform: translateY(0px);
+            }
+        }
+
+        .card {
+            animation: float 6s ease-in-out infinite;
+        }
+
+        .card:nth-child(2) {
+            animation-delay: 0.5s;
+        }
+
+        .card:nth-child(3) {
+            animation-delay: 1s;
+        }
+
+        /* Particle effects */
+        .particle {
+            position: absolute;
+            background: var(--gold);
+            border-radius: 50%;
+            pointer-events: none;
+            z-index: -1;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="moon"></div>
+    <div class="container">
+        <h1>Tarot Reading</h1>
+        <div id="cards" class="cards-container"></div>
+        <button onclick="drawCards()">Draw Again</button>
+    </div>
+    <script>
+        const majorArcana = [
+            {
+                name: "The Fool",
+                description: "New beginnings, spontaneity, a free spirit",
+                upright: "Innocence, new adventures, unlimited potential",
+                reversed: "Recklessness, naivety, poor judgment",
+            },
+            {
+                name: "The Magician",
+                description: "Manifestation, resourcefulness, power",
+                upright: "Skill, concentration, manifestation of desires",
+                reversed: "Manipulation, poor planning, untapped talents",
+            },
+            {
+                name: "The High Priestess",
+                description: "Intuition, mystery, the subconscious mind",
+                upright: "Wisdom, serenity, spiritual enlightenment",
+                reversed: "Secrets, disconnection from intuition, hidden agendas",
+            },
+            {
+                name: "The Empress",
+                description: "Abundance, nurturing, fertility",
+                upright: "Motherhood, beauty, nature, artistic expression",
+                reversed: "Dependence, smothering, emptiness",
+            },
+            {
+                name: "The Emperor",
+                description: "Authority, structure, a father figure",
+                upright: "Control, stability, protection, logical approach",
+                reversed: "Domination, rigidity, lack of discipline",
+            },
+            {
+                name: "The Hierophant",
+                description: "Tradition, conformity, moral compass",
+                upright: "Spiritual wisdom, religious beliefs, conformity",
+                reversed: "Rebellion, unconventionality, new approaches",
+            },
+            {
+                name: "The Lovers",
+                description: "Love, harmony, meaningful relationships",
+                upright: "Union, choices, alignment of values",
+                reversed: "Conflict, imbalance, misalignment of values",
+            },
+            {
+                name: "The Chariot",
+                description: "Willpower, determination, victory",
+                upright: "Control, ambition, focus, triumph over obstacles",
+                reversed: "Lack of direction, aggression, no control",
+            },
+            {
+                name: "Strength",
+                description: "Courage, inner strength, compassion",
+                upright: "Patience, compassion, quiet power",
+                reversed: "Self-doubt, weakness, insecurity",
+            },
+            {
+                name: "The Hermit",
+                description: "Soul-searching, introspection, inner guidance",
+                upright: "Wisdom, solitude, spiritual enlightenment",
+                reversed: "Isolation, loneliness, withdrawal",
+            },
+            {
+                name: "Wheel of Fortune",
+                description: "Change, cycles, inevitable fate",
+                upright: "Good luck, destiny, a turning point",
+                reversed: "Bad luck, resistance to change, breaking cycles",
+            },
+            {
+                name: "Justice",
+                description: "Fairness, truth, law and order",
+                upright: "Balance, accountability, cause and effect",
+                reversed: "Dishonesty, unfairness, lack of accountability",
+            },
+            {
+                name: "The Hanged Man",
+                description: "Surrender, sacrifice, new perspectives",
+                upright: "Letting go, spiritual enlightenment, different viewpoints",
+                reversed: "Stagnation, delay, resistance to sacrifice",
+            },
+            {
+                name: "Death",
+                description: "Endings, transformation, transition",
+                upright: "Change, renewal, metamorphosis",
+                reversed: "Resistance to change, fear of transformation",
+            },
+            {
+                name: "Temperance",
+                description: "Balance, moderation, patience",
+                upright: "Harmony, peace, patience, finding middle ground",
+                reversed: "Excess, imbalance, recklessness",
+            },
+            {
+                name: "The Devil",
+                description: "Bondage, materialism, unhealthy relationships",
+                upright: "Awareness of limitations, facing temptations",
+                reversed: "Breaking free, reclaiming power, releasing bonds",
+            },
+            {
+                name: "The Tower",
+                description: "Sudden change, upheaval, chaos",
+                upright: "Revelation, awakening, sudden enlightenment",
+                reversed: "Fear of change, avoiding disaster, delaying the inevitable",
+            },
+            {
+                name: "The Star",
+                description: "Hope, inspiration, serenity",
+                upright: "Healing, faith, purpose, spiritual guidance",
+                reversed: "Lack of faith, despair, discouragement",
+            },
+            {
+                name: "The Moon",
+                description: "Illusion, intuition, the subconscious",
+                upright: "Subconscious, dreams, intuition, imagination",
+                reversed: "Confusion, fear, misinterpretation",
+            },
+            {
+                name: "The Sun",
+                description: "Joy, success, celebration",
+                upright: "Vitality, positivity, warmth, success",
+                reversed: "Temporary setbacks, lack of success, pessimism",
+            },
+            {
+                name: "Judgement",
+                description: "Awakening, renewal, inner calling",
+                upright: "Self-evaluation, purpose, reflection, absolution",
+                reversed: "Self-doubt, denial, ignoring the call",
+            },
+            {
+                name: "The World",
+                description: "Completion, fulfillment, wholeness",
+                upright: "Accomplishment, harmony, completion, celebration",
+                reversed: "Incompletion, delay, lack of closure",
+            },
+        ];
+
+        let stars = [];
+        let particles = [];
+
+        function setup() {
+            let canvas = createCanvas(windowWidth, windowHeight);
+            canvas.position(0, 0);
+            canvas.style("z-index", "-1");
+            canvas.style("position", "fixed");
+
+            // Create stars
+            for (let i = 0; i < 200; i++) {
+                stars.push({
+                    x: random(width),
+                    y: random(height),
+                    r: random(1, 3),
+                    s: random(0.5, 2),
+                    alpha: random(100, 200)
+                });
+            }
+
+            // Create initial particles
+            for (let i = 0; i < 30; i++) {
+                createParticle(random(width), random(height));
+            }
+        }
+
+        function draw() {
+            clear();
+
+            // Draw stars
+            noStroke();
+            stars.forEach((star) => {
+                fill(255, 255, 255, star.alpha);
+                ellipse(star.x, star.y, star.r * 2);
+                star.y += star.s;
+                if (star.y > height) {
+                    star.y = 0;
+                    star.x = random(width);
+                }
+                // Twinkle effect
+                star.alpha += random(-5, 5);
+                star.alpha = constrain(star.alpha, 100, 200);
+            });
+
+            // Draw and update particles
+            particles.forEach((particle, index) => {
+                particle.x += particle.vx;
+                particle.y += particle.vy;
+                particle.alpha -= particle.decay;
+
+                fill(particle.color);
+                noStroke();
+                ellipse(particle.x, particle.y, particle.size);
+
+                if (particle.alpha <= 0) {
+                    particles.splice(index, 1);
+                }
+            });
+        }
+
+        function createParticle(x, y) {
+            const colors = ['#ffd700', '#ff4d79', '#9b59b6', '#3498db'];
+            particles.push({
+                x: x,
+                y: y,
+                size: random(2, 6),
+                vx: random(-0.5, 0.5),
+                vy: random(-0.5, 0.5),
+                alpha: 100,
+                decay: random(0.5, 2),
+                color: colors[floor(random(colors.length))]
+            });
+        }
+
+        function windowResized() {
+            resizeCanvas(windowWidth, windowHeight);
+        }
+
+        function getRandomCards() {
+            const shuffled = [...majorArcana].sort(() => 0.5 - Math.random());
+            return shuffled
+                .slice(0, 3)
+                .map((card) => ({ ...card, isReversed: Math.random() < 0.5 }));
+        }
+
+        function displayCards() {
+            const cardsDiv = document.getElementById("cards");
+            cardsDiv.innerHTML = "";
+            const drawnCards = getRandomCards();
+
+            drawnCards.forEach((card, index) => {
+                const cardWrapper = document.createElement("div");
+                cardWrapper.classList.add("card");
+
+                // Add slight delay for each card
+                cardWrapper.style.animationDelay = `${index * 0.2}s`;
+
+                const inner = document.createElement("div");
+                inner.classList.add("card-inner");
+                inner.innerHTML = `
+            <div class="card-title">${card.name}</div>
+            <div class="card-orientation">${card.isReversed ? "Reversed" : "Upright"
+                    }</div>
+            <div class="card-description">${card.description}</div>
+            <div class="card-meaning"><strong>Meaning:</strong> ${card.isReversed ? card.reversed : card.upright
+                    }</div>
+          `;
+
+                cardWrapper.appendChild(inner);
+                cardsDiv.appendChild(cardWrapper);
+
+                cardWrapper.addEventListener("click", () => {
+                    cardWrapper.classList.toggle("flip");
+                    // Create particles on click
+                    const rect = cardWrapper.getBoundingClientRect();
+                    for (let i = 0; i < 10; i++) {
+                        createParticle(
+                            rect.left + rect.width / 2 + random(-50, 50),
+                            rect.top + rect.height / 2 + random(-50, 50)
+                        );
+                    }
+                });
+
+                setTimeout(() => {
+                    cardWrapper.classList.add("flip");
+                }, 100 + index * 200);
+
+                // Add hover effect to create particles
+                cardWrapper.addEventListener("mouseenter", () => {
+                    const rect = cardWrapper.getBoundingClientRect();
+                    for (let i = 0; i < 5; i++) {
+                        createParticle(
+                            rect.left + rect.width / 2 + random(-30, 30),
+                            rect.top + rect.height / 2 + random(-30, 30)
+                        );
+                    }
+                });
+            });
+
+            // Create particles around the button
+            const button = document.querySelector("button");
+            if (button) {
+                const rect = button.getBoundingClientRect();
+                for (let i = 0; i < 20; i++) {
+                    createParticle(
+                        rect.left + rect.width / 2 + random(-40, 40),
+                        rect.top + rect.height / 2 + random(-20, 20)
+                    );
+                }
+            }
+        }
+
+        function drawCards() {
+            // Create explosion of particles when drawing new cards
+            const container = document.querySelector(".container");
+            if (container) {
+                const rect = container.getBoundingClientRect();
+                for (let i = 0; i < 50; i++) {
+                    createParticle(
+                        rect.left + rect.width / 2 + random(-100, 100),
+                        rect.top + rect.height / 2 + random(-50, 50)
+                    );
+                }
+            }
+
+            displayCards();
+        }
+
+        window.onload = function () {
+            setup();
+            drawCards();
+
+            // Add particles on mouse move
+            document.addEventListener("mousemove", (e) => {
+                if (Math.random() > 0.7) {
+                    createParticle(e.clientX, e.clientY);
+                }
+            });
+        };
+    </script>
+</body>
+
+</html>

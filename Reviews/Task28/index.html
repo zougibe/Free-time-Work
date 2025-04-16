@@ -1,0 +1,963 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Job Application Tracker</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        indigo: {
+                            50: '#eef2ff',
+                            100: '#e0e7ff',
+                            200: '#c7d2fe',
+                            300: '#a5b4fc',
+                            400: '#818cf8',
+                            500: '#6366f1',
+                            600: '#4f46e5',
+                            700: '#4338ca',
+                            800: '#3730a3',
+                            900: '#312e81',
+                        },
+                        status: {
+                            pending: '#f59e0b',
+                            interview: '#3b82f6',
+                            offer: '#10b981',
+                            rejected: '#ef4444',
+                        }
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                    },
+                }
+            }
+        }
+    </script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
+</head>
+
+<body class="bg-indigo-50 font-sans text-gray-800 min-h-screen flex flex-col">
+    <!-- Header -->
+    <header class="bg-indigo-700 text-white shadow-md fixed top-0 left-0 right-0 z-50">
+        <div class="container mx-auto px-4 py-3 flex justify-between items-center">
+            <div class="flex items-center space-x-2">
+                <span class="material-icons-round text-2xl">work_outline</span>
+                <h1 class="text-xl font-bold">Job Application Tracker</h1>
+            </div>
+        </div>
+    </header>
+
+    <!-- Navigation -->
+    <nav class="bg-white shadow-sm fixed top-16 left-0 right-0 z-40">
+        <div class="container mx-auto px-4 overflow-x-auto">
+            <div class="flex space-x-1 py-2">
+                <button onclick="scrollToSection('about')"
+                    class="px-4 py-2 text-sm font-medium rounded-md hover:bg-indigo-100 hover:text-indigo-700 transition-colors flex items-center">
+                    <span class="material-icons-round text-base mr-1">info</span>
+                    About
+                </button>
+                <button onclick="scrollToSection('add')"
+                    class="px-4 py-2 text-sm font-medium rounded-md hover:bg-indigo-100 hover:text-indigo-700 transition-colors flex items-center">
+                    <span class="material-icons-round text-base mr-1">add_circle</span>
+                    Add Job
+                </button>
+                <button onclick="scrollToSection('applications')"
+                    class="px-4 py-2 text-sm font-medium rounded-md hover:bg-indigo-100 hover:text-indigo-700 transition-colors flex items-center">
+                    <span class="material-icons-round text-base mr-1">list_alt</span>
+                    Applications
+                </button>
+                <button onclick="scrollToSection('history')"
+                    class="px-4 py-2 text-sm font-medium rounded-md hover:bg-indigo-100 hover:text-indigo-700 transition-colors flex items-center">
+                    <span class="material-icons-round text-base mr-1">history</span>
+                    History
+                </button>
+                <button onclick="scrollToSection('stats')"
+                    class="px-4 py-2 text-sm font-medium rounded-md hover:bg-indigo-100 hover:text-indigo-700 transition-colors flex items-center">
+                    <span class="material-icons-round text-base mr-1">insights</span>
+                    Statistics
+                </button>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <main class="flex-grow container mx-auto px-4 pt-32 pb-16 space-y-8">
+        <!-- Notification Banner -->
+        <div id="notificationBanner"
+            class="fixed top-28 left-0 right-0 z-40 transform -translate-y-full transition-transform duration-300 hidden">
+            <div class="container mx-auto px-4">
+                <div class="p-3 rounded-md shadow-lg flex items-center justify-between">
+                    <div class="flex items-center">
+                        <span id="bannerIcon" class="material-icons-round mr-2"></span>
+                        <p id="bannerMessage" class="text-sm font-medium"></p>
+                    </div>
+                    <button onclick="hideNotification()"
+                        class="ml-2 p-1 rounded-full hover:bg-opacity-20 hover:bg-white">
+                        <span class="material-icons-round text-sm">close</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+        <!-- About Section -->
+        <section id="about" class="bg-white rounded-xl shadow-sm p-6">
+            <div class="flex items-center mb-4">
+                <span class="material-icons-round text-indigo-600 mr-2">info</span>
+                <h2 class="text-xl font-bold text-gray-800">About Job Tracker</h2>
+            </div>
+            <div class="space-y-4">
+                <p class="text-gray-600">This application helps you track your job search journey by organizing all your
+                    applications in one place. Stay on top of your job search with our intuitive tracking system.</p>
+                <div class="bg-indigo-50 border-l-4 border-indigo-500 p-4 rounded-r">
+                    <div class="flex">
+                        <div class="flex-shrink-0">
+                            <span class="material-icons-round text-indigo-500">lightbulb</span>
+                        </div>
+                        <div class="ml-3">
+                            <p class="text-sm text-indigo-700">
+                                <span class="font-medium">Tip:</span> Add all your job applications to track their
+                                status and get insights into your job search progress.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Add Job Section -->
+        <section id="add" class="bg-white rounded-xl shadow-sm p-6">
+            <div class="flex items-center mb-4">
+                <span class="material-icons-round text-indigo-600 mr-2">add_circle</span>
+                <h2 class="text-xl font-bold text-gray-800">Add New Job Application</h2>
+            </div>
+            <form id="addJobForm" class="space-y-4">
+                <div>
+                    <label for="company" class="block text-sm font-medium text-gray-700 mb-1">Company Name</label>
+                    <input type="text" id="company" placeholder="e.g. Google, Amazon"
+                        class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                        required>
+                </div>
+                <div>
+                    <label for="position" class="block text-sm font-medium text-gray-700 mb-1">Position</label>
+                    <input type="text" id="position" placeholder="e.g. Frontend Developer"
+                        class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                        required>
+                </div>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                        <label for="status" class="block text-sm font-medium text-gray-700 mb-1">Status</label>
+                        <select id="status"
+                            class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                            required>
+                            <option value="pending">Pending</option>
+                            <option value="interview">Interview</option>
+                            <option value="offer">Offer</option>
+                            <option value="rejected">Rejected</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label for="date" class="block text-sm font-medium text-gray-700 mb-1">Application
+                            Date</label>
+                        <input type="date" id="date"
+                            class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                            required>
+                    </div>
+                </div>
+                <div>
+                    <label for="notes" class="block text-sm font-medium text-gray-700 mb-1">Notes</label>
+                    <textarea id="notes" rows="3" placeholder="Any additional information..."
+                        class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"></textarea>
+                </div>
+                <div class="flex justify-end">
+                    <button type="submit"
+                        class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+                        <span class="material-icons-round mr-1">save</span>
+                        Save Application
+                    </button>
+                </div>
+            </form>
+        </section>
+
+        <!-- Statistics Section -->
+        <section id="stats" class="bg-white rounded-xl shadow-sm p-6">
+            <div class="flex items-center mb-4">
+                <span class="material-icons-round text-indigo-600 mr-2">insights</span>
+                <h2 class="text-xl font-bold text-gray-800">Application Statistics</h2>
+            </div>
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6" id="statsCards">
+                <!-- Stats will be populated by JavaScript -->
+            </div>
+            <div class="bg-indigo-50 p-4 rounded-lg">
+                <canvas id="statsChart" height="150"></canvas>
+            </div>
+        </section>
+
+        <!-- Applications Section -->
+        <section id="applications" class="bg-white rounded-xl shadow-sm p-6">
+            <div class="flex items-center mb-4">
+                <span class="material-icons-round text-indigo-600 mr-2">list_alt</span>
+                <h2 class="text-xl font-bold text-gray-800">Your Job Applications</h2>
+            </div>
+
+            <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4">
+                <div class="flex space-x-2 w-full sm:w-auto">
+                    <select id="filterStatus"
+                        class="px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 text-sm">
+                        <option value="">All Statuses</option>
+                        <option value="pending">Pending</option>
+                        <option value="interview">Interview</option>
+                        <option value="offer">Offer</option>
+                        <option value="rejected">Rejected</option>
+                    </select>
+                    <select id="sortDate"
+                        class="px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 text-sm">
+                        <option value="newest">Newest First</option>
+                        <option value="oldest">Oldest First</option>
+                    </select>
+                </div>
+                <button id="deleteAllBtn"
+                    class="inline-flex items-center px-3 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500">
+                    <span class="material-icons-round mr-1 text-sm">delete_forever</span>
+                    Delete All
+                </button>
+            </div>
+
+            <div id="applicationsList" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                <!-- Applications will be populated by JavaScript -->
+            </div>
+
+            <div id="emptyState" class="text-center py-12 hidden">
+                <span class="material-icons-round text-gray-400 text-5xl mb-4">work_outline</span>
+                <h3 class="text-lg font-medium text-gray-900">No applications yet</h3>
+                <p class="mt-1 text-sm text-gray-500">Get started by adding your first job application.</p>
+                <button onclick="scrollToSection('add')"
+                    class="mt-4 inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+                    <span class="material-icons-round mr-1">add</span>
+                    Add Application
+                </button>
+            </div>
+
+
+            <!-- History Section -->
+            <section id="history" class="bg-white rounded-xl shadow-sm p-6">
+                <div class="flex items-center mb-4">
+                    <span class="material-icons-round text-indigo-600 mr-2">history</span>
+                    <h2 class="text-xl font-bold text-gray-800">Activity History</h2>
+                </div>
+
+                <div class="space-y-4" id="historyLogs">
+                    <!-- History logs will be populated by JavaScript -->
+                </div>
+
+                <div id="emptyHistory" class="text-center py-12 hidden">
+                    <span class="material-icons-round text-gray-400 text-5xl mb-4">history</span>
+                    <h3 class="text-lg font-medium text-gray-900">No activity yet</h3>
+                    <p class="mt-1 text-sm text-gray-500">Your actions will appear here.</p>
+                </div>
+            </section>
+    </main>
+
+    <!-- Footer -->
+    <footer class="bg-indigo-700 text-white py-4">
+        <div class="container mx-auto px-4 text-center text-sm">
+            <p>&copy; 2025 Job Application Tracker. All rights reserved.</p>
+        </div>
+    </footer>
+
+    <!-- Edit Modal -->
+    <div id="editModal" class="fixed inset-0 z-50 hidden overflow-y-auto">
+        <div class="flex items-center justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
+            <div class="fixed inset-0 transition-opacity" aria-hidden="true">
+                <div class="absolute inset-0 bg-gray-500 opacity-75"></div>
+            </div>
+            <span class="hidden sm:inline-block sm:align-middle sm:h-screen" aria-hidden="true">&#8203;</span>
+            <div
+                class="inline-block align-bottom bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg sm:w-full">
+                <div class="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
+                    <div class="sm:flex sm:items-start">
+                        <div
+                            class="mx-auto flex-shrink-0 flex items-center justify-center h-12 w-12 rounded-full bg-indigo-100 sm:mx-0 sm:h-10 sm:w-10">
+                            <span class="material-icons-round text-indigo-600">edit</span>
+                        </div>
+                        <div class="mt-3 text-center sm:mt-0 sm:ml-4 sm:text-left w-full">
+                            <h3 class="text-lg leading-6 font-medium text-gray-900" id="modalTitle">Edit Application
+                            </h3>
+                            <div class="mt-4">
+                                <form id="editJobForm" class="space-y-4">
+                                    <div>
+                                        <label for="editCompany"
+                                            class="block text-sm font-medium text-gray-700 mb-1">Company Name</label>
+                                        <input type="text" id="editCompany"
+                                            class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                                            required>
+                                    </div>
+                                    <div>
+                                        <label for="editPosition"
+                                            class="block text-sm font-medium text-gray-700 mb-1">Position</label>
+                                        <input type="text" id="editPosition"
+                                            class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                                            required>
+                                    </div>
+                                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                        <div>
+                                            <label for="editStatus"
+                                                class="block text-sm font-medium text-gray-700 mb-1">Status</label>
+                                            <select id="editStatus"
+                                                class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                                                required>
+                                                <option value="pending">Pending</option>
+                                                <option value="interview">Interview</option>
+                                                <option value="offer">Offer</option>
+                                                <option value="rejected">Rejected</option>
+                                            </select>
+                                        </div>
+                                        <div>
+                                            <label for="editDate"
+                                                class="block text-sm font-medium text-gray-700 mb-1">Application
+                                                Date</label>
+                                            <input type="date" id="editDate"
+                                                class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                                                required>
+                                        </div>
+                                    </div>
+                                    <div>
+                                        <label for="editNotes"
+                                            class="block text-sm font-medium text-gray-700 mb-1">Notes</label>
+                                        <textarea id="editNotes" rows="3"
+                                            class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"></textarea>
+                                    </div>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="bg-gray-50 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse">
+                    <button type="button" id="saveEditBtn"
+                        class="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-indigo-600 text-base font-medium text-white hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 sm:ml-3 sm:w-auto sm:text-sm">
+                        <span class="material-icons-round mr-1 text-sm">save</span>
+                        Save Changes
+                    </button>
+                    <button type="button" onclick="closeEditModal()"
+                        class="mt-3 w-full inline-flex justify-center rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 sm:mt-0 sm:ml-3 sm:w-auto sm:text-sm">
+                        <span class="material-icons-round mr-1 text-sm">close</span>
+                        Cancel
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Delete Confirmation Modal -->
+    <div id="deleteConfirmationModal" class="fixed inset-0 z-50 hidden overflow-y-auto">
+        <div class="flex items-center justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
+            <div class="fixed inset-0 transition-opacity" aria-hidden="true">
+                <div class="absolute inset-0 bg-gray-500 opacity-75"></div>
+            </div>
+            <span class="hidden sm:inline-block sm:align-middle sm:h-screen" aria-hidden="true">&#8203;</span>
+            <div
+                class="inline-block align-bottom bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg sm:w-full">
+                <div class="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
+                    <div class="sm:flex sm:items-start">
+                        <div
+                            class="mx-auto flex-shrink-0 flex items-center justify-center h-12 w-12 rounded-full bg-red-100 sm:mx-0 sm:h-10 sm:w-10">
+                            <span class="material-icons-round text-red-600">warning</span>
+                        </div>
+                        <div class="mt-3 text-center sm:mt-0 sm:ml-4 sm:text-left">
+                            <h3 class="text-lg leading-6 font-medium text-gray-900">Delete Application</h3>
+                            <div class="mt-2">
+                                <p class="text-sm text-gray-500">Are you sure you want to delete this application? This
+                                    action cannot be undone.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="bg-gray-50 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse">
+                    <button type="button" id="confirmDeleteBtn"
+                        class="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-red-600 text-base font-medium text-white hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 sm:ml-3 sm:w-auto sm:text-sm">
+                        <span class="material-icons-round mr-1 text-sm">delete</span>
+                        Delete
+                    </button>
+                    <button type="button" onclick="closeDeleteConfirmationModal()"
+                        class="mt-3 w-full inline-flex justify-center rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 sm:mt-0 sm:ml-3 sm:w-auto sm:text-sm">
+                        <span class="material-icons-round mr-1 text-sm">close</span>
+                        Cancel
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Delete All Confirmation Modal -->
+    <div id="deleteAllConfirmationModal" class="fixed inset-0 z-50 hidden overflow-y-auto">
+        <div class="flex items-center justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
+            <div class="fixed inset-0 transition-opacity" aria-hidden="true">
+                <div class="absolute inset-0 bg-gray-500 opacity-75"></div>
+            </div>
+            <span class="hidden sm:inline-block sm:align-middle sm:h-screen" aria-hidden="true">&#8203;</span>
+            <div
+                class="inline-block align-bottom bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg sm:w-full">
+                <div class="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
+                    <div class="sm:flex sm:items-start">
+                        <div
+                            class="mx-auto flex-shrink-0 flex items-center justify-center h-12 w-12 rounded-full bg-red-100 sm:mx-0 sm:h-10 sm:w-10">
+                            <span class="material-icons-round text-red-600">warning</span>
+                        </div>
+                        <div class="mt-3 text-center sm:mt-0 sm:ml-4 sm:text-left">
+                            <h3 class="text-lg leading-6 font-medium text-gray-900">Delete All Applications</h3>
+                            <div class="mt-2">
+                                <p class="text-sm text-gray-500">Are you sure you want to delete ALL applications and
+                                    history? This action cannot be undone.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="bg-gray-50 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse">
+                    <button type="button" id="confirmDeleteAllBtn"
+                        class="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-red-600 text-base font-medium text-white hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 sm:ml-3 sm:w-auto sm:text-sm">
+                        <span class="material-icons-round mr-1 text-sm">delete_forever</span>
+                        Delete All
+                    </button>
+                    <button type="button" onclick="closeDeleteAllConfirmationModal()"
+                        class="mt-3 w-full inline-flex justify-center rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 sm:mt-0 sm:ml-3 sm:w-auto sm:text-sm">
+                        <span class="material-icons-round mr-1 text-sm">close</span>
+                        Cancel
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Include Chart.js for statistics -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <script>
+        // Initialize data
+        let applications = JSON.parse(localStorage.getItem('applications')) || [];
+        let historyLogs = JSON.parse(localStorage.getItem('historyLogs')) || [];
+        let currentDeleteIndex = -1;
+        let currentEditIndex = -1;
+        let statsChart = null;
+
+        // DOM Ready
+        document.addEventListener('DOMContentLoaded', function () {
+            // Set up event listeners
+            document.getElementById('addJobForm').addEventListener('submit', saveApplication);
+            document.getElementById('filterStatus').addEventListener('change', renderApplications);
+            document.getElementById('sortDate').addEventListener('change', renderApplications);
+            document.getElementById('deleteAllBtn').addEventListener('click', openDeleteAllConfirmationModal);
+            document.getElementById('confirmDeleteBtn').addEventListener('click', confirmDeleteApplication);
+            document.getElementById('confirmDeleteAllBtn').addEventListener('click', confirmDeleteAllApplications);
+            document.getElementById('saveEditBtn').addEventListener('click', saveEditedApplication);
+
+            // Initial render
+            renderApplications();
+            renderHistoryLogs();
+            renderStats();
+
+            // Set today's date as default in the add form
+            document.getElementById('date').valueAsDate = new Date();
+        });
+
+        // Notification functions
+        function showNotification(message, type = 'success') {
+            const banner = document.getElementById('notificationBanner');
+            const bannerIcon = document.getElementById('bannerIcon');
+            const bannerMessage = document.getElementById('bannerMessage');
+
+            // Set styles based on type
+            let bgColor, icon;
+            if (type === 'success') {
+                bgColor = 'bg-green-500';
+                icon = 'check_circle';
+            } else if (type === 'error') {
+                bgColor = 'bg-red-500';
+                icon = 'error';
+            } else if (type === 'warning') {
+                bgColor = 'bg-yellow-500';
+                icon = 'warning';
+            } else {
+                bgColor = 'bg-indigo-500';
+                icon = 'info';
+            }
+
+            // Update banner
+            banner.className = `fixed top-28 left-0 right-0 z-40 transform transition-transform duration-300 ${bgColor} text-white`;
+            bannerIcon.textContent = icon;
+            bannerMessage.textContent = message;
+            banner.classList.remove('hidden');
+            banner.classList.remove('-translate-y-full');
+
+            // Auto-hide after 5 seconds
+            setTimeout(hideNotification, 5000);
+        }
+
+        function hideNotification() {
+            const banner = document.getElementById('notificationBanner');
+            banner.classList.add('-translate-y-full');
+            setTimeout(() => banner.classList.add('hidden'), 300);
+        }
+
+        // Scroll to section
+        function scrollToSection(sectionId) {
+            const section = document.getElementById(sectionId);
+            if (section) {
+                section.scrollIntoView({ behavior: 'smooth' });
+            }
+        }
+
+        // Application functions
+        function saveApplication(e) {
+            e.preventDefault();
+
+            const application = {
+                company: document.getElementById('company').value.trim(),
+                position: document.getElementById('position').value.trim(),
+                status: document.getElementById('status').value,
+                date: document.getElementById('date').value,
+                notes: document.getElementById('notes').value.trim(),
+                createdAt: new Date().toISOString()
+            };
+
+            applications.push(application);
+            localStorage.setItem('applications', JSON.stringify(applications));
+
+            const logEntry = {
+                action: "Added",
+                details: `Applied to ${application.company} for ${application.position}`,
+                date: new Date().toLocaleString(),
+                type: "add"
+            };
+            historyLogs.push(logEntry);
+            localStorage.setItem('historyLogs', JSON.stringify(historyLogs));
+
+            renderApplications();
+            renderHistoryLogs();
+            renderStats();
+            document.getElementById('addJobForm').reset();
+            document.getElementById('date').valueAsDate = new Date();
+
+            showNotification('Job application added successfully!', 'success');
+        }
+
+        function renderApplications() {
+            const filterStatus = document.getElementById('filterStatus').value;
+            const sortDate = document.getElementById('sortDate').value;
+            let filteredApps = [...applications];
+
+            // Filter by status if selected
+            if (filterStatus) {
+                filteredApps = filteredApps.filter(app => app.status === filterStatus);
+            }
+
+            // Sort by date
+            if (sortDate === 'newest') {
+                filteredApps.sort((a, b) => new Date(b.date) - new Date(a.date));
+            } else {
+                filteredApps.sort((a, b) => new Date(a.date) - new Date(b.date));
+            }
+
+            const appsDiv = document.getElementById('applicationsList');
+            const emptyState = document.getElementById('emptyState');
+
+            if (filteredApps.length === 0) {
+                appsDiv.innerHTML = '';
+                emptyState.classList.remove('hidden');
+                return;
+            }
+
+            emptyState.classList.add('hidden');
+            appsDiv.innerHTML = '';
+
+            filteredApps.forEach((app, index) => {
+                const statusTextColors = {
+                    pending: 'text-yellow-800',
+                    interview: 'text-blue-800',
+                    offer: 'text-green-800',
+                    rejected: 'text-red-800'
+                };
+
+                const statusBgColors = {
+                    pending: 'bg-yellow-100',
+                    interview: 'bg-blue-100',
+                    offer: 'bg-green-100',
+                    rejected: 'bg-red-100'
+                };
+
+                const card = document.createElement('div');
+                card.className = 'bg-white rounded-lg shadow overflow-hidden border-l-4 border-indigo-500 hover:shadow-md transition-shadow';
+                card.innerHTML = `
+            <div class="p-4">
+                <div class="flex justify-between items-start">
+                    <h3 class="text-lg font-semibold text-gray-900 truncate">${app.company}</h3>
+                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${statusBgColors[app.status]} ${statusTextColors[app.status]}">
+                        ${app.status.charAt(0).toUpperCase() + app.status.slice(1)}
+                    </span>
+                </div>
+                <p class="mt-1 text-sm text-gray-600">${app.position}</p>
+                <p class="mt-2 text-xs text-gray-500">Applied on: ${formatDate(app.date)}</p>
+                ${app.notes ? `<div class="mt-3 p-2 bg-gray-50 rounded text-sm text-gray-600">${app.notes}</div>` : ''}
+                <div class="mt-4 flex justify-end space-x-2">
+                    <button onclick="openEditModal(${index})" class="inline-flex items-center p-1 border border-gray-300 rounded-full shadow-sm text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500" title="Edit">
+                        <span class="material-icons-round text-sm">edit</span>
+                    </button>
+                    <button onclick="openDeleteConfirmationModal(${index})" class="inline-flex items-center p-1 border border-gray-300 rounded-full shadow-sm text-gray-700 hover:bg-red-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500" title="Delete">
+                        <span class="material-icons-round text-sm">delete</span>
+                    </button>
+                </div>
+            </div>
+        `;
+                appsDiv.appendChild(card);
+            });
+        }
+
+        function formatDate(dateString) {
+            const options = { year: 'numeric', month: 'short', day: 'numeric' };
+            return new Date(dateString).toLocaleDateString(undefined, options);
+        }
+
+        function openEditModal(index) {
+            currentEditIndex = index;
+            const app = applications[index];
+
+            document.getElementById('editCompany').value = app.company;
+            document.getElementById('editPosition').value = app.position;
+            document.getElementById('editStatus').value = app.status;
+            document.getElementById('editDate').value = app.date;
+            document.getElementById('editNotes').value = app.notes || '';
+
+            document.getElementById('editModal').classList.remove('hidden');
+        }
+
+        function closeEditModal() {
+            document.getElementById('editModal').classList.add('hidden');
+            currentEditIndex = -1;
+        }
+
+        function saveEditedApplication() {
+            if (currentEditIndex === -1) return;
+
+            const originalApp = applications[currentEditIndex];
+            const updatedApp = {
+                ...originalApp,
+                company: document.getElementById('editCompany').value.trim(),
+                position: document.getElementById('editPosition').value.trim(),
+                status: document.getElementById('editStatus').value,
+                date: document.getElementById('editDate').value,
+                notes: document.getElementById('editNotes').value.trim()
+            };
+
+            applications[currentEditIndex] = updatedApp;
+            localStorage.setItem('applications', JSON.stringify(applications));
+
+            const logEntry = {
+                action: "Updated",
+                details: `Updated application for ${updatedApp.company}`,
+                date: new Date().toLocaleString(),
+                type: "edit"
+            };
+            historyLogs.push(logEntry);
+            localStorage.setItem('historyLogs', JSON.stringify(historyLogs));
+
+            renderApplications();
+            renderHistoryLogs();
+            renderStats();
+            closeEditModal();
+
+            showNotification('Job application updated successfully!', 'success');
+        }
+
+        function openDeleteConfirmationModal(index) {
+            currentDeleteIndex = index;
+            document.getElementById('deleteConfirmationModal').classList.remove('hidden');
+        }
+
+        function closeDeleteConfirmationModal() {
+            document.getElementById('deleteConfirmationModal').classList.add('hidden');
+            currentDeleteIndex = -1;
+        }
+
+        function confirmDeleteApplication() {
+            if (currentDeleteIndex === -1) return;
+
+            const app = applications[currentDeleteIndex];
+            applications.splice(currentDeleteIndex, 1);
+            localStorage.setItem('applications', JSON.stringify(applications));
+
+            const logEntry = {
+                action: "Deleted",
+                details: `Deleted application from ${app.company}`,
+                date: new Date().toLocaleString(),
+                type: "delete"
+            };
+            historyLogs.push(logEntry);
+            localStorage.setItem('historyLogs', JSON.stringify(historyLogs));
+
+            renderApplications();
+            renderHistoryLogs();
+            renderStats();
+            closeDeleteConfirmationModal();
+
+            showNotification('Job application deleted!', 'success');
+        }
+
+        function openDeleteAllConfirmationModal() {
+            if (applications.length === 0) {
+                showNotification('No applications to delete', 'warning');
+                return;
+            }
+            document.getElementById('deleteAllConfirmationModal').classList.remove('hidden');
+        }
+
+        function closeDeleteAllConfirmationModal() {
+            document.getElementById('deleteAllConfirmationModal').classList.add('hidden');
+        }
+
+        function confirmDeleteAllApplications() {
+            localStorage.removeItem('applications');
+            localStorage.removeItem('historyLogs');
+            applications = [];
+            historyLogs = [];
+
+            renderApplications();
+            renderHistoryLogs();
+            renderStats();
+            closeDeleteAllConfirmationModal();
+
+            showNotification('All applications and history deleted!', 'success');
+        }
+
+        // History functions
+        function renderHistoryLogs() {
+            const logsDiv = document.getElementById('historyLogs');
+            const emptyHistory = document.getElementById('emptyHistory');
+
+            if (historyLogs.length === 0) {
+                logsDiv.innerHTML = '';
+                emptyHistory.classList.remove('hidden');
+                return;
+            }
+
+            emptyHistory.classList.add('hidden');
+            logsDiv.innerHTML = '';
+
+            // Show only the last 50 entries to prevent performance issues
+            const recentLogs = historyLogs.slice().reverse().slice(0, 50);
+
+            recentLogs.forEach(log => {
+                const logEntry = document.createElement('div');
+                logEntry.className = 'flex items-start pb-3 last:pb-0';
+
+                let icon, iconColor;
+                switch (log.type) {
+                    case 'add':
+                        icon = 'add_circle';
+                        iconColor = 'text-green-500';
+                        break;
+                    case 'edit':
+                        icon = 'edit';
+                        iconColor = 'text-blue-500';
+                        break;
+                    case 'delete':
+                        icon = 'delete';
+                        iconColor = 'text-red-500';
+                        break;
+                    default:
+                        icon = 'info';
+                        iconColor = 'text-indigo-500';
+                }
+
+                logEntry.innerHTML = `
+            <div class="flex-shrink-0 pt-0.5">
+                <span class="material-icons-round ${iconColor} text-lg">${icon}</span>
+            </div>
+            <div class="ml-3">
+                <p class="text-sm font-medium text-gray-900">${log.action}</p>
+                <p class="text-sm text-gray-500">${log.details}</p>
+                <p class="text-xs text-gray-400 mt-0.5">${log.date}</p>
+            </div>
+        `;
+                logsDiv.appendChild(logEntry);
+            });
+        }
+
+        // Statistics functions
+        function renderStats() {
+            renderStatsCards();
+            renderStatsChart();
+        }
+
+        function renderStatsCards() {
+            const statsDiv = document.getElementById('statsCards');
+
+            const totalApps = applications.length;
+            const pendingApps = applications.filter(app => app.status === 'pending').length;
+            const interviewApps = applications.filter(app => app.status === 'interview').length;
+            const offerApps = applications.filter(app => app.status === 'offer').length;
+            const rejectedApps = applications.filter(app => app.status === 'rejected').length;
+
+            const stats = [
+                {
+                    title: 'Total Applications',
+                    value: totalApps,
+                    icon: 'work_outline',
+                    bg: 'bg-indigo-100',
+                    text: 'text-indigo-800'
+                },
+                {
+                    title: 'Pending',
+                    value: pendingApps,
+                    icon: 'pending',
+                    bg: 'bg-yellow-100',
+                    text: 'text-yellow-800'
+                },
+                {
+                    title: 'Interviews',
+                    value: interviewApps,
+                    icon: 'calendar_today',
+                    bg: 'bg-blue-100',
+                    text: 'text-blue-800'
+                },
+                {
+                    title: 'Offers',
+                    value: offerApps,
+                    icon: 'emoji_events',
+                    bg: 'bg-green-100',
+                    text: 'text-green-800'
+                }
+            ];
+
+            statsDiv.innerHTML = stats.map(stat => `
+        <div class="bg-white rounded-lg shadow overflow-hidden">
+            <div class="px-4 py-5 sm:p-6">
+                <div class="flex items-center">
+                    <div class="flex-shrink-0 ${stat.bg} rounded-md p-3">
+                        <span class="material-icons-round ${stat.text}">${stat.icon}</span>
+                    </div>
+                    <div class="ml-5 w-0 flex-1">
+                        <dt class="text-sm font-medium text-gray-500 truncate">${stat.title}</dt>
+                        <dd class="flex items-baseline">
+                            <div class="text-2xl font-semibold text-gray-900">${stat.value}</div>
+                            ${stat.title !== 'Total Applications' ? `
+                            <div class="ml-2 flex items-baseline text-sm font-semibold ${totalApps > 0 ? stat.text : 'text-gray-500'}">
+                                ${totalApps > 0 ? Math.round((stat.value / totalApps) * 100) : 0}%
+                            </div>
+                            ` : ''}
+                        </dd>
+                    </div>
+                </div>
+            </div>
+        </div>
+    `).join('');
+        }
+
+        function renderStatsChart() {
+            const ctx = document.getElementById('statsChart').getContext('2d');
+
+            // Group applications by month
+            const monthlyData = {};
+            applications.forEach(app => {
+                const date = new Date(app.date);
+                const monthYear = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
+
+                if (!monthlyData[monthYear]) {
+                    monthlyData[monthYear] = {
+                        pending: 0,
+                        interview: 0,
+                        offer: 0,
+                        rejected: 0,
+                        total: 0
+                    };
+                }
+
+                monthlyData[monthYear][app.status]++;
+                monthlyData[monthYear].total++;
+            });
+
+            // Sort months chronologically
+            const sortedMonths = Object.keys(monthlyData).sort();
+
+            // Prepare data for chart
+            const labels = sortedMonths.map(month => {
+                const [year, monthNum] = month.split('-');
+                return new Date(year, monthNum - 1).toLocaleDateString(undefined, { month: 'short', year: 'numeric' });
+            });
+
+            const pendingData = sortedMonths.map(month => monthlyData[month].pending);
+            const interviewData = sortedMonths.map(month => monthlyData[month].interview);
+            const offerData = sortedMonths.map(month => monthlyData[month].offer);
+            const rejectedData = sortedMonths.map(month => monthlyData[month].rejected);
+
+            // Destroy previous chart if it exists
+            if (statsChart) {
+                statsChart.destroy();
+            }
+
+            // Create new chart
+            statsChart = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: labels,
+                    datasets: [
+                        {
+                            label: 'Pending',
+                            data: pendingData,
+                            backgroundColor: '#f59e0b',
+                            stack: 'stack'
+                        },
+                        {
+                            label: 'Interview',
+                            data: interviewData,
+                            backgroundColor: '#3b82f6',
+                            stack: 'stack'
+                        },
+                        {
+                            label: 'Offer',
+                            data: offerData,
+                            backgroundColor: '#10b981',
+                            stack: 'stack'
+                        },
+                        {
+                            label: 'Rejected',
+                            data: rejectedData,
+                            backgroundColor: '#ef4444',
+                            stack: 'stack'
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    scales: {
+                        x: {
+                            stacked: true,
+                            grid: {
+                                display: false
+                            }
+                        },
+                        y: {
+                            stacked: true,
+                            beginAtZero: true,
+                            ticks: {
+                                precision: 0
+                            }
+                        }
+                    },
+                    plugins: {
+                        legend: {
+                            position: 'top',
+                        },
+                        tooltip: {
+                            mode: 'index',
+                            intersect: false
+                        }
+                    }
+                }
+            });
+        }
+    </script>
+</body>
+
+</html>

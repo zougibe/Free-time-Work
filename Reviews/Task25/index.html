@@ -1,0 +1,302 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>EventSphere - Personalized Event Recommendations</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet" />
+    <link href="https://unpkg.com/leaflet@1.9.3/dist/leaflet.css" rel="stylesheet" />
+    <style>
+        :root {
+            --primary-500: #8ecae6;
+            --secondary-500: #219ebc;
+            --tertiary-500: #023047;
+            --accent-500: #ffb703;
+            --accent-600: #fb8500;
+        }
+
+        body {
+            font-family: 'Poppins', sans-serif;
+            background: #f8fafc;
+        }
+
+        .card {
+            background: white;
+            border-radius: 16px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+        }
+
+        .event-card:hover .event-image {
+            transform: scale(1.03);
+        }
+
+        .event-image {
+            transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            border-radius: 12px;
+            overflow: hidden;
+        }
+
+        .calendar-day.active {
+            background: var(--accent-500);
+            color: white;
+        }
+
+        .filter-checkbox:checked+.checkmark {
+            background-color: var(--secondary-500);
+            border-color: var(--secondary-500);
+        }
+    </style>
+</head>
+
+<body class="antialiased">
+    <header class="bg-tertiary-500 text-indgo-300 py-5 shadow-xl">
+        <div class="container mx-auto px-4 flex items-center space-x-4">
+            <i class="fas fa-calendar-star text-2xl text-accent-500"></i>
+            <h1 class="text-2xl font-bold tracking-tight">EventSphere</h1>
+        </div>
+    </header>
+
+    <main class="container mx-auto px-4 py-8">
+        <div class="grid lg:grid-cols-4 gap-8">
+            <!-- Filters Section -->
+            <div class="lg:col-span-1 space-y-8">
+                <div class="card p-6">
+                    <h2 class="text-lg font-semibold mb-5 text-tertiary-500">Filter Events</h2>
+                    <div class="space-y-4" id="filters">
+                        <label class="flex items-center space-x-3 cursor-pointer">
+                            <input type="checkbox" class="hidden filter-checkbox" value="music">
+                            <div class="w-6 h-6 border-2 border-gray-300 rounded-md checkmark">
+                                <div class="checkmark-inner"></div>
+                            </div>
+                            <span>🎵 Music</span>
+                        </label>
+                        <label class="flex items-center space-x-3 cursor-pointer">
+                            <input type="checkbox" class="hidden filter-checkbox" value="tech">
+                            <div class="w-6 h-6 border-2 border-gray-300 rounded-md checkmark">
+                                <div class="checkmark-inner"></div>
+                            </div>
+                            <span>💻 Tech</span>
+                        </label>
+                        <label class="flex items-center space-x-3 cursor-pointer">
+                            <input type="checkbox" class="hidden filter-checkbox" value="art">
+                            <div class="w-6 h-6 border-2 border-gray-300 rounded-md checkmark">
+                                <div class="checkmark-inner"></div>
+                            </div>
+                            <span>🎨 Art</span>
+                        </label>
+                        <label class="flex items-center space-x-3 cursor-pointer">
+                            <input type="checkbox" class="hidden filter-checkbox" value="sports">
+                            <div class="w-6 h-6 border-2 border-gray-300 rounded-md checkmark">
+                                <div class="checkmark-inner"></div>
+                            </div>
+                            <span>⚽ Sports</span>
+                        </label>
+                    </div>
+                    <button id="applyFilters"
+                        class="w-full mt-6 py-3 bg-accent-500 hover:bg-accent-600 text-white rounded-lg font-semibold">
+                        Apply Filters
+                    </button>
+                </div>
+            </div>
+
+            <!-- Main Content -->
+            <div class="lg:col-span-3 space-y-8">
+                <!-- Recommended Events -->
+                <div class="card p-6">
+                    <h2 class="text-xl font-bold mb-6 text-tertiary-500">Recommended Events</h2>
+                    <div id="recommendations" class="grid md:grid-cols-2 gap-6"></div>
+                </div>
+
+                <!-- Calendar & Map -->
+                <div class="grid lg:grid-cols-2 gap-8">
+                    <div class="card p-6">
+                        <h2 class="text-xl font-bold mb-6 text-tertiary-500">Event Calendar</h2>
+                        <div id="calendar" class="grid grid-cols-7 gap-2"></div>
+                    </div>
+                    <div class="card p-6">
+                        <h2 class="text-xl font-bold mb-6 text-tertiary-500">Event Map</h2>
+                        <div id="map" class="h-96 rounded-xl overflow-hidden"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <script src="https://unpkg.com/leaflet@1.9.3/dist/leaflet.js"></script>
+    <script>
+        // Event Data
+        const events = [
+            {
+                id: 1,
+                title: "Summer Jazz Festival",
+                category: "music",
+                date: "2024-07-15",
+                image: "https://source.unsplash.com/random/800x600/?jazz",
+                location: { lat: 51.5074, lng: -0.1278 },
+                description: "Open-air jazz festival with world-class musicians",
+                price: "£25-£80"
+            },
+            {
+                id: 2,
+                title: "Tech Conference",
+                category: "tech",
+                date: "2024-07-20",
+                image: "https://source.unsplash.com/random/800x600/?coding",
+                location: { lat: 51.5155, lng: -0.0722 },
+                description: "Annual technology innovation summit",
+                price: "£199"
+            },
+            {
+                id: 3,
+                title: "Modern Art Expo",
+                category: "art",
+                date: "2024-07-18",
+                image: "https://source.unsplash.com/random/800x600/?painting",
+                location: { lat: 51.5081, lng: -0.0989 },
+                description: "Contemporary art exhibition",
+                price: "Free"
+            },
+            {
+                id: 4,
+                title: "Football Championship",
+                category: "sports",
+                date: "2024-07-22",
+                image: "https://source.unsplash.com/random/800x600/?stadium",
+                location: { lat: 51.4816, lng: -0.1910 },
+                description: "National league final match",
+                price: "£45-£150"
+            }
+        ];
+
+        // State
+        let currentFilters = [];
+        let selectedDate = null;
+
+        // Map Initialization
+        const initMap = () => {
+            const map = L.map('map').setView([51.5074, -0.1278], 12);
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
+
+            events.forEach(event => {
+                L.marker([event.location.lat, event.location.lng])
+                    .addTo(map)
+                    .bindPopup(`<b>${event.title}</b><br>${event.date}`);
+            });
+        };
+
+        // Calendar
+        function initCalendar() {
+            const today = new Date();
+            const month = today.getMonth();
+            const year = today.getFullYear();
+            const daysInMonth = new Date(year, month + 1, 0).getDate();
+            const firstDay = new Date(year, month, 1).getDay();
+
+            let calendarHTML = `
+        <div class="col-span-7 text-center font-semibold mb-4">
+          ${today.toLocaleString('default', { month: 'long' })} ${year}
+        </div>
+        <div class="col-span-7 grid grid-cols-7 gap-1 mb-2 text-sm">
+          ${['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
+                    .map(day => `<div class="text-center">${day}</div>`).join('')}
+        </div>
+        <div class="col-span-7 grid grid-cols-7 gap-1">
+      `;
+
+            // Empty days
+            for (let i = 0; i < firstDay; i++) {
+                calendarHTML += '<div class="calendar-day"></div>';
+            }
+
+            // Days
+            for (let day = 1; day <= daysInMonth; day++) {
+                const date = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+                const hasEvents = events.some(e => e.date === date);
+                const isToday = day === today.getDate();
+
+                calendarHTML += `
+          <button class="calendar-day p-2 rounded-lg ${isToday ? 'bg-accent-500 text-white' : ''} ${hasEvents ? 'has-events' : ''}" 
+            data-date="${date}"
+            onclick="handleDateSelect('${date}')">
+            ${day}
+          </button>
+        `;
+            }
+
+            calendarHTML += '</div>';
+            document.getElementById('calendar').innerHTML = calendarHTML;
+        }
+
+        // Event Handlers
+        window.handleDateSelect = (date) => {
+            selectedDate = date;
+            document.querySelectorAll('.calendar-day').forEach(day => {
+                day.classList.remove('bg-accent-500', 'text-white');
+            });
+            document.querySelector(`[data-date="${date}"]`).classList.add('bg-accent-500', 'text-white');
+            updateRecommendations();
+        };
+
+        // Filter Logic
+        function updateRecommendations() {
+            let filteredEvents = events;
+
+            // Date Filter
+            if (selectedDate) {
+                filteredEvents = filteredEvents.filter(e => e.date === selectedDate);
+            }
+
+            // Category Filter
+            if (currentFilters.length > 0) {
+                filteredEvents = filteredEvents.filter(e => currentFilters.includes(e.category));
+            }
+
+            renderEvents(filteredEvents);
+        }
+
+        // Render Events
+        function renderEvents(events) {
+            const container = document.getElementById('recommendations');
+            container.innerHTML = events.map(event => `
+        <div class="event-card bg-white rounded-xl overflow-hidden shadow-sm">
+          <div class="event-image h-48 relative">
+            <img src="${event.image}" class="w-full h-full object-cover" 
+                 onerror="this.src='data:image/svg+xml;utf8,<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 100 100\"><rect width=\"100\" height=\"100\" fill=\"%23f0f4f8\"/></svg>'">
+            <div class="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/60 p-4">
+              <div class="text-white font-semibold">${event.date}</div>
+            </div>
+          </div>
+          <div class="p-4">
+            <h3 class="text-lg font-bold mb-2">${event.title}</h3>
+            <p class="text-gray-600 mb-3">${event.description}</p>
+            <div class="flex justify-between items-center">
+              <span class="text-accent-500 font-bold">${event.price}</span>
+              <button class="bg-accent-500 text-white px-4 py-2 rounded-lg hover:bg-accent-600">
+                Get Tickets
+              </button>
+            </div>
+          </div>
+        </div>
+      `).join('');
+        }
+
+        // Initialization
+        document.addEventListener('DOMContentLoaded', () => {
+            initMap();
+            initCalendar();
+            renderEvents(events);
+
+            // Filter Events
+            document.getElementById('applyFilters').addEventListener('click', () => {
+                currentFilters = Array.from(document.querySelectorAll('.filter-checkbox:checked'))
+                    .map(checkbox => checkbox.value);
+                updateRecommendations();
+            });
+        });
+    </script>
+</body>
+
+</html>
