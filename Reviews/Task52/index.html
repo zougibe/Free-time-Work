@@ -1,0 +1,1492 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Board Game Designer</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.4.2/p5.min.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@700&family=Quicksand:wght@500;700&display=swap"
+        rel="stylesheet">
+    <style>
+        body {
+            transition: background-color 0.3s, color 0.3s;
+        }
+
+        html {
+            font-size: 16px;
+        }
+
+        @media (min-width: 1200px) {
+            html {
+                font-size: 18px;
+            }
+        }
+
+        @media (max-width: 900px) {
+            html {
+                font-size: 15px;
+            }
+        }
+
+        @media (max-width: 700px) {
+            html {
+                font-size: 14px;
+            }
+        }
+
+        @media (max-width: 500px) {
+            html {
+                font-size: 13px;
+            }
+        }
+
+        /* Contrast and accessible colors */
+        body {
+            background-color: #f6f7fb;
+            color: #232946;
+        }
+
+        .font-display {
+            font-family: 'Montserrat', 'Poppins', 'Segoe UI', Arial, sans-serif !important;
+        }
+
+        .bg-panel {
+            background: #fff;
+            border-radius: 1.2rem;
+            box-shadow: 0 4px 24px #b39cd033;
+        }
+
+        .dark .bg-panel {
+            background: #232946 !important;
+            color: #f6f7fb !important;
+        }
+
+        .btn-primary {
+            background: linear-gradient(90deg, #845ec2 0%, #00c9a7 100%) !important;
+            color: #fff !important;
+            border: none;
+            font-weight: 700;
+            letter-spacing: 0.01em;
+        }
+
+        .btn-primary:hover {
+            background: linear-gradient(90deg, #00c9a7 0%, #845ec2 100%) !important;
+        }
+
+        .btn-secondary {
+            background: #e0e7ff !important;
+            color: #232946 !important;
+            border: none;
+            font-weight: 600;
+        }
+
+        .btn-secondary:hover {
+            background: #b39cd0 !important;
+            color: #fff !important;
+        }
+
+        .dark .btn-secondary {
+            background: #393e6e !important;
+            color: #f6f7fb !important;
+        }
+
+        .dark .btn-secondary:hover {
+            background: #845ec2 !important;
+            color: #fff !important;
+        }
+
+        .input-primary {
+            border: 1.5px solid #b39cd0 !important;
+            background: #f6f7fb !important;
+            color: #232946 !important;
+            border-radius: 0.7rem;
+        }
+
+        .input-primary:focus {
+            border-color: #845ec2 !important;
+            outline: none;
+        }
+
+        .dark .input-primary {
+            background: #232946 !important;
+            color: #f6f7fb !important;
+            border-color: #00c9a7 !important;
+        }
+
+        .legend {
+            background: #b39cd0 !important;
+            color: #232946 !important;
+            border-radius: 0.5rem;
+            padding: 0.25rem 0.75rem;
+            font-size: 0.95rem;
+        }
+
+        .dark .legend {
+            background: #393e6e !important;
+            color: #f6f7fb !important;
+        }
+
+        /* Better contrast for titles */
+        h1,
+        h2,
+        h3,
+        h4,
+        h5,
+        h6 {
+            color: #232946;
+        }
+
+        .dark h1,
+        .dark h2,
+        .dark h3,
+        .dark h4,
+        .dark h5,
+        .dark h6 {
+            color: #f6f7fb;
+        }
+
+        /* Better contrast for secondary text */
+        .text-secondary,
+        .text-gray-500,
+        .text-gray-400 {
+            color: #393e6e !important;
+        }
+
+        .dark .text-secondary,
+        .dark .text-gray-500,
+        .dark .text-gray-400 {
+            color: #b39cd0 !important;
+        }
+
+        /* Better contrast for score */
+        .score-card {
+            background: linear-gradient(90deg, #e0e7ff 0%, #fbeaff 100%);
+            color: #232946;
+            border-radius: 1.2rem;
+            box-shadow: 0 2px 12px #b39cd033;
+            margin: 0 auto;
+            max-width: 420px;
+        }
+
+        .dark .score-card {
+            background: linear-gradient(90deg, #232946 0%, #393e6e 100%);
+            color: #f6f7fb;
+        }
+
+        /* Better contrast for score bar */
+        .score-bar-bg {
+            background: #e0e7ff;
+        }
+
+        .dark .score-bar-bg {
+            background: #393e6e;
+        }
+
+        .score-bar {
+            background: linear-gradient(90deg, #00c9a7 0%, #845ec2 100%);
+        }
+
+        /* Better contrast for errors */
+        #error-msg {
+            color: #d7263d !important;
+        }
+
+        .dark #error-msg {
+            color: #ffb3b3 !important;
+        }
+
+        /* Responsive font size adjustment */
+        @media (max-width: 700px) {
+
+            h1,
+            h2 {
+                font-size: 1.5rem !important;
+            }
+
+            .score-card {
+                font-size: 1rem;
+            }
+        }
+
+        @media (max-width: 500px) {
+
+            h1,
+            h2 {
+                font-size: 1.1rem !important;
+            }
+
+            .score-card {
+                font-size: 0.95rem;
+            }
+        }
+
+        /* Light palette */
+        body {
+            background-color: #fbeaff;
+            color: #845ec2;
+            font-family: 'Poppins', 'Segoe UI', Arial, sans-serif;
+        }
+
+        .bg-primary {
+            background-color: #845ec2 !important;
+        }
+
+        .bg-secondary {
+            background-color: #b39cd0 !important;
+        }
+
+        .bg-accent {
+            background-color: #00c9a7 !important;
+        }
+
+        .bg-surface {
+            background-color: #fbeaff !important;
+        }
+
+        .text-primary {
+            color: #845ec2 !important;
+        }
+
+        .text-secondary {
+            color: #b39cd0 !important;
+        }
+
+        .text-accent {
+            color: #00c9a7 !important;
+        }
+
+        .border-primary {
+            border-color: #845ec2 !important;
+        }
+
+        .border-accent {
+            border-color: #00c9a7 !important;
+        }
+
+        .shadow-primary {
+            box-shadow: 0 2px 8px #b39cd0cc !important;
+        }
+
+        .btn-primary {
+            background: #845ec2 !important;
+            color: #fff !important;
+            border: none;
+        }
+
+        .btn-primary:hover {
+            background: #6d4bb1 !important;
+            color: #fff !important;
+        }
+
+        .btn-accent {
+            background: #00c9a7 !important;
+            color: #fff !important;
+            border: none;
+        }
+
+        .btn-accent:hover {
+            background: #00b89c !important;
+            color: #fff !important;
+        }
+
+        .input-primary {
+            border: 1px solid #b39cd0 !important;
+            background: #fbeaff !important;
+            color: #845ec2 !important;
+        }
+
+        .input-primary:focus {
+            border-color: #845ec2 !important;
+            outline: none;
+        }
+
+        .legend {
+            background: #b39cd0 !important;
+            color: #fff !important;
+            border-radius: 0.5rem;
+            padding: 0.25rem 0.75rem;
+            font-size: 0.9rem;
+        }
+
+        .font-display {
+            font-family: 'Montserrat', 'Poppins', 'Segoe UI', Arial, sans-serif !important;
+        }
+
+        /* Enhanced visual board */
+        canvas {
+            background: linear-gradient(135deg, #f3e8ff 0%, #e0e7ff 100%) !important;
+            border-radius: 1.2rem !important;
+            box-shadow: 0 6px 32px #b39cd066, 0 0 0 4px #845ec233;
+            border: 2px solid #b39cd0 !important;
+            transition: box-shadow 0.3s;
+        }
+
+        body.dark canvas {
+            background: linear-gradient(135deg, #232946 0%, #2d2546 100%) !important;
+            border: 2px solid #00c9a7 !important;
+            box-shadow: 0 6px 32px #00c9a766, 0 0 0 4px #845ec233;
+        }
+
+        /* Board cells */
+        .p5Canvas {
+            font-family: 'Quicksand', 'Montserrat', 'Poppins', Arial, sans-serif !important;
+        }
+
+        .p5Canvas text {
+            font-size: 1.1rem !important;
+            font-weight: 700 !important;
+            letter-spacing: 0.02em;
+            text-shadow: 0 1px 4px #fff8, 0 0px 2px #0004;
+        }
+
+        body.dark .p5Canvas text {
+            text-shadow: 0 1px 4px #23294688, 0 0px 2px #fff4;
+        }
+
+        /* Hover effect for cells (optional, visual only, not functional in p5.js) */
+        #canvas-container:hover {
+            box-shadow: 0 8px 40px #845ec288, 0 0 0 6px #00c9a733;
+            transition: box-shadow 0.3s;
+        }
+
+        /* --- DARK MODE --- */
+        body.dark {
+            background: linear-gradient(135deg, #201c2b 0%, #2d2546 100%) !important;
+            color: #fbeaff !important;
+        }
+
+        .dark .container,
+        .dark .bg-white,
+        .dark .bg-gray-800,
+        .dark .bg-gray-900 {
+            background: rgba(45, 37, 70, 0.92) !important;
+            border-radius: 18px;
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.18), 0 0 0 4px #845ec233;
+            color: #fbeaff !important;
+        }
+
+        .dark .summary-card,
+        .dark .collapsible-content,
+        .dark .collapsible-header {
+            background: rgba(45, 37, 70, 0.96) !important;
+            color: #fbeaff !important;
+            box-shadow: 0 4px 24px #845ec233;
+            border-radius: 16px;
+            backdrop-filter: blur(8px);
+        }
+
+        .dark .plot-container {
+            background: rgba(35, 37, 38, 0.95) !important;
+            color: #fbeaff !important;
+            border-radius: 14px;
+            box-shadow: 0 4px 24px #00c9a733;
+            backdrop-filter: blur(6px);
+        }
+
+        .dark .tab-bar {
+            background: rgba(0, 201, 167, 0.10);
+            border-radius: 14px 14px 0 0;
+            box-shadow: 0 2px 12px #00c9a733;
+        }
+
+        .dark .tab-btn {
+            background: rgba(132, 94, 194, 0.18) !important;
+            color: #fbeaff !important;
+        }
+
+        .dark .tab-btn.active {
+            background: linear-gradient(90deg, #00c9a7 0%, #845ec2 100%) !important;
+            color: #fff !important;
+        }
+
+        .dark .input-primary {
+            background: rgba(255, 255, 255, 0.05) !important;
+            color: #fbeaff !important;
+            border-color: #00c9a7 !important;
+        }
+
+        .dark .input-primary:focus {
+            border-color: #00c9a7 !important;
+        }
+
+        .dark .legend {
+            background: #845ec2 !important;
+            color: #fbeaff !important;
+            border-color: #00c9a7 !important;
+        }
+
+        .dark .btn-primary {
+            background: linear-gradient(90deg, #845ec2 0%, #00c9a7 100%) !important;
+            color: #fff !important;
+            border: none;
+        }
+
+        .dark .btn-primary:hover {
+            background: linear-gradient(90deg, #00c9a7 0%, #845ec2 100%) !important;
+            color: #fff !important;
+        }
+
+        .dark .btn-accent {
+            background: #845ec2 !important;
+            color: #fff !important;
+        }
+
+        .dark .btn-accent:hover {
+            background: #00c9a7 !important;
+            color: #2d2546 !important;
+        }
+
+        .dark .bg-panel,
+        .dark .glow-box {
+            background: rgba(45, 37, 70, 0.96) !important;
+            border-radius: 16px;
+            box-shadow: 0 4px 24px #b39cd033;
+            backdrop-filter: blur(8px);
+        }
+
+        /* Playability Score dark mode fix */
+        .dark section[aria-label="Playability Score Panel"] {
+            background: #232946 !important;
+            color: #fbeaff !important;
+        }
+
+        /* --- Fix: Gradient titles keep color in dark mode --- */
+        .gradient-title {
+            background: linear-gradient(90deg, #845ec2 0%, #00c9a7 100%) !important;
+            -webkit-background-clip: text !important;
+            -webkit-text-fill-color: transparent !important;
+            background-clip: text !important;
+            color: transparent !important;
+        }
+
+        .dark .gradient-title {
+            background: linear-gradient(90deg, #845ec2 0%, #00c9a7 100%) !important;
+            -webkit-background-clip: text !important;
+            -webkit-text-fill-color: transparent !important;
+            background-clip: text !important;
+            color: transparent !important;
+        }
+
+        /* --- Fix: Board Controls buttons contrast in dark mode --- */
+        .dark .btn-primary,
+        .dark .btn-secondary {
+            background: linear-gradient(90deg, #845ec2 0%, #00c9a7 100%) !important;
+            color: #fff !important;
+            border: none;
+        }
+
+        .dark .btn-primary:hover,
+        .dark .btn-secondary:hover {
+            background: linear-gradient(90deg, #00c9a7 0%, #845ec2 100%) !important;
+            color: #fff !important;
+        }
+
+        /* --- Fix: Tips text black in dark mode --- */
+        .dark .instructions-section {
+            color: #000 !important;
+        }
+
+        /* --- Responsive fix for title and subtitle overflow --- */
+        .main-title-section {
+            width: 100%;
+            max-width: 100vw;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            word-break: break-word;
+        }
+
+        .main-title-section h2 {
+            font-size: clamp(1.2rem, 4vw, 2.5rem);
+            line-height: 1.1;
+            text-align: center;
+            margin-bottom: 0.5rem;
+            max-width: 100%;
+            overflow-wrap: break-word;
+            word-break: break-word;
+            white-space: normal;
+            text-overflow: ellipsis;
+        }
+
+        @media (min-width: 900px) {
+            .main-title-section h2 {
+                margin-top: 1.5rem !important;
+                margin-bottom: 1.5rem !important;
+                text-align: center !important;
+                font-size: 2.5rem !important;
+                line-height: 1.1;
+            }
+        }
+
+        @media (max-width: 700px) {
+            .main-title-section h2 {
+                font-size: 1.3rem !important;
+            }
+
+            /* Reduce label font size for board elements on mobile */
+            .p5Canvas text,
+            .p5Canvas .element-label {
+                font-size: 0.75rem !important;
+                text-align: center;
+                word-break: break-word;
+            }
+        }
+
+        @media (max-width: 500px) {
+            .main-title-section h2 {
+                font-size: 1.05rem !important;
+            }
+
+            .p5Canvas text,
+            .p5Canvas .element-label {
+                font-size: 0.65rem !important;
+            }
+        }
+
+        /* --- Responsive improvements --- */
+        @media (max-width: 900px) {
+            .flex.md\:flex-row {
+                flex-direction: column !important;
+            }
+
+            .md\:w-96 {
+                width: 100% !important;
+                max-width: 100vw !important;
+            }
+
+            .md\:p-6 {
+                padding: 1rem !important;
+            }
+
+            .md\:p-8 {
+                padding: 1rem !important;
+            }
+
+            .max-w-xl {
+                max-width: 98vw !important;
+            }
+        }
+
+        @media (max-width: 700px) {
+
+            .main-grid,
+            .flex.md\:flex-row {
+                flex-direction: column !important;
+                gap: 1rem !important;
+            }
+
+            .w-full.max-w-xl {
+                max-width: 100vw !important;
+            }
+
+            .rounded-2xl {
+                border-radius: 1rem !important;
+            }
+
+            #canvas-container {
+                width: 94vw !important;
+                max-width: 94vw !important;
+                min-width: 0 !important;
+                height: auto !important;
+                max-height: 94vw !important;
+                min-height: 180px;
+                aspect-ratio: 1/1;
+                padding: 0 !important;
+                margin: 0 auto 12px auto !important;
+                position: relative;
+                z-index: 1;
+            }
+
+            canvas {
+                width: 100% !important;
+                max-width: 100% !important;
+                min-width: 0 !important;
+                height: 100% !important;
+                max-height: 100% !important;
+                min-height: 180px !important;
+                aspect-ratio: 1/1 !important;
+                display: block;
+                position: relative;
+                z-index: 2;
+            }
+        }
+
+        @media (max-width: 640px) {
+            .aspect-square {
+                aspect-ratio: unset !important;
+                height: auto !important;
+                min-height: 220px !important;
+            }
+
+            #canvas-container {
+                min-height: 220px !important;
+                height: 220px !important;
+                max-width: 100vw !important;
+            }
+
+            .md\:w-96,
+            .w-full.max-w-xl {
+                max-width: 100vw !important;
+            }
+
+            .p-4,
+            .md\:p-8,
+            .md\:p-6 {
+                padding: 0.5rem !important;
+            }
+
+            .rounded-2xl {
+                border-radius: 0.75rem !important;
+            }
+        }
+
+        @media (max-width: 600px) {
+
+            .w-full.max-w-xl,
+            .md\:w-96 {
+                max-width: 100vw !important;
+            }
+
+            .rounded-2xl {
+                border-radius: 0.5rem !important;
+            }
+
+            h1,
+            h2 {
+                font-size: 1.3rem !important;
+            }
+        }
+
+        /* Touch-friendly buttons/inputs */
+        button,
+        select,
+        input {
+            min-height: 44px;
+            font-size: 1rem;
+        }
+
+        /* Ensure tap area and spacing */
+        .flex.gap-2>* {
+            margin-bottom: 0.5rem;
+        }
+
+        /* Scrollbar only on desktop, hidden on mobile */
+        aside[aria-label="Controls and Info Panel"] {
+            max-height: 95vh !important;
+            overflow-y: auto !important;
+            scrollbar-width: thin;
+            /* Firefox */
+            scrollbar-color: #b39cd0 #fbeaff;
+        }
+
+        aside[aria-label="Controls and Info Panel"]::-webkit-scrollbar {
+            width: 8px;
+            background: #fbeaff;
+        }
+
+        aside[aria-label="Controls and Info Panel"]::-webkit-scrollbar-thumb {
+            background: #b39cd0;
+            border-radius: 6px;
+        }
+
+        @media (max-width: 900px) {
+            aside[aria-label="Controls and Info Panel"] {
+                max-height: none !important;
+                overflow-y: visible !important;
+            }
+        }
+
+        /* Responsive adjustment for canvas and container */
+        #canvas-container {
+            width: 100% !important;
+            height: 100% !important;
+            max-width: 600px;
+            max-height: 80vh;
+            aspect-ratio: 1/1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        canvas {
+            width: 100% !important;
+            height: 100% !important;
+            max-width: 100% !important;
+            max-height: 100% !important;
+            display: block;
+        }
+
+        @media (max-width: 700px) {
+            #canvas-container {
+                max-width: 98vw;
+                max-height: 60vw;
+                min-height: 220px;
+            }
+        }
+
+        /* Contrast and responsiveness improvements for panels and notifications */
+        .subtitle-info {
+            background: #e0e7ff !important;
+            color: #232946 !important;
+        }
+
+        .dark .subtitle-info {
+            background: #232946 !important;
+            color: #f6f7fb !important;
+        }
+
+        /* Unify background of selection panels with Playability Score */
+        .panel-section {
+            background: #e0e7ff !important;
+        }
+
+        .dark .panel-section {
+            background: #232946 !important;
+        }
+
+        /* General responsiveness improvements for devices */
+        @media (max-width: 900px) {
+
+            body,
+            html {
+                height: auto !important;
+                min-height: 100vh !important;
+            }
+
+            .h-screen {
+                height: auto !important;
+                min-height: 100vh !important;
+            }
+        }
+
+        @media (max-width: 700px) {
+            .main-title-section {
+                padding-top: 0.5rem !important;
+            }
+
+            .flex.md\:flex-row {
+                gap: 0.5rem !important;
+            }
+
+            .p-2,
+            .md\:p-6 {
+                padding: 0.5rem !important;
+            }
+        }
+
+        /* Adjustment for canvas-container on mobile to avoid overflow */
+        @media (max-width: 700px) {
+            #canvas-container {
+                width: 98vw !important;
+                max-width: 98vw !important;
+                min-width: 0 !important;
+                height: auto !important;
+                max-height: 98vw !important;
+                min-height: 180px;
+                aspect-ratio: 1/1;
+                padding: 0 !important;
+                margin: 0 auto 12px auto !important;
+                position: relative;
+                z-index: 1;
+            }
+
+            canvas {
+                width: 100% !important;
+                max-width: 100% !important;
+                min-width: 0 !important;
+                height: 100% !important;
+                max-height: 100% !important;
+                min-height: 180px !important;
+                aspect-ratio: 1/1 !important;
+                display: block;
+                position: relative;
+                z-index: 2;
+            }
+        }
+
+        /* Adjustment to avoid horizontal overflow on mobile */
+        html,
+        body {
+            overflow-x: hidden !important;
+        }
+    </style>
+</head>
+
+<body
+    class="min-h-screen bg-gradient-to-br from-blue-100 via-purple-100 to-pink-100 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900 text-gray-900 dark:text-gray-100 font-sans transition-colors duration-300">
+    <div class="flex flex-col md:flex-row h-screen gap-4 p-2 md:p-6">
+        <!-- Canvas Area -->
+        <main
+            class="flex-1 flex items-center justify-center bg-white/80 dark:bg-gray-900/80 rounded-2xl shadow-xl p-4 md:p-8">
+            <section class="w-full max-w-xl flex-1 flex flex-col items-center justify-center gap-4 main-title-section">
+                <div id="canvas-container"
+                    class="w-full h-full aspect-square max-w-full max-h-full flex-1 flex items-center justify-center outline-none focus:ring-4 focus:ring-blue-400 rounded-xl shadow-lg"
+                    tabindex="0" role="region" aria-label="Game Board Canvas"></div>
+                <div class="mt-4 flex justify-center w-full">
+                    <div class="text-xs subtitle-info text-center bg-blue-50 dark:bg-gray-800 rounded-lg px-3 py-2 shadow-sm w-full max-w-xs"
+                        style="font-size:0.98rem;">Use <b>mouse</b> or <b>keyboard</b> to place and move elements.</div>
+                </div>
+            </section>
+        </main>
+        <!-- Side Panel -->
+        <aside
+            class="w-full md:w-96 bg-white/90 dark:bg-gray-800/90 p-4 md:p-6 flex flex-col gap-6 shadow-2xl rounded-2xl"
+            aria-label="Controls and Info Panel">
+            <div class="flex items-center justify-between mb-2">
+                <h1
+                    class="text-4xl font-extrabold bg-gradient-to-r from-purple-600 via-pink-500 to-blue-600 dark:from-yellow-300 dark:via-pink-400 dark:to-green-300 bg-clip-text text-transparent drop-shadow-lg tracking-tight font-display transition-all duration-300 gradient-title m-0 w-full text-center">
+                    Board Game Studio
+                </h1>
+                <button id="theme-toggle"
+                    class="ml-2 p-2 rounded-full bg-gray-500 hover:bg-gray-600 text-white shadow focus:outline-none focus:ring-2 focus:ring-gray-400 flex items-center justify-center"
+                    aria-label="Toggle dark mode"><svg id="theme-icon" xmlns="http://www.w3.org/2000/svg"
+                        class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path id="theme-icon-path" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M12 3v1m0 16v1m8.66-8.66l-.71.71M4.05 4.05l-.71.71M21 12h-1M4 12H3m16.95 7.95l-.71-.71M4.05 19.95l-.71-.71M16 12a4 4 0 11-8 0 4 4 0 018 0z" />
+                    </svg></button>
+            </div>
+            <!-- Visual theme selector -->
+            <div
+                class="rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 shadow-sm mb-2 panel-section">
+                <div class="px-4 pt-4 pb-2 flex flex-col gap-2">
+                    <label class="block text-base font-semibold" for="theme-selector">Theme</label>
+                    <select id="theme-selector"
+                        class="w-full p-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 focus:ring-2 focus:ring-purple-400 flex items-center"
+                        aria-label="Select theme">
+                        <option value="pirate">🦜 Pirate Quest</option>
+                        <option value="space">🪐 Space Expedition</option>
+                        <option value="medieval">🏰 Medieval Tournament</option>
+                    </select>
+                </div>
+            </div>
+            <!-- Element selector -->
+            <div
+                class="rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 shadow-sm mb-2 panel-section">
+                <div class="px-4 pt-4 pb-2 flex flex-col gap-2">
+                    <label class="block text-base font-semibold" for="element-selector">Place Element</label>
+                    <select id="element-selector"
+                        class="w-full p-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 focus:ring-2 focus:ring-purple-400"
+                        aria-label="Select element">
+                        <option value="tile">Tile (Terrain)</option>
+                        <option value="card">Card (Event)</option>
+                        <option value="token">Token (Player)</option>
+                        <option value="obstacle">Obstacle (Barrier)</option>
+                    </select>
+                </div>
+            </div>
+            <!-- Enhanced Playability Score -->
+            <section
+                class="mt-2 bg-blue-50 dark:bg-gray-900 rounded-xl p-4 flex flex-col items-center shadow-inner w-full score-card panel-section"
+                aria-label="Playability Score Panel">
+                <h2 class="text-lg font-bold text-blue-800 dark:text-white mb-1">Playability Score</h2>
+                <div class="w-full flex flex-col gap-1">
+                    <div class="flex items-center justify-between text-xs mb-1">
+                        <span class="text-purple-600 dark:text-white">Balance</span>
+                        <span id="score-balance" class="font-semibold text-purple-600 dark:text-white">0%</span>
+                    </div>
+                    <div class="w-full score-bar-bg rounded-full h-3 mb-2">
+                        <div id="score-bar" class="score-bar h-3 rounded-full transition-all duration-300"
+                            style="width: 0%"></div>
+                    </div>
+                </div>
+                <p id="score-display"
+                    class="text-2xl font-extrabold bg-gradient-to-r from-purple-600 via-pink-500 to-blue-600 bg-clip-text text-transparent dark:text-white">
+                    Score: 0</p>
+                <p class="text-xs text-purple-600 dark:text-white">Based on element balance and rule complexity.</p>
+                <div id="error-msg" class="mt-2 text-xs text-red-500" aria-live="polite"></div>
+            </section>
+            <!-- Collapsible Controls -->
+            <div class="flex flex-col gap-4">
+                <div class="flex flex-col gap-2 mb-2">
+                    <button id="save-btn"
+                        class="py-2 px-4 rounded-lg btn-primary hover:bg-blue-700 text-white font-bold text-base shadow focus:outline-none focus:ring-2 focus:ring-blue-400 flex items-center gap-2"
+                        aria-label="Save Design"><span class="material-icons">save</span>Save</button>
+                    <button id="export-btn"
+                        class="py-2 px-4 rounded-lg btn-primary hover:bg-green-700 text-white font-bold text-base shadow focus:outline-none focus:ring-2 focus:ring-green-400 flex items-center gap-2"
+                        aria-label="Export as PNG"><span class="material-icons">image</span>Export PNG</button>
+                    <div class="flex gap-2">
+                        <button id="test-btn"
+                            class="flex-1 py-2 px-4 rounded-lg btn-primary hover:bg-purple-700 text-white font-bold text-base shadow focus:outline-none focus:ring-2 focus:ring-purple-400 flex items-center gap-2"
+                            aria-label="Test Play"><span class="material-icons">play_arrow</span>Test Play</button>
+                        <button id="animation-toggle"
+                            class="flex-1 py-2 px-4 rounded-lg btn-secondary hover:bg-yellow-600 text-white font-semibold text-base shadow focus:outline-none focus:ring-2 focus:ring-yellow-300 flex items-center gap-2"
+                            aria-label="Toggle Animation"><span class="material-icons">motion_photos_on</span>Animation:
+                            OFF</button>
+                    </div>
+                </div>
+                <hr class="my-2 border-t border-gray-300 dark:border-gray-600">
+                <div class="flex flex-col gap-2">
+                    <button id="clear-btn"
+                        class="py-2 px-4 rounded-lg btn-secondary hover:bg-red-600 text-white font-semibold text-base shadow focus:outline-none focus:ring-2 focus:ring-red-400 flex items-center gap-2"
+                        aria-label="Clear Board"><span class="material-icons">delete</span>Clear</button>
+                    <button id="randomize-btn"
+                        class="py-2 px-4 rounded-lg btn-secondary hover:bg-pink-600 text-white font-semibold text-base shadow focus:outline-none focus:ring-2 focus:ring-pink-300 flex items-center gap-2"
+                        aria-label="Randomize Board"><span class="material-icons">shuffle</span>Randomize</button>
+                </div>
+            </div>
+            <!-- Tips -->
+            <section class="mt-2 text-xs instructions-section" aria-label="Tips">
+                <ul class="list-disc pl-4">
+                    <li>Use Tab to navigate controls. Use arrows to move tokens in Test Play.</li>
+                    <li>Drag elements to reposition. Only one token per theme.</li>
+                    <li>Randomize for a balanced board suggestion.</li>
+                </ul>
+            </section>
+        </aside>
+    </div>
+
+    <script>
+        // --- Game Data ---
+        const gameData = {
+            pirate: {
+                tile: { color: '#4f46e5', label: 'Island', attr: { terrain: 'land' } },
+                card: { color: '#ef4444', label: 'Treasure', attr: { event: 'bonus' } },
+                token: { color: '#22c55e', label: 'Ship', attr: { moves: 3 } },
+                obstacle: { color: '#eab308', label: 'Reef', attr: { block: true } }
+            },
+            space: {
+                tile: { color: '#6b7280', label: 'Planet', attr: { terrain: 'planet' } },
+                card: { color: '#d946ef', label: 'Mission', attr: { event: 'mission' } },
+                token: { color: '#3b82f6', label: 'Ship', attr: { fuel: 5 } },
+                obstacle: { color: '#f97316', label: 'Asteroid', attr: { block: true } }
+            },
+            medieval: {
+                tile: { color: '#16a34a', label: 'Field', attr: { terrain: 'field' } },
+                card: { color: '#dc2626', label: 'Quest', attr: { event: 'quest' } },
+                token: { color: '#7c3aed', label: 'Knight', attr: { stamina: 4 } },
+                obstacle: { color: '#ca8a04', label: 'Wall', attr: { block: true } }
+            }
+        };
+
+        // --- Game State ---
+        let currentTheme = localStorage.getItem('theme') || 'pirate';
+        let currentElement = 'tile';
+        let elements = [];
+        let playabilityScore = 0;
+        let isTestMode = false;
+        let isAnimationOn = false;
+        let animationFrame = 0;
+        let dragging = false;
+        let dragElement = null;
+        let dragOffset = { x: 0, y: 0 };
+        let tokenPos = { x: 0, y: 0 };
+        let testPlayState = {};
+        let errorMsg = '';
+
+        // --- p5.js Setup ---
+        let cellSize = 0, cols = 10, rows = 10;
+        function setup() {
+            const canvas = createCanvas(500, 500);
+            canvas.parent('canvas-container');
+            cellSize = width / cols;
+            document.getElementById('canvas-container').addEventListener('keydown', handleCanvasKeydown);
+            // Call resizeBoardCanvas only when resizeCanvas already exists
+            resizeBoardCanvas();
+        }
+
+        function draw() {
+            background(220);
+            cellSize = width / cols;
+            // Enhanced: Alternate board colors for subtle "checkerboard"
+            for (let x = 0; x < cols; x++) {
+                for (let y = 0; y < rows; y++) {
+                    if ((x + y) % 2 === 0) {
+                        fill(255, 255, 255, 200);
+                    } else {
+                        fill(230, 220, 255, 160);
+                    }
+                    if (document.body.classList.contains('dark')) {
+                        if ((x + y) % 2 === 0) {
+                            fill(40, 36, 60, 200);
+                        } else {
+                            fill(60, 50, 90, 160);
+                        }
+                    }
+                    stroke(132, 94, 194, 60); // Subtle lilac
+                    rect(x * cellSize, y * cellSize, cellSize, cellSize, 8);
+                }
+            }
+            for (const el of elements) {
+                if (dragElement === el && dragging) continue;
+                drawElement(el, false);
+            }
+            if (dragElement && dragging) {
+                drawElement({ ...dragElement, x: mouseX / cellSize, y: mouseY / cellSize }, true);
+            }
+            if (isTestMode) {
+                drawTestToken();
+            }
+            if (isAnimationOn) {
+                animationFrame++;
+                // Do not use requestAnimationFrame(redraw) here
+                // p5.js handles the loop automatically
+            }
+        }
+
+        function drawElement(el, isDragging) {
+            const { type, x, y, theme } = el;
+            const px = (isDragging ? x : Math.round(x)) * cellSize;
+            const py = (isDragging ? y : Math.round(y)) * cellSize;
+            push();
+            strokeWeight(2);
+            stroke(0, 0, 0, 30);
+            fill(gameData[theme][type].color);
+            if (type === 'token' && isAnimationOn) {
+                const offset = sin(animationFrame * 0.15) * 5;
+                ellipse(px + cellSize / 2 + offset, py + cellSize / 2, cellSize * 0.8);
+            } else if (type === 'obstacle') {
+                // Obstacle base background
+                rect(px + cellSize * 0.15, py + cellSize * 0.15, cellSize * 0.7, cellSize * 0.7, 10);
+                // Pattern by theme
+                if (theme === 'space') {
+                    // Asteroid: gray circles
+                    for (let i = 0; i < 4; i++) {
+                        fill(120 + random(-20, 20), 120 + random(-20, 20), 120 + random(-20, 20), 180);
+                        ellipse(px + cellSize * 0.35 + random(-4, 4), py + cellSize * 0.35 + random(-4, 4), cellSize * 0.13 + random(-2, 2));
+                    }
+                } else if (theme === 'pirate') {
+                    // Reef: blue/green waves
+                    noFill();
+                    stroke(0, 180, 200, 120);
+                    for (let i = 0; i < 3; i++) {
+                        beginShape();
+                        for (let t = 0; t <= 1; t += 0.2) {
+                            let xx = lerp(px + cellSize * 0.18, px + cellSize * 0.82, t);
+                            let yy = py + cellSize * 0.5 + sin(t * PI * 2 + i) * cellSize * 0.08;
+                            vertex(xx, yy);
+                        }
+                        endShape();
+                    }
+                    stroke(0, 200, 120, 100);
+                    for (let i = 0; i < 2; i++) {
+                        beginShape();
+                        for (let t = 0; t <= 1; t += 0.2) {
+                            let xx = lerp(px + cellSize * 0.18, px + cellSize * 0.82, t);
+                            let yy = py + cellSize * 0.6 + cos(t * PI * 2 + i) * cellSize * 0.06;
+                            vertex(xx, yy);
+                        }
+                        endShape();
+                    }
+                } else if (theme === 'medieval') {
+                    // Wall: horizontal lines (bricks)
+                    stroke(180, 140, 60, 180);
+                    for (let i = 1; i < 4; i++) {
+                        let yb = py + cellSize * 0.15 + (cellSize * 0.7 / 4) * i;
+                        line(px + cellSize * 0.15, yb, px + cellSize * 0.85, yb);
+                    }
+                    // Alternate bricks
+                    for (let i = 0; i < 3; i++) {
+                        let yb = py + cellSize * 0.15 + (cellSize * 0.7 / 4) * i;
+                        let x1 = px + cellSize * 0.15 + (i % 2) * cellSize * 0.35;
+                        line(x1, yb, x1, yb + (cellSize * 0.7 / 4));
+                    }
+                }
+                // Label for obstacles
+                textAlign(CENTER, CENTER);
+                textFont('Quicksand');
+                // Responsive font size for label
+                let labelSize = cellSize * 0.22;
+                if (window.innerWidth < 700) labelSize = cellSize * 0.16;
+                if (window.innerWidth < 500) labelSize = cellSize * 0.13;
+                textSize(labelSize);
+                textStyle(BOLD);
+                // Contrast color by theme
+                if (theme === 'space') {
+                    fill(40, 40, 60, 235);
+                    if (document.body.classList.contains('dark')) fill(255);
+                    strokeWeight(1);
+                    stroke(220, 220, 255, 120);
+                } else if (theme === 'pirate') {
+                    fill(20, 60, 80, 230);
+                    if (document.body.classList.contains('dark')) fill(255);
+                    strokeWeight(1);
+                    stroke(200, 255, 255, 120);
+                } else if (theme === 'medieval') {
+                    fill(60, 40, 10, 230);
+                    if (document.body.classList.contains('dark')) fill(255);
+                    strokeWeight(1);
+                    stroke(255, 220, 120, 120);
+                } else {
+                    fill(255);
+                    strokeWeight(0.5);
+                    stroke(0, 0, 0, 60);
+                }
+                text(gameData[theme][type].label, px + cellSize / 2, py + cellSize / 2);
+                pop();
+                return;
+            }
+            rect(px, py, cellSize, cellSize, 12);
+            // Improved label for other elements
+            textAlign(CENTER, CENTER);
+            textFont('Quicksand');
+            // Responsive font size for label
+            let labelSize = 16;
+            if (cellSize < 60) labelSize = cellSize * 0.22;
+            if (window.innerWidth < 700) labelSize = cellSize * 0.16;
+            if (window.innerWidth < 500) labelSize = cellSize * 0.13;
+            textSize(labelSize);
+            textStyle(BOLD);
+            if (document.body.classList.contains('dark')) {
+                fill(255);
+            } else {
+                fill(0);
+            }
+            strokeWeight(0.5);
+            stroke(0, 0, 0, 60);
+            text(gameData[theme][type].label, px + cellSize / 2, py + cellSize / 2);
+            pop();
+        }
+
+        // --- Drag & Drop ---
+        function mousePressed() {
+            if (isTestMode) return;
+            const [x, y] = [floor(mouseX / cellSize), floor(mouseY / cellSize)];
+            if (x < 0 || x >= cols || y < 0 || y >= rows) return;
+            for (const el of elements) {
+                if (el.x === x && el.y === y) {
+                    dragging = true;
+                    dragElement = el;
+                    dragOffset = { x: mouseX - x * cellSize, y: mouseY - y * cellSize };
+                    return;
+                }
+            }
+            if (!elements.some(e => e.x === x && e.y === y)) {
+                if (currentElement === 'token' && elements.some(e => e.type === 'token' && e.theme === currentTheme)) {
+                    showError('Only one token per theme allowed.');
+                    return;
+                }
+                elements.push({
+                    type: currentElement,
+                    x, y,
+                    theme: currentTheme,
+                    attr: { ...gameData[currentTheme][currentElement].attr }
+                });
+                updatePlayabilityScore();
+                if (!isAnimationOn) redraw();
+            } else {
+                showError('Cell already occupied.');
+            }
+        }
+
+        function mouseDragged() {
+            if (!dragging || !dragElement) return;
+        }
+
+        function mouseReleased() {
+            if (!dragging || !dragElement) return;
+            const [x, y] = [floor(mouseX / cellSize), floor(mouseY / cellSize)];
+            if (x < 0 || x >= cols || y < 0 || y >= rows) {
+                dragging = false; dragElement = null;
+                return;
+            }
+            if (elements.some(e => e !== dragElement && e.x === x && e.y === y)) {
+                showError('Cell already occupied.');
+            } else {
+                dragElement.x = x; dragElement.y = y;
+                updatePlayabilityScore();
+                if (!isAnimationOn) redraw();
+            }
+            dragging = false; dragElement = null;
+        }
+
+        // --- Keyboard Navigation ---
+        function handleCanvasKeydown(e) {
+            if (isTestMode) {
+                handleTestPlayKey(e);
+                return;
+            }
+            if (["ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight", "Enter", " "].includes(e.key)) {
+                e.preventDefault();
+                let focus = elements.find(e => e.type === currentElement && e.theme === currentTheme);
+                if (!focus) return;
+                let dx = 0, dy = 0;
+                if (e.key === 'ArrowUp') dy = -1;
+                if (e.key === 'ArrowDown') dy = 1;
+                if (e.key === 'ArrowLeft') dx = -1;
+                if (e.key === 'ArrowRight') dx = 1;
+                if (dx || dy) {
+                    let nx = focus.x + dx, ny = focus.y + dy;
+                    if (nx >= 0 && nx < cols && ny >= 0 && ny < rows && !elements.some(el => el.x === nx && el.y === ny)) {
+                        focus.x = nx; focus.y = ny;
+                        updatePlayabilityScore();
+                    }
+                }
+            }
+        }
+
+        // --- Playability Score ---
+        function updatePlayabilityScore() {
+            let counts = { tile: 0, card: 0, token: 0, obstacle: 0 };
+            for (const el of elements) counts[el.type]++;
+            const total = elements.length;
+            const coverage = total / (cols * rows);
+            const balance = Math.min(counts.tile, counts.card, counts.token, counts.obstacle) / Math.max(1, total);
+            const complexity = Math.min(1, (counts.card + counts.obstacle) / 10);
+            playabilityScore = Math.round((coverage * 40 + balance * 40 + (1 - complexity) * 20) * 100) / 100;
+            document.getElementById('score-display').textContent = `Score: ${playabilityScore}`;
+            document.getElementById('score-balance').textContent = `${Math.round(balance * 100)}%`;
+            document.getElementById('score-bar').style.width = `${Math.round(balance * 100)}%`;
+        }
+
+        // --- Test Play Mode ---
+        function drawTestToken() {
+            let { x, y, animX, animY } = testPlayState;
+            let tx = lerp(x * cellSize, animX * cellSize, 0.5);
+            let ty = lerp(y * cellSize, animY * cellSize, 0.5);
+            fill(0, 0, 255, 120);
+            ellipse(tx + cellSize / 2, ty + cellSize / 2, cellSize * 0.8);
+        }
+
+        function handleTestPlayKey(e) {
+            let { x, y, theme, fuel, stamina } = testPlayState;
+            let dx = 0, dy = 0;
+            if (e.key === 'ArrowUp') dy = -1;
+            if (e.key === 'ArrowDown') dy = 1;
+            if (e.key === 'ArrowLeft') dx = -1;
+            if (e.key === 'ArrowRight') dx = 1;
+            if (dx || dy) {
+                let nx = x + dx, ny = y + dy;
+                if (nx < 0 || nx >= cols || ny < 0 || ny >= rows) return;
+                if (elements.some(el => el.x === nx && el.y === ny && el.type === 'obstacle')) return;
+                if (theme === 'pirate') {
+                    let roll = Math.ceil(Math.random() * 6);
+                    if (roll < 3) { showError('Pirate: Need 3+ on dice to move!'); return; }
+                }
+                if (theme === 'space') {
+                    if (fuel <= 0) { showError('Space: Out of fuel!'); return; }
+                    testPlayState.fuel--;
+                }
+                if (theme === 'medieval') {
+                    if (stamina <= 0) { showError('Medieval: Out of stamina!'); return; }
+                    testPlayState.stamina--;
+                }
+                testPlayState.x = nx; testPlayState.y = ny;
+                testPlayState.animX = nx; testPlayState.animY = ny;
+            }
+        }
+
+        // --- UI Event Listeners ---
+        document.getElementById('theme-selector').addEventListener('change', (e) => {
+            currentTheme = e.target.value;
+            localStorage.setItem('theme', currentTheme);
+            updatePlayabilityScore();
+            if (!isAnimationOn) redraw();
+        });
+
+        document.getElementById('element-selector').addEventListener('change', (e) => {
+            currentElement = e.target.value;
+            if (!isAnimationOn) redraw();
+        });
+
+        document.getElementById('save-btn').addEventListener('click', () => {
+            try {
+                localStorage.setItem('boardDesign', JSON.stringify({ theme: currentTheme, elements }));
+                showError('Design saved!', true);
+            } catch (err) {
+                showError('LocalStorage full or error saving.');
+            }
+        });
+
+        document.getElementById('export-btn').addEventListener('click', () => {
+            saveCanvas('board_design', 'png');
+        });
+
+        document.getElementById('clear-btn').addEventListener('click', () => {
+            elements = [];
+            updatePlayabilityScore();
+            showError('Board cleared!', true);
+            if (!isAnimationOn) redraw();
+        });
+
+        document.getElementById('randomize-btn').addEventListener('click', () => {
+            elements = randomizeBoard(currentTheme);
+            updatePlayabilityScore();
+            showError('Random board generated!', true);
+            if (!isAnimationOn) redraw();
+        });
+
+        document.getElementById('test-btn').addEventListener('click', () => {
+            isTestMode = !isTestMode;
+            document.getElementById('test-btn').textContent = isTestMode ? 'Exit Test Play' : 'Test Play';
+            if (isTestMode) {
+                let token = elements.find(e => e.type === 'token' && e.theme === currentTheme);
+                if (!token) { showError('Place a token first!'); isTestMode = false; return; }
+                testPlayState = {
+                    x: token.x, y: token.y, theme: currentTheme,
+                    fuel: token.attr.fuel || 5, stamina: token.attr.stamina || 4,
+                    animX: token.x, animY: token.y
+                };
+                document.getElementById('canvas-container').focus();
+            }
+        });
+
+        document.getElementById('animation-toggle').addEventListener('click', () => {
+            isAnimationOn = !isAnimationOn;
+            const btn = document.getElementById('animation-toggle');
+            btn.innerHTML = `<span class="material-icons" style="color:${isAnimationOn ? '#00c9a7' : '#fff'}">motion_photos_on</span>Animation: ${isAnimationOn ? 'ON' : 'OFF'}`;
+            if (isAnimationOn) {
+                loop();
+            } else {
+                noLoop();
+                redraw(); // refresh once
+            }
+        });
+
+        // --- Dark Mode: persist, system preference, icon feedback ---
+        (function () {
+            let dark = localStorage.getItem('darkMode');
+            const icon = document.getElementById('theme-icon-path');
+            const label = document.getElementById('theme-toggle-label');
+            if (dark === null) {
+                dark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches ? '1' : '0';
+            }
+            if (dark === '1') {
+                document.body.classList.add('dark');
+                if (icon) icon.setAttribute('d', 'M21.752 15.002A9.718 9.718 0 0112 21.75c-5.385 0-9.75-4.365-9.75-9.75 0-4.418 2.892-8.166 6.948-9.418a.75.75 0 01.948.948A7.5 7.5 0 0019.8 17.8a.75.75 0 01.948.948z');
+                if (label) label.textContent = 'Light Mode';
+            } else {
+                document.body.classList.remove('dark');
+                if (icon) icon.setAttribute('d', 'M12 3v1m0 16v1m8.66-8.66l-.71.71M4.05 4.05l-.71.71M21 12h-1M4 12H3m16.95 7.95l-.71-.71M4.05 19.95l-.71-.71M16 12a4 4 0 11-8 0 4 4 0 018 0z');
+                if (label) label.textContent = 'Dark Mode';
+            }
+            // Transition animation
+            document.body.style.transition = 'background-color 0.3s, color 0.3s';
+        })();
+        document.getElementById('theme-toggle').addEventListener('click', () => {
+            const isDark = !document.body.classList.contains('dark');
+            const icon = document.getElementById('theme-icon-path');
+            const label = document.getElementById('theme-toggle-label');
+            if (isDark) {
+                document.body.classList.add('dark');
+                if (icon) icon.setAttribute('d', 'M21.752 15.002A9.718 9.718 0 0112 21.75c-5.385 0-9.75-4.365-9.75-9.75 0-4.418 2.892-8.166 6.948-9.418a.75.75 0 01.948.948A7.5 7.5 0 0019.8 17.8a.75.75 0 01.948.948z');
+                if (label) label.textContent = 'Light Mode';
+            } else {
+                document.body.classList.remove('dark');
+                if (icon) icon.setAttribute('d', 'M12 3v1m0 16v1m8.66-8.66l-.71.71M4.05 4.05l-.71.71M21 12h-1M4 12H3m16.95 7.95l-.71-.71M4.05 19.95l-.71-.71M16 12a4 4 0 11-8 0 4 4 0 018 0z');
+                if (label) label.textContent = 'Dark Mode';
+            }
+            localStorage.setItem('darkMode', isDark ? '1' : '0');
+            // Transition animation
+            document.body.style.transition = 'background-color 0.3s, color 0.3s';
+        });
+
+        // --- Error Handling ---
+        function showError(msg, success = false) {
+            errorMsg = msg;
+            const el = document.getElementById('error-msg');
+            el.textContent = msg;
+            el.className = 'mt-2 text-xs ' + (success ? 'text-green-500' : 'text-red-500');
+            setTimeout(() => { if (el.textContent === msg) el.textContent = ''; }, 2500);
+        }
+
+        // --- Randomize Board ---
+        function randomizeBoard(theme) {
+            let arr = [];
+            let used = {};
+            let tx = Math.floor(Math.random() * cols), ty = Math.floor(Math.random() * rows);
+            arr.push({ type: 'token', x: tx, y: ty, theme, attr: { ...gameData[theme].token.attr } });
+            used[`${tx},${ty}`] = 1;
+            for (let i = 0; i < 10; i++) placeRand('tile');
+            for (let i = 0; i < 5; i++) placeRand('card');
+            for (let i = 0; i < 5; i++) placeRand('obstacle');
+            function placeRand(type) {
+                let tries = 0;
+                while (tries++ < 20) {
+                    let x = Math.floor(Math.random() * cols), y = Math.floor(Math.random() * rows);
+                    if (!used[`${x},${y}`]) {
+                        arr.push({ type, x, y, theme, attr: { ...gameData[theme][type].attr } });
+                        used[`${x},${y}`] = 1; break;
+                    }
+                }
+            }
+            return arr;
+        }
+
+        // --- Load Saved Design & Dark Mode ---
+        window.onload = () => {
+            if (localStorage.getItem('darkMode') === '1') document.body.classList.add('dark');
+            const saved = localStorage.getItem('boardDesign');
+            if (saved) {
+                try {
+                    const { theme, elements: els } = JSON.parse(saved);
+                    currentTheme = theme;
+                    elements = els || [];
+                    document.getElementById('theme-selector').value = theme;
+                    updatePlayabilityScore();
+                } catch { }
+            }
+            // Ensure canvas is not looping if animation is off on load
+            if (!isAnimationOn) {
+                noLoop();
+                redraw();
+            }
+        };
+
+        // --- Responsive canvas resize ---
+        function resizeBoardCanvas() {
+            const container = document.getElementById('canvas-container');
+            if (!container) return;
+            // Calculate the maximum square size possible within the container
+            const size = Math.min(container.offsetWidth, container.offsetHeight);
+            resizeCanvas(size, size);
+        }
+        window.addEventListener('resize', resizeBoardCanvas);
+
+        // --- Touch support for drag-and-drop ---
+        let touchStart = null;
+        document.getElementById('canvas-container').addEventListener('touchstart', function (e) {
+            if (isTestMode) return;
+            const touch = e.touches[0];
+            const rect = this.getBoundingClientRect();
+            const mx = touch.clientX - rect.left;
+            const my = touch.clientY - rect.top;
+            const [x, y] = [Math.floor(mx / cellSize), Math.floor(my / cellSize)];
+            for (const el of elements) {
+                if (el.x === x && el.y === y) {
+                    dragging = true;
+                    dragElement = el;
+                    dragOffset = { x: mx - x * cellSize, y: my - y * cellSize };
+                    touchStart = { x: mx, y: my };
+                    return;
+                }
+            }
+        });
+        document.getElementById('canvas-container').addEventListener('touchmove', function (e) {
+            if (!dragging || !dragElement) return;
+            e.preventDefault();
+            // Optionally, update dragElement position visually (not committed until touchend)
+        }, { passive: false });
+        document.getElementById('canvas-container').addEventListener('touchend', function (e) {
+            if (!dragging || !dragElement) return;
+            const touch = e.changedTouches[0];
+            const rect = this.getBoundingClientRect();
+            const mx = touch.clientX - rect.left;
+            const my = touch.clientY - rect.top;
+            const [x, y] = [Math.floor(mx / cellSize), Math.floor(my / cellSize)];
+            if (x < 0 || x >= cols || y < 0 || y >= rows) {
+                dragging = false; dragElement = null;
+                return;
+            }
+            if (elements.some(e => e !== dragElement && e.x === x && e.y === y)) {
+                showError('Cell already occupied.');
+            } else {
+                dragElement.x = x; dragElement.y = y;
+                updatePlayabilityScore();
+            }
+            dragging = false; dragElement = null;
+        });
+
+        window.mousePressed = mousePressed;
+        window.mouseDragged = mouseDragged;
+        window.mouseReleased = mouseReleased;
+        window.keyPressed = function () {
+            if (isTestMode) handleTestPlayKey({ key: key, keyCode: keyCode });
+        };
+    </script>
+</body>
+
+</html>

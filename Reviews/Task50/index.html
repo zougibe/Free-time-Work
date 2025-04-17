@@ -1,0 +1,852 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>📊 Real-Time Stock Tracker</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-luxon@1.2.0"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script src="https://cdn.jsdelivr.net/npm/luxon@3.0.1"></script>
+    <style>
+        @keyframes pulse {
+
+            0%,
+            100% {
+                opacity: 1;
+            }
+
+            50% {
+                opacity: 0.7;
+            }
+        }
+
+        .price-up {
+            animation: pulse 2s infinite;
+            background: linear-gradient(90deg, rgba(5, 150, 105, 0.2), rgba(5, 150, 105, 0.1));
+        }
+
+        .price-down {
+            animation: pulse 2s infinite;
+            background: linear-gradient(90deg, rgba(220, 38, 38, 0.2), rgba(220, 38, 38, 0.1));
+        }
+
+        .trend-up {
+            background: linear-gradient(90deg, rgba(5, 150, 105, 0.7), rgba(5, 150, 105, 0.5));
+        }
+
+        .trend-down {
+            background: linear-gradient(90deg, rgba(220, 38, 38, 0.7), rgba(220, 38, 38, 0.5));
+        }
+
+        .card-hover {
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+
+        .card-hover:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 10px 15px rgba(0, 0, 0, 0.2);
+        }
+
+        .search-input {
+            transition: all 0.3s ease;
+        }
+
+        .search-input:focus {
+            box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.5);
+        }
+
+        .news-ticker {
+            animation: ticker 30s linear infinite;
+        }
+
+        @keyframes ticker {
+            0% {
+                transform: translateX(100%);
+            }
+
+            100% {
+                transform: translateX(-100%);
+            }
+        }
+
+        .loading-spinner {
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% {
+                transform: rotate(0deg);
+            }
+
+            100% {
+                transform: rotate(360deg);
+            }
+        }
+    </style>
+</head>
+
+<body class="bg-gray-900 text-gray-100 min-h-screen flex flex-col">
+    <!-- Header -->
+    <header class="bg-gray-800 p-4 shadow-lg">
+        <div class="container mx-auto flex flex-col md:flex-row justify-between items-center gap-4">
+            <div class="text-2xl font-bold flex items-center gap-2">
+                <span class="text-blue-400" aria-hidden="true">📊</span>
+                <span class="bg-gradient-to-r from-blue-400 to-blue-600 bg-clip-text text-transparent">
+                    Real-Time Stock Tracker
+                </span>
+            </div>
+            <div class="flex items-center gap-2 w-full md:w-1/2">
+                <input id="stockSearch" placeholder="Search stocks (e.g., AAPL, MSFT, TSLA)"
+                    aria-label="Search for stock symbols"
+                    class="search-input flex-1 p-3 rounded-lg bg-gray-700 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                <button onclick="addStock()" aria-label="Add stock to portfolio"
+                    class="bg-blue-600 hover:bg-blue-700 text-white h-12 w-12 flex items-center justify-center rounded-lg transition-all duration-300 transform hover:scale-105">
+                    <span class="text-xl">+</span>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- News Ticker -->
+    <div class="bg-gray-800 py-2 overflow-hidden border-b border-gray-700">
+        <div class="news-ticker whitespace-nowrap text-sm text-gray-300">
+            <span class="font-semibold text-blue-400 mr-4">Market News:</span>
+            <span id="newsTickerContent">Loading market news...</span>
+        </div>
+    </div>
+
+    <!-- Performance Filters -->
+    <div class="bg-gray-800 p-2 flex flex-wrap gap-2 justify-center">
+        <button onclick="sortStocks('gainers')" aria-label="Sort by top gainers"
+            class="px-3 py-1 rounded-full bg-green-900 text-green-300 text-sm hover:bg-green-800 transition">
+            Top Gainers ↑
+        </button>
+        <button onclick="sortStocks('losers')" aria-label="Sort by top losers"
+            class="px-3 py-1 rounded-full bg-red-900 text-red-300 text-sm hover:bg-red-800 transition">
+            Top Losers ↓
+        </button>
+        <button onclick="sortStocks('volatile')" aria-label="Sort by most volatile"
+            class="px-3 py-1 rounded-full bg-purple-900 text-purple-300 text-sm hover:bg-purple-800 transition">
+            Most Volatile
+        </button>
+        <button onclick="sortStocks('default')" aria-label="Sort by default order"
+            class="px-3 py-1 rounded-full bg-gray-700 text-gray-300 text-sm hover:bg-gray-600 transition">
+            Default Order
+        </button>
+    </div>
+
+    <!-- Main Content -->
+    <main class="flex-1 p-4 md:p-6 overflow-y-auto">
+        <div id="loadingIndicator" class="flex justify-center items-center py-12 hidden" aria-live="polite">
+            <div class="loading-spinner h-8 w-8 border-4 border-blue-500 border-t-transparent rounded-full"></div>
+            <span class="sr-only">Loading stocks...</span>
+        </div>
+
+        <div id="emptyState" class="flex flex-col items-center justify-center py-12 text-gray-300">
+            <div class="text-5xl mb-4" aria-hidden="true">📊</div>
+            <h3 class="text-xl font-medium mb-2">Your portfolio is empty</h3>
+            <p class="text-center max-w-md">Add stocks to track their real-time performance.<br>Try searching for AAPL,
+                MSFT, or TSLA.</p>
+        </div>
+
+        <div id="cardGrid" class="grid gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4"></div>
+    </main>
+
+    <!-- Modal for full chart -->
+    <div id="graphModal" class="hidden fixed inset-0 bg-black bg-opacity-80 flex items-center justify-center z-50 p-4"
+        role="dialog" aria-modal="true" aria-labelledby="modalTitle">
+        <div class="bg-gray-800 p-6 rounded-xl w-full max-w-5xl relative border border-gray-700">
+            <button onclick="closeModal()" aria-label="Close chart modal"
+                class="text-gray-400 hover:text-white absolute right-4 top-4 text-2xl transition">
+                ✕
+            </button>
+            <div class="flex justify-between items-center mb-4">
+                <h2 id="modalTitle" class="text-xl font-bold"></h2>
+                <div class="flex items-center gap-4">
+                    <span id="modalPrice" class="text-xl font-semibold"></span>
+                    <span id="modalChange" class="text-sm px-2 py-1 rounded-full"></span>
+                </div>
+            </div>
+            <div class="h-96">
+                <canvas id="modalChart" aria-label="Stock price chart"></canvas>
+            </div>
+            <div class="mt-4 flex gap-2">
+                <button onclick="changeTimeFrame('1D')"
+                    class="timeframe-btn px-3 py-1 rounded bg-gray-700 hover:bg-gray-600 text-sm"
+                    aria-label="Show 1-day chart">
+                    1D
+                </button>
+                <button onclick="changeTimeFrame('1W')"
+                    class="timeframe-btn px-3 py-1 rounded bg-gray-700 hover:bg-gray-600 text-sm"
+                    aria-label="Show 1-week chart">
+                    1W
+                </button>
+                <button onclick="changeTimeFrame('1M')"
+                    class="timeframe-btn px-3 py-1 rounded bg-gray-700 hover:bg-gray-600 text-sm"
+                    aria-label="Show 1-month chart">
+                    1M
+                </button>
+                <button onclick="changeTimeFrame('3M')"
+                    class="timeframe-btn px-3 py-1 rounded bg-gray-700 hover:bg-gray-600 text-sm"
+                    aria-label="Show 3-month chart">
+                    3M
+                </button>
+                <button onclick="changeTimeFrame('1Y')"
+                    class="timeframe-btn px-3 py-1 rounded bg-gray-700 hover:bg-gray-600 text-sm"
+                    aria-label="Show 1-year chart">
+                    1Y
+                </button>
+                <button onclick="changeTimeFrame('MAX')"
+                    class="timeframe-btn px-3 py-1 rounded bg-gray-700 hover:bg-gray-600 text-sm"
+                    aria-label="Show maximum timeframe chart">
+                    MAX
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Configuration
+        const stockData = {};
+        let modalChart = null;
+        let currentSymbol = null;
+        let currentTimeFrame = '1M';
+        let newsItems = [];
+
+        // DOM Elements
+        const stockInput = document.getElementById("stockSearch");
+        const cardGrid = document.getElementById("cardGrid");
+        const emptyState = document.getElementById("emptyState");
+        const loadingIndicator = document.getElementById("loadingIndicator");
+        const newsTickerContent = document.getElementById("newsTickerContent");
+
+        // Request Queue for API Rate Limiting
+        class RequestQueue {
+            constructor(maxConcurrent = 5, delay = 12000) {
+                this.queue = [];
+                this.running = 0;
+                this.maxConcurrent = maxConcurrent;
+                this.delay = delay;
+            }
+
+            async add(fn) {
+                this.queue.push(fn);
+                await this.process();
+            }
+
+            async process() {
+                if (this.running >= this.maxConcurrent || this.queue.length === 0) return;
+
+                this.running++;
+                const fn = this.queue.shift();
+                try {
+                    await fn();
+                } finally {
+                    this.running--;
+                    setTimeout(() => this.process(), this.delay);
+                }
+            }
+        }
+
+        const requestQueue = new RequestQueue(5, 12000);
+
+        // Initialize
+        function initializeApp() {
+            loadPortfolio();
+            fetchMarketNews();
+
+            stockInput.addEventListener("keypress", e => {
+                if (e.key === "Enter") addStock();
+            });
+
+            setInterval(() => {
+                if (Object.keys(stockData).length > 0) {
+                    updateAllStockPrices();
+                }
+            }, 15000); // Update every 15 seconds to respect rate limits
+        }
+
+        // Portfolio Management
+        function savePortfolio() {
+            localStorage.setItem("portfolio", JSON.stringify(Object.keys(stockData)));
+            toggleEmptyState();
+        }
+
+        async function loadPortfolio() {
+            const saved = JSON.parse(localStorage.getItem("portfolio") || "[]");
+            if (saved.length > 0) {
+                loadingIndicator.classList.remove('hidden');
+                emptyState.classList.add('hidden');
+
+                await Promise.all(saved.map(symbol => addStock(symbol, true)))
+                    .finally(() => {
+                        loadingIndicator.classList.add('hidden');
+                        toggleEmptyState();
+                    });
+            } else {
+                toggleEmptyState();
+            }
+        }
+
+        function toggleEmptyState() {
+            if (Object.keys(stockData).length === 0) {
+                emptyState.classList.remove('hidden');
+                cardGrid.classList.add('hidden');
+            } else {
+                emptyState.classList.add('hidden');
+                cardGrid.classList.remove('hidden');
+            }
+        }
+
+        // API Functions
+        async function fetchStockPrice(symbol) {
+            try {
+                const res = await fetch(`/api/stock/${symbol}`);
+                if (!res.ok) throw new Error(res.status === 404 ? 'Symbol not found' : 'API error');
+                const data = await res.json();
+                return data["Global Quote"];
+            } catch (error) {
+                console.error(`Error fetching stock price for ${symbol}:`, error);
+                throw error;
+            }
+        }
+
+        async function fetchHistoricalData(symbol, timeFrame = '1M') {
+            try {
+                let functionName, outputSize;
+
+                switch (timeFrame) {
+                    case '1D':
+                        functionName = 'TIME_SERIES_INTRADAY';
+                        outputSize = 'compact';
+                        break;
+                    case '1W':
+                    case '1M':
+                    case '3M':
+                    case '1Y':
+                        functionName = 'TIME_SERIES_DAILY';
+                        outputSize = 'compact';
+                        break;
+                    case 'MAX':
+                        functionName = 'TIME_SERIES_DAILY';
+                        outputSize = 'full';
+                        break;
+                    default:
+                        functionName = 'TIME_SERIES_DAILY';
+                        outputSize = 'compact';
+                }
+
+                let url = `/api/historical/${symbol}?function=${functionName}&outputsize=${outputSize}`;
+                if (timeFrame === '1D') url += '&interval=5min';
+
+                const res = await fetch(url);
+                if (!res.ok) throw new Error(res.status === 404 ? 'Symbol not found' : 'API error');
+                const data = await res.json();
+
+                let series = timeFrame === '1D' ? data[`Time Series (5min)`] : data[`Time Series (Daily)`];
+                if (!series) return [];
+
+                let filteredData = Object.entries(series);
+                const now = luxon.DateTime.now();
+
+                if (timeFrame === '1D') {
+                    filteredData = filteredData.filter(([date]) => {
+                        const d = luxon.DateTime.fromISO(date);
+                        return d.hasSame(now, 'day');
+                    }).slice(0, 30);
+                } else if (timeFrame === '1W') {
+                    filteredData = filteredData.filter(([date]) => {
+                        return luxon.DateTime.fromISO(date) >= now.minus({ weeks: 1 });
+                    }).slice(0, 30);
+                } else if (timeFrame === '1M') {
+                    filteredData = filteredData.slice(0, 30);
+                } else if (timeFrame === '3M') {
+                    filteredData = filteredData.slice(0, 90);
+                } else if (timeFrame === '1Y') {
+                    filteredData = filteredData.slice(0, 365);
+                }
+
+                return filteredData.map(([date, val]) => ({
+                    x: luxon.DateTime.fromISO(date).toJSDate(),
+                    y: parseFloat(val["4. close"])
+                })).reverse();
+            } catch (error) {
+                console.error(`Error fetching historical data for ${symbol}:`, error);
+                throw error;
+            }
+        }
+
+        async function fetchCompanyName(symbol) {
+            try {
+                const res = await fetch(`/api/overview/${symbol}`);
+                const data = await res.json();
+                return data["Name"] || symbol;
+            } catch (error) {
+                console.error(`Error fetching company name for ${symbol}:`, error);
+                return symbol; // Fallback to symbol
+            }
+        }
+
+        async function fetchMarketNews() {
+            try {
+                // Placeholder: Replace with real news API (e.g., NewsAPI, Financial Modeling Prep)
+                newsItems = [
+                    "NASDAQ up 1.5% as tech stocks rally | Apple unveils new iPhone",
+                    "Federal Reserve hints at rate cuts | Markets optimistic",
+                    "Tesla surges 6% after strong Q2 earnings | New factory announced",
+                    "Microsoft acquires AI startup for $1B | Stock hits record high",
+                    "Amazon expands logistics network | Retail stocks climb"
+                ];
+
+                updateNewsTicker();
+            } catch (error) {
+                console.error("Error fetching market news:", error);
+                newsTickerContent.textContent = "Market news unavailable";
+            }
+        }
+
+        function updateNewsTicker() {
+            if (newsItems.length === 0) return;
+
+            let currentIndex = 0;
+            newsTickerContent.textContent = newsItems[currentIndex];
+
+            setInterval(() => {
+                currentIndex = (currentIndex + 1) % newsItems.length;
+                newsTickerContent.textContent = newsItems[currentIndex];
+            }, 8000);
+        }
+
+        // UI Rendering
+        function renderMiniChart(canvas, data) {
+            return new Chart(canvas.getContext("2d"), {
+                type: "line",
+                data: {
+                    datasets: [{
+                        data: data,
+                        borderColor: "#3B82F6",
+                        backgroundColor: "rgba(59, 130, 246, 0.1)",
+                        tension: 0.3,
+                        pointRadius: 0,
+                        borderWidth: 2,
+                        fill: true
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        x: { display: false },
+                        y: { display: false }
+                    },
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: { enabled: false }
+                    },
+                    animation: { duration: 0 } // Disable animations for performance
+                }
+            });
+        }
+
+        async function addStock(symbolParam, silent = false) {
+            const symbol = (symbolParam || stockInput.value.trim().toUpperCase()).replace(/[^A-Z.]/g, '');
+            if (!symbol) return;
+
+            if (!silent) {
+                stockInput.disabled = true;
+                Swal.fire({
+                    title: 'Fetching stock data',
+                    allowOutsideClick: false,
+                    didOpen: () => Swal.showLoading(),
+                    background: '#1f2937',
+                    color: '#fff'
+                });
+            }
+
+            if (stockData[symbol]) {
+                if (!silent) {
+                    Swal.fire({
+                        icon: 'info',
+                        title: 'Already Added',
+                        text: `${symbol} is already in your portfolio.`,
+                        background: '#1f2937',
+                        color: '#fff',
+                        confirmButtonColor: '#3b82f6'
+                    });
+                    stockInput.disabled = false;
+                }
+                return;
+            }
+
+            try {
+                const [quote, history, companyName] = await Promise.all([
+                    fetchStockPrice(symbol),
+                    fetchHistoricalData(symbol),
+                    fetchCompanyName(symbol)
+                ]);
+
+                if (quote && quote["05. price"] && history.length) {
+                    stockData[symbol] = {
+                        quote,
+                        history,
+                        chart: null,
+                        companyName,
+                        lastUpdated: new Date()
+                    };
+                    savePortfolio();
+                    renderStockCard(symbol, quote, history, companyName);
+
+                    if (!symbolParam) stockInput.value = "";
+
+                    if (!silent) {
+                        Swal.fire({
+                            icon: 'success',
+                            title: 'Stock Added',
+                            text: `${symbol} added successfully.`,
+                            background: '#1f2937',
+                            color: '#fff',
+                            confirmButtonColor: '#3b82f6',
+                            timer: 1500
+                        });
+                    }
+                } else {
+                    throw new Error("Invalid data received");
+                }
+            } catch (error) {
+                if (!silent) {
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Error',
+                        text: error.message === 'Symbol not found' ? `${symbol} not found.` : 'Failed to fetch stock data.',
+                        background: '#1f2937',
+                        color: '#fff',
+                        confirmButtonColor: '#ef4444'
+                    });
+                }
+            } finally {
+                if (!silent) stockInput.disabled = false;
+            }
+        }
+
+        function renderStockCard(symbol, quote, history, companyName) {
+            const price = parseFloat(quote["05. price"]);
+            const change = parseFloat(quote["10. change percent"]);
+            const changeAbs = parseFloat(quote["09. change"]);
+            const trend = change >= 0 ? `↑ ${change.toFixed(2)}%` : `↓ ${Math.abs(change).toFixed(2)}%`;
+            const colorClass = change >= 0 ? "text-green-400" : "text-red-500";
+            const trendClass = change >= 0 ? "trend-up" : "trend-down";
+            const cardClass = change >= 0 ? "price-up" : "price-down";
+
+            const card = document.createElement("div");
+            card.className = `bg-gray-800 p-4 rounded-xl shadow-md card-hover relative group ${cardClass}`;
+            card.setAttribute("data-symbol", symbol);
+            card.setAttribute("data-change", change);
+            card.setAttribute("data-volatility", Math.abs(change));
+            card.setAttribute("role", "article");
+            card.setAttribute("aria-label", `Stock card for ${symbol}`);
+
+            card.innerHTML = `
+                <button 
+                    class="absolute top-3 right-3 text-gray-400 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-opacity"
+                    onclick="event.stopPropagation(); removeStock('${symbol}')"
+                    aria-label="Remove ${symbol} from portfolio"
+                >
+                    ✕
+                </button>
+                <div onclick="showModal('${symbol}')" class="cursor-pointer">
+                    <div class="flex justify-between items-start mb-2">
+                        <div>
+                            <h2 class="font-bold text-xl">${symbol}</h2>
+                            <p class="text-gray-300 text-sm">${companyName}</p>
+                        </div>
+                        <div class="text-right">
+                            <div class="price text-xl font-semibold">$${price.toFixed(2)}</div>
+                            <div class="change text-sm ${colorClass}">
+                                ${change >= 0 ? '+' : ''}${changeAbs.toFixed(2)} (${change >= 0 ? '+' : ''}${change.toFixed(2)}%)
+                            </div>
+                        </div>
+                    </div>
+                    <div class="trend text-xs font-medium inline-block px-3 py-1 mb-3 rounded-full ${trendClass}">
+                        ${trend}
+                    </div>
+                    <div class="h-20">
+                        <canvas aria-label="Mini chart for ${symbol}"></canvas>
+                    </div>
+                    <div class="flex justify-between items-center mt-2 text-xs text-gray-300">
+                        <span>Vol: ${formatVolume(quote["06. volume"])}</span>
+                        <span>Updated: ${new Date().toLocaleTimeString()}</span>
+                    </div>
+                </div>
+            `;
+
+            cardGrid.appendChild(card);
+            const canvas = card.querySelector("canvas");
+            stockData[symbol].chart = renderMiniChart(canvas, history);
+            toggleEmptyState();
+        }
+
+        function formatVolume(volume) {
+            if (!volume) return 'N/A';
+            const num = parseInt(volume);
+            if (num >= 1000000) return (num / 1000000).toFixed(1) + 'M';
+            if (num >= 1000) return (num / 1000).toFixed(1) + 'K';
+            return num.toString();
+        }
+
+        // Stock Updates
+        async function updateAllStockPrices() {
+            const symbols = Object.keys(stockData);
+            if (symbols.length === 0) return;
+
+            const updatePromises = symbols.map(symbol =>
+                requestQueue.add(async () => {
+                    try {
+                        const quote = await fetchStockPrice(symbol);
+                        if (quote && quote["05. price"]) {
+                            stockData[symbol].quote = quote;
+                            stockData[symbol].lastUpdated = new Date();
+                            updateStockCard(symbol, quote);
+                        }
+                    } catch (error) {
+                        console.error(`Failed to update ${symbol}:`, error);
+                    }
+                })
+            );
+
+            await Promise.all(updatePromises);
+        }
+
+        function updateStockCard(symbol, quote) {
+            const card = document.querySelector(`[data-symbol="${symbol}"]`);
+            if (!card) return;
+
+            const price = parseFloat(quote["05. price"]);
+            const change = parseFloat(quote["10. change percent"]);
+            const changeAbs = parseFloat(quote["09. change"]);
+            const trend = change >= 0 ? `↑ ${change.toFixed(2)}%` : `↓ ${Math.abs(change).toFixed(2)}%`;
+            const colorClass = change >= 0 ? "text-green-400" : "text-red-500";
+            const trendClass = change >= 0 ? "trend-up" : "trend-down";
+            const cardClass = change >= 0 ? "price-up" : "price-down";
+
+            card.setAttribute("data-change", change);
+            card.setAttribute("data-volatility", Math.abs(change));
+            card.className = `bg-gray-800 p-4 rounded-xl shadow-md card-hover relative group ${cardClass}`;
+
+            card.querySelector(".price").textContent = `$${price.toFixed(2)}`;
+            card.querySelector(".change").textContent =
+                `${change >= 0 ? '+' : ''}${changeAbs.toFixed(2)} (${change >= 0 ? '+' : ''}${change.toFixed(2)}%)`;
+            card.querySelector(".change").className = `change text-sm ${colorClass}`;
+
+            card.querySelector(".trend").textContent = trend;
+            card.querySelector(".trend").className = `trend text-xs font-medium inline-block px-3 py-1 mb-3 rounded-full ${trendClass}`;
+
+            card.querySelector("div:last-child span:last-child").textContent =
+                `Updated: ${new Date().toLocaleTimeString()}`;
+        }
+
+        // Sorting Functions
+        function sortStocks(sortBy) {
+            const cards = Array.from(cardGrid.children);
+
+            cards.sort((a, b) => {
+                const aSymbol = a.getAttribute('data-symbol');
+                const bSymbol = b.getAttribute('data-symbol');
+
+                if (sortBy === 'gainers') {
+                    return parseFloat(b.getAttribute('data-change')) - parseFloat(a.getAttribute('data-change'));
+                } else if (sortBy === 'losers') {
+                    return parseFloat(a.getAttribute('data-change')) - parseFloat(b.getAttribute('data-change'));
+                } else if (sortBy === 'volatile') {
+                    return parseFloat(b.getAttribute('data-volatility')) - parseFloat(a.getAttribute('data-volatility'));
+                } else {
+                    return Object.keys(stockData).indexOf(aSymbol) - Object.keys(stockData).indexOf(bSymbol);
+                }
+            });
+
+            cards.forEach(card => cardGrid.appendChild(card));
+        }
+
+        // Modal Functions
+        async function showModal(symbol) {
+            currentSymbol = symbol;
+            const modal = document.getElementById("graphModal");
+            const ctx = document.getElementById("modalChart").getContext("2d");
+            const quote = stockData[symbol].quote;
+
+            document.getElementById("modalTitle").textContent = `${symbol} - ${stockData[symbol].companyName}`;
+            document.getElementById("modalPrice").textContent = `$${parseFloat(quote["05. price"]).toFixed(2)}`;
+            const change = parseFloat(quote["10. change percent"]);
+            const changeElement = document.getElementById("modalChange");
+            changeElement.textContent = `${change >= 0 ? '+' : ''}${change.toFixed(2)}%`;
+            changeElement.className = `text-sm px-2 py-1 rounded-full ${change >= 0 ? 'bg-green-900 text-green-300' : 'bg-red-900 text-red-300'}`;
+
+            modal.classList.remove("hidden");
+
+            const history = await fetchHistoricalData(symbol, currentTimeFrame);
+
+            if (!modalChart) {
+                modalChart = new Chart(ctx, {
+                    type: "line",
+                    data: {
+                        datasets: [{
+                            label: `${symbol} Price`,
+                            data: history,
+                            borderColor: "#3B82F6",
+                            backgroundColor: "rgba(59, 130, 246, 0.1)",
+                            tension: 0.3,
+                            pointRadius: 0,
+                            borderWidth: 2,
+                            fill: true
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        scales: {
+                            x: {
+                                type: "time",
+                                time: {
+                                    unit: getTimeUnit(currentTimeFrame),
+                                    displayFormats: {
+                                        hour: 'HH:mm',
+                                        day: 'MMM d',
+                                        week: 'MMM d',
+                                        month: 'MMM yyyy',
+                                        year: 'yyyy'
+                                    }
+                                },
+                                ticks: { color: "#E5E7EB" },
+                                grid: { color: "rgba(255,255,255,0.1)" }
+                            },
+                            y: {
+                                ticks: { color: "#E5E7EB" },
+                                grid: { color: "rgba(255,255,255,0.1)" },
+                                position: 'right'
+                            }
+                        },
+                        plugins: {
+                            legend: {
+                                labels: {
+                                    color: "#F3F4F6",
+                                    font: { size: 14 }
+                                }
+                            },
+                            tooltip: {
+                                mode: 'index',
+                                intersect: false,
+                                backgroundColor: '#1F2937',
+                                titleColor: '#F3F4F6',
+                                bodyColor: '#D1D5DB',
+                                borderColor: '#4B5563',
+                                borderWidth: 1
+                            }
+                        },
+                        interaction: {
+                            mode: 'nearest',
+                            axis: 'x',
+                            intersect: false
+                        }
+                    }
+                });
+            } else {
+                modalChart.data.datasets[0].data = history;
+                modalChart.options.scales.x.time.unit = getTimeUnit(currentTimeFrame);
+                modalChart.update();
+            }
+
+            updateTimeFrameButtons();
+        }
+
+        function getTimeUnit(timeFrame) {
+            switch (timeFrame) {
+                case '1D': return 'hour';
+                case '1W': return 'day';
+                case '1M': return 'day';
+                case '3M': return 'day';
+                case '1Y': return 'month';
+                case 'MAX': return 'year';
+                default: return 'day';
+            }
+        }
+
+        async function changeTimeFrame(timeFrame) {
+            currentTimeFrame = timeFrame;
+            if (currentSymbol) {
+                const history = await fetchHistoricalData(currentSymbol, timeFrame);
+                if (modalChart && history.length > 0) {
+                    modalChart.data.datasets[0].data = history;
+                    modalChart.options.scales.x.time.unit = getTimeUnit(timeFrame);
+                    modalChart.update();
+                    updateTimeFrameButtons();
+                }
+            }
+        }
+
+        function updateTimeFrameButtons() {
+            document.querySelectorAll('.timeframe-btn').forEach(btn => {
+                btn.classList.remove('bg-blue-600', 'text-white');
+                btn.classList.add('bg-gray-700', 'hover:bg-gray-600');
+            });
+
+            const activeBtn = document.querySelector(
+                `.timeframe-btn:nth-child(${['1D', '1W', '1M', '3M', '1Y', 'MAX'].indexOf(currentTimeFrame) + 1})`
+            );
+            if (activeBtn) {
+                activeBtn.classList.remove('bg-gray-700', 'hover:bg-gray-600');
+                activeBtn.classList.add('bg-blue-600', 'text-white');
+            }
+        }
+
+        function closeModal() {
+            document.getElementById("graphModal").classList.add("hidden");
+            currentSymbol = null;
+        }
+
+        // Utility Functions
+        function removeStock(symbol, confirmFirst = true) {
+            const doRemove = () => {
+                delete stockData[symbol];
+                savePortfolio();
+                document.querySelector(`[data-symbol="${symbol}"]`)?.remove();
+                toggleEmptyState();
+
+                Swal.fire({
+                    icon: 'success',
+                    title: 'Removed',
+                    text: `${symbol} has been removed from your portfolio.`,
+                    background: '#1f2937',
+                    color: '#fff',
+                    confirmButtonColor: '#3b82f6',
+                    timer: 1500
+                });
+            };
+
+            if (confirmFirst) {
+                Swal.fire({
+                    title: 'Remove Stock?',
+                    text: `Are you sure you want to remove ${symbol} from your portfolio?`,
+                    icon: 'warning',
+                    showCancelButton: true,
+                    confirmButtonColor: '#ef4444',
+                    cancelButtonColor: '#6b7280',
+                    confirmButtonText: 'Remove',
+                    background: '#1f2937',
+                    color: '#fff'
+                }).then((result) => {
+                    if (result.isConfirmed) doRemove();
+                });
+            } else {
+                doRemove();
+            }
+        }
+
+        // Start the app
+        document.addEventListener('DOMContentLoaded', initializeApp);
+    </script>
+</body>
+
+</html>

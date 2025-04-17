@@ -1,0 +1,1176 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mindful Moments - Wellbeing Journal</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Lora:ital,wght@0,400;0,500;1,400&display=swap"
+        rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                        serif: ['Lora', 'serif'],
+                    },
+                    colors: {
+                        primary: {
+                            light: '#a7f3d0',
+                            DEFAULT: '#10b981',
+                            dark: '#059669'
+                        },
+                        secondary: {
+                            light: '#bfdbfe',
+                            DEFAULT: '#3b82f6',
+                            dark: '#2563eb'
+                        },
+                        accent: {
+                            light: '#d8b4fe',
+                            DEFAULT: '#a855f7',
+                            dark: '#7e22ce'
+                        },
+                        background: '#f8fafc',
+                        card: '#ffffff',
+                        text: {
+                            primary: '#1f2937',
+                            secondary: '#4b5563'
+                        },
+                        dark: {
+                            background: '#111827',
+                            card: '#1f2937',
+                            text: {
+                                primary: '#f3f4f6',
+                                secondary: '#9ca3af'
+                            }
+                        }
+                    },
+                    boxShadow: {
+                        'subtle': '0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03)',
+                        'soft': '0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -4px rgba(0, 0, 0, 0.05)',
+                        'glow': '0 0 15px rgba(16, 185, 129, 0.3)',
+                        'glow-dark': '0 0 15px rgba(167, 243, 208, 0.3)'
+                    },
+                    animation: {
+                        'float': 'float 3s ease-in-out infinite',
+                        'pulse-slow': 'pulse 4s cubic-bezier(0.4, 0, 0.6, 1) infinite',
+                    },
+                    keyframes: {
+                        float: {
+                            '0%, 100%': { transform: 'translateY(0)' },
+                            '50%': { transform: 'translateY(-5px)' },
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        :root {
+            --color-primary: 16, 185, 129;
+            --color-primary-dark: 5, 150, 105;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f8fafc;
+            color: #1f2937;
+            transition: background-color 0.3s ease, color 0.3s ease;
+            line-height: 1.6;
+        }
+
+        .dark body {
+            background-color: #111827;
+            color: #f3f4f6;
+        }
+
+        .card {
+            background-color: #ffffff;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05), 0 1px 2px rgba(0, 0, 0, 0.03);
+            border-radius: 0.75rem;
+            transition: all 0.3s ease;
+            border: 1px solid rgba(0, 0, 0, 0.05);
+        }
+
+        .dark .card {
+            background-color: #1f2937;
+            border-color: rgba(255, 255, 255, 0.05);
+        }
+
+        .card-hover:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -4px rgba(0, 0, 0, 0.05);
+        }
+
+        .nav-item {
+            transition: all 0.2s ease;
+        }
+
+        .nav-item.active {
+            color: #10b981;
+            border-top-color: #10b981;
+        }
+
+        .dark .nav-item.active {
+            color: #a7f3d0;
+            border-top-color: #a7f3d0;
+        }
+
+        .tab-content {
+            display: none;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        .tab-content.active {
+            display: block;
+            opacity: 1;
+        }
+
+        .mood-btn {
+            transition: all 0.3s ease;
+            cursor: pointer;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .mood-btn::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(255, 255, 255, 0.2);
+            transform: translateY(100%);
+            transition: transform 0.3s ease;
+        }
+
+        .mood-btn:hover::after {
+            transform: translateY(0);
+        }
+
+        .mood-btn:hover {
+            transform: translateY(-3px) scale(1.03);
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+        }
+
+        .mood-btn.selected {
+            transform: scale(1.05);
+            box-shadow: 0 0 0 3px rgba(var(--color-primary), 0 0 15px rgba(var(--color-primary), 0.3));
+        }
+
+        .dark .mood-btn.selected {
+            box-shadow: 0 0 0 3px rgba(167, 243, 208, 0.5), 0 0 15px rgba(167, 243, 208, 0.3);
+        }
+
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(15px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .animate-fadeInUp {
+            animation: fadeInUp 0.5s ease-out forwards;
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 100;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            overflow: auto;
+            background-color: rgba(0, 0, 0, 0.6);
+            backdrop-filter: blur(4px);
+            transition: opacity 0.3s ease;
+        }
+
+        .modal-content {
+            position: relative;
+            background-color: #ffffff;
+            margin: 10% auto;
+            padding: 2rem;
+            border-radius: 0.75rem;
+            width: 90%;
+            max-width: 600px;
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+            transform: translateY(20px);
+            transition: all 0.3s ease;
+        }
+
+        .modal.active {
+            display: block;
+            opacity: 1;
+        }
+
+        .modal.active .modal-content {
+            transform: translateY(0);
+        }
+
+        .dark .modal-content {
+            background-color: #1f2937;
+        }
+
+        .modal-close {
+            position: absolute;
+            top: 1rem;
+            right: 1.5rem;
+            color: #9ca3af;
+            font-size: 1.5rem;
+            font-weight: bold;
+            cursor: pointer;
+            transition: color 0.2s ease;
+        }
+
+        .modal-close:hover,
+        .modal-close:focus {
+            color: #ef4444;
+            text-decoration: none;
+        }
+
+        .video-container {
+            position: relative;
+            padding-bottom: 56.25%;
+            height: 0;
+            overflow: hidden;
+            max-width: 100%;
+            background: #000;
+            border-radius: 0.5rem;
+        }
+
+        .video-container iframe {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            border: none;
+        }
+
+        /* Custom scrollbar */
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: rgba(0, 0, 0, 0.05);
+            border-radius: 10px;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: rgba(0, 0, 0, 0.2);
+            border-radius: 10px;
+        }
+
+        .dark ::-webkit-scrollbar-track {
+            background: rgba(255, 255, 255, 0.05);
+        }
+
+        .dark ::-webkit-scrollbar-thumb {
+            background: rgba(255, 255, 255, 0.2);
+        }
+
+        /* Input fields */
+        input,
+        textarea,
+        select {
+            transition: all 0.3s ease;
+        }
+
+        input:focus,
+        textarea:focus,
+        select:focus {
+            outline: none;
+            box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.3);
+            border-color: #10b981;
+        }
+
+        .dark input:focus,
+        .dark textarea:focus,
+        .dark select:focus {
+            box-shadow: 0 0 0 3px rgba(167, 243, 208, 0.3);
+            border-color: #a7f3d0;
+        }
+
+        /* Buttons */
+        .btn {
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .btn::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(255, 255, 255, 0.2);
+            transform: translateY(100%);
+            transition: transform 0.3s ease;
+        }
+
+        .btn:hover::after {
+            transform: translateY(0);
+        }
+
+        .btn-primary {
+            background-color: #10b981;
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background-color: #059669;
+            transform: translateY(-2px);
+            box-shadow: 0 10px 15px -3px rgba(16, 185, 129, 0.3);
+        }
+
+        .btn-primary:active {
+            transform: translateY(0);
+        }
+
+        /* Mood colors */
+        .mood-awful {
+            background-color: #fee2e2;
+            color: #b91c1c;
+        }
+
+        .dark .mood-awful {
+            background-color: rgba(185, 28, 28, 0.2);
+            color: #fca5a5;
+        }
+
+        .mood-bad {
+            background-color: #ffedd5;
+            color: #c2410c;
+        }
+
+        .dark .mood-bad {
+            background-color: rgba(194, 65, 12, 0.2);
+            color: #fdba74;
+        }
+
+        .mood-okay {
+            background-color: #fef3c7;
+            color: #b45309;
+        }
+
+        .dark .mood-okay {
+            background-color: rgba(180, 83, 9, 0.2);
+            color: #fcd34d;
+        }
+
+        .mood-good {
+            background-color: #dcfce7;
+            color: #15803d;
+        }
+
+        .dark .mood-good {
+            background-color: rgba(21, 128, 61, 0.2);
+            color: #86efac;
+        }
+
+        .mood-great {
+            background-color: #ccfbf1;
+            color: #0d9488;
+        }
+
+        .dark .mood-great {
+            background-color: rgba(13, 148, 136, 0.2);
+            color: #5eead4;
+        }
+
+        /* Loading animation */
+        @keyframes shimmer {
+            0% {
+                background-position: -200% 0;
+            }
+
+            100% {
+                background-position: 200% 0;
+            }
+        }
+
+        .shimmer {
+            background: linear-gradient(90deg, #f3f4f6 25%, #e5e7eb 50%, #f3f4f6 75%);
+            background-size: 200% 100%;
+            animation: shimmer 1.5s infinite;
+        }
+
+        .dark .shimmer {
+            background: linear-gradient(90deg, #1f2937 25%, #374151 50%, #1f2937 75%);
+        }
+
+        /* Floating animation for meditation icons */
+        .meditation-icon {
+            animation: float 3s ease-in-out infinite;
+        }
+
+        .meditation-icon:nth-child(2) {
+            animation-delay: 0.5s;
+        }
+
+        .meditation-icon:nth-child(3) {
+            animation-delay: 1s;
+        }
+
+        /* Gradient text */
+        .text-gradient {
+            background-clip: text;
+            -webkit-background-clip: text;
+            color: transparent;
+            background-image: linear-gradient(to right, #10b981, #3b82f6);
+        }
+
+        .dark .text-gradient {
+            background-image: linear-gradient(to right, #a7f3d0, #93c5fd);
+        }
+    </style>
+</head>
+
+<body class="pb-20 md:pb-0 bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800">
+
+    <div class="container mx-auto px-4 py-6 max-w-4xl">
+
+        <header class="mb-8 text-center animate-fadeInUp">
+            <div class="relative inline-block">
+                <h1 class="text-4xl md:text-5xl font-serif font-medium text-gradient mb-2">Mindful Moments</h1>
+                <div
+                    class="absolute -bottom-2 left-0 right-0 h-1 bg-gradient-to-r from-primary to-accent rounded-full opacity-80">
+                </div>
+            </div>
+            <p class="text-lg text-text-secondary dark:text-dark.text.secondary mt-4">Your personal space for reflection
+                and growth.</p>
+            <button id="themeToggleBtn"
+                class="absolute top-4 right-4 p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors duration-200 shadow-sm bg-white dark:bg-gray-800">
+                <i class="fas fa-moon text-gray-600 dark:hidden"></i>
+                <i class="fas fa-sun text-yellow-400 hidden dark:inline-block"></i>
+            </button>
+        </header>
+
+        <div
+            class="hidden md:flex justify-center space-x-1 mb-8 bg-white dark:bg-gray-800 rounded-full p-1 shadow-inner max-w-xl mx-auto">
+            <button class="desktop-nav-item py-2 px-5 text-sm font-medium rounded-full transition-all duration-200"
+                data-target="dashboard">
+                <i class="fas fa-home mr-1.5"></i> Today
+            </button>
+            <button class="desktop-nav-item py-2 px-5 text-sm font-medium rounded-full transition-all duration-200"
+                data-target="journal">
+                <i class="fas fa-book-open mr-1.5"></i> Journal
+            </button>
+            <button class="desktop-nav-item py-2 px-5 text-sm font-medium rounded-full transition-all duration-200"
+                data-target="meditations">
+                <i class="fas fa-spa mr-1.5"></i> Meditate
+            </button>
+            <button class="desktop-nav-item py-2 px-5 text-sm font-medium rounded-full transition-all duration-200"
+                data-target="analytics">
+                <i class="fas fa-chart-line mr-1.5"></i> Stats
+            </button>
+        </div>
+
+        <main class="space-y-6">
+            <section id="dashboard" class="tab-content active animate-fadeInUp">
+                <div
+                    class="card p-6 mb-6 border border-gray-100 dark:border-gray-800 hover:shadow-soft transition-all duration-300">
+                    <h2 class="text-2xl font-semibold mb-4 flex items-center">
+                        <span class="mr-2">How are you feeling today?</span>
+                        <i class="fas fa-heart text-pink-500 animation-pulse-slow"></i>
+                    </h2>
+                    <div class="grid grid-cols-5 gap-3 mb-6" id="moodSelector">
+                        <button
+                            class="mood-btn p-4 rounded-xl flex flex-col items-center justify-center mood-awful hover:shadow-md transition-all"
+                            data-mood="Awful">
+                            <span class="text-3xl mb-1">😟</span>
+                            <span class="text-sm font-medium">Awful</span>
+                        </button>
+                        <button
+                            class="mood-btn p-4 rounded-xl flex flex-col items-center justify-center mood-bad hover:shadow-md transition-all"
+                            data-mood="Bad">
+                            <span class="text-3xl mb-1">🙁</span>
+                            <span class="text-sm font-medium">Bad</span>
+                        </button>
+                        <button
+                            class="mood-btn p-4 rounded-xl flex flex-col items-center justify-center mood-okay hover:shadow-md transition-all"
+                            data-mood="Okay">
+                            <span class="text-3xl mb-1">😐</span>
+                            <span class="text-sm font-medium">Okay</span>
+                        </button>
+                        <button
+                            class="mood-btn p-4 rounded-xl flex flex-col items-center justify-center mood-good hover:shadow-md transition-all"
+                            data-mood="Good">
+                            <span class="text-3xl mb-1">🙂</span>
+                            <span class="text-sm font-medium">Good</span>
+                        </button>
+                        <button
+                            class="mood-btn p-4 rounded-xl flex flex-col items-center justify-center mood-great hover:shadow-md transition-all"
+                            data-mood="Great">
+                            <span class="text-3xl mb-1">😄</span>
+                            <span class="text-sm font-medium">Great</span>
+                        </button>
+                    </div>
+                    <div class="relative">
+                        <textarea id="journalEntry"
+                            class="w-full p-4 border border-gray-200 dark:border-gray-700 rounded-xl focus:ring-2 focus:ring-primary dark:bg-gray-800 dark:text-gray-200 placeholder-gray-400 dark:placeholder-gray-500 transition-all duration-200"
+                            rows="4" placeholder="What made you feel this way today? (optional)"></textarea>
+                        <div class="absolute bottom-3 right-3 text-gray-400 dark:text-gray-500 text-sm">
+                            <i class="fas fa-pen"></i>
+                        </div>
+                    </div>
+                    <button id="saveEntryBtn"
+                        class="mt-4 w-full md:w-auto btn btn-primary font-semibold py-3 px-8 rounded-xl transition-all duration-200 flex items-center justify-center space-x-2">
+                        <i class="fas fa-save"></i>
+                        <span>Save Today's Entry</span>
+                    </button>
+                </div>
+
+                <div
+                    class="card p-6 border border-gray-100 dark:border-gray-800 hover:shadow-soft transition-all duration-300">
+                    <h3 class="text-xl font-semibold mb-3 flex items-center">
+                        <i class="fas fa-lightbulb text-yellow-500 mr-2"></i>
+                        <span>Daily Inspiration</span>
+                    </h3>
+                    <blockquote
+                        class="italic text-text-secondary dark:text-dark.text.secondary border-l-4 border-accent pl-4 py-1 bg-gray-50 dark:bg-gray-800/50 rounded-r-lg">
+                        "The best way to capture moments is to pay attention. This is how we cultivate mindfulness."
+                        <cite class="block mt-2 not-italic text-sm text-primary dark:text-primary-light">- Jon
+                            Kabat-Zinn</cite>
+                    </blockquote>
+                </div>
+            </section>
+
+            <section id="journal" class="tab-content animate-fadeInUp">
+                <div class="card p-6 border border-gray-100 dark:border-gray-800">
+                    <div class="flex justify-between items-center mb-4">
+                        <h2 class="text-2xl font-semibold">Your Journal</h2>
+                        <button class="text-sm text-primary dark:text-primary-light hover:underline flex items-center">
+                            <i class="fas fa-filter mr-1"></i> Filter
+                        </button>
+                    </div>
+                    <div id="journalList" class="space-y-4 max-h-[500px] overflow-y-auto pr-2">
+                        <div class="shimmer h-20 rounded-lg"></div>
+                        <div class="shimmer h-20 rounded-lg"></div>
+                        <div class="shimmer h-20 rounded-lg"></div>
+                    </div>
+                </div>
+            </section>
+
+            <section id="meditations" class="tab-content animate-fadeInUp">
+                <div class="card p-6 border border-gray-100 dark:border-gray-800">
+                    <h2 class="text-2xl font-semibold mb-4 flex items-center">
+                        <i class="fas fa-spa text-primary dark:text-primary-light mr-2"></i>
+                        <span>Guided Meditations</span>
+                    </h2>
+                    <p class="text-text-secondary dark:text-dark.text.secondary mb-6">Select a meditation to begin your
+                        practice. Find peace in just a few minutes.</p>
+
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div
+                            class="card p-5 border border-gray-100 dark:border-gray-700 hover:shadow-soft transition-all duration-300 group">
+                            <div class="flex items-start space-x-4">
+                                <div
+                                    class="meditation-icon bg-primary/10 text-primary dark:bg-primary-dark/20 dark:text-primary-light p-3 rounded-full">
+                                    <i class="fas fa-wind text-xl"></i>
+                                </div>
+                                <div>
+                                    <h3
+                                        class="font-semibold mb-1 group-hover:text-primary dark:group-hover:text-primary-light">
+                                        Mindful Breathing</h3>
+                                    <p class="text-sm text-text-secondary dark:text-dark.text.secondary mb-2">5 minutes
+                                        • Beginner</p>
+                                    <button
+                                        class="meditation-btn text-primary hover:text-primary-dark dark:text-primary-light dark:hover:text-primary font-medium text-sm flex items-center"
+                                        data-title="Mindful Breathing (5 Min)" data-video-id="placeholder">
+                                        <span>Start Session</span>
+                                        <i class="fas fa-arrow-right ml-1 text-xs"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div
+                            class="card p-5 border border-gray-100 dark:border-gray-700 hover:shadow-soft transition-all duration-300 group">
+                            <div class="flex items-start space-x-4">
+                                <div
+                                    class="meditation-icon bg-secondary/10 text-secondary dark:bg-secondary-dark/20 dark:text-secondary-light p-3 rounded-full">
+                                    <i class="fas fa-body text-xl"></i>
+                                </div>
+                                <div>
+                                    <h3
+                                        class="font-semibold mb-1 group-hover:text-secondary dark:group-hover:text-secondary-light">
+                                        Body Scan</h3>
+                                    <p class="text-sm text-text-secondary dark:text-dark.text.secondary mb-2">10 minutes
+                                        • Intermediate</p>
+                                    <button
+                                        class="meditation-btn text-secondary hover:text-secondary-dark dark:text-secondary-light dark:hover:text-secondary font-medium text-sm flex items-center"
+                                        data-title="Body Scan Meditation (10 Min)" data-video-id="placeholder">
+                                        <span>Start Session</span>
+                                        <i class="fas fa-arrow-right ml-1 text-xs"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div
+                            class="card p-5 border border-gray-100 dark:border-gray-700 hover:shadow-soft transition-all duration-300 group">
+                            <div class="flex items-start space-x-4">
+                                <div
+                                    class="meditation-icon bg-accent/10 text-accent dark:bg-accent-dark/20 dark:text-accent-light p-3 rounded-full">
+                                    <i class="fas fa-heart text-xl"></i>
+                                </div>
+                                <div>
+                                    <h3
+                                        class="font-semibold mb-1 group-hover:text-accent dark:group-hover:text-accent-light">
+                                        Loving Kindness</h3>
+                                    <p class="text-sm text-text-secondary dark:text-dark.text.secondary mb-2">15 minutes
+                                        • All Levels</p>
+                                    <button
+                                        class="meditation-btn text-accent hover:text-accent-dark dark:text-accent-light dark:hover:text-accent font-medium text-sm flex items-center"
+                                        data-title="Loving Kindness Meditation (15 Min)" data-video-id="placeholder">
+                                        <span>Start Session</span>
+                                        <i class="fas fa-arrow-right ml-1 text-xs"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <section id="analytics" class="tab-content animate-fadeInUp">
+                <div class="card p-6 border border-gray-100 dark:border-gray-800">
+                    <h2 class="text-2xl font-semibold mb-4 flex items-center">
+                        <i class="fas fa-chart-pie text-primary dark:text-primary-light mr-2"></i>
+                        <span>Mood Analytics</span>
+                    </h2>
+                    <p class="text-text-secondary dark:text-dark.text.secondary mb-6">Your mood summary and trend over
+                        the last 7 days.</p>
+
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+                        <div
+                            class="card p-4 bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-800 dark:to-gray-900 border border-gray-100 dark:border-gray-700 rounded-xl">
+                            <h3 class="font-medium text-sm text-text-secondary dark:text-dark.text.secondary mb-3">Mood
+                                Distribution</h3>
+                            <div id="moodCounts" class="space-y-3">
+                                <div class="shimmer h-4 rounded-full"></div>
+                                <div class="shimmer h-4 rounded-full"></div>
+                                <div class="shimmer h-4 rounded-full"></div>
+                            </div>
+                        </div>
+
+                        <div
+                            class="card p-4 bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-800 dark:to-gray-900 border border-gray-100 dark:border-gray-700 rounded-xl">
+                            <h3 class="font-medium text-sm text-text-secondary dark:text-dark.text.secondary mb-3">
+                                Average Mood</h3>
+                            <div class="flex items-center justify-center h-full">
+                                <div
+                                    class="text-4xl font-bold text-primary dark:text-primary-light shimmer w-20 h-12 rounded-lg">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div
+                        class="h-72 md:h-80 bg-white dark:bg-gray-800 rounded-xl p-4 border border-gray-100 dark:border-gray-700">
+                        <canvas id="moodTrendChart"></canvas>
+                    </div>
+                </div>
+            </section>
+        </main>
+
+    </div>
+
+    <nav
+        class="fixed bottom-0 left-0 right-0 bg-white dark:bg-gray-800 shadow-lg border-t border-gray-200 dark:border-gray-700 md:hidden backdrop-blur-sm bg-opacity-80 dark:bg-opacity-80">
+        <div class="flex justify-around max-w-md mx-auto">
+            <button
+                class="nav-item flex-1 py-3 px-2 text-center text-gray-600 dark:text-gray-400 border-t-2 border-transparent transition-colors duration-200 active flex flex-col items-center"
+                data-target="dashboard">
+                <div
+                    class="w-8 h-8 flex items-center justify-center rounded-full bg-primary/10 text-primary dark:bg-primary-dark/20 dark:text-primary-light mb-1">
+                    <i class="fas fa-home"></i>
+                </div>
+                <span class="text-xs">Today</span>
+            </button>
+            <button
+                class="nav-item flex-1 py-3 px-2 text-center text-gray-600 dark:text-gray-400 border-t-2 border-transparent transition-colors duration-200 flex flex-col items-center"
+                data-target="journal">
+                <div
+                    class="w-8 h-8 flex items-center justify-center rounded-full bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 mb-1">
+                    <i class="fas fa-book-open"></i>
+                </div>
+                <span class="text-xs">Journal</span>
+            </button>
+            <button
+                class="nav-item flex-1 py-3 px-2 text-center text-gray-600 dark:text-gray-400 border-t-2 border-transparent transition-colors duration-200 flex flex-col items-center"
+                data-target="meditations">
+                <div
+                    class="w-8 h-8 flex items-center justify-center rounded-full bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 mb-1">
+                    <i class="fas fa-spa"></i>
+                </div>
+                <span class="text-xs">Meditate</span>
+            </button>
+            <button
+                class="nav-item flex-1 py-3 px-2 text-center text-gray-600 dark:text-gray-400 border-t-2 border-transparent transition-colors duration-200 flex flex-col items-center"
+                data-target="analytics">
+                <div
+                    class="w-8 h-8 flex items-center justify-center rounded-full bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 mb-1">
+                    <i class="fas fa-chart-line"></i>
+                </div>
+                <span class="text-xs">Stats</span>
+            </button>
+        </div>
+    </nav>
+
+    <div id="meditationModal" class="modal">
+        <div class="modal-content">
+            <span class="modal-close" id="modalCloseBtn">&times;</span>
+            <h3 class="text-xl font-semibold mb-4" id="modalTitle">Meditation Session</h3>
+            <div class="video-container" id="modalVideoContainer">
+                <div class="absolute inset-0 flex items-center justify-center">
+                    <div class="text-center">
+                        <i class="fas fa-spinner fa-spin text-4xl text-primary dark:text-primary-light mb-3"></i>
+                        <p class="text-text-secondary dark:text-dark.text.secondary">Loading meditation...</p>
+                    </div>
+                </div>
+            </div>
+            <div class="mt-4 flex justify-between items-center">
+                <button
+                    class="text-sm text-text-secondary dark:text-dark.text.secondary hover:text-primary dark:hover:text-primary-light">
+                    <i class="fas fa-bookmark mr-1"></i> Save for later
+                </button>
+                <button
+                    class="text-sm text-text-secondary dark:text-dark.text.secondary hover:text-primary dark:hover:text-primary-light">
+                    <i class="fas fa-share-alt mr-1"></i> Share
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const navItems = document.querySelectorAll('.nav-item');
+            const tabContents = document.querySelectorAll('.tab-content');
+            const moodSelector = document.getElementById('moodSelector');
+            const saveEntryBtn = document.getElementById('saveEntryBtn');
+            const journalEntryInput = document.getElementById('journalEntry');
+            const journalList = document.getElementById('journalList');
+            const journalPlaceholder = document.getElementById('journalPlaceholder');
+            const themeToggleBtn = document.getElementById('themeToggleBtn');
+            const meditationBtns = document.querySelectorAll('.meditation-btn');
+            const desktopNavItems = document.querySelectorAll('.desktop-nav-item');
+            const meditationModal = document.getElementById('meditationModal');
+            const modalCloseBtn = document.getElementById('modalCloseBtn');
+            const modalTitle = document.getElementById('modalTitle');
+            const modalVideoContainer = document.getElementById('modalVideoContainer');
+            const moodCountsContainer = document.getElementById('moodCounts');
+            const moodChartCanvas = document.getElementById('moodTrendChart');
+
+            let selectedMood = null;
+            let moodChart = null;
+            const moodEmojis = { 'Awful': '😟', 'Bad': '🙁', 'Okay': '😐', 'Good': '🙂', 'Great': '😄' };
+            const moodValues = { 'Awful': 1, 'Bad': 2, 'Okay': 3, 'Good': 4, 'Great': 5 };
+            const LOCAL_STORAGE_KEY = 'wellbeingJournalEntries';
+            const THEME_STORAGE_KEY = 'wellbeingTheme';
+            const ACTIVE_TAB_KEY = 'activeWellbeingTab';
+
+            applyTheme(localStorage.getItem(THEME_STORAGE_KEY) || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'));
+            loadJournalEntries();
+            navigateTo(sessionStorage.getItem(ACTIVE_TAB_KEY) || 'dashboard');
+            initChart();
+
+            navItems.forEach(item => {
+                item.addEventListener('click', () => {
+                    navigateTo(item.getAttribute('data-target'));
+                });
+            });
+
+            desktopNavItems.forEach(item => {
+                item.addEventListener('click', () => {
+                    navigateTo(item.getAttribute('data-target'));
+                });
+            });
+
+            function navigateTo(targetId) {
+                const activeClass = 'border-primary dark:border-primary-light text-primary dark:text-primary-light';
+                const inactiveClass = 'border-transparent text-gray-600 hover:text-primary dark:text-gray-400 dark:hover:text-primary-light';
+
+                navItems.forEach(nav => nav.classList.remove('active'));
+                const activeNavItem = document.querySelector(`.nav-item[data-target="${targetId}"]`);
+                if (activeNavItem) activeNavItem.classList.add('active');
+
+                desktopNavItems.forEach(nav => {
+                    nav.classList.remove(...activeClass.split(' '));
+                    nav.classList.add(...inactiveClass.split(' '));
+                    if (nav.getAttribute('data-target') === targetId) {
+                        nav.classList.remove(...inactiveClass.split(' '));
+                        nav.classList.add(...activeClass.split(' '));
+                    }
+                });
+
+                tabContents.forEach(content => {
+                    content.classList.toggle('active', content.id === targetId);
+                });
+
+                if (targetId === 'journal') {
+                    loadJournalEntries();
+                }
+                if (targetId === 'analytics') {
+                    displayMoodAnalytics();
+                }
+
+                sessionStorage.setItem(ACTIVE_TAB_KEY, targetId);
+            }
+
+            if (moodSelector) {
+                moodSelector.querySelectorAll('.mood-btn').forEach(button => {
+                    button.addEventListener('click', () => {
+                        moodSelector.querySelectorAll('.mood-btn').forEach(btn => btn.classList.remove('selected'));
+                        button.classList.add('selected');
+                        selectedMood = button.getAttribute('data-mood');
+                    });
+                });
+            }
+
+            if (saveEntryBtn) {
+                saveEntryBtn.addEventListener('click', () => {
+                    if (!selectedMood) {
+                        showNotification('Please select your mood first.', 'warning');
+                        return;
+                    }
+                    const entryText = journalEntryInput.value.trim();
+                    const date = new Date();
+                    const formattedDate = date.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
+                    const moodEmoji = moodEmojis[selectedMood] || '❓';
+
+                    const entryData = {
+                        id: Date.now(),
+                        date: date.toISOString().split('T')[0],
+                        formattedDate: formattedDate,
+                        mood: selectedMood,
+                        emoji: moodEmoji,
+                        note: entryText
+                    };
+
+                    const entries = getJournalEntries();
+                    entries.unshift(entryData);
+                    saveJournalEntries(entries);
+
+                    if (document.getElementById('journal').classList.contains('active')) {
+                        renderJournalEntry(entryData, true);
+                        if (journalPlaceholder) journalPlaceholder.classList.add('hidden');
+                    }
+
+                    if (moodSelector) {
+                        moodSelector.querySelectorAll('.mood-btn').forEach(btn => btn.classList.remove('selected'));
+                    }
+                    journalEntryInput.value = '';
+                    selectedMood = null;
+
+                    showNotification('Journal entry saved successfully!', 'success');
+                });
+            }
+
+            function getJournalEntries() {
+                try {
+                    return JSON.parse(localStorage.getItem(LOCAL_STORAGE_KEY) || '[]');
+                } catch (e) {
+                    console.error("Error parsing journal entries from localStorage", e);
+                    localStorage.removeItem(LOCAL_STORAGE_KEY);
+                    return [];
+                }
+            }
+
+            function saveJournalEntries(entries) {
+                localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(entries));
+            }
+
+            function loadJournalEntries() {
+                const entries = getJournalEntries();
+                journalList.innerHTML = '';
+
+                if (entries.length === 0) {
+                    if (journalPlaceholder) {
+                        journalPlaceholder.textContent = 'Your journal entries will appear here.';
+                        journalPlaceholder.classList.remove('hidden');
+                    }
+                } else {
+                    if (journalPlaceholder) journalPlaceholder.classList.add('hidden');
+                    [...entries].reverse().forEach(entry => renderJournalEntry(entry, false));
+                }
+            }
+
+            function renderJournalEntry(entry, prepend = false) {
+                if (!entry || !entry.mood || !entry.formattedDate) {
+                    console.warn("Skipping invalid journal entry:", entry);
+                    return;
+                }
+                const entryDiv = document.createElement('div');
+                entryDiv.className = 'card p-4 bg-gray-50 dark:bg-gray-700/50 rounded-lg animate-fadeInUp';
+                entryDiv.innerHTML = `
+                    <p class="font-semibold mb-1 text-gray-800 dark:text-gray-200">Mood: ${entry.mood} ${entry.emoji || '❓'}</p>
+                    <p class="text-xs text-gray-500 dark:text-gray-400 mb-2">${entry.formattedDate}</p>
+                    <p class="text-gray-700 dark:text-gray-300 whitespace-pre-wrap">${entry.note || 'No additional notes.'}</p>
+                 `;
+                if (prepend) {
+                    journalList.prepend(entryDiv);
+                } else {
+                    journalList.appendChild(entryDiv);
+                }
+            }
+
+            meditationBtns.forEach(button => {
+                button.addEventListener('click', () => {
+                    const videoId = button.getAttribute('data-video-id');
+                    const title = button.getAttribute('data-title');
+                    openMeditationModal(videoId, title);
+                });
+            });
+
+            function openMeditationModal(videoId, title) {
+                modalTitle.textContent = title;
+                modalVideoContainer.innerHTML = `
+                    <iframe src="https://www.youtube.com/embed/${videoId}?autoplay=1&rel=0"
+                            frameborder="0"
+                            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                            allowfullscreen></iframe>
+                 `;
+                meditationModal.style.display = "block";
+            }
+
+            function closeMeditationModal() {
+                meditationModal.style.display = "none";
+                modalVideoContainer.innerHTML = '';
+            }
+
+            modalCloseBtn.onclick = closeMeditationModal;
+            meditationModal.onclick = function (event) {
+                if (event.target == meditationModal) {
+                    closeMeditationModal();
+                }
+            }
+
+            function initChart() {
+                if (!moodChartCanvas) return;
+                const ctx = moodChartCanvas.getContext('2d');
+                moodChart = new Chart(ctx, {
+                    type: 'line',
+                    data: {
+                        labels: [],
+                        datasets: [{
+                            label: 'Mood Trend',
+                            data: [],
+                            borderColor: '#34d399',
+                            backgroundColor: 'rgba(52, 211, 153, 0.1)',
+                            borderWidth: 2,
+                            tension: 0.3,
+                            fill: true,
+                            pointRadius: 4,
+                            pointBackgroundColor: '#34d399'
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        scales: {
+                            y: {
+                                beginAtZero: false,
+                                min: 1,
+                                max: 5,
+                                ticks: {
+                                    stepSize: 1,
+                                    color: getChartTextColor(),
+                                    callback: function (value) {
+                                        return Object.keys(moodValues).find(key => moodValues[key] === value) || '';
+                                    }
+                                }
+                            },
+                            x: {
+                                ticks: {
+                                    color: getChartTextColor()
+                                }
+                            }
+                        },
+                        plugins: {
+                            legend: { display: false },
+                            tooltip: {
+                                callbacks: {
+                                    label: function (context) {
+                                        const moodLabel = Object.keys(moodValues).find(key => moodValues[key] === context.raw);
+                                        return `Mood: ${moodLabel || 'Unknown'}`;
+                                    }
+                                }
+                            }
+                        }
+                    }
+                });
+            }
+
+            function displayMoodAnalytics() {
+                const entries = getJournalEntries();
+                updateMoodCounts(entries);
+                updateMoodChart(entries);
+            }
+
+            function updateMoodCounts(entries) {
+                const moodCounts = entries.reduce((acc, entry) => {
+                    if (entry.mood) {
+                        acc[entry.mood] = (acc[entry.mood] || 0) + 1;
+                    }
+                    return acc;
+                }, {});
+
+                moodCountsContainer.innerHTML = '';
+                if (Object.keys(moodCounts).length === 0) {
+                    moodCountsContainer.innerHTML = `<p class="text-sm text-gray-500 dark:text-gray-400">No mood data recorded yet.</p>`;
+                    return;
+                }
+                const moodOrder = ['Awful', 'Bad', 'Okay', 'Good', 'Great'];
+                moodOrder.forEach(mood => {
+                    if (moodCounts[mood]) {
+                        const count = moodCounts[mood];
+                        const emoji = moodEmojis[mood] || '❓';
+                        const countDiv = document.createElement('div');
+                        countDiv.className = 'flex justify-between items-center text-sm py-1';
+                        countDiv.innerHTML = `
+                            <span class="text-gray-700 dark:text-gray-300">${emoji} ${mood}</span>
+                            <span class="font-medium text-gray-600 dark:text-gray-400">${count} ${count === 1 ? 'day' : 'days'}</span>
+                         `;
+                        moodCountsContainer.appendChild(countDiv);
+                    }
+                });
+            }
+
+            function updateMoodChart(entries) {
+                if (!moodChart) return;
+
+                const last7DaysData = {};
+                const today = new Date();
+                for (let i = 6; i >= 0; i--) {
+                    const date = new Date(today);
+                    date.setDate(today.getDate() - i);
+                    const dateString = date.toISOString().split('T')[0];
+                    last7DaysData[dateString] = null;
+                }
+
+                [...entries].reverse().forEach(entry => {
+                    if (entry.date in last7DaysData && last7DaysData[entry.date] === null) {
+                        if (moodValues[entry.mood]) {
+                            last7DaysData[entry.date] = moodValues[entry.mood];
+                        }
+                    }
+                });
+
+                const labels = Object.keys(last7DaysData).map(dateStr => {
+                    const date = new Date(dateStr);
+                    return date.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
+                });
+                const data = Object.values(last7DaysData);
+
+                moodChart.data.labels = labels;
+                moodChart.data.datasets[0].data = data;
+
+                moodChart.options.scales.y.ticks.color = getChartTextColor();
+                moodChart.options.scales.x.ticks.color = getChartTextColor();
+                moodChart.data.datasets[0].borderColor = isDarkMode() ? '#a7f3d0' : '#34d399';
+                moodChart.data.datasets[0].pointBackgroundColor = isDarkMode() ? '#a7f3d0' : '#34d399';
+                moodChart.data.datasets[0].backgroundColor = isDarkMode() ? 'rgba(167, 243, 208, 0.1)' : 'rgba(52, 211, 153, 0.1)';
+
+                moodChart.update();
+            }
+
+            function getChartTextColor() {
+                return isDarkMode() ? '#9ca3af' : '#6b7280';
+            }
+
+            function applyTheme(theme) {
+                document.documentElement.classList.toggle('dark', theme === 'dark');
+                localStorage.setItem(THEME_STORAGE_KEY, theme);
+                if (moodChart) {
+                    updateMoodChart(getJournalEntries());
+                }
+            }
+
+            function isDarkMode() {
+                return document.documentElement.classList.contains('dark');
+            }
+
+            if (themeToggleBtn) {
+                themeToggleBtn.addEventListener('click', () => {
+                    applyTheme(isDarkMode() ? 'light' : 'dark');
+                });
+            }
+
+            function showNotification(message, type = 'info') {
+                const notification = document.createElement('div');
+                let bgColor, textColor, iconClass, borderColor;
+
+                switch (type) {
+                    case 'success':
+                        bgColor = 'bg-green-50 dark:bg-green-900/80';
+                        textColor = 'text-green-700 dark:text-green-200';
+                        iconClass = 'fas fa-check-circle';
+                        borderColor = 'border-green-400 dark:border-green-600';
+                        break;
+                    case 'warning':
+                        bgColor = 'bg-yellow-50 dark:bg-yellow-900/80';
+                        textColor = 'text-yellow-700 dark:text-yellow-200';
+                        iconClass = 'fas fa-exclamation-triangle';
+                        borderColor = 'border-yellow-400 dark:border-yellow-600';
+                        break;
+                    case 'info':
+                        bgColor = 'bg-blue-50 dark:bg-blue-900/80';
+                        textColor = 'text-blue-700 dark:text-blue-200';
+                        iconClass = 'fas fa-info-circle';
+                        borderColor = 'border-blue-400 dark:border-blue-600';
+                        break;
+                    default:
+                        bgColor = 'bg-gray-100 dark:bg-gray-700';
+                        textColor = 'text-gray-800 dark:text-gray-200';
+                        iconClass = 'fas fa-bell';
+                        borderColor = 'border-gray-400 dark:border-gray-500';
+                }
+
+                notification.className = `fixed top-5 right-5 ${bgColor} ${textColor} border-l-4 ${borderColor} p-4 rounded-md shadow-lg z-[110] flex items-center animate-fadeInUp max-w-sm`;
+                notification.innerHTML = `
+                     <i class="${iconClass} mr-3 text-xl"></i>
+                     <span>${message}</span>
+                     <button class="ml-auto text-xl leading-none font-semibold opacity-70 hover:opacity-100 focus:outline-none">&times;</button>
+                 `;
+
+                notification.querySelector('button').onclick = () => {
+                    notification.style.opacity = '0';
+                    setTimeout(() => notification.remove(), 300);
+                };
+
+                document.body.appendChild(notification);
+
+                setTimeout(() => {
+                    if (document.body.contains(notification)) {
+                        notification.style.opacity = '0';
+                        setTimeout(() => notification.remove(), 300);
+                    }
+                }, 5000);
+            }
+
+        });
+    </script>
+
+</body>
+
+</html>

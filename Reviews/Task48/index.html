@@ -1,0 +1,764 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Book Opinion Word Cloud</title>
+    <script src="https://cdn.jsdelivr.net/npm/p5@1.4.2/lib/p5.js"></script>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&family=Playfair+Display:wght@400;700&display=swap"
+        rel="stylesheet">
+    <style>
+        :root {
+            --primary: #6d28d9;
+            --secondary: #10b981;
+            --accent: #ec4899;
+            --bg-dark: #1e1b4b;
+            --bg-light: #f5f3ff;
+            --text-dark: #1f2937;
+            --text-light: #f1f5f9;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: linear-gradient(145deg, var(--bg-dark) 0%, #3730a3 100%);
+            min-height: 100vh;
+            margin: 0;
+            color: var(--text-light);
+            position: relative;
+            transition: background 0.3s ease;
+        }
+
+        body.light-theme {
+            background: linear-gradient(145deg, #e5e7eb 0%, #f5f3ff 100%);
+            color: var(--text-dark);
+        }
+
+        body::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: radial-gradient(circle, rgba(255, 255, 255, 0.15) 0%, rgba(0, 0, 0, 0.3) 100%);
+            opacity: 0.6;
+            z-index: -1;
+        }
+
+        #app-bar {
+            position: sticky;
+            top: 0;
+            background: rgba(17, 24, 39, 0.95);
+            backdrop-filter: blur(12px);
+            padding: 1rem 2rem;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+            z-index: 20;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        body.light-theme #app-bar {
+            background: rgba(255, 255, 255, 0.95);
+            color: var(--text-dark);
+        }
+
+        #app-bar h1 {
+            font-family: 'Playfair Display', serif;
+            font-size: 1.875rem;
+            font-weight: 700;
+            margin: 0;
+            letter-spacing: -0.025em;
+        }
+
+        #container {
+            max-width: 1400px;
+            margin: 2rem auto;
+            display: grid;
+            grid-template-columns: 2fr 1fr;
+            gap: 1.5rem;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 1rem;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+            padding: 1.5rem;
+            backdrop-filter: blur(10px);
+        }
+
+        textarea {
+            resize: vertical;
+            border: none;
+            background: rgba(255, 255, 255, 0.15);
+            border-radius: 0.75rem;
+            padding: 1.25rem;
+            color: var(--text-light);
+            font-size: 1rem;
+            font-family: 'Inter', sans-serif;
+            transition: all 0.3s ease;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+            width: 100%;
+            min-height: 200px;
+        }
+
+        body.light-theme textarea {
+            background: rgba(0, 0, 0, 0.05);
+            color: var(--text-dark);
+        }
+
+        textarea:focus {
+            outline: none;
+            background: rgba(255, 255, 255, 0.2);
+            box-shadow: 0 0 0 3px rgba(109, 40, 217, 0.3);
+        }
+
+        textarea:invalid {
+            box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.3);
+        }
+
+        #sidebar {
+            background: rgba(255, 255, 255, 0.15);
+            border-radius: 0.75rem;
+            padding: 1.5rem;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+            transition: all 0.3s ease;
+            opacity: 0;
+            transform: translateY(10px);
+            display: none;
+            max-height: 70vh;
+            overflow-y: auto;
+        }
+
+        #sidebar.active {
+            display: block;
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        body.light-theme #sidebar {
+            background: rgba(0, 0, 0, 0.05);
+            color: var(--text-dark);
+        }
+
+        .word-cloud {
+            border-radius: 0.75rem;
+            overflow: hidden;
+            background: linear-gradient(135deg, #f5f3ff 0%, #ddd6fe 100%);
+            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.2);
+            position: relative;
+            width: 100%;
+            height: 550px;
+            transition: transform 0.3s ease;
+        }
+
+        body.light-theme .word-cloud {
+            background: linear-gradient(135deg, #e5e7eb 0%, #d1d5db 100%);
+        }
+
+        .word-cloud:hover {
+            transform: scale(1.005);
+        }
+
+        .stats-panel,
+        .settings-panel,
+        .zoom-controls {
+            background: rgba(255, 255, 255, 0.15);
+            border-radius: 0.75rem;
+            padding: 1.5rem;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+            margin-top: 1rem;
+        }
+
+        body.light-theme .stats-panel,
+        body.light-theme .settings-panel,
+        body.light-theme .zoom-controls {
+            background: rgba(0, 0, 0, 0.05);
+            color: var(--text-dark);
+        }
+
+        .tooltip {
+            position: absolute;
+            background: rgba(17, 24, 39, 0.9);
+            color: var(--text-light);
+            padding: 0.5rem 1rem;
+            border-radius: 0.375rem;
+            font-size: 0.875rem;
+            z-index: 20;
+            pointer-events: none;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
+            display: none;
+        }
+
+        button {
+            transition: all 0.3s ease;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+            font-weight: 500;
+        }
+
+        button:focus {
+            outline: none;
+            box-shadow: 0 0 0 3px rgba(109, 40, 217, 0.3);
+        }
+
+        button:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+
+        h3 {
+            font-family: 'Playfair Display', serif;
+            font-weight: 700;
+            font-size: 1.5rem;
+        }
+
+        @media (max-width: 1280px) {
+            #container {
+                grid-template-columns: 1.5fr 1fr;
+                gap: 1rem;
+            }
+
+            .word-cloud {
+                height: 500px;
+            }
+        }
+
+        @media (max-width: 1024px) {
+            #container {
+                grid-template-columns: 1fr;
+                padding: 1rem;
+            }
+
+            #sidebar.active {
+                margin-top: 1rem;
+            }
+
+            .word-cloud {
+                height: 450px;
+            }
+
+            #app-bar h1 {
+                font-size: 1.5rem;
+            }
+        }
+
+        @media (max-width: 640px) {
+            #container {
+                padding: 0.75rem;
+            }
+
+            .word-cloud {
+                height: 350px;
+            }
+
+            textarea {
+                min-height: 160px;
+                font-size: 0.875rem;
+            }
+
+            button {
+                padding: 0.5rem 1rem;
+                font-size: 0.875rem;
+            }
+
+            h3 {
+                font-size: 1.25rem;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div id="app-bar" class="flex justify-between items-center">
+        <h1>Book Opinion Word Cloud</h1>
+        <button onclick="toggleTheme()"
+            class="bg-gray-700 hover:bg-gray-600 text-white px-4 py-2 rounded-lg focus:ring-2 focus:ring-offset-2 focus:ring-gray-500"
+            aria-label="Toggle theme">Toggle Theme</button>
+    </div>
+    <div id="container">
+        <div>
+            <div class="word-cloud">
+                <div id="canvas-container"></div>
+                <div id="tooltip" class="tooltip" role="tooltip"></div>
+            </div>
+            <div class="mt-4 space-y-4">
+                <div class="relative">
+                    <textarea id="bookInput" class="w-full"
+                        placeholder="Enter books and opinions (one per line):\nTitle: Opinion\nGreat Gatsby: Beautiful writing, slow pace\n1984: Intense, thought-provoking"
+                        aria-describedby="input-help" required></textarea>
+                    <p id="input-help" class="text-sm text-gray-400 mt-1">Format: Title: Opinion (one book per line)</p>
+                </div>
+                <div class="flex flex-wrap gap-2">
+                    <button onclick="generateWordCloud()"
+                        class="bg-[var(--primary)] hover:bg-[#5b21b6] text-white px-5 py-2.5 rounded-lg focus:ring-2 focus:ring-offset-2 focus:ring-[var(--primary)]"
+                        aria-label="Generate word cloud">Generate Cloud</button>
+                    <button onclick="saveCanvasImage()"
+                        class="bg-gray-600 hover:bg-gray-500 text-white px-5 py-2.5 rounded-lg focus:ring-2 focus:ring-offset-2 focus:ring-gray-500"
+                        aria-label="Export as PNG">Export PNG</button>
+                    <button onclick="exportJSON()"
+                        class="bg-[var(--secondary)] hover:bg-[#059669] text-white px-5 py-2.5 rounded-lg focus:ring-2 focus:ring-offset-2 focus:ring-[var(--secondary)]"
+                        aria-label="Export as JSON">Export JSON</button>
+                    <button onclick="clearInput()"
+                        class="bg-[var(--accent)] hover:bg-[#db2777] text-white px-5 py-2.5 rounded-lg focus:ring-2 focus:ring-offset-2 focus:ring-[var(--accent)]"
+                        aria-label="Clear input">Clear</button>
+                </div>
+            </div>
+        </div>
+        <div>
+            <div class="zoom-controls">
+                <h3 class="mb-3">Zoom</h3>
+                <div class="flex gap-2">
+                    <button onclick="zoomIn()"
+                        class="bg-gray-700 hover:bg-gray-600 text-white px-4 py-2 rounded-lg focus:ring-2 focus:ring-offset-2 focus:ring-gray-500"
+                        aria-label="Zoom in">Zoom In</button>
+                    <button onclick="zoomOut()"
+                        class="bg-gray-700 hover:bg-gray-600 text-white px-4 py-2 rounded-lg focus:ring-2 focus:ring-offset-2 focus:ring-gray-500"
+                        aria-label="Zoom out">Zoom Out</button>
+                </div>
+            </div>
+            <div id="sidebar" role="region" aria-label="Books with selected word">
+                <h3 class="mb-4">Books with "<span id="selected-word"></span>"</h3>
+                <ul id="book-list" class="space-y-3"></ul>
+            </div>
+            <div class="stats-panel">
+                <h3 class="mb-4">Statistics</h3>
+                <div id="stats" class="space-y-2 text-sm"></div>
+            </div>
+            <div class="settings-panel">
+                <h3 class="mb-4">Settings</h3>
+                <div class="space-y-4">
+                    <label class="flex items-center space-x-2">
+                        <input type="checkbox" id="sentimentToggle" checked
+                            class="rounded text-[var(--primary)] focus:ring-[var(--primary)]">
+                        <span>Show Sentiment</span>
+                    </label>
+                    <div>
+                        <label for="maxWords" class="block text-sm font-medium">Max Words:</label>
+                        <input type="number" id="maxWords" value="50" min="10" max="100"
+                            class="w-full mt-1 p-2 rounded-lg bg-gray-800 text-white focus:ring-[var(--primary)]"
+                            aria-label="Maximum number of words">
+                    </div>
+                    <div>
+                        <label for="density" class="block text-sm font-medium">Density:</label>
+                        <input type="range" id="density" min="0.5" max="2" step="0.1" value="1"
+                            class="w-full mt-1 accent-[var(--primary)]" aria-label="Word cloud density">
+                    </div>
+                    <div>
+                        <label for="layout" class="block text-sm font-medium">Layout:</label>
+                        <select id="layout"
+                            class="w-full mt-1 p-2 rounded-lg bg-gray-800 text-white focus:ring-[var(--primary)]"
+                            aria-label="Word cloud layout">
+                            <option value="circular">Circular</option>
+                            <option value="spiral">Spiral</option>
+                            <option value="rectangular">Rectangular</option>
+                            <option value="organic">Organic</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let words = [];
+        let bookData = [];
+        let selectedWord = null;
+        let zoomLevel = 1;
+        let needsRedraw = true;
+        const positiveWords = ['beautiful', 'intense', 'thought-provoking', 'exciting', 'great', 'amazing', 'captivating', 'heartwarming', 'deep', 'epic', 'witty', 'charming', 'brilliant', 'engaging'];
+        const negativeWords = ['slow', 'boring', 'dull', 'bad', 'annoying', 'disturbing', 'poor', 'weak', 'confusing', 'disappointing'];
+
+        function setup() {
+            createCanvas(850, 550).parent('canvas-container');
+            colorMode(HSB, 360, 100, 100, 1);
+            textAlign(CENTER, CENTER);
+            textFont('Inter');
+            drawBackground();
+            fill(270, 70, 80);
+            textSize(24);
+            textStyle(BOLD);
+            text("Enter books and opinions below,\nthen click 'Generate Cloud' to begin!", width / 2, height / 2);
+            noLoop();
+        }
+
+        function draw() {
+            if (!needsRedraw) return;
+            push();
+            scale(zoomLevel);
+            drawBackground();
+            if (words.length === 0) {
+                fill(270, 70, 80);
+                textSize(24);
+                textStyle(BOLD);
+                text("Enter books and opinions below,\nthen click 'Generate Cloud' to begin!", width / 2, height / 2);
+            } else {
+                words.forEach(word => {
+                    if (word.opacity > 0) {
+                        push();
+                        translate(word.x, word.y);
+                        rotate(word.rotation);
+                        textSize(word.size);
+                        const sentimentOn = document.getElementById('sentimentToggle').checked;
+                        let textColor;
+                        if (sentimentOn && word.sentiment !== 0) {
+                            textColor = word.sentiment > 0 ? color(140, 80, 80, word.opacity) : color(0, 80, 80, word.opacity);
+                        } else {
+                            textColor = color(word.hue, 70, 80, word.opacity);
+                        }
+                        drawingContext.shadowBlur = 8;
+                        drawingContext.shadowColor = 'rgba(109, 40, 217, 0.3)';
+                        fill(textColor);
+                        text(word.text, 0, 0);
+                        drawingContext.shadowBlur = 0;
+                        pop();
+                    }
+                });
+            }
+            pop();
+            needsRedraw = false;
+        }
+
+        function drawBackground() {
+            background(document.body.classList.contains('light-theme') ? '#e5e7eb' : '#f5f3ff');
+            noStroke();
+            fill(270, 30, 50, 0.15);
+            for (let i = 0; i < 50; i++) {
+                let x = random(width);
+                let y = random(height);
+                ellipse(x, y, random(4, 12), random(4, 12));
+            }
+        }
+
+        function generateWordCloud() {
+            words = [];
+            bookData = [];
+            const input = document.getElementById('bookInput').value.trim();
+            if (!input) {
+                alert("Please enter at least one book and opinion!");
+                return;
+            }
+            const lines = input.split('\n').filter(line => line.trim());
+            let validEntries = false;
+
+            lines.forEach((line, index) => {
+                const parts = line.split(':').map(s => s.trim());
+                if (parts.length < 2 || !parts[0] || !parts[1]) {
+                    console.warn(`Invalid format at line ${index + 1}: "${line}"`);
+                    return;
+                }
+                const [title, opinion] = parts;
+                const opinionWords = opinion.toLowerCase()
+                    .replace(/[.,!?]/g, '')
+                    .split(/\s+/)
+                    .filter(w => w.length > 2 && !['and', 'the', 'with', 'for'].includes(w));
+                if (opinionWords.length === 0) return;
+
+                const sentiment = calculateSentiment(opinionWords);
+                bookData.push({ title, opinion, words: opinionWords, sentiment });
+                validEntries = true;
+
+                opinionWords.forEach(word => {
+                    const existing = words.find(w => w.text === word);
+                    if (existing) {
+                        existing.count++;
+                        existing.sentiment += sentiment;
+                    } else {
+                        words.push({ text: word, count: 1, sentiment, hue: random(360) });
+                    }
+                });
+            });
+
+            if (!validEntries) {
+                alert("No valid book entries found! Use format: Title: Opinion");
+                return;
+            }
+
+            words.sort((a, b) => b.count - a.count);
+            const maxWords = Math.min(parseInt(document.getElementById('maxWords').value) || 50, words.length);
+            const layout = document.getElementById('layout').value;
+            const density = parseFloat(document.getElementById('density').value);
+            placeWords(words.slice(0, maxWords), layout, density);
+            updateStats();
+            hideSidebar();
+            needsRedraw = true;
+            redraw();
+        }
+
+        function placeWords(wordList, layout, density) {
+            const padding = 30;
+            const maxCount = Math.max(...wordList.map(w => w.count), 1);
+            wordList.forEach(word => {
+                textSize(word.size = map(word.count, 1, maxCount, 18 / density, 54 / density));
+                word.width = textWidth(word.text) * 1.2;
+                word.height = word.size * 1.3;
+                word.opacity = 0;
+                word.rotation = random(-0.1, 0.1);
+            });
+
+            const layouts = {
+                circular: () => {
+                    const radius = min(width, height) / (3.5 * density) - padding;
+                    wordList.forEach((word, i) => {
+                        const angle = (i / wordList.length) * TWO_PI;
+                        word.x = width / 2 + cos(angle) * radius * random(0.8, 1.2);
+                        word.y = height / 2 + sin(angle) * radius * random(0.8, 1.2);
+                        avoidCollisions(word, wordList.slice(0, i));
+                        clampPosition(word, padding);
+                    });
+                },
+                spiral: () => {
+                    let theta = 0;
+                    const scaleFactor = min(width, height) / (80 * density);
+                    wordList.forEach((word, i) => {
+                        const r = scaleFactor * sqrt(i);
+                        word.x = width / 2 + r * cos(theta);
+                        word.y = height / 2 + r * sin(theta);
+                        theta += 0.4;
+                        avoidCollisions(word, wordList.slice(0, i));
+                        clampPosition(word, padding);
+                    });
+                },
+                rectangular: () => {
+                    const cols = Math.ceil(sqrt(wordList.length));
+                    const cellW = (width - 2 * padding) / cols;
+                    const cellH = (height - 2 * padding) / Math.ceil(wordList.length / cols);
+                    wordList.forEach((word, i) => {
+                        const col = i % cols;
+                        const row = floor(i / cols);
+                        word.x = padding + col * cellW + cellW / 2 + random(-20, 20);
+                        word.y = padding + row * cellH + cellH / 2 + random(-20, 20);
+                        avoidCollisions(word, wordList.slice(0, i));
+                        clampPosition(word, padding);
+                    });
+                },
+                organic: () => {
+                    wordList.forEach((word, i) => {
+                        let placed = false;
+                        let attempts = 0;
+                        while (!placed && attempts < 500) {
+                            word.x = random(padding + word.width / 2, width - padding - word.width / 2);
+                            word.y = random(padding + word.height / 2, height - padding - word.height / 2);
+                            if (i === 0 || !checkCollision(word, wordList.slice(0, i))) {
+                                placed = true;
+                            }
+                            attempts++;
+                        }
+                        clampPosition(word, padding);
+                    });
+                }
+            };
+
+            layouts[layout]();
+            animateWords(wordList);
+        }
+
+        function clampPosition(word, padding) {
+            word.x = constrain(word.x, padding + word.width / 2, width - padding - word.width / 2);
+            word.y = constrain(word.y, padding + word.height / 2, height - padding - word.height / 2);
+        }
+
+        function checkCollision(word, wordList) {
+            for (let other of wordList) {
+                if (other !== word && other.x && other.y) {
+                    const dx = word.x - other.x;
+                    const dy = word.y - other.y;
+                    const distance = sqrt(dx * dx + dy * dy);
+                    const minDist = (word.width + other.width) / 2 + (word.height + other.height) / 4;
+                    if (distance < minDist) return true;
+                }
+            }
+            return false;
+        }
+
+        function avoidCollisions(word, priorWords) {
+            let attempts = 0;
+            while (checkCollision(word, priorWords) && attempts < 100) {
+                word.x += random(-10, 10);
+                word.y += random(-10, 10);
+                attempts++;
+            }
+            clampPosition(word, 30);
+        }
+
+        function animateWords(wordList) {
+            wordList.forEach((word, index) => {
+                setTimeout(() => {
+                    word.opacity = 1;
+                    needsRedraw = true;
+                    redraw();
+                }, index * 50);
+            });
+        }
+
+        function mouseMoved() {
+            const tooltip = document.getElementById('tooltip');
+            tooltip.style.display = 'none';
+            for (let word of words) {
+                if (word.x && word.y && word.opacity > 0) {
+                    const adjustedX = mouseX / zoomLevel;
+                    const adjustedY = mouseY / zoomLevel;
+                    const d = dist(adjustedX, adjustedY, word.x, word.y);
+                    if (d < word.size / 1.5) {
+                        tooltip.style.display = 'block';
+                        tooltip.style.left = `${mouseX + 15}px`;
+                        tooltip.style.top = `${mouseY + 15}px`;
+                        tooltip.innerHTML = `${word.text}<br>Count: ${word.count}<br>Sentiment: ${word.sentiment > 0 ? 'Positive' : word.sentiment < 0 ? 'Negative' : 'Neutral'}`;
+                        return;
+                    }
+                }
+            }
+        }
+
+        function mouseClicked() {
+            for (let word of words) {
+                if (word.x && word.y && word.opacity > 0) {
+                    const adjustedX = mouseX / zoomLevel;
+                    const adjustedY = mouseY / zoomLevel;
+                    const d = dist(adjustedX, adjustedY, word.x, word.y);
+                    if (d < word.size / 1.5) {
+                        showSidebar(word.text);
+                        return;
+                    }
+                }
+            }
+            hideSidebar();
+        }
+
+        function keyPressed() {
+            if (keyCode === ESCAPE) {
+                hideSidebar();
+            }
+        }
+
+        function zoomIn() {
+            zoomLevel = min(zoomLevel + 0.1, 2);
+            needsRedraw = true;
+            redraw();
+        }
+
+        function zoomOut() {
+            zoomLevel = max(zoomLevel - 0.1, 0.5);
+            needsRedraw = true;
+            redraw();
+        }
+
+        function toggleTheme() {
+            document.body.classList.toggle('light-theme');
+            needsRedraw = true;
+            redraw();
+        }
+
+        function showSidebar(word) {
+            selectedWord = word;
+            const sidebar = document.getElementById('sidebar');
+            sidebar.classList.add('active');
+            document.getElementById('selected-word').textContent = word;
+
+            const matchingBooks = bookData.filter(book => book.words.includes(word));
+            const bookList = document.getElementById('book-list');
+            bookList.innerHTML = matchingBooks.length ? matchingBooks.map(book => `
+                <li class="p-3 bg-gray-800/50 rounded-md hover:bg-gray-700/50 transition-all">
+                    <span class="font-semibold">${book.title}</span>: ${book.opinion}
+                    <span class="block text-xs text-gray-400 mt-1">Sentiment: ${book.sentiment > 0 ? 'Positive' : book.sentiment < 0 ? 'Negative' : 'Neutral'}</span>
+                </li>
+            `).join('') : '<li class="text-sm text-gray-400">No books found</li>';
+        }
+
+        function hideSidebar() {
+            document.getElementById('sidebar').classList.remove('active');
+            selectedWord = null;
+        }
+
+        function saveCanvasImage() {
+            if (words.length === 0) {
+                alert("Generate a word cloud first!");
+                return;
+            }
+            saveCanvas(`book_opinion_wordcloud_${new Date().toISOString().split('T')[0]}`, 'png');
+        }
+
+        function exportJSON() {
+            if (bookData.length === 0) {
+                alert("Generate a word cloud first!");
+                return;
+            }
+            const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(bookData, null, 2));
+            const downloadAnchor = document.createElement('a');
+            downloadAnchor.setAttribute('href', dataStr);
+            downloadAnchor.setAttribute('download', `book_opinions_${new Date().toISOString().split('T')[0]}.json`);
+            document.body.appendChild(downloadAnchor);
+            downloadAnchor.click();
+            downloadAnchor.remove();
+        }
+
+        function clearInput() {
+            document.getElementById('bookInput').value = '';
+            words = [];
+            bookData = [];
+            hideSidebar();
+            document.getElementById('stats').innerHTML = '';
+            needsRedraw = true;
+            redraw();
+        }
+
+        function updateStats() {
+            const stats = document.getElementById('stats');
+            const avgSentiment = bookData.length ? (bookData.reduce((sum, b) => sum + b.sentiment, 0) / bookData.length).toFixed(2) : 'N/A';
+            stats.innerHTML = `
+                <p>Total Books: ${bookData.length}</p>
+                <p>Unique Words: ${words.length}</p>
+                <p>Most Frequent: "${words[0]?.text || 'N/A'}" (${words[0]?.count || 0}x)</p>
+                <p>Average Sentiment: ${avgSentiment}</p>
+            `;
+        }
+
+        function calculateSentiment(words) {
+            let score = 0;
+            const wordCount = words.length;
+            if (wordCount === 0) return 0;
+            words.forEach(word => {
+                if (positiveWords.includes(word)) score += 1;
+                if (negativeWords.includes(word)) score -= 1;
+            });
+            return score / wordCount;
+        }
+
+        // Event Listeners for Settings
+        document.getElementById('sentimentToggle').addEventListener('change', () => {
+            needsRedraw = true;
+            redraw();
+        });
+
+        document.getElementById('maxWords').addEventListener('input', () => {
+            const value = parseInt(document.getElementById('maxWords').value);
+            if (value < 10 || value > 100) {
+                document.getElementById('maxWords').value = constrain(value, 10, 100);
+            }
+        });
+
+        document.getElementById('density').addEventListener('input', () => {
+            if (words.length > 0) {
+                generateWordCloud();
+            }
+        });
+
+        document.getElementById('layout').addEventListener('change', () => {
+            if (words.length > 0) {
+                generateWordCloud();
+            }
+        });
+
+        // Input Validation
+        document.getElementById('bookInput').addEventListener('input', () => {
+            const input = document.getElementById('bookInput').value.trim();
+            const lines = input.split('\n').filter(line => line.trim());
+            const valid = lines.every(line => {
+                const parts = line.split(':').map(s => s.trim());
+                return parts.length >= 2 && parts[0] && parts[1];
+            });
+            document.getElementById('bookInput').setCustomValidity(valid || !input ? '' : 'Invalid format. Use Title: Opinion');
+        });
+    </script>
+</body>
+
+</html>

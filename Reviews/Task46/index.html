@@ -1,0 +1,614 @@
+<!DOCTYPE html>
+<html lang="en" class="h-full">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Yoga Flow Creator</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap"
+        rel="stylesheet" />
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/choices.js/public/assets/styles/choices.min.css" />
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: {
+                            DEFAULT: "#6b46c1",
+                            light: "#9f7aea",
+                            dark: "#553c9a",
+                        },
+                        secondary: {
+                            DEFAULT: "#ed64a6",
+                            light: "#fBB6ce",
+                        },
+                    },
+                    fontFamily: {
+                        sans: ["Inter", "sans-serif"],
+                    },
+                    keyframes: {
+                        fadeIn: {
+                            "0%": { opacity: "0", transform: "translateY(10px)" },
+                            "100%": { opacity: "1", transform: "translateY(0)" },
+                        },
+                    },
+                    animation: {
+                        fadeIn: "fadeIn 0.5s ease-in-out",
+                    },
+                },
+            },
+        };
+    </script>
+    <style>
+        body {
+            overscroll-behavior: none;
+        }
+
+        .choices__inner {
+            background-color: #fff;
+            border: 1px solid #e2e8f0;
+            border-radius: 0.5rem;
+            padding: 0.5rem;
+            transition: all 0.2s ease;
+        }
+
+        .choices:focus-within .choices__inner {
+            border-color: #9f7aea;
+            box-shadow: 0 0 0 3px rgba(159, 122, 234, 0.2);
+        }
+
+        .choices__list--dropdown {
+            border: 1px solid #e2e8f0;
+            border-radius: 0.5rem;
+            margin-top: 4px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+
+        .choices__list--dropdown .choices__item--selectable.is-highlighted {
+            background-color: #6b46c1;
+            color: #fff;
+        }
+
+        .choices__list--multiple .choices__item {
+            background-color: #6b46c1;
+            border: 1px solid #553c9a;
+            border-radius: 0.25rem;
+        }
+
+        [draggable="true"] {
+            cursor: grab;
+        }
+
+        [draggable="true"]:active {
+            cursor: grabbing;
+        }
+
+        .pose-item.dragging {
+            opacity: 0.6;
+            background-color: #f1f5f9;
+        }
+
+        .pose-image {
+            transition: opacity 0.5s ease-in-out;
+        }
+
+        .fade-in {
+            animation: fadeIn 0.5s ease-in-out;
+        }
+
+        input::-webkit-outer-spin-button,
+        input::-webkit-inner-spin-button {
+            -webkit-appearance: none;
+            margin: 0;
+        }
+
+        input[type="number"] {
+            -moz-appearance: textfield;
+        }
+    </style>
+</head>
+
+<body class="h-full font-sans bg-gray-50">
+    <div class="min-h-screen bg-gradient-to-br from-purple-50 via-indigo-50 to-pink-50 relative overflow-hidden">
+        <!-- Background Decorations -->
+        <div class="absolute inset-0 pointer-events-none">
+            <div class="absolute -top-32 -right-32 w-96 h-96 bg-purple-100/30 rounded-full blur-3xl"></div>
+            <div class="absolute top-1/2 -left-32 w-80 h-80 bg-indigo-100/30 rounded-full blur-3xl"></div>
+            <div class="absolute -bottom-40 right-1/3 w-72 h-72 bg-pink-100/30 rounded-full blur-3xl"></div>
+        </div>
+
+        <div class="max-w-7xl mx-auto px-4 py-8 sm:px-6 lg:px-8 relative z-10 flex flex-col min-h-screen">
+            <header class="mb-10">
+                <div class="bg-white/90 backdrop-blur-sm rounded-2xl shadow-lg p-8 text-center">
+                    <div class="flex items-center justify-center mb-4">
+                        <span class="bg-primary text-white p-3 rounded-lg shadow-md mr-4" aria-hidden="true">
+                            <img alt="Yoga SVG Vector Icon" fetchpriority="high" width="250" height="250"
+                                decoding="async" data-nimg="1" style="color:transparent;width:30px;height:30px"
+                                src="https://www.svgrepo.com/show/324866/yoga.svg">
+                        </span>
+                        <h1
+                            class="text-3xl sm:text-4xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-primary-dark to-primary">
+                            Yoga Flow Creator
+                        </h1>
+                    </div>
+                    <p class="text-gray-600 text-base sm:text-lg max-w-2xl mx-auto">
+                        Craft your perfect yoga practice — select poses, set durations, and
+                        flow with ease.
+                    </p>
+                </div>
+            </header>
+
+            <main class="flex-1 grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <!-- Create Flow Section -->
+                <section class="bg-white/90 backdrop-blur-sm rounded-2xl shadow-lg p-6 flex flex-col"
+                    aria-labelledby="create-flow-heading">
+                    <h2 id="create-flow-heading" class="text-xl font-semibold text-gray-800 mb-6">
+                        Create Your Flow
+                    </h2>
+                    <form id="pose-form" class="flex-1 flex flex-col" onsubmit="return false;">
+                        <div class="grid grid-cols-1 sm:grid-cols-4 gap-4 mb-6">
+                            <div class="sm:col-span-3">
+                                <label for="pose-select" class="block text-sm font-medium text-gray-700 mb-2">Select
+                                    Pose</label>
+                                <select id="pose-select" class="w-full rounded-md hover:text-primary-dark"
+                                    aria-describedby="pose-error"></select>
+                            </div>
+                            <div>
+                                <label for="duration" class="block text-sm font-medium text-gray-700 mb-2">Duration
+                                    (sec)</label>
+                                <input type="number" id="duration" min="5" max="300" value="30"
+                                    class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-light/50 focus:border-primary-light"
+                                    aria-describedby="duration-error" />
+                            </div>
+                        </div>
+                        <button type="button" id="add-pose-btn"
+                            class="bg-primary hover:bg-primary-dark text-white px-4 py-2.5 rounded-md transition duration-200 font-medium mb-4"
+                            aria-label="Add pose to flow">
+                            Add to Flow
+                        </button>
+                        <div id="error-message" class="text-red-500 text-sm mb-4" role="alert"></div>
+
+                        <div id="pose-list" class="flex-1 border border-gray-200 rounded-md overflow-auto bg-white"
+                            role="list" aria-label="Selected poses">
+                            <div class="empty-state p-8 text-center text-gray-500 text-sm bg-gray-50">
+                                No poses added yet. Start building your flow!
+                            </div>
+                        </div>
+
+                        <div class="flex gap-3 mt-6">
+                            <button type="button" id="begin-btn"
+                                class="bg-primary hover:bg-primary-dark text-white px-4 py-2.5 rounded-md transition duration-200 font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+                                disabled aria-label="Begin yoga flow">
+                                Begin Flow
+                            </button>
+                            <button type="button" id="export-btn"
+                                class="border border-primary text-primary hover:bg-primary/10 px-4 py-2.5 rounded-md transition duration-200 font-medium"
+                                aria-label="Export flow as text file">
+                                Export Flow
+                            </button>
+                            <button type="button" id="clear-btn"
+                                class="border border-gray-300 text-gray-600 hover:bg-gray-100 px-4 py-2.5 rounded-md transition duration-200 font-medium"
+                                aria-label="Clear all poses">
+                                Clear All
+                            </button>
+                        </div>
+                    </form>
+                </section>
+
+                <!-- Flow Preview Section -->
+                <section class="bg-white/90 backdrop-blur-sm rounded-2xl shadow-lg p-6 flex flex-col"
+                    aria-labelledby="flow-preview-heading">
+                    <h2 id="flow-preview-heading" class="text-xl font-semibold text-gray-800 mb-6">
+                        Flow Preview
+                    </h2>
+                    <div class="flex-1 flex flex-col items-center justify-center" id="flow-display">
+                        <div class="flow-empty text-center p-12 text-gray-500" role="status">
+                            <div class="text-5xl mb-4 opacity-30">🧘</div>
+                            <p class="text-lg font-medium mb-2">
+                                Your flow will appear here
+                            </p>
+                            <p class="text-sm">
+                                Add poses from the left panel to create your sequence
+                            </p>
+                        </div>
+
+                        <div id="active-flow" class="hidden w-full flex flex-col items-center">
+                            <div class="mb-6 flex items-center justify-center gap-2" aria-live="polite">
+                                <span class="text-sm font-medium text-gray-500">Pose</span>
+                                <span id="current-count" class="text-sm font-medium text-gray-500">0</span>
+                                <span class="text-sm font-medium text-gray-500">/</span>
+                                <span id="total-count" class="text-sm font-medium text-gray-500">0</span>
+                            </div>
+
+                            <h3 id="current-pose" class="text-2xl font-semibold text-gray-800 mb-4"></h3>
+                            <div class="w-full max-w-sm">
+                                <img id="pose-image" src="" alt=""
+                                    class="pose-image w-full rounded-lg shadow-md aspect-[4/5] object-cover" />
+                            </div>
+                            <div id="timer" class="text-5xl font-bold text-primary my-6" aria-live="polite"></div>
+
+                            <button type="button" id="stop-btn"
+                                class="bg-red-500 hover:bg-red-600 text-white px-4 py-2.5 rounded-md transition duration-200 font-medium"
+                                aria-label="Stop yoga flow">
+                                Stop Flow
+                            </button>
+
+                            <div id="completion-message" class="hidden text-center mt-6" role="alert">
+                                <h3 class="text-2xl font-semibold text-green-600 mb-2">
+                                    Flow Completed!
+                                </h3>
+                                <p class="text-gray-600 text-sm mb-4">
+                                    Great job completing your yoga practice.
+                                </p>
+                                <button type="button" id="restart-btn"
+                                    class="bg-primary hover:bg-primary-dark text-white px-4 py-2.5 rounded-md transition duration-200 font-medium"
+                                    aria-label="Restart yoga flow">
+                                    Restart Flow
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+            </main>
+
+            <footer class="mt-10 text-center text-gray-500 text-sm py-4">
+                <p>Created with ❤️ for your mindful practice</p>
+            </footer>
+        </div>
+
+        <script src="https://cdn.jsdelivr.net/npm/choices.js/public/assets/scripts/choices.min.js"></script>
+        <script>
+            // Yoga poses data
+            const yogaPoses = [
+                {
+                    name: "Mountain Pose",
+                    image:
+                        "https://images.unsplash.com/photo-1566501206188-5dd0cf160a0e?ixlib=rb-1.2.1&auto=format&fit=crop&w=800&q=80",
+                },
+                {
+                    name: "Downward Dog",
+                    image:
+                        "https://images.unsplash.com/photo-1544367567-0f2fcb009e0b?ixlib=rb-1.2.1&auto=format&fit=crop&w=800&q=80",
+                },
+                {
+                    name: "Warrior",
+                    image:
+                        "https://images.unsplash.com/photo-1599447421416-3414500d18a5?ixlib=rb-1.2.1&auto=format&fit=crop&w=800&q=80",
+                },
+                {
+                    name: "Child's Pose",
+                    image:
+                        "https://images.unsplash.com/photo-1600618528240-fb9fc964b853?ixlib=rb-1.2.1&auto=format&fit=crop&w=800&q=80",
+                },
+                {
+                    name: "Cobra Pose",
+                    image:
+                        "https://images.unsplash.com/photo-1510894347713-fc3ed6fdf539?ixlib=rb-1.2.1&auto=format&fit=crop&w=800&q=80",
+                },
+                {
+                    name: "Seated Forward Bend",
+                    image:
+                        "https://images.unsplash.com/photo-1562088287-bde35a1ea917?ixlib=rb-1.2.1&auto=format&fit=crop&w=800&q=80",
+                },
+                {
+                    name: "Corpse Pose",
+                    image:
+                        "https://images.unsplash.com/photo-1552196563-55cd4e45efb3?ixlib=rb-1.2.1&auto=format&fit=crop&w=800&q=80",
+                },
+            ];
+
+            // State
+            let selectedFlow = [];
+            let flowInterval = null;
+            let currentPoseIndex = 0;
+            let choicesInstance = null;
+
+            // DOM Elements
+            const elements = {
+                poseSelect: document.getElementById("pose-select"),
+                durationInput: document.getElementById("duration"),
+                errorMessage: document.getElementById("error-message"),
+                poseList: document.getElementById("pose-list"),
+                beginBtn: document.getElementById("begin-btn"),
+                exportBtn: document.getElementById("export-btn"),
+                clearBtn: document.getElementById("clear-btn"),
+                flowEmpty: document.querySelector(".flow-empty"),
+                activeFlow: document.getElementById("active-flow"),
+                currentPose: document.getElementById("current-pose"),
+                poseImage: document.getElementById("pose-image"),
+                timer: document.getElementById("timer"),
+                currentCount: document.getElementById("current-count"),
+                totalCount: document.getElementById("total-count"),
+                stopBtn: document.getElementById("stop-btn"),
+                completionMessage: document.getElementById("completion-message"),
+                restartBtn: document.getElementById("restart-btn"),
+                addPoseBtn: document.getElementById("add-pose-btn"),
+            };
+
+            // Initialize
+            function init() {
+                initializePoseSelector();
+                bindEventListeners();
+                loadSavedFlow();
+                updatePoseList();
+            }
+
+            function initializePoseSelector() {
+                yogaPoses.forEach((pose) => {
+                    const option = document.createElement("option");
+                    option.value = pose.name;
+                    option.textContent = pose.name;
+                    elements.poseSelect.appendChild(option);
+                });
+
+                try {
+                    choicesInstance = new Choices(elements.poseSelect, {
+                        searchEnabled: true,
+                        searchPlaceholderValue: "Search for a pose...",
+                        itemSelectText: "",
+                        placeholder: true,
+                        placeholderValue: "Select a yoga pose",
+                        classNames: {
+                            containerOuter: "choices",
+                            containerInner: "choices__inner",
+                            input: "choices__input",
+                            inputCloned: "choices__input--cloned",
+                            list: "choices__list",
+                            listItems: "choices__list--multiple",
+                            listSingle: "choices__list--single",
+                            listDropdown: "choices__list--dropdown",
+                            item: "choices__item",
+                            itemSelectable: "choices__item--selectable",
+                            itemDisabled: "choices__item--disabled",
+                            itemChoice: "choices__item--choice",
+                            placeholder: "choices__placeholder",
+                            group: "choices__group",
+                            groupHeading: "choices__heading",
+                            button: "choices__button",
+                            activeState: "is-active",
+                            focusState: "is-focused",
+                            openState: "is-open",
+                            disabledState: "is-disabled",
+                            highlightedState: "is-highlighted",
+                            selectedState: "is-selected",
+                            flippedState: "is-flipped",
+                        },
+                    });
+                } catch (error) {
+                    console.warn("Choices.js failed to initialize:", error);
+                }
+            }
+
+            function bindEventListeners() {
+                elements.addPoseBtn.addEventListener("click", addPose);
+                elements.beginBtn.addEventListener("click", startFlow);
+                elements.exportBtn.addEventListener("click", exportFlow);
+                elements.clearBtn.addEventListener("click", clearFlow);
+                elements.stopBtn.addEventListener("click", stopFlow);
+                elements.restartBtn.addEventListener("click", startFlow);
+                elements.durationInput.addEventListener("keypress", (e) => {
+                    if (e.key === "Enter") addPose();
+                });
+            }
+
+            function addPose() {
+                const poseName = choicesInstance
+                    ? choicesInstance.getValue(true)
+                    : elements.poseSelect.value;
+                const duration = parseInt(elements.durationInput.value);
+
+                if (!poseName) {
+                    elements.errorMessage.textContent = "Please select a pose.";
+                    return;
+                }
+
+                if (isNaN(duration) || duration < 5 || duration > 300) {
+                    elements.errorMessage.textContent =
+                        "Please enter a duration between 5 and 300 seconds.";
+                    return;
+                }
+
+                if (selectedFlow.some((p) => p.name === poseName)) {
+                    elements.errorMessage.textContent =
+                        "This pose is already in your flow.";
+                    return;
+                }
+
+                elements.errorMessage.textContent = "";
+                const pose = yogaPoses.find((p) => p.name === poseName);
+                selectedFlow.push({ ...pose, duration });
+                saveFlow();
+                updatePoseList();
+                elements.durationInput.value = "30";
+                if (choicesInstance) choicesInstance.setChoiceByValue("");
+            }
+
+            function updatePoseList() {
+                elements.poseList.innerHTML = "";
+                elements.beginBtn.disabled = selectedFlow.length === 0;
+
+                if (selectedFlow.length === 0) {
+                    elements.poseList.innerHTML =
+                        '<div class="empty-state p-8 text-center text-gray-500 text-sm bg-gray-50">No poses added yet. Start building your flow!</div>';
+                    return;
+                }
+
+                selectedFlow.forEach((pose, index) => {
+                    const div = document.createElement("div");
+                    div.className =
+                        "pose-item flex items-center p-4 bg-white border-b border-gray-200 last:border-b-0 hover:bg-gray-50 hover:text-black transition-colors";
+                    div.draggable = true;
+                    div.dataset.index = index;
+                    div.setAttribute("role", "listitem");
+                    div.innerHTML = `
+            <div class="text-gray-400 mr-3 cursor-grab text-xl" aria-hidden="true">⋮</div>
+            <img src="${pose.image}" alt="${pose.name}" class="w-10 h-10 rounded object-cover mr-3" />
+            <div class="flex-1">
+              <div class="font-medium text-gray-800">${pose.name}</div>
+              <div class="text-xs text-gray-500">${pose.duration} seconds</div>
+            </div>
+            <button type="button" class="bg-red-500 hover:bg-red-600 text-white px-2 py-1 rounded text-xs font-medium" aria-label="Remove ${pose.name}">Remove</button>
+          `;
+
+                    div.querySelector("button").addEventListener("click", () =>
+                        removePose(index)
+                    );
+                    div.addEventListener("dragstart", handleDragStart);
+                    div.addEventListener("dragover", handleDragOver);
+                    div.addEventListener("drop", handleDrop);
+                    div.addEventListener("dragend", handleDragEnd);
+
+                    elements.poseList.appendChild(div);
+                });
+            }
+
+            function handleDragStart(e) {
+                e.target.classList.add("dragging");
+                e.dataTransfer.setData("text/plain", e.target.dataset.index);
+                e.dataTransfer.effectAllowed = "move";
+            }
+
+            function handleDragOver(e) {
+                e.preventDefault();
+                e.dataTransfer.dropEffect = "move";
+            }
+
+            function handleDrop(e) {
+                e.preventDefault();
+                const fromIndex = parseInt(e.dataTransfer.getData("text/plain"));
+                const toIndex = parseInt(e.target.closest(".pose-item").dataset.index);
+
+                if (fromIndex !== toIndex) {
+                    const [item] = selectedFlow.splice(fromIndex, 1);
+                    selectedFlow.splice(toIndex, 0, item);
+                    saveFlow();
+                    updatePoseList();
+                }
+            }
+
+            function handleDragEnd(e) {
+                e.target.classList.remove("dragging");
+            }
+
+            function removePose(index) {
+                selectedFlow.splice(index, 1);
+                saveFlow();
+                updatePoseList();
+            }
+
+            function clearFlow() {
+                selectedFlow = [];
+                saveFlow();
+                updatePoseList();
+                elements.errorMessage.textContent = "";
+            }
+
+            function startFlow() {
+                if (selectedFlow.length === 0) {
+                    elements.errorMessage.textContent =
+                        "Please add at least one pose to your flow.";
+                    return;
+                }
+
+                elements.errorMessage.textContent = "";
+                elements.flowEmpty.style.display = "none";
+                elements.activeFlow.classList.remove("hidden");
+                elements.completionMessage.classList.add("hidden");
+                elements.totalCount.textContent = selectedFlow.length;
+                currentPoseIndex = 0;
+                runPose();
+            }
+
+            function runPose() {
+                if (currentPoseIndex >= selectedFlow.length) {
+                    elements.completionMessage.classList.remove("hidden");
+                    elements.poseImage.classList.add("hidden");
+                    elements.timer.classList.add("hidden");
+                    elements.currentPose.classList.add("hidden");
+                    elements.currentCount.textContent = selectedFlow.length;
+                    setTimeout(stopFlow, 5000);
+                    return;
+                }
+
+                const pose = selectedFlow[currentPoseIndex];
+                elements.currentPose.textContent = pose.name;
+                elements.currentPose.classList.remove("hidden");
+                elements.poseImage.src = pose.image;
+                elements.poseImage.alt = pose.name;
+                elements.poseImage.classList.remove("hidden");
+                elements.poseImage.classList.add("fade-in");
+                elements.timer.classList.remove("hidden");
+                elements.currentCount.textContent = currentPoseIndex + 1;
+
+                let timeLeft = pose.duration;
+                elements.timer.textContent = timeLeft;
+
+                clearInterval(flowInterval);
+                flowInterval = setInterval(() => {
+                    timeLeft--;
+                    elements.timer.textContent = timeLeft;
+                    if (timeLeft <= 0) {
+                        elements.poseImage.classList.remove("fade-in");
+                        currentPoseIndex++;
+                        runPose();
+                    }
+                }, 1000);
+            }
+
+            function stopFlow() {
+                clearInterval(flowInterval);
+                elements.activeFlow.classList.add("hidden");
+                elements.flowEmpty.style.display = "block";
+                elements.currentCount.textContent = "0";
+                elements.poseImage.classList.remove("fade-in");
+            }
+
+            function exportFlow() {
+                if (selectedFlow.length === 0) {
+                    elements.errorMessage.textContent =
+                        "Please add at least one pose to your flow.";
+                    return;
+                }
+
+                const now = new Date().toISOString().split("T")[0];
+                const text = `Yoga Flow (Created on ${now})\n\n${selectedFlow
+                    .map((pose, index) => `${index + 1}. ${pose.name}: ${pose.duration}s`)
+                    .join("\n")}`;
+                const blob = new Blob([text], { type: "text/plain" });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement("a");
+                a.href = url;
+                a.download = `yoga-flow-${now}.txt`;
+                a.click();
+                URL.revokeObjectURL(url);
+            }
+
+            function saveFlow() {
+                try {
+                    localStorage.setItem("yogaFlow", JSON.stringify(selectedFlow));
+                } catch (error) {
+                    console.warn("Failed to save flow to localStorage:", error);
+                }
+            }
+
+            function loadSavedFlow() {
+                try {
+                    const saved = localStorage.getItem("yogaFlow");
+                    if (saved) {
+                        selectedFlow = JSON.parse(saved).filter((pose) =>
+                            yogaPoses.some((p) => p.name === pose.name)
+                        );
+                        updatePoseList();
+                    }
+                } catch (error) {
+                    console.warn("Failed to load saved flow:", error);
+                }
+            }
+
+            // Start the app
+            document.addEventListener("DOMContentLoaded", init);
+        </script>
+</body>
+
+</html>

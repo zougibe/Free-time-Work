@@ -1,0 +1,272 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>📊 Real-Time Stock Tracker</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+</head>
+
+<body class="bg-gray-900 text-gray-100 h-screen flex flex-col">
+
+    <!-- Header -->
+    <header class="bg-gray-800 p-4 flex justify-between items-center shadow-md">
+        <div class="text-xl font-bold flex items-center gap-2">
+            📊 <span>Real-Time Stock Tracker</span>
+        </div>
+        <div class="flex items-center gap-2 w-1/2">
+            <input id="stockSearch" placeholder="Enter stock (e.g., AAPL)"
+                class="flex-1 p-2 rounded-md bg-gray-700 placeholder-gray-400" />
+            <button onclick="addStock()"
+                class="bg-blue-600 hover:bg-blue-700 text-white h-10 w-10 flex items-center justify-center rounded-md">+</button>
+        </div>
+    </header>
+
+    <!-- Cards Grid -->
+    <main class="flex-1 p-6 overflow-y-auto">
+        <div id="cardGrid" class="grid gap-4 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4"></div>
+    </main>
+
+    <!-- Modal for full chart -->
+    <div id="graphModal" class="hidden fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-50">
+        <div class="bg-gray-800 p-6 rounded-lg w-11/12 max-w-4xl relative">
+            <button onclick="closeModal()" class="text-white absolute right-4 top-4 text-lg">✖</button>
+            <canvas id="modalChart" class="w-full"></canvas>
+        </div>
+    </div>
+
+    <script>
+        const apiKey = "demo";
+        const stockData = {};
+        let modalChart;
+
+        const stockInput = document.getElementById("stockSearch");
+        const cardGrid = document.getElementById("cardGrid");
+
+        function savePortfolio() {
+            localStorage.setItem("portfolio", JSON.stringify(Object.keys(stockData)));
+        }
+
+        function loadPortfolio() {
+            const saved = JSON.parse(localStorage.getItem("portfolio") || "[]");
+            saved.forEach(symbol => addStock(symbol, true));
+        }
+
+        async function fetchStockPrice(symbol) {
+            try {
+                const res = await fetch(`https://www.alphavantage.co/query?function=GLOBAL_QUOTE&symbol=${symbol}&apikey=${apiKey}`);
+                const data = await res.json();
+                return data["Global Quote"];
+            } catch {
+                return null;
+            }
+        }
+
+        async function fetchHistoricalData(symbol) {
+            try {
+                const res = await fetch(`https://www.alphavantage.co/query?function=TIME_SERIES_DAILY&symbol=${symbol}&apikey=${apiKey}`);
+                const data = await res.json();
+                const series = data["Time Series (Daily)"];
+                if (!series) return [];
+                return Object.entries(series).slice(0, 30).map(([date, val]) => ({
+                    x: new Date(date),
+                    y: parseFloat(val["4. close"])
+                })).reverse();
+            } catch {
+                return [];
+            }
+        }
+
+        function renderMiniChart(canvas, data) {
+            new Chart(canvas.getContext("2d"), {
+                type: "line",
+                data: {
+                    labels: data.map(d => d.x),
+                    datasets: [{
+                        data: data.map(d => d.y),
+                        borderColor: "#60a5fa",
+                        backgroundColor: "rgba(96,165,250,0.1)",
+                        tension: 0.4,
+                        pointRadius: 0,
+                        borderWidth: 2
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: { x: { display: false }, y: { display: false } },
+                    plugins: { legend: { display: false }, tooltip: { enabled: false } }
+                }
+            });
+        }
+
+        async function addStock(symbolParam, silent = false) {
+            const symbol = (symbolParam || stockInput.value.trim().toUpperCase());
+            if (!symbol) return;
+
+            if (stockData[symbol]) {
+                if (!silent) {
+                    Swal.fire({ icon: 'info', title: 'Already Added', text: `${symbol} is already in your dashboard.`, background: '#1f2937', color: '#fff', confirmButtonColor: '#3b82f6' });
+                }
+                return;
+            }
+
+            const data = await fetchStockPrice(symbol);
+            const history = await fetchHistoricalData(symbol);
+            if (data && data["05. price"] && history.length) {
+                stockData[symbol] = { quote: data, history };
+                savePortfolio();
+
+                const card = document.createElement("div");
+                card.className = "bg-gray-800 p-4 rounded shadow-md hover:shadow-2xl transition transform hover:-translate-y-1 relative group cursor-pointer";
+                card.setAttribute("data-symbol", symbol);
+
+                const price = parseFloat(data["05. price"]);
+                const change = parseFloat(data["10. change percent"]);
+                const trend = change >= 0 ? "↑ Bullish" : "↓ Bearish";
+                const color = change >= 0 ? "text-green-400" : "text-red-500";
+                const trendColor = change >= 0 ? "bg-green-800 text-green-300" : "bg-red-800 text-red-300";
+
+                card.innerHTML = `
+		  <button class="absolute top-2 right-2 text-sm text-gray-400 hover:text-red-500 hidden group-hover:block" onclick="event.stopPropagation(); removeStock('${symbol}')">✖</button>
+		  <div onclick="showModal('${symbol}')">
+			<div class="flex justify-between items-center mb-1">
+			  <h2 class="font-bold text-lg">${symbol}</h2>
+			  <div class="text-right">
+				<div class="price text-md font-semibold text-white">$${price.toFixed(2)}</div>
+				<div class="change text-sm ${color}">${change.toFixed(2)}%</div>
+			  </div>
+			</div>
+			<div class="trend text-xs inline-block px-2 py-1 mb-2 rounded ${trendColor}">${trend}</div>
+			<div class="h-16"><canvas></canvas></div>
+		  </div>
+		`;
+
+                cardGrid.appendChild(card);
+                const canvas = card.querySelector("canvas");
+                renderMiniChart(canvas, history);
+                simulateLiveUpdates(symbol, canvas);
+
+                if (!symbolParam) stockInput.value = "";
+
+                if (!silent) {
+                    Swal.fire({ icon: 'success', title: 'Stock Added', text: `${symbol} added successfully.`, background: '#1f2937', color: '#fff', confirmButtonColor: '#3b82f6' });
+                }
+            } else {
+                if (!silent) {
+                    Swal.fire({ icon: 'error', title: 'Invalid Symbol', text: 'Symbol not found or API error.', background: '#1f2937', color: '#fff', confirmButtonColor: '#ef4444' });
+                }
+            }
+        }
+
+        function simulateLiveUpdates(symbol, canvas) {
+            const ctx = canvas.getContext("2d");
+            let sparkChart = Chart.getChart(ctx);
+
+            setInterval(async () => {
+                const data = await fetchStockPrice(symbol);
+                const history = await fetchHistoricalData(symbol);
+                if (!data || !history.length) return;
+
+                stockData[symbol].quote = data;
+                stockData[symbol].history = history;
+
+                // update card values and styles
+                const price = parseFloat(data["05. price"]);
+                const change = parseFloat(data["10. change percent"]);
+                const trend = change >= 0 ? "↑ Bullish" : "↓ Bearish";
+                const color = change >= 0 ? "text-green-400" : "text-red-500";
+                const trendColor = change >= 0 ? "bg-green-800 text-green-300" : "bg-red-800 text-red-300";
+
+                const card = [...cardGrid.children].find(c => c.dataset.symbol === symbol);
+                if (!card) return;
+                card.querySelector(".price").textContent = `$${price.toFixed(2)}`;
+                card.querySelector(".change").textContent = `${change.toFixed(2)}%`;
+                card.querySelector(".change").className = `change text-sm ${color}`;
+                card.querySelector(".trend").textContent = trend;
+                card.querySelector(".trend").className = `trend text-xs inline-block px-2 py-1 mb-2 rounded ${trendColor}`;
+
+                // update mini‐chart
+                if (sparkChart) {
+                    sparkChart.data.labels = history.map(d => d.x);
+                    sparkChart.data.datasets[0].data = history.map(d => d.y);
+                    sparkChart.update();
+                }
+
+                // update modal chart if it’s open
+                const modalEl = document.getElementById("graphModal");
+                if (!modalEl.classList.contains("hidden") && modalChart &&
+                    modalChart.config.data.datasets[0].label.includes(symbol)) {
+                    modalChart.data.datasets[0].data = history;
+                    modalChart.update();
+                }
+            }, 3000);
+        }
+
+        function removeStock(symbol) {
+            delete stockData[symbol];
+            savePortfolio();
+            [...cardGrid.children].forEach(card => {
+                if (card.getAttribute("data-symbol") === symbol) card.remove();
+            });
+        }
+
+        async function showModal(symbol) {
+            const modal = document.getElementById("graphModal");
+            const ctx = document.getElementById("modalChart").getContext("2d");
+            modal.classList.remove("hidden");
+
+            if (modalChart) modalChart.destroy();
+            modalChart = new Chart(ctx, {
+                type: "line",
+                data: {
+                    datasets: [{
+                        label: `${symbol} Price (30 days)`,
+                        data: stockData[symbol].history,
+                        borderColor: "#3B82F6",
+                        backgroundColor: "rgba(59,130,246,0.1)",
+                        tension: 0.3,
+                        fill: true
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: true,
+                    aspectRatio: 2,
+                    scales: {
+                        x: {
+                            type: "time",
+                            time: { unit: "day" },
+                            ticks: { color: "white" },
+                            grid: { color: "rgba(255,255,255,0.1)" }
+                        },
+                        y: {
+                            ticks: { color: "white" },
+                            grid: { color: "rgba(255,255,255,0.1)" }
+                        }
+                    },
+                    plugins: {
+                        legend: { labels: { color: "white" } }
+                    }
+                }
+            });
+        }
+
+        function closeModal() {
+            document.getElementById("graphModal").classList.add("hidden");
+            if (modalChart) modalChart.destroy();
+        }
+
+        stockInput.addEventListener("keypress", e => {
+            if (e.key === "Enter") addStock();
+        });
+
+        loadPortfolio();
+    </script>
+</body>
+
+</html>
