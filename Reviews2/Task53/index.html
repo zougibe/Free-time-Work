@@ -1,0 +1,515 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>News Bites</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        :root {
+            --primary: #2563eb;
+            --primary-hover: #1d4ed8;
+            --text: #1f2937;
+            --background: #f9fafb;
+        }
+
+        [data-theme="dark"] {
+            --primary: #60a5fa;
+            --primary-hover: #3b82f6;
+            --text: #e5e7eb;
+            --background: #1f2937;
+        }
+
+        body {
+            background: var(--background);
+            color: var(--text);
+            transition: background-color 0.3s, color 0.3s;
+        }
+
+        .news-details {
+            max-height: 0;
+            transition: max-height 0.3s ease-out;
+            overflow: hidden;
+        }
+
+        .news-details.active {
+            max-height: 500px;
+        }
+
+        .comment-section {
+            max-height: 320px;
+            overflow-y: auto;
+        }
+
+        article p {
+            color: #6b7280;
+            font-size: 0.9375rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .news-card {
+            transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
+        }
+
+        .news-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+        }
+
+        .comment-section::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        .comment-section::-webkit-scrollbar-track {
+            background: #f1f5f9;
+        }
+
+        .comment-section::-webkit-scrollbar-thumb {
+            background: #64748b;
+            border-radius: 4px;
+        }
+
+        [data-theme="dark"] .comment-section::-webkit-scrollbar-track {
+            background: #374151;
+        }
+
+        [data-theme="dark"] .comment-section::-webkit-scrollbar-thumb {
+            background: #9ca3af;
+        }
+
+        .modal-enter {
+            opacity: 0;
+            transform: scale(0.95);
+        }
+
+        .modal-enter-active {
+            opacity: 1;
+            transform: scale(1);
+            transition: opacity 200ms, transform 200ms;
+        }
+
+        .modal-exit {
+            opacity: 1;
+            transform: scale(1);
+        }
+
+        .modal-exit-active {
+            opacity: 0;
+            transform: scale(0.95);
+            transition: opacity 200ms, transform 200ms;
+        }
+
+        .back-to-top {
+            transition: opacity 0.3s, transform 0.3s;
+        }
+
+        .back-to-top.hidden {
+            opacity: 0;
+            transform: translateY(20px);
+        }
+    </style>
+</head>
+
+<body class="font-sans antialiased" data-theme="light">
+    <!-- Header -->
+    <header class="bg-white dark:bg-gray-800 shadow-sm p-4 sticky top-0 z-10">
+        <div class="max-w-6xl mx-auto flex justify-between items-center">
+            <h1 class="text-3xl font-bold text-gray-900 dark:text-gray-100">News Bites</h1>
+            <div class="flex items-center gap-3">
+                <button id="themeToggle"
+                    class="p-2 rounded-full bg-gray-200 dark:bg-gray-700 text-gray-600 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-gray-600 transition"
+                    aria-label="Toggle dark mode">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z" />
+                    </svg>
+                </button>
+                <button id="subscribeBtn"
+                    class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 transition">
+                    Daily Digest
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="max-w-6xl mx-auto py-8 px-4">
+        <h2 class="text-2xl font-bold text-gray-900 dark:text-gray-100 mb-6 text-center">Your Briefing</h2>
+        <section class="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+            <!-- News Cards -->
+            <article class="news-card bg-white dark:bg-gray-800 p-5 rounded-lg shadow-sm" data-visible="false">
+                <h2 class="text-lg font-semibold text-gray-900 dark:text-gray-100">Global Markets Rally</h2>
+                <p>Tuesday April 8, 2025 | India News | Edited by NDTV News Desk</p>
+                <ul class="list-disc pl-5 text-gray-600 dark:text-gray-300 mt-2">
+                    <li>Stocks hit record highs</li>
+                    <li>Tech sector leads gains</li>
+                    <li>Investor confidence surges</li>
+                </ul>
+                <button
+                    class="toggleDetails text-blue-600 dark:text-blue-400 mt-3 font-medium hover:underline focus:outline-none"
+                    aria-expanded="false">More Details</button>
+                <div class="news-details text-gray-600 dark:text-gray-300 mt-3">
+                    <p>Markets soared today as positive earnings reports from major tech firms bolstered investor
+                        sentiment. The Dow rose 300 points, with analysts predicting continued growth through Q2.</p>
+                </div>
+            </article>
+
+            <article class="news-card bg-white dark:bg-gray-800 p-5 rounded-lg shadow-sm" data-visible="false">
+                <h2 class="text-lg font-semibold text-gray-900 dark:text-gray-100">Climate Talks Progress</h2>
+                <p>Tuesday April 8, 2025 | India News | Edited by NDTV News Desk</p>
+                <ul class="list-disc pl-5 text-gray-600 dark:text-gray-300 mt-2">
+                    <li>New emissions targets set</li>
+                    <li>50+ countries commit</li>
+                    <li>Funding pledged for green tech</li>
+                </ul>
+                <button
+                    class="toggleDetails text-blue-600 dark:text-blue-400 mt-3 font-medium hover:underline focus:outline-none"
+                    aria-expanded="false">More Details</button>
+                <div class="news-details text-gray-600 dark:text-gray-300 mt-3">
+                    <p>International climate negotiations concluded with a historic agreement, setting ambitious carbon
+                        reduction goals. Developing nations will receive $100B in aid to transition to renewable energy.
+                    </p>
+                </div>
+            </article>
+
+            <article class="news-card bg-white dark:bg-gray-800 p-5 rounded-lg shadow-sm" data-visible="false">
+                <h2 class="text-lg font-semibold text-gray-900 dark:text-gray-100">Tech Stocks Surge Amid Earnings
+                    Reports</h2>
+                <p>Tuesday April 8, 2025 | India News | Edited by NDTV News Desk</p>
+                <ul class="list-disc pl-5 text-gray-600 dark:text-gray-300 mt-2">
+                    <li>Apple and Microsoft beat earnings expectations</li>
+                    <li>Nasdaq hits all-time high</li>
+                    <li>Investor optimism grows</li>
+                </ul>
+                <button
+                    class="toggleDetails text-blue-600 dark:text-blue-400 mt-3 font-medium hover:underline focus:outline-none"
+                    aria-expanded="false">More Details</button>
+                <div class="news-details text-gray-600 dark:text-gray-300 mt-3">
+                    <p>Tech stocks led the market rally today as major firms like Apple and Microsoft surpassed earnings
+                        expectations, pushing the Nasdaq to new highs.</p>
+                </div>
+            </article>
+
+            <article class="news-card bg-white dark:bg-gray-800 p-5 rounded-lg shadow-sm" data-visible="false">
+                <h2 class="text-lg font-semibold text-gray-900 dark:text-gray-100">Global Oil Prices Hit 5-Year High
+                </h2>
+                <p>Tuesday April 8, 2025 | India News | Edited by NDTV News Desk</p>
+                <ul class="list-disc pl-5 text-gray-600 dark:text-gray-300 mt-2">
+                    <li>Oil prices rise to $85 per barrel</li>
+                    <li>Global demand rebounds post-pandemic</li>
+                    <li>Supply constraints continue to drive prices</li>
+                </ul>
+                <button
+                    class="toggleDetails text-blue-600 dark:text-blue-400 mt-3 font-medium hover:underline focus:outline-none"
+                    aria-expanded="false">More Details</button>
+                <div class="news-details text-gray-600 dark:text-gray-300 mt-3">
+                    <p>Crude oil prices surged to their highest levels in five years as global demand recovers from the
+                        pandemic, while supply constraints and geopolitical tensions add to the bullish trend.</p>
+                </div>
+            </article>
+
+            <article class="news-card bg-white dark:bg-gray-800 p-5 rounded-lg shadow-sm" data-visible="false">
+                <h2 class="text-lg font-semibold text-gray-900 dark:text-gray-100">US Federal Reserve Signals Tightening
+                    Policy</h2>
+                <p>Tuesday April 8, 2025 | India News | Edited by NDTV News Desk</p>
+                <ul class="list-disc pl-5 text-gray-600 dark:text-gray-300 mt-2">
+                    <li>Fed hints at interest rate hikes</li>
+                    <li>Inflation concerns continue</li>
+                    <li>Impact on global markets expected</li>
+                </ul>
+                <button
+                    class="toggleDetails text-blue-600 dark:text-blue-400 mt-3 font-medium hover:underline focus:outline-none"
+                    aria-expanded="false">More Details</button>
+                <div class="news-details text-gray-600 dark:text-gray-300 mt-3">
+                    <p>The US Federal Reserve hinted at tightening monetary policy, signaling potential interest rate
+                        hikes as inflationary pressures persist.</p>
+                </div>
+            </article>
+
+            <article class="news-card bg-white dark:bg-gray-800 p-5 rounded-lg shadow-sm" data-visible="false">
+                <h2 class="text-lg font-semibold text-gray-900 dark:text-gray-100">S&P 500 Hits Record Close</h2>
+                <p>Tuesday April 8, 2025 | India News | Edited by NDTV News Desk</p>
+                <ul class="list-disc pl-5 text-gray-600 dark:text-gray-300 mt-2">
+                    <li>S&P 500 closes at new record</li>
+                    <li>Strong earnings from financial and consumer sectors</li>
+                    <li>Economic recovery on track</li>
+                </ul>
+                <button
+                    class="toggleDetails text-blue-600 dark:text-blue-400 mt-3 font-medium hover:underline focus:outline-none"
+                    aria-expanded="false">More Details</button>
+                <div class="news-details text-gray-600 dark:text-gray-300 mt-3">
+                    <p>The S&P 500 closed at a new all-time high today, driven by robust earnings reports from the
+                        financial and consumer sectors.</p>
+                </div>
+            </article>
+
+            <article class="news-card bg-white dark:bg-gray-800 p-5 rounded-lg shadow-sm" data-visible="false">
+                <h2 class="text-lg font-semibold text-gray-900 dark:text-gray-100">Cryptocurrency Market Booms</h2>
+                <p>Tuesday April 8, 2025 | India News | Edited by NDTV News Desk</p>
+                <ul class="list-disc pl-5 text-gray-600 dark:text-gray-300 mt-2">
+                    <li>Bitcoin reaches $60,000</li>
+                    <li>Institutional investments increase</li>
+                    <li>Altcoins see significant gains</li>
+                </ul>
+                <button
+                    class="toggleDetails text-blue-600 dark:text-blue-400 mt-3 font-medium hover:underline focus:outline-none"
+                    aria-expanded="false">More Details</button>
+                <div class="news-details text-gray-600 dark:text-gray-300 mt-3">
+                    <p>Bitcoin surged past $60,000 today, fueled by growing institutional interest and positive
+                        sentiment in the cryptocurrency space.</p>
+                </div>
+            </article>
+        </section>
+
+        <!-- Comment Section -->
+        <section class="mt-10 bg-white dark:bg-gray-800 p-6 rounded-lg shadow-sm">
+            <h3 class="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">Live Comments</h3>
+            <div id="comments" class="comment-section text-gray-600 dark:text-gray-300 space-y-3"></div>
+            <div class="mt-4 relative">
+                <input type="text" id="commentInput"
+                    class="w-full p-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700"
+                    placeholder="Add a comment..." maxlength="200" aria-label="Comment input">
+                <span id="charCounter"
+                    class="absolute right-3 top-3 text-xs text-gray-500 dark:text-gray-400">200</span>
+                <button id="commentSubmit"
+                    class="mt-2 w-full bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 transition disabled:opacity-50"
+                    disabled>Post</button>
+            </div>
+        </section>
+    </main>
+
+    <!-- Subscription Modal -->
+    <div id="subscribeModal"
+        class="fixed inset-0 bg-gray-800 bg-opacity-60 hidden flex items-center justify-center z-20" role="dialog"
+        aria-labelledby="modalTitle" aria-modal="true">
+        <div class="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-lg w-full max-w-md">
+            <h3 id="modalTitle" class="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">Subscribe to Daily
+                Digest</h3>
+            <div>
+                <div class="relative">
+                    <input type="email" id="emailInput"
+                        class="w-full p-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700"
+                        placeholder="Enter your email" required aria-label="Email input">
+                    <span id="emailError" class="text-red-500 text-sm hidden mt-1">Please enter a valid email</span>
+                </div>
+                <div class="flex gap-3 mt-4">
+                    <button id="subscribeSubmit"
+                        class="flex-1 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 transition disabled:opacity-50"
+                        disabled>Subscribe</button>
+                    <button id="closeModal"
+                        class="flex-1 bg-gray-200 dark:bg-gray-600 text-gray-800 dark:text-gray-200 px-4 py-2 rounded-lg hover:bg-gray-300 dark:hover:bg-gray-500 focus:outline-none focus:ring-2 focus:ring-gray-400 transition">Cancel</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Back to Top Button -->
+    <button id="backToTop"
+        class="fixed bottom-6 right-6 bg-blue-600 text-white p-3 rounded-full shadow-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 transition back-to-top hidden"
+        aria-label="Back to top">
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 10l7-7m0 0l7 7m-7-7v18" />
+        </svg>
+    </button>
+
+    <!-- Footer -->
+    <footer
+        class="bg-white dark:bg-gray-800 p-4 mt-8 text-center text-gray-600 dark:text-gray-300 border-t dark:border-gray-700">
+        <p>© 2025 News Bites. All rights reserved.</p>
+    </footer>
+
+    <script>
+        // Utility: Debounce function
+        function debounce(func, wait) {
+            let timeout;
+            return function executedFunction(...args) {
+                const later = () => {
+                    clearTimeout(timeout);
+                    func(...args);
+                };
+                clearTimeout(timeout);
+                timeout = setTimeout(later, wait);
+            };
+        }
+
+        // Theme Toggle
+        const themeToggle = document.getElementById('themeToggle');
+        const body = document.body;
+        const currentTheme = localStorage.getItem('theme') || 'light';
+        body.setAttribute('data-theme', currentTheme);
+        themeToggle.innerHTML = currentTheme === 'light'
+            ? '<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z" /></svg>'
+            : '<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" /></svg>';
+
+        themeToggle.addEventListener('click', () => {
+            const newTheme = body.getAttribute('data-theme') === 'light' ? 'dark' : 'light';
+            body.setAttribute('data-theme', newTheme);
+            localStorage.setItem('theme', newTheme);
+            themeToggle.innerHTML = newTheme === 'light'
+                ? '<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z" /></svg>'
+                : '<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" /></svg>';
+        });
+
+        // Toggle News Details
+        document.querySelectorAll('.toggleDetails').forEach(btn => {
+            btn.addEventListener('click', () => {
+                const details = btn.nextElementSibling;
+                const isActive = details.classList.toggle('active');
+                btn.textContent = isActive ? 'Less Details' : 'More Details';
+                btn.setAttribute('aria-expanded', isActive);
+            });
+        });
+
+        // Subscription Modal
+        const subscribeBtn = document.getElementById('subscribeBtn');
+        const subscribeModal = document.getElementById('subscribeModal');
+        const closeModal = document.getElementById('closeModal');
+        const subscribeSubmit = document.getElementById('subscribeSubmit');
+        const emailInput = document.getElementById('emailInput');
+        const emailError = document.getElementById('emailError');
+
+        function toggleModal(show) {
+            subscribeModal.classList.toggle('hidden', !show);
+            if (show) {
+                subscribeModal.classList.add('modal-enter');
+                setTimeout(() => subscribeModal.classList.add('modal-enter-active'), 10);
+                emailInput.focus();
+            } else {
+                subscribeModal.classList.remove('modal-enter-active');
+                subscribeModal.classList.add('modal-exit');
+                setTimeout(() => {
+                    subscribeModal.classList.remove('modal-exit');
+                    subscribeModal.classList.add('modal-enter');
+                }, 200);
+            }
+        }
+
+        subscribeBtn.addEventListener('click', () => toggleModal(true));
+        closeModal.addEventListener('click', () => toggleModal(false));
+
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape' && !subscribeModal.classList.contains('hidden')) {
+                toggleModal(false);
+            }
+        });
+
+        emailInput.addEventListener('input', () => {
+            const email = emailInput.value.trim();
+            const isValid = /^\S+@\S+\.\S+$/.test(email);
+            subscribeSubmit.disabled = !isValid;
+            emailError.classList.toggle('hidden', isValid || !email);
+            emailInput.classList.toggle('border-red-500', !isValid && email);
+        });
+
+        subscribeSubmit.addEventListener('click', async (e) => {
+            e.preventDefault();
+            const email = emailInput.value.trim();
+            if (/^\S+@\S+\.\S+$/.test(email)) {
+                subscribeSubmit.disabled = true;
+                subscribeSubmit.textContent = 'Subscribing...';
+                await new Promise(resolve => setTimeout(resolve, 1000)); // Simulate API call
+                localStorage.setItem('subscribedEmail', email);
+                alert(`Subscribed with ${email}!`);
+                toggleModal(false);
+                emailInput.value = '';
+                subscribeSubmit.textContent = 'Subscribe';
+                subscribeSubmit.disabled = false;
+            }
+        });
+
+        // Comment Section
+        const commentInput = document.getElementById('commentInput');
+        const commentSubmit = document.getElementById('commentSubmit');
+        const commentsDiv = document.getElementById('comments');
+        const charCounter = document.getElementById('charCounter');
+        const maxComments = 50;
+        let comments = JSON.parse(localStorage.getItem('comments')) || [];
+
+        function renderComments() {
+            commentsDiv.innerHTML = '';
+            comments.slice(0, maxComments).forEach(comment => {
+                const p = document.createElement('p');
+                p.className = 'text-sm';
+                p.textContent = `${new Date(comment.timestamp).toLocaleTimeString()} - ${comment.text}`;
+                commentsDiv.appendChild(p);
+            });
+        }
+
+        function saveComment(text) {
+            comments.unshift({ text, timestamp: Date.now() });
+            if (comments.length > maxComments) comments.pop();
+            localStorage.setItem('comments', JSON.stringify(comments));
+            renderComments();
+        }
+
+        const debouncedSubmit = debounce(async () => {
+            const text = commentInput.value.trim();
+            if (text) {
+                commentSubmit.disabled = true;
+                commentSubmit.textContent = 'Posting...';
+                await new Promise(resolve => setTimeout(resolve, 500)); // Simulate API call
+                saveComment(text);
+                commentInput.value = '';
+                charCounter.textContent = '200';
+                commentSubmit.textContent = 'Post';
+                commentSubmit.disabled = true;
+            }
+        }, 300);
+
+        commentInput.addEventListener('input', () => {
+            const text = commentInput.value.trim();
+            charCounter.textContent = 200 - commentInput.value.length;
+            commentSubmit.disabled = !text;
+            charCounter.classList.toggle('text-red-500', commentInput.value.length > 180);
+        });
+
+        commentSubmit.addEventListener('click', (e) => {
+            e.preventDefault();
+            debouncedSubmit();
+        });
+
+        commentInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                debouncedSubmit();
+            }
+        });
+
+        function addRandomComment() {
+            const randomComments = [
+                'Great summary!', 'Thanks for the update.', 'Interesting take!', 'More details please.'
+            ];
+            const text = randomComments[Math.floor(Math.random() * randomComments.length)];
+            saveComment(text);
+        }
+
+        setInterval(addRandomComment, 15000);
+        renderComments();
+
+        // Back to Top Button
+        const backToTop = document.getElementById('backToTop');
+        window.addEventListener('scroll', () => {
+            backToTop.classList.toggle('hidden', window.scrollY < 300);
+        });
+
+        backToTop.addEventListener('click', () => {
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        });
+
+        // Lazy-load news cards
+        const newsCards = document.querySelectorAll('.news-card');
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.setAttribute('data-visible', 'true');
+                    observer.unobserve(entry.target);
+                }
+            });
+        }, { threshold: 0.1 });
+
+        newsCards.forEach(card => observer.observe(card));
+    </script>
+</body>
+
+</html>

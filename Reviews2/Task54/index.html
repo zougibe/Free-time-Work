@@ -1,0 +1,608 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BookVoyage | Dark Mode</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root {
+            --primary: #6366f1;
+            --primary-dark: #4f46e5;
+            --primary-light: #818cf8;
+            --bg-dark: #0f172a;
+            --bg-darker: #020617;
+            --bg-light: #1e293b;
+            --text-primary: #f8fafc;
+            --text-secondary: #94a3b8;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--bg-darker);
+            color: var(--text-primary);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .book-card {
+            transition: all 0.3s ease;
+            background-color: var(--bg-dark);
+            border-radius: 12px;
+            overflow: hidden;
+            border: 1px solid #1e293b;
+            box-shadow: 0 4px 6px rgba(2, 6, 23, 0.5);
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .book-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 10px 15px rgba(2, 6, 23, 0.7);
+            border-color: var(--primary);
+        }
+
+        .card-header {
+            height: 6px;
+            background: linear-gradient(90deg, var(--primary) 0%, var(--primary-light) 100%);
+        }
+
+        .search-container {
+            background: var(--bg-dark);
+            border-radius: 12px;
+            box-shadow: 0 4px 15px rgba(2, 6, 23, 0.5);
+            transition: all 0.3s ease;
+            width: 100%;
+            max-width: 800px;
+            margin: 0 auto;
+            border: 1px solid #1e293b;
+        }
+
+        .search-container:focus-within {
+            box-shadow: 0 8px 25px rgba(2, 6, 23, 0.7);
+            border-color: var(--primary);
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 6px rgba(71, 61, 107, 0.2);
+            position: relative;
+            overflow: hidden;
+            border: none;
+            color: white;
+            font-weight: 500;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 12px rgba(71, 61, 107, 0.3);
+            background: linear-gradient(135deg, var(--primary-dark) 0%, var(--primary) 100%);
+        }
+
+        .genre-badge {
+            background-color: rgba(99, 102, 241, 0.15);
+            color: var(--primary-light);
+            font-size: 0.75rem;
+            padding: 0.25rem 0.75rem;
+            border-radius: 9999px;
+            display: inline-block;
+            margin-bottom: 0.5rem;
+            border: 1px solid rgba(99, 102, 241, 0.3);
+        }
+
+        .hero-section {
+            background-image: linear-gradient(rgba(2, 6, 23, 0.9), rgba(15, 23, 42, 0.9)),
+                url('https://images.unsplash.com/photo-1507842217343-583bb7270b66?ixlib=rb-1.2.1&auto=format&fit=crop&w=1350&q=80');
+            background-size: cover;
+            background-position: center;
+            position: relative;
+            padding: 4rem 1rem;
+            border-bottom: 1px solid #1e293b;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .animate-fadeIn {
+            animation: fadeIn 0.5s ease forwards;
+        }
+
+        .delay-100 {
+            animation-delay: 0.1s;
+        }
+
+        .delay-200 {
+            animation-delay: 0.2s;
+        }
+
+        .delay-300 {
+            animation-delay: 0.3s;
+        }
+
+        .book-cover {
+            width: 80px;
+            height: 120px;
+            object-fit: cover;
+            border-radius: 8px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+        }
+
+        .loading-spinner {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid rgba(255, 255, 255, 0.3);
+            border-radius: 50%;
+            border-top-color: var(--primary-light);
+            animation: spin 1s ease-in-out infinite;
+            margin-left: 8px;
+        }
+
+        @keyframes spin {
+            to {
+                transform: rotate(360deg);
+            }
+        }
+
+        /* Mobile menu */
+        .mobile-menu {
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.3s ease;
+        }
+
+        .mobile-menu.open {
+            max-height: 200px;
+        }
+
+        /* Custom scrollbar */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: var(--bg-dark);
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: var(--primary);
+            border-radius: 4px;
+        }
+
+        /* Responsive adjustments */
+        @media (max-width: 640px) {
+            .book-card {
+                flex-direction: column;
+            }
+
+            .book-cover {
+                width: 100%;
+                height: auto;
+                max-height: 200px;
+                margin-bottom: 1rem;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <header class="bg-[#0f172a] border-b border-[#1e293b] sticky top-0 z-10 shadow-sm">
+        <div class="container mx-auto px-4">
+            <div class="flex justify-between items-center py-4">
+                <div class="flex items-center">
+                    <span class="text-indigo-500 text-3xl mr-2">
+                        <i class="fas fa-book-open"></i>
+                    </span>
+                    <h1 class="text-xl font-bold text-white">BookVoyage</h1>
+                </div>
+                <nav class="hidden md:flex">
+                    <a href="#"
+                        class="px-3 py-2 rounded-md text-sm font-medium text-white bg-indigo-900/30 border border-indigo-500/30">
+                        <i class="fas fa-home mr-1"></i> Home
+                    </a>
+                    <a href="#"
+                        class="px-3 py-2 rounded-md text-sm font-medium text-[#94a3b8] hover:text-white hover:bg-indigo-900/20 ml-2">
+                        <i class="fas fa-heart mr-1"></i> Favorites
+                    </a>
+                    <a href="#"
+                        class="px-3 py-2 rounded-md text-sm font-medium text-[#94a3b8] hover:text-white hover:bg-indigo-900/20 ml-2">
+                        <i class="fas fa-search mr-1"></i> Browse
+                    </a>
+                </nav>
+                <div class="md:hidden">
+                    <button id="mobileMenuButton" class="text-[#94a3b8] hover:text-white focus:outline-none">
+                        <i class="fas fa-bars text-xl"></i>
+                    </button>
+                </div>
+            </div>
+            <!-- Mobile menu -->
+            <div id="mobileMenu" class="mobile-menu md:hidden">
+                <div class="pt-2 pb-3 space-y-1">
+                    <a href="#"
+                        class="block px-3 py-2 rounded-md text-base font-medium text-white bg-indigo-900/30 border border-indigo-500/30">
+                        <i class="fas fa-home mr-1"></i> Home
+                    </a>
+                    <a href="#"
+                        class="block px-3 py-2 rounded-md text-base font-medium text-[#94a3b8] hover:text-white hover:bg-indigo-900/20">
+                        <i class="fas fa-heart mr-1"></i> Favorites
+                    </a>
+                    <a href="#"
+                        class="block px-3 py-2 rounded-md text-base font-medium text-[#94a3b8] hover:text-white hover:bg-indigo-900/20">
+                        <i class="fas fa-search mr-1"></i> Browse
+                    </a>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <div class="hero-section text-white">
+        <div class="container mx-auto px-4 py-12 md:py-20 relative z-10">
+            <div class="max-w-3xl mx-auto text-center">
+                <h2 class="text-3xl md:text-4xl font-bold mb-4 animate-fadeIn">
+                    <i class="fas fa-book mr-2 text-indigo-400"></i> Discover Your Next Favorite Book
+                </h2>
+                <p class="text-[#94a3b8] mb-8 animate-fadeIn delay-100">Enter a genre to get personalized book
+                    recommendations in our sleek dark interface</p>
+
+                <div class="search-container p-2 flex flex-col md:flex-row animate-fadeIn delay-200">
+                    <div class="relative flex-grow">
+                        <span class="absolute left-3 top-1/2 transform -translate-y-1/2 text-[#64748b]">
+                            <i class="fas fa-search"></i>
+                        </span>
+                        <input type="text" id="genreInput"
+                            placeholder="Enter your favorite genre (e.g., Fantasy, Mystery, Sci-Fi)"
+                            class="flex-grow p-3 pl-10 rounded-lg focus:outline-none bg-[#1e293b] text-white placeholder-[#64748b] w-full focus:ring-2 focus:ring-indigo-500 border-transparent"
+                            autocomplete="off">
+                    </div>
+                    <button id="searchBtn"
+                        class="btn-primary mt-2 md:mt-0 md:ml-2 px-6 py-3 rounded-lg font-medium flex items-center justify-center">
+                        <i class="fas fa-book-reader mr-1"></i> Find Books
+                        <span id="searchSpinner" class="loading-spinner hidden"></span>
+                    </button>
+                </div>
+
+                <div class="mt-4 animate-fadeIn delay-300">
+                    <p class="text-sm text-[#64748b]">Try: <span
+                            class="text-indigo-300 font-medium cursor-pointer hover:text-indigo-200"
+                            onclick="suggestGenre('Fantasy')">Fantasy</span>, <span
+                            class="text-indigo-300 font-medium cursor-pointer hover:text-indigo-200"
+                            onclick="suggestGenre('Mystery')">Mystery</span>, <span
+                            class="text-indigo-300 font-medium cursor-pointer hover:text-indigo-200"
+                            onclick="suggestGenre('Sci-Fi')">Sci-Fi</span></p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <main class="flex-grow container mx-auto px-4 py-8 md:py-12">
+        <div class="mb-8 flex justify-between items-center animate-fadeIn delay-300">
+            <h3 class="text-xl font-semibold text-white">
+                <i class="fas fa-bookmark mr-2 text-indigo-400"></i> <span id="resultsTitle">Recommended Books</span>
+            </h3>
+            <div class="flex items-center space-x-2">
+                <span class="text-sm text-[#94a3b8]" id="resultsCount"></span>
+            </div>
+        </div>
+
+        <section id="results" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+            <!-- Book recommendations will be inserted here -->
+        </section>
+
+        <div id="noResults" class="hidden text-center py-12">
+            <i class="fas fa-book-open text-4xl text-[#334155] mb-4"></i>
+            <h4 class="text-xl font-medium text-[#94a3b8] mb-2">No books found</h4>
+            <p class="text-[#64748b]">Try searching for a different genre</p>
+        </div>
+    </main>
+
+    <footer class="bg-[#0f172a] text-[#94a3b8] border-t border-[#1e293b]">
+        <div class="container mx-auto px-4 py-8">
+            <div class="flex flex-col md:flex-row justify-between items-center">
+                <div class="mb-4 md:mb-0 text-center md:text-left">
+                    <div class="flex items-center justify-center md:justify-start">
+                        <span class="text-indigo-500 text-2xl mr-2">
+                            <i class="fas fa-book-open"></i>
+                        </span>
+                        <span class="text-lg font-semibold text-white">BookVoyage</span>
+                    </div>
+                    <p class="mt-2 text-sm">Embark on your next reading adventure</p>
+                </div>
+                <div class="flex space-x-4">
+                    <a href="#" class="text-[#94a3b8] hover:text-indigo-400 transition-colors">
+                        <i class="fab fa-twitter"></i>
+                    </a>
+                    <a href="#" class="text-[#94a3b8] hover:text-indigo-400 transition-colors">
+                        <i class="fab fa-facebook"></i>
+                    </a>
+                    <a href="#" class="text-[#94a3b8] hover:text-indigo-400 transition-colors">
+                        <i class="fab fa-instagram"></i>
+                    </a>
+                </div>
+            </div>
+            <div class="mt-6 text-center md:text-left">
+                <p class="text-xs text-[#64748b]">&copy; 2023 BookVoyage. All rights reserved.</p>
+            </div>
+        </div>
+    </footer>
+
+    <script>
+        // Enhanced book database with more details and cover images
+        const books = [
+            {
+                title: "The Hobbit",
+                author: "J.R.R. Tolkien",
+                genre: "Fantasy",
+                description: "A classic tale of adventure in Middle-earth where Bilbo Baggins goes on an unexpected journey.",
+                cover: "https://images.unsplash.com/photo-1544947950-fa07a98d237f?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=800&q=80",
+                rating: 4.7
+            },
+            {
+                title: "Dune",
+                author: "Frank Herbert",
+                genre: "Sci-Fi",
+                description: "Epic saga of politics and power on a desert planet that blends science fiction with mystical elements.",
+                cover: "https://images.unsplash.com/photo-1589998059171-988d887df646?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=800&q=80",
+                rating: 4.6
+            },
+            {
+                title: "The Da Vinci Code",
+                author: "Dan Brown",
+                genre: "Mystery",
+                description: "A thrilling puzzle-filled adventure that combines art history, religion, and conspiracy theories.",
+                cover: "https://images.unsplash.com/photo-1544716278-ca5e3f4abd8c?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=800&q=80",
+                rating: 4.2
+            },
+            {
+                title: "Harry Potter and the Sorcerer's Stone",
+                author: "J.K. Rowling",
+                genre: "Fantasy",
+                description: "Magical journey of a young wizard discovering his heritage and entering a world of witchcraft and wizardry.",
+                cover: "https://images.unsplash.com/photo-1600189261867-30e5ffe7b8da?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=800&q=80",
+                rating: 4.8
+            },
+            {
+                title: "Ender's Game",
+                author: "Orson Scott Card",
+                genre: "Sci-Fi",
+                description: "A child genius trains in battle school to save humanity from an alien threat in this thought-provoking novel.",
+                cover: "https://images.unsplash.com/photo-1535905557558-afc4877a26fc?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=800&q=80",
+                rating: 4.5
+            },
+            {
+                title: "The Girl with the Dragon Tattoo",
+                author: "Stieg Larsson",
+                genre: "Mystery",
+                description: "A gripping tale of murder, corruption, and secrets featuring an unforgettable hacker heroine.",
+                cover: "https://images.unsplash.com/photo-1512820790803-83ca734da794?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=800&q=80",
+                rating: 4.3
+            },
+            {
+                title: "To Kill a Mockingbird",
+                author: "Harper Lee",
+                genre: "Classic",
+                description: "A gripping tale of racial injustice in the American South, told through the eyes of a young girl.",
+                cover: "https://images.unsplash.com/photo-1589998059171-988d887df646?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=800&q=80",
+                rating: 4.9
+            },
+            {
+                title: "1984",
+                author: "George Orwell",
+                genre: "Dystopian",
+                description: "A bleak future under constant surveillance and control that remains disturbingly relevant.",
+                cover: "https://images.unsplash.com/photo-1544947950-fa07a98d237f?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=800&q=80",
+                rating: 4.6
+            },
+            {
+                title: "The Great Gatsby",
+                author: "F. Scott Fitzgerald",
+                genre: "Classic",
+                description: "A tragic story of love, wealth, and ambition set in the roaring twenties.",
+                cover: "https://images.unsplash.com/photo-1531346878377-a5be20888e57?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=800&q=80",
+                rating: 4.4
+            },
+            {
+                title: "The Martian",
+                author: "Andy Weir",
+                genre: "Sci-Fi",
+                description: "A lone astronaut uses his ingenuity to survive on Mars in this scientifically accurate thriller.",
+                cover: "https://images.unsplash.com/photo-1535905557558-afc4877a26fc?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=800&q=80",
+                rating: 4.7
+            },
+            {
+                title: "The Lord of the Rings",
+                author: "J.R.R. Tolkien",
+                genre: "Fantasy",
+                description: "An epic quest to destroy a powerful ring that serves as the foundation of modern fantasy literature.",
+                cover: "https://images.unsplash.com/photo-1544716278-ca5e3f4abd8c?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=800&q=80",
+                rating: 4.9
+            },
+            {
+                title: "The Hunger Games",
+                author: "Suzanne Collins",
+                genre: "Dystopian",
+                description: "A brutal competition for survival in a dystopian future that explores themes of power and resistance.",
+                cover: "https://images.unsplash.com/photo-1600189261867-30e5ffe7b8da?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=800&q=80",
+                rating: 4.5
+            }
+        ];
+
+        // Elements
+        const searchBtn = document.getElementById('searchBtn');
+        const genreInput = document.getElementById('genreInput');
+        const results = document.getElementById('results');
+        const noResults = document.getElementById('noResults');
+        const resultsTitle = document.getElementById('resultsTitle');
+        const resultsCount = document.getElementById('resultsCount');
+        const searchSpinner = document.getElementById('searchSpinner');
+        const mobileMenuButton = document.getElementById('mobileMenuButton');
+        const mobileMenu = document.getElementById('mobileMenu');
+
+        // Mobile menu toggle
+        mobileMenuButton.addEventListener('click', () => {
+            mobileMenu.classList.toggle('open');
+        });
+
+        // Animation for results
+        function animateResults() {
+            results.style.opacity = '0';
+            setTimeout(() => {
+                results.style.opacity = '1';
+            }, 100);
+        }
+
+        // Simulate loading state
+        function showLoading(show) {
+            if (show) {
+                searchBtn.disabled = true;
+                searchSpinner.classList.remove('hidden');
+            } else {
+                searchBtn.disabled = false;
+                searchSpinner.classList.add('hidden');
+            }
+        }
+
+        // Suggest genre when clicking on example
+        function suggestGenre(genre) {
+            genreInput.value = genre;
+            findBooks();
+        }
+
+        // Search functionality
+        function findBooks() {
+            const genre = genreInput.value.trim().toLowerCase();
+            results.innerHTML = '';
+            noResults.classList.add('hidden');
+            animateResults();
+            showLoading(true);
+
+            if (!genre) {
+                showLoading(false);
+                noResults.classList.remove('hidden');
+                noResults.innerHTML = `
+                    <i class="fas fa-info-circle text-4xl text-[#334155] mb-4"></i>
+                    <h4 class="text-xl font-medium text-[#94a3b8] mb-2">Please enter a genre</h4>
+                    <p class="text-[#64748b]">Try searching for Fantasy, Mystery, or Sci-Fi</p>
+                `;
+                return;
+            }
+
+            // Simulate network delay
+            setTimeout(() => {
+                const recommendations = books.filter(book =>
+                    book.genre.toLowerCase().includes(genre)
+                );
+
+                if (recommendations.length === 0) {
+                    noResults.classList.remove('hidden');
+                    resultsTitle.textContent = 'No Results';
+                    resultsCount.textContent = '';
+                } else {
+                    resultsTitle.textContent = genre.charAt(0).toUpperCase() + genre.slice(1) + ' Books';
+                    resultsCount.textContent = `${recommendations.length} books found`;
+                    displayBooks(recommendations);
+                }
+
+                showLoading(false);
+            }, 800);
+        }
+
+        // Function to display books
+        function displayBooks(bookList) {
+            bookList.forEach((book, index) => {
+                const bookCard = document.createElement('div');
+                bookCard.className = 'book-card animate-fadeIn';
+                bookCard.style.animationDelay = `${index * 0.1}s`;
+
+                // Generate star rating
+                const stars = [];
+                const fullStars = Math.floor(book.rating);
+                const hasHalfStar = book.rating % 1 >= 0.5;
+
+                for (let i = 0; i < 5; i++) {
+                    if (i < fullStars) {
+                        stars.push('<i class="fas fa-star text-yellow-400"></i>');
+                    } else if (i === fullStars && hasHalfStar) {
+                        stars.push('<i class="fas fa-star-half-alt text-yellow-400"></i>');
+                    } else {
+                        stars.push('<i class="far fa-star text-yellow-400"></i>');
+                    }
+                }
+
+                bookCard.innerHTML = `
+                    <div class="card-header"></div>
+                    <div class="p-5 flex flex-col h-full">
+                        <div class="flex items-start mb-4">
+                            <img src="${book.cover}" alt="${book.title}" class="book-cover mr-4">
+                            <div>
+                                <h3 class="text-lg font-semibold text-white mb-1">
+                                    ${book.title}
+                                </h3>
+                                <p class="text-sm text-[#94a3b8] mb-2">${book.author}</p>
+                                <div class="text-sm mb-3">
+                                    ${stars.join('')}
+                                    <span class="ml-1 text-[#94a3b8]">${book.rating.toFixed(1)}</span>
+                                </div>
+                                <span class="genre-badge">
+                                    <i class="fas fa-bookmark mr-1"></i> ${book.genre}
+                                </span>
+                            </div>
+                        </div>
+                        <p class="text-[#cbd5e1] mb-4 flex-grow">${book.description}</p>
+                        <div class="mt-auto">
+                            <button class="text-indigo-400 hover:text-indigo-300 text-sm font-medium transition duration-300 flex items-center">
+                                More details <i class="fas fa-chevron-right ml-1 text-xs"></i>
+                            </button>
+                        </div>
+                    </div>
+                `;
+                results.appendChild(bookCard);
+            });
+        }
+
+        // Display featured books on page load
+        function displayFeaturedBooks() {
+            const featuredGenres = ["Fantasy", "Sci-Fi", "Mystery"];
+            const featuredBooks = [];
+
+            // Get 2 books from each featured genre
+            featuredGenres.forEach(genre => {
+                const genreBooks = books.filter(book => book.genre === genre).slice(0, 4);
+                featuredBooks.push(...genreBooks);
+            });
+
+            // Shuffle the array to mix genres
+            const shuffledBooks = featuredBooks.sort(() => 0.5 - Math.random());
+
+            animateResults();
+            resultsTitle.textContent = 'Featured Books';
+            resultsCount.textContent = `${shuffledBooks.length} books`;
+            displayBooks(shuffledBooks.slice(0, 6));
+        }
+
+        // Event listeners
+        searchBtn.addEventListener('click', findBooks);
+        genreInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') findBooks();
+        });
+
+        // Display featured books when page loads
+        displayFeaturedBooks();
+    </script>
+</body>
+
+</html>

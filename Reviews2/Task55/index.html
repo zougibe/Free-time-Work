@@ -1,0 +1,1257 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Industrial Maintenance Tracker</title>
+    <script src="https://cdn.plot.ly/plotly-2.27.0.min.js"></script>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&family=Roboto:wght@300;400;700&display=swap"
+        rel="stylesheet">
+    <style>
+        :root {
+            --primary: #ff8c00;
+            --primary-dark: #e07b00;
+            --secondary: #4a90e2;
+            --dark-bg: #1a1a1a;
+            --darker-bg: #121212;
+            --light-text: #f0f0f0;
+            --medium-text: #cccccc;
+            --dark-text: #888888;
+            --danger: #ff4444;
+            --warning: #ffcc00;
+            --success: #4CAF50;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Roboto', sans-serif;
+            background-color: var(--darker-bg);
+            color: var(--light-text);
+            line-height: 1.6;
+            background-image:
+                radial-gradient(circle at 1px 1px, #333 1px, transparent 0),
+                radial-gradient(circle at 1px 1px, #333 1px, transparent 0);
+            background-size: 20px 20px;
+            background-position: 0 0, 10px 10px;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            display: grid;
+            grid-template-columns: 350px 1fr;
+            gap: 20px;
+        }
+
+        .panel {
+            background: rgba(26, 26, 26, 0.9);
+            border: 1px solid #444;
+            border-radius: 8px;
+            padding: 20px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+            backdrop-filter: blur(5px);
+        }
+
+        .sidebar {
+            display: flex;
+            flex-direction: column;
+            gap: 25px;
+        }
+
+        h1,
+        h2,
+        h3 {
+            font-family: 'Orbitron', sans-serif;
+            color: var(--primary);
+            letter-spacing: 1px;
+            margin-bottom: 15px;
+        }
+
+        h1 {
+            font-size: 1.8rem;
+            text-transform: uppercase;
+            border-bottom: 2px solid var(--primary);
+            padding-bottom: 10px;
+            display: flex;
+            align-items: center;
+        }
+
+        h1::before {
+            content: "⚙️";
+            margin-right: 10px;
+            font-size: 1.5rem;
+        }
+
+        h2 {
+            font-size: 1.4rem;
+            border-bottom: 1px solid var(--primary);
+            padding-bottom: 8px;
+            margin-top: 10px;
+        }
+
+        .form-group {
+            margin-bottom: 15px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 8px;
+            color: var(--medium-text);
+            font-size: 0.9rem;
+            font-weight: 300;
+        }
+
+        select,
+        input,
+        textarea {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid #444;
+            border-radius: 4px;
+            background: rgba(40, 40, 40, 0.8);
+            color: var(--light-text);
+            font-size: 0.95rem;
+            transition: all 0.3s ease;
+        }
+
+        select:focus,
+        input:focus,
+        textarea:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 2px rgba(255, 140, 0, 0.2);
+        }
+
+        input[type="date"] {
+            padding: 11px;
+        }
+
+        button {
+            width: 100%;
+            padding: 12px;
+            border: none;
+            border-radius: 4px;
+            background: var(--primary);
+            color: white;
+            font-family: 'Orbitron', sans-serif;
+            font-size: 0.95rem;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-top: 5px;
+        }
+
+        button:hover {
+            background: var(--primary-dark);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+        }
+
+        button:active {
+            transform: translateY(0);
+        }
+
+        button.secondary {
+            background: var(--secondary);
+        }
+
+        button.warning {
+            background: var(--warning);
+            color: #333;
+        }
+
+        button.danger {
+            background: var(--danger);
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 15px;
+            font-size: 0.9rem;
+        }
+
+        th,
+        td {
+            padding: 12px 15px;
+            text-align: left;
+            border-bottom: 1px solid #444;
+        }
+
+        th {
+            background: rgba(40, 40, 40, 0.8);
+            color: var(--primary);
+            font-family: 'Orbitron', sans-serif;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+            font-size: 0.8rem;
+        }
+
+        tr:hover {
+            background: rgba(255, 140, 0, 0.05);
+        }
+
+        .status {
+            display: inline-block;
+            padding: 4px 8px;
+            border-radius: 12px;
+            font-size: 0.75rem;
+            font-weight: bold;
+            text-transform: uppercase;
+        }
+
+        .status-pending {
+            background: rgba(255, 204, 0, 0.2);
+            color: var(--warning);
+        }
+
+        .status-completed {
+            background: rgba(76, 175, 80, 0.2);
+            color: var(--success);
+        }
+
+        .status-predicted {
+            background: rgba(74, 144, 226, 0.2);
+            color: var(--secondary);
+        }
+
+        .status-overdue {
+            background: rgba(255, 68, 68, 0.2);
+            color: var(--danger);
+        }
+
+        .overdue-row {
+            background: rgba(255, 68, 68, 0.1) !important;
+            border-left: 3px solid var(--danger);
+        }
+
+        .chart-container {
+            background: rgba(26, 26, 26, 0.8);
+            border: 1px solid #444;
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 20px;
+            height: 320px;
+        }
+
+        .chart-title {
+            font-family: 'Orbitron', sans-serif;
+            color: var(--primary);
+            margin-bottom: 15px;
+            font-size: 1.1rem;
+        }
+
+        .slider-container {
+            margin: 20px 0;
+        }
+
+        .slider-container label {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        input[type="range"] {
+            -webkit-appearance: none;
+            width: 100%;
+            height: 8px;
+            border-radius: 4px;
+            background: #444;
+            margin-top: 10px;
+        }
+
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background: var(--primary);
+            cursor: pointer;
+        }
+
+        .badge {
+            display: inline-block;
+            padding: 3px 8px;
+            border-radius: 10px;
+            font-size: 0.7rem;
+            font-weight: bold;
+            background: rgba(255, 140, 0, 0.2);
+            color: var(--primary);
+            margin-left: 8px;
+        }
+
+        .notification {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            padding: 15px 20px;
+            background: var(--danger);
+            color: white;
+            border-radius: 5px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+            z-index: 1000;
+            transform: translateX(200%);
+            transition: transform 0.3s ease;
+            font-family: 'Orbitron', sans-serif;
+        }
+
+        .notification.show {
+            transform: translateX(0);
+        }
+
+        .notification.success {
+            background: var(--success);
+        }
+
+        .notification.warning {
+            background: var(--warning);
+            color: #333;
+        }
+
+        .tabs {
+            display: flex;
+            margin-bottom: 15px;
+            border-bottom: 1px solid #444;
+        }
+
+        .tab {
+            padding: 10px 20px;
+            cursor: pointer;
+            border-bottom: 3px solid transparent;
+            transition: all 0.3s ease;
+        }
+
+        .tab.active {
+            border-bottom: 3px solid var(--primary);
+            color: var(--primary);
+            font-weight: bold;
+        }
+
+        .tab:hover:not(.active) {
+            background: rgba(255, 140, 0, 0.1);
+        }
+
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        @media (max-width: 1000px) {
+            .container {
+                grid-template-columns: 1fr;
+            }
+
+            .sidebar {
+                order: 2;
+            }
+        }
+
+        .industrial-border {
+            position: relative;
+        }
+
+        .industrial-border::before {
+            content: "";
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 3px;
+            background: linear-gradient(90deg, var(--primary), transparent);
+        }
+
+        .bolt-icon {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="%23ff8c00"><path d="M7 2v11h3v9l7-12h-4l4-8z"/></svg>');
+            background-repeat: no-repeat;
+            margin-right: 8px;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <div class="sidebar panel industrial-border">
+            <h1><span class="bolt-icon"></span>Maintenance Control</h1>
+
+            <div class="form-group">
+                <label for="equipment-filter">Filter Equipment</label>
+                <select id="equipment-filter">
+                    <option value="all">All Equipment</option>
+                </select>
+            </div>
+
+            <div class="slider-container">
+                <label>
+                    <span>Prediction Horizon: <span id="horizon-value">30</span> days</span>
+                </label>
+                <input type="range" id="horizon-slider" min="1" max="90" value="30">
+            </div>
+
+            <div class="tabs">
+                <div class="tab active" data-tab="log">Log Maintenance</div>
+                <div class="tab" data-tab="schedule">Schedule Task</div>
+            </div>
+
+            <div class="tab-content active" id="log-tab">
+                <div class="form-group">
+                    <label for="log-equipment">Equipment</label>
+                    <select id="log-equipment"></select>
+                </div>
+                <div class="form-group">
+                    <label for="log-task">Task Description</label>
+                    <input type="text" id="log-task" placeholder="e.g., Oil Change, Inspection">
+                </div>
+                <div class="form-group">
+                    <label for="log-hours">Usage Hours</label>
+                    <input type="number" id="log-hours" placeholder="Current equipment hours">
+                </div>
+                <div class="form-group">
+                    <label for="log-notes">Notes</label>
+                    <textarea id="log-notes" rows="3" placeholder="Additional details..."></textarea>
+                </div>
+                <button onclick="logMaintenance()">Record Maintenance</button>
+            </div>
+
+            <div class="tab-content" id="schedule-tab">
+                <div class="form-group">
+                    <label for="schedule-equipment">Equipment</label>
+                    <select id="schedule-equipment"></select>
+                </div>
+                <div class="form-group">
+                    <label for="schedule-task">Task Description</label>
+                    <input type="text" id="schedule-task" placeholder="e.g., Annual Inspection">
+                </div>
+                <div class="form-group">
+                    <label for="schedule-date">Due Date</label>
+                    <input type="date" id="schedule-date">
+                </div>
+                <div class="form-group">
+                    <label for="schedule-priority">Priority</label>
+                    <select id="schedule-priority">
+                        <option value="normal">Normal</option>
+                        <option value="high">High</option>
+                        <option value="critical">Critical</option>
+                    </select>
+                </div>
+                <button onclick="scheduleTask()">Schedule Task</button>
+            </div>
+
+            <button class="warning" onclick="checkReminders()">Check Reminders</button>
+            <button class="secondary" onclick="generateReport()">Generate Report</button>
+        </div>
+
+        <div class="main-content panel industrial-border">
+            <div class="tabs">
+                <div class="tab active" data-tab="log-view">Maintenance Log</div>
+                <div class="tab" data-tab="schedule-view">Scheduled Tasks</div>
+                <div class="tab" data-tab="visualizations">Visualizations</div>
+            </div>
+
+            <div class="tab-content active" id="log-view-tab">
+                <table id="log-table">
+                    <thead>
+                        <tr>
+                            <th>Date</th>
+                            <th>Equipment</th>
+                            <th>Task</th>
+                            <th>Hours</th>
+                            <th>Notes</th>
+                        </tr>
+                    </thead>
+                    <tbody></tbody>
+                </table>
+            </div>
+
+            <div class="tab-content" id="schedule-view-tab">
+                <table id="schedule-table">
+                    <thead>
+                        <tr>
+                            <th>Equipment</th>
+                            <th>Task</th>
+                            <th>Due Date</th>
+                            <th>Priority</th>
+                            <th>Status</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody></tbody>
+                </table>
+            </div>
+
+            <div class="tab-content" id="visualizations-tab">
+                <div class="chart-container">
+                    <div class="chart-title">Maintenance Schedule</div>
+                    <div id="gantt-chart"></div>
+                </div>
+
+                <div class="chart-container">
+                    <div class="chart-title">Equipment Usage vs. Service Intervals</div>
+                    <div id="usage-chart"></div>
+                </div>
+
+                <div class="chart-container">
+                    <div class="chart-title">Maintenance Frequency</div>
+                    <div id="frequency-chart"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="notification" id="notification"></div>
+
+    <script>
+        // Enhanced Data Model
+        const equipment = [
+            {
+                id: 'CR-001',
+                name: 'Tower Crane',
+                type: 'Heavy Equipment',
+                usageHours: 2850,
+                lastMaintenance: '2025-03-15',
+                serviceInterval: 500,
+                hourlyUsageRate: 8
+            },
+            {
+                id: 'FL-205',
+                name: 'Forklift',
+                type: 'Material Handling',
+                usageHours: 1820,
+                lastMaintenance: '2025-04-01',
+                serviceInterval: 250,
+                hourlyUsageRate: 5
+            },
+            {
+                id: 'CV-110',
+                name: 'Conveyor Belt',
+                type: 'Processing',
+                usageHours: 3760,
+                lastMaintenance: '2025-02-20',
+                serviceInterval: 750,
+                hourlyUsageRate: 24
+            },
+            {
+                id: 'EX-302',
+                name: 'Excavator',
+                type: 'Earth Moving',
+                usageHours: 1250,
+                lastMaintenance: '2025-04-05',
+                serviceInterval: 500,
+                hourlyUsageRate: 6
+            }
+        ];
+
+        let maintenanceLog = [
+            {
+                id: 'ML-001',
+                equipmentId: 'CR-001',
+                date: '2025-03-15',
+                task: 'Hydraulic System Service',
+                hours: 2800,
+                notes: 'Replaced hydraulic fluid and filters. No leaks detected.',
+                technician: 'J. Smith'
+            },
+            {
+                id: 'ML-002',
+                equipmentId: 'FL-205',
+                date: '2025-04-01',
+                task: 'Battery Maintenance',
+                hours: 1800,
+                notes: 'Cleaned terminals, checked water levels. Battery at 85% capacity.',
+                technician: 'M. Johnson'
+            },
+            {
+                id: 'ML-003',
+                equipmentId: 'CV-110',
+                date: '2025-02-20',
+                task: 'Belt Alignment',
+                hours: 3700,
+                notes: 'Adjusted tracking and tension. Replaced 3 rollers.',
+                technician: 'R. Davis'
+            },
+            {
+                id: 'ML-004',
+                equipmentId: 'EX-302',
+                date: '2025-04-05',
+                task: 'Undercarriage Inspection',
+                hours: 1200,
+                notes: 'Greased all fittings. No excessive wear detected.',
+                technician: 'T. Wilson'
+            }
+        ];
+
+        let scheduledTasks = [
+            {
+                id: 'ST-001',
+                equipmentId: 'CR-001',
+                task: 'Wire Rope Inspection',
+                dueDate: '2025-05-10',
+                scheduledDate: '2025-04-01',
+                priority: 'high',
+                status: 'Pending',
+                notes: 'Check for wear and proper lubrication'
+            },
+            {
+                id: 'ST-002',
+                equipmentId: 'FL-205',
+                task: 'Tire Replacement',
+                dueDate: '2025-04-25',
+                scheduledDate: '2025-03-15',
+                priority: 'normal',
+                status: 'Pending',
+                notes: 'Front tires showing 60% wear'
+            },
+            {
+                id: 'ST-003',
+                equipmentId: 'CV-110',
+                task: 'Motor Bearing Service',
+                dueDate: '2025-06-01',
+                scheduledDate: '2025-03-20',
+                priority: 'normal',
+                status: 'Pending',
+                notes: 'Preventive maintenance - 2 year interval'
+            }
+        ];
+
+        // Constants
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+
+        // DOM Elements
+        const notification = document.getElementById('notification');
+
+        // Initialize UI
+        function init() {
+            populateDropdowns();
+            updateTables();
+            updateCharts();
+            setupEventListeners();
+            predictMaintenance();
+            checkRemindersOnLoad();
+        }
+
+        function setupEventListeners() {
+            // Equipment filter
+            document.getElementById('equipment-filter').addEventListener('change', () => {
+                updateTables();
+                updateCharts();
+            });
+
+            // Horizon slider
+            document.getElementById('horizon-slider').addEventListener('input', (e) => {
+                document.getElementById('horizon-value').textContent = e.target.value;
+                predictMaintenance();
+                updateCharts();
+            });
+
+            // Tab switching
+            document.querySelectorAll('.tab').forEach(tab => {
+                tab.addEventListener('click', () => {
+                    const tabId = tab.getAttribute('data-tab');
+
+                    // Hide all tab contents and remove active class from tabs
+                    document.querySelectorAll('.tab-content').forEach(content => {
+                        content.classList.remove('active');
+                    });
+                    document.querySelectorAll('.tab').forEach(t => {
+                        t.classList.remove('active');
+                    });
+
+                    // Show selected tab content and mark tab as active
+                    document.getElementById(`${tabId}-tab`).classList.add('active');
+                    tab.classList.add('active');
+
+                    // If switching to visualizations, update charts
+                    if (tabId === 'visualizations') {
+                        updateCharts();
+                    }
+                });
+            });
+        }
+
+        function populateDropdowns() {
+            const filter = document.getElementById('equipment-filter');
+            const logEq = document.getElementById('log-equipment');
+            const scheduleEq = document.getElementById('schedule-equipment');
+
+            // Clear existing options (except first in filter)
+            while (filter.children.length > 1) filter.removeChild(filter.lastChild);
+            while (logEq.firstChild) logEq.removeChild(logEq.firstChild);
+            while (scheduleEq.firstChild) scheduleEq.removeChild(scheduleEq.firstChild);
+
+            // Add equipment options
+            equipment.forEach(eq => {
+                const option = document.createElement('option');
+                option.value = eq.id;
+                option.textContent = `${eq.id} - ${eq.name}`;
+
+                // Clone for each dropdown
+                logEq.appendChild(option.cloneNode(true));
+                scheduleEq.appendChild(option.cloneNode(true));
+                filter.appendChild(option.cloneNode(true));
+            });
+        }
+
+        // Maintenance Logging
+        function logMaintenance() {
+            const equipmentId = document.getElementById('log-equipment').value;
+            const task = document.getElementById('log-task').value.trim();
+            const hours = parseInt(document.getElementById('log-hours').value);
+            const notes = document.getElementById('log-notes').value.trim();
+
+            if (!equipmentId || !task || isNaN(hours)) {
+                showNotification('Please fill all required fields', 'error');
+                return;
+            }
+
+            const date = new Date().toISOString().split('T')[0];
+            const logId = 'ML-' + Math.random().toString(36).substr(2, 6).toUpperCase();
+
+            maintenanceLog.unshift({
+                id: logId,
+                equipmentId,
+                date,
+                task,
+                hours,
+                notes,
+                technician: 'Current User'
+            });
+
+            // Update equipment hours
+            const eq = equipment.find(e => e.id === equipmentId);
+            if (eq) {
+                eq.usageHours = hours;
+                eq.lastMaintenance = date;
+            }
+
+            updateTables();
+            updateCharts();
+            predictMaintenance();
+            clearLogForm();
+
+            showNotification('Maintenance logged successfully', 'success');
+        }
+
+        function clearLogForm() {
+            document.getElementById('log-task').value = '';
+            document.getElementById('log-hours').value = '';
+            document.getElementById('log-notes').value = '';
+        }
+
+        // Task Scheduling
+        function scheduleTask() {
+            const equipmentId = document.getElementById('schedule-equipment').value;
+            const task = document.getElementById('schedule-task').value.trim();
+            const dueDate = document.getElementById('schedule-date').value;
+            const priority = document.getElementById('schedule-priority').value;
+
+            if (!equipmentId || !task || !dueDate) {
+                showNotification('Please fill all required fields', 'error');
+                return;
+            }
+
+            const taskId = 'ST-' + Math.random().toString(36).substr(2, 6).toUpperCase();
+            const scheduledDate = new Date().toISOString().split('T')[0];
+
+            scheduledTasks.push({
+                id: taskId,
+                equipmentId,
+                task,
+                dueDate,
+                scheduledDate,
+                priority,
+                status: 'Pending',
+                notes: ''
+            });
+
+            updateTables();
+            updateCharts();
+            clearScheduleForm();
+
+            showNotification('Task scheduled successfully', 'success');
+        }
+
+        function clearScheduleForm() {
+            document.getElementById('schedule-task').value = '';
+            document.getElementById('schedule-date').value = '';
+            document.getElementById('schedule-priority').value = 'normal';
+        }
+
+        // Task Management
+        function completeTask(taskId) {
+            const task = scheduledTasks.find(t => t.id === taskId);
+            if (task) {
+                task.status = 'Completed';
+                task.completedDate = new Date().toISOString().split('T')[0];
+                updateTables();
+                showNotification('Task marked as completed', 'success');
+            }
+        }
+
+        function deleteTask(taskId) {
+            scheduledTasks = scheduledTasks.filter(t => t.id !== taskId);
+            updateTables();
+            showNotification('Task deleted', 'success');
+        }
+
+        // Notifications
+        function showNotification(message, type = 'success', duration = 3000) {
+            notification.innerHTML = message;
+            notification.className = `notification ${type} show`;
+
+            setTimeout(() => {
+                notification.classList.remove('show');
+            }, duration);
+        }
+
+        // Reminders
+        function checkReminders() {
+            const overdueTasks = scheduledTasks.filter(task => {
+                const due = new Date(task.dueDate);
+                return due < today && task.status === 'Pending';
+            });
+
+            const dueSoonTasks = scheduledTasks.filter(task => {
+                const due = new Date(task.dueDate);
+                const daysDiff = Math.floor((due - today) / (1000 * 60 * 60 * 24));
+                return daysDiff <= 7 && daysDiff >= 0 && task.status === 'Pending';
+            });
+
+            if (overdueTasks.length > 0 || dueSoonTasks.length > 0) {
+                let message = '';
+
+                if (overdueTasks.length > 0) {
+                    message += `<strong>${overdueTasks.length} Overdue Task(s):</strong><br>`;
+                    message += overdueTasks.map(task =>
+                        `⚠️ ${task.equipmentId}: ${task.task} was due on ${task.dueDate}`
+                    ).join('<br>');
+                    message += '<br><br>';
+                }
+
+                if (dueSoonTasks.length > 0) {
+                    message += `<strong>${dueSoonTasks.length} Task(s) Due Soon:</strong><br>`;
+                    message += dueSoonTasks.map(task => {
+                        const due = new Date(task.dueDate);
+                        const daysDiff = Math.floor((due - today) / (1000 * 60 * 60 * 24));
+                        return `⏳ ${task.equipmentId}: ${task.task} due in ${daysDiff} day(s) (${task.dueDate})`;
+                    }).join('<br>');
+                }
+
+                showNotification(message, 'warning', 10000);
+            } else {
+                showNotification('No overdue or upcoming tasks', 'success');
+            }
+
+            updateTables();
+        }
+
+        function checkRemindersOnLoad() {
+            setTimeout(() => {
+                const overdueTasks = scheduledTasks.filter(task => {
+                    const due = new Date(task.dueDate);
+                    return due < today && task.status === 'Pending';
+                });
+
+                if (overdueTasks.length > 0) {
+                    showNotification(`You have ${overdueTasks.length} overdue maintenance tasks`, 'error', 5000);
+                }
+            }, 1500);
+        }
+
+        // Predictive Maintenance
+        function predictMaintenance() {
+            const horizon = parseInt(document.getElementById('horizon-slider').value);
+
+            // Remove old predictions
+            scheduledTasks = scheduledTasks.filter(task => task.status !== 'Predicted');
+
+            // Add new predictions
+            equipment.forEach(eq => {
+                const lastMaintenance = maintenanceLog
+                    .filter(log => log.equipmentId === eq.id)
+                    .sort((a, b) => new Date(b.date) - new Date(a.date))[0];
+
+                if (!lastMaintenance) return;
+
+                const hoursSinceLast = eq.usageHours - lastMaintenance.hours;
+                const hoursToNext = eq.serviceInterval - (hoursSinceLast % eq.serviceInterval);
+                const daysToNext = Math.ceil(hoursToNext / eq.hourlyUsageRate);
+
+                if (daysToNext <= horizon) {
+                    const dueDate = new Date(today);
+                    dueDate.setDate(today.getDate() + daysToNext);
+
+                    scheduledTasks.push({
+                        id: 'PM-' + Math.random().toString(36).substr(2, 6).toUpperCase(),
+                        equipmentId: eq.id,
+                        task: 'Predicted Maintenance',
+                        dueDate: dueDate.toISOString().split('T')[0],
+                        scheduledDate: new Date().toISOString().split('T')[0],
+                        priority: 'normal',
+                        status: 'Predicted',
+                        notes: `Based on usage patterns, service needed in ~${daysToNext} days`
+                    });
+                }
+            });
+
+            updateTables();
+        }
+
+        // Update Tables
+        function updateTables() {
+            const filter = document.getElementById('equipment-filter').value;
+
+            // Maintenance Log Table
+            const logBody = document.querySelector('#log-table tbody');
+            logBody.innerHTML = '';
+
+            maintenanceLog
+                .filter(log => filter === 'all' || log.equipmentId === filter)
+                .forEach(log => {
+                    const eq = equipment.find(e => e.id === log.equipmentId);
+                    const row = document.createElement('tr');
+
+                    row.innerHTML = `
+                        <td>${log.date}</td>
+                        <td>${eq ? eq.name : log.equipmentId}</td>
+                        <td>${log.task}</td>
+                        <td>${log.hours.toLocaleString()}</td>
+                        <td>${log.notes || '—'}</td>
+                    `;
+
+                    logBody.appendChild(row);
+                });
+
+            // Scheduled Tasks Table
+            const scheduleBody = document.querySelector('#schedule-table tbody');
+            scheduleBody.innerHTML = '';
+
+            scheduledTasks
+                .filter(task => filter === 'all' || task.equipmentId === filter)
+                .sort((a, b) => new Date(a.dueDate) - new Date(b.dueDate))
+                .forEach(task => {
+                    const eq = equipment.find(e => e.id === task.equipmentId);
+                    const dueDate = new Date(task.dueDate);
+                    const isOverdue = dueDate < today && task.status === 'Pending';
+                    const daysUntilDue = Math.floor((dueDate - today) / (1000 * 60 * 60 * 24));
+
+                    const row = document.createElement('tr');
+                    if (isOverdue) row.classList.add('overdue-row');
+
+                    row.innerHTML = `
+                        <td>${eq ? eq.name : task.equipmentId}</td>
+                        <td>${task.task}</td>
+                        <td>${task.dueDate} ${isOverdue ? '<span class="badge">OVERDUE</span>' :
+                            (daysUntilDue >= 0 && task.status === 'Pending' ? `<span class="badge">in ${daysUntilDue} days</span>` : '')}</td>
+                        <td>${task.priority === 'high' ? 'High' : task.priority === 'critical' ? 'Critical' : 'Normal'}</td>
+                        <td><span class="status status-${task.status.toLowerCase()}">${task.status}</span></td>
+                        <td>
+                            ${task.status === 'Pending' ?
+                            `<button class="secondary" onclick="completeTask('${task.id}')" style="padding: 5px 10px; width: auto; margin: 2px;">Complete</button>` : ''}
+                            <button class="danger" onclick="deleteTask('${task.id}')" style="padding: 5px 10px; width: auto; margin: 2px;">Delete</button>
+                        </td>
+                    `;
+
+                    scheduleBody.appendChild(row);
+                });
+        }
+
+        // Update Charts
+        function updateCharts() {
+            const filter = document.getElementById('equipment-filter').value;
+            updateGanttChart(filter);
+            updateUsageChart(filter);
+            updateFrequencyChart(filter);
+        }
+
+        function updateGanttChart(filter) {
+            const tasks = scheduledTasks
+                .filter(task => filter === 'all' || task.equipmentId === filter)
+                .sort((a, b) => new Date(a.dueDate) - new Date(b.dueDate));
+
+            const colors = {
+                'Pending': '#FFA500',
+                'Completed': '#4CAF50',
+                'Predicted': '#4A90E2',
+                'high': '#FF5722',
+                'critical': '#F44336',
+                'normal': '#FFA500'
+            };
+
+            const data = [{
+                type: 'scatter',
+                x: tasks.map(task => task.dueDate),
+                y: tasks.map(task => {
+                    const eq = equipment.find(e => e.id === task.equipmentId);
+                    return eq ? eq.name : task.equipmentId;
+                }),
+                mode: 'markers',
+                marker: {
+                    size: 12,
+                    color: tasks.map(task =>
+                        task.status === 'Predicted' ? colors[task.status] :
+                            task.status === 'Completed' ? colors[task.status] :
+                                colors[task.priority]
+                    ),
+                    symbol: tasks.map(task =>
+                        task.status === 'Predicted' ? 'diamond' : 'circle'
+                    )
+                },
+                text: tasks.map(task => `${task.task} (${task.status})`),
+                hoverinfo: 'text',
+                showlegend: false
+            }];
+
+            const layout = {
+                title: 'Maintenance Schedule',
+                xaxis: {
+                    title: 'Date',
+                    type: 'date',
+                    gridcolor: '#444',
+                    zerolinecolor: '#444'
+                },
+                yaxis: {
+                    title: 'Equipment',
+                    gridcolor: '#444',
+                    zerolinecolor: '#444'
+                },
+                plot_bgcolor: 'rgba(40, 40, 40, 0.8)',
+                paper_bgcolor: 'rgba(26, 26, 26, 0)',
+                font: { color: '#f0f0f0' },
+                height: 280,
+                margin: { t: 40, b: 60, l: 80, r: 40 }
+            };
+
+            Plotly.react('gantt-chart', data, layout);
+        }
+
+        function updateUsageChart(filter) {
+            const filteredLogs = maintenanceLog
+                .filter(log => filter === 'all' || log.equipmentId === filter)
+                .sort((a, b) => new Date(a.date) - new Date(b.date));
+
+            const equipmentIds = [...new Set(filteredLogs.map(log => log.equipmentId))];
+
+            const traces = equipmentIds.map(id => {
+                const logs = filteredLogs.filter(log => log.equipmentId === id);
+                const eq = equipment.find(e => e.id === id);
+
+                // Add service interval lines
+                const serviceIntervals = [];
+                if (eq) {
+                    let currentHours = 0;
+                    let currentDate = new Date(logs[0]?.date || today);
+
+                    while (currentHours < eq.usageHours) {
+                        serviceIntervals.push({
+                            date: currentDate.toISOString().split('T')[0],
+                            hours: currentHours
+                        });
+
+                        currentHours += eq.serviceInterval;
+                        currentDate = new Date(currentDate);
+                        currentDate.setDate(currentDate.getDate() + (eq.serviceInterval / eq.hourlyUsageRate));
+                    }
+                }
+
+                return [
+                    // Actual usage line
+                    {
+                        x: logs.map(log => log.date),
+                        y: logs.map(log => log.hours),
+                        mode: 'lines+markers',
+                        name: eq ? eq.name : id,
+                        line: { color: '#4A90E2', width: 2 },
+                        marker: { size: 8 }
+                    },
+                    // Service interval line
+                    {
+                        x: serviceIntervals.map(i => i.date),
+                        y: serviceIntervals.map(i => i.hours),
+                        mode: 'lines',
+                        name: 'Service Interval',
+                        line: { color: '#FF8C00', width: 1, dash: 'dot' },
+                        showlegend: false
+                    }
+                ];
+            }).flat();
+
+            const layout = {
+                title: 'Equipment Usage vs. Service Intervals',
+                xaxis: {
+                    title: 'Date',
+                    type: 'date',
+                    gridcolor: '#444',
+                    zerolinecolor: '#444'
+                },
+                yaxis: {
+                    title: 'Usage Hours',
+                    gridcolor: '#444',
+                    zerolinecolor: '#444'
+                },
+                plot_bgcolor: 'rgba(40, 40, 40, 0.8)',
+                paper_bgcolor: 'rgba(26, 26, 26, 0)',
+                font: { color: '#f0f0f0' },
+                height: 280,
+                margin: { t: 40, b: 60, l: 80, r: 40 },
+                showlegend: true,
+                legend: {
+                    x: 1,
+                    y: 1,
+                    xanchor: 'right',
+                    yanchor: 'top',
+                    bgcolor: 'rgba(26, 26, 26, 0.8)',
+                    bordercolor: '#444',
+                    borderwidth: 1
+                }
+            };
+
+            Plotly.react('usage-chart', traces, layout);
+        }
+
+        function updateFrequencyChart(filter) {
+            const filteredLogs = maintenanceLog
+                .filter(log => filter === 'all' || log.equipmentId === filter);
+
+            const equipmentIds = [...new Set(filteredLogs.map(log => log.equipmentId))];
+
+            const counts = equipmentIds.map(id => {
+                const logs = filteredLogs.filter(log => log.equipmentId === id);
+                const eq = equipment.find(e => e.id === id);
+                return {
+                    name: eq ? eq.name : id,
+                    count: logs.length
+                };
+            });
+
+            const data = [{
+                type: 'bar',
+                x: counts.map(c => c.name),
+                y: counts.map(c => c.count),
+                marker: {
+                    color: '#FF8C00',
+                    line: {
+                        color: '#E07B00',
+                        width: 1
+                    }
+                },
+                text: counts.map(c => c.count),
+                textposition: 'auto'
+            }];
+
+            const layout = {
+                title: 'Maintenance Frequency',
+                xaxis: {
+                    title: 'Equipment',
+                    gridcolor: '#444',
+                    zerolinecolor: '#444'
+                },
+                yaxis: {
+                    title: 'Number of Maintenance Events',
+                    gridcolor: '#444',
+                    zerolinecolor: '#444'
+                },
+                plot_bgcolor: 'rgba(40, 40, 40, 0.8)',
+                paper_bgcolor: 'rgba(26, 26, 26, 0)',
+                font: { color: '#f0f0f0' },
+                height: 280,
+                margin: { t: 40, b: 60, l: 80, r: 40 }
+            };
+
+            Plotly.react('frequency-chart', data, layout);
+        }
+
+        // Generate Report
+        function generateReport() {
+            const filter = document.getElementById('equipment-filter').value;
+            const filteredLogs = maintenanceLog
+                .filter(log => filter === 'all' || log.equipmentId === filter);
+            const filteredTasks = scheduledTasks
+                .filter(task => filter === 'all' || task.equipmentId === filter);
+
+            let report = '<h2 style="font-family: \'Orbitron\', sans-serif; color: #ff8c00;">Maintenance Report</h2>';
+            report += `<p>Generated on: ${new Date().toLocaleString()}</p>`;
+            report += `<p>Equipment Filter: ${filter === 'all' ? 'All Equipment' : equipment.find(e => e.id === filter)?.name || filter}</p>`;
+
+            // Maintenance Log Summary
+            report += '<h3 style="font-family: \'Orbitron\', sans-serif; color: #ff8c00;">Maintenance Log</h3>';
+            if (filteredLogs.length === 0) {
+                report += '<p>No maintenance records found.</p>';
+            } else {
+                report += '<ul style="list-style-type: none;">';
+                filteredLogs.forEach(log => {
+                    const eq = equipment.find(e => e.id === log.equipmentId);
+                    report += `<li style="margin-bottom: 10px;"><strong>${log.date}</strong>: ${eq ? eq.name : log.equipmentId} - ${log.task} (${log.hours} hours)<br>Notes: ${log.notes || 'None'}</li>`;
+                });
+                report += '</ul>';
+            }
+
+            // Scheduled Tasks Summary
+            report += '<h3 style="font-family: \'Orbitron\', sans-serif; color: #ff8c00;">Scheduled Tasks</h3>';
+            if (filteredTasks.length === 0) {
+                report += '<p>No scheduled tasks found.</p>';
+            } else {
+                report += '<ul style="list-style-type: none;">';
+                filteredTasks.forEach(task => {
+                    const eq = equipment.find(e => e.id === task.equipmentId);
+                    report += `<li style="margin-bottom: 10px;"><strong>${task.dueDate}</strong>: ${eq ? eq.name : task.equipmentId} - ${task.task} (Priority: ${task.priority}, Status: ${task.status})</li>`;
+                });
+                report += '</ul>';
+            }
+
+            // Predictive Maintenance Insights
+            report += '<h3 style="font-family: \'Orbitron\', sans-serif; color: #ff8c00;">Predictive Maintenance Insights</h3>';
+            const predictedTasks = filteredTasks.filter(task => task.status === 'Predicted');
+            if (predictedTasks.length === 0) {
+                report += '<p>No predicted maintenance tasks within the current horizon.</p>';
+            } else {
+                report += '<ul style="list-style-type: none;">';
+                predictedTasks.forEach(task => {
+                    const eq = equipment.find(e => e.id === task.equipmentId);
+                    report += `<li style="margin-bottom: 10px;"><strong>${task.dueDate}</strong>: ${eq ? eq.name : task.equipmentId} - ${task.task}<br>Notes: ${task.notes}</li>`;
+                });
+                report += '</ul>';
+            }
+
+            // Display report in a new window
+            const reportWindow = window.open('', '_blank');
+            reportWindow.document.write(`
+                <html>
+                    <head>
+                        <title>Maintenance Report</title>
+                        <style>
+                            body { font-family: 'Roboto', sans-serif; background: #121212; color: #f0f0f0; padding: 20px; }
+                            h2, h3 { font-family: 'Orbitron', sans-serif; color: #ff8c00; }
+                            ul { padding-left: 20px; }
+                            p, li { line-height: 1.6; }
+                        </style>
+                    </head>
+                    <body>${report}</body>
+                </html>
+            `);
+            reportWindow.document.close();
+
+            showNotification('Report generated successfully', 'success');
+        }
+
+        // Initialize the application
+        init();
+    </script>
+</body>
+
+</html>

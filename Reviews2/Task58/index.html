@@ -1,0 +1,432 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Batch Production Scheduler</title>
+    <script src="https://cdn.plot.ly/plotly-2.35.2.min.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&family=Outfit:wght@300;400;500&display=swap"
+        rel="stylesheet" />
+    <style>
+        body {
+            font-family: "Outfit", sans-serif;
+        }
+
+        .font-poppins {
+            font-family: "Poppins", sans-serif;
+        }
+
+        input[type="range"] {
+            accent-color: #ea580c;
+        }
+    </style>
+</head>
+
+<body class="bg-gray-900">
+    <header class="bg-gradient-to-r from-gray-700 via-gray-800 to-gray-900 p-4 shadow border-b-2 border-orange-600">
+        <div class="max-w-8xl mx-auto flex justify-between">
+            <h1 class="text-3xl font-extrabold px-4 py-2 text-left font-poppins text-orange-600 flex items-center">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5"
+                    stroke="currentColor" class="size-10 mr-4">
+                    <path stroke-linecap="round" stroke-linejoin="round"
+                        d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 0 1 2.25-2.25h13.5A2.25 2.25 0 0 1 21 7.5v11.25m-18 0A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75m-18 0v-7.5A2.25 2.25 0 0 1 5.25 9h13.5A2.25 2.25 0 0 1 21 11.25v7.5m-9-6h.008v.008H12v-.008ZM12 15h.008v.008H12V15Zm0 2.25h.008v.008H12v-.008ZM9.75 15h.008v.008H9.75V15Zm0 2.25h.008v.008H9.75v-.008ZM7.5 15h.008v.008H7.5V15Zm0 2.25h.008v.008H7.5v-.008Zm6.75-4.5h.008v.008h-.008v-.008Zm0 2.25h.008v.008h-.008V15Zm0 2.25h.008v.008h-.008v-.008Zm2.25-4.5h.008v.008H16.5v-.008Zm0 2.25h.008v.008H16.5V15Z" />
+                </svg>
+                Batch Production Scheduler
+            </h1>
+            <div id="conflicts" class="absolute top-3 right-5 text-red-600 bg-gray-950/80 p-2 rounded-lg"></div>
+        </div>
+    </header>
+    <div class="p-6 max-w-8xl mx-auto">
+        <div class="bg-gray-800 rounded-lg shadow mb-6 p-4">
+            <div class="flex justify-between items-center">
+                <h2 class="text-2xl text-sky-600 font-bold flex items-center">
+                    Add New Task
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="size-6 ml-3">
+                        <path
+                            d="M21.731 2.269a2.625 2.625 0 0 0-3.712 0l-1.157 1.157 3.712 3.712 1.157-1.157a2.625 2.625 0 0 0 0-3.712ZM19.513 8.199l-3.712-3.712-8.4 8.4a5.25 5.25 0 0 0-1.32 2.214l-.8 2.685a.75.75 0 0 0 .933.933l2.685-.8a5.25 5.25 0 0 0 2.214-1.32l8.4-8.4Z" />
+                        <path
+                            d="M5.25 5.25a3 3 0 0 0-3 3v10.5a3 3 0 0 0 3 3h10.5a3 3 0 0 0 3-3V13.5a.75.75 0 0 0-1.5 0v5.25a1.5 1.5 0 0 1-1.5 1.5H5.25a1.5 1.5 0 0 1-1.5-1.5V8.25a1.5 1.5 0 0 1 1.5-1.5h5.25a.75.75 0 0 0 0-1.5H5.25Z" />
+                    </svg>
+                </h2>
+                <div class="tooltip">
+                    <span class="tooltiptext text-white">Add new tasks using the form below</span>
+                </div>
+            </div>
+            <div class="border-b-2 border-sky-600 mb-4 mt-2"></div>
+
+            <form id="addTaskForm" class="grid grid-cols-1 md:grid-cols-6 gap-4">
+                <div>
+                    <select id="product" required
+                        class="w-full p-2 text-white border border-gray-800 rounded-md bg-gray-900 focus:outline-none focus:ring-2 focus:ring-orange-500/40">
+                        <option value="">Select a product</option>
+                        <option value="Widget">Widget</option>
+                        <option value="Gadget">Gadget</option>
+                        <option value="Tool">Tool</option>
+                    </select>
+                </div>
+                <div>
+                    <input type="datetime-local" id="startDate" required
+                        class="w-full p-2 text-white border border-gray-800 rounded-md bg-gray-900 focus:outline-none focus:ring-2 focus:ring-orange-600"
+                        placeholder="Date" />
+                </div>
+                <div>
+                    <input type="datetime-local" id="endDate" required
+                        class="w-full p-2 text-white border border-gray-800 rounded-md bg-gray-900 focus:outline-none focus:ring-2 focus:ring-orange-600"
+                        placeholder="Date" />
+                </div>
+                <div>
+                    <input type="number" id="quantity" required
+                        class="w-full p-2 text-white border border-gray-800 rounded-md bg-gray-900 focus:outline-none focus:ring-2 focus:ring-orange-600"
+                        placeholder="Quantity" />
+                </div>
+                <div>
+                    <input type="text" id="resources" required
+                        class="w-full p-2 text-white border border-gray-800 rounded-md bg-gray-900 focus:outline-none focus:ring-2 focus:ring-orange-600"
+                        placeholder="Resources" />
+                </div>
+
+                <div>
+                    <button type="submit"
+                        class="bg-sky-500 hover:bg-sky-600 text-white py-2 px-4 rounded-md w-full transition-colors flex items-center justify-center">
+                        Add Task
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5"
+                            stroke="currentColor" class="size-6 ml-2">
+                            <path stroke-linecap="round" stroke-linejoin="round"
+                                d="M12 9v6m3-3H9m12 0a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" />
+                        </svg>
+                    </button>
+                </div>
+            </form>
+        </div>
+        <div class="py-2 px-4 bg-gray-800 rounded-lg shadow-lg mb-6">
+            <div class="flex justify-between items-center">
+                <h2 class="text-2xl text-orange-600 font-bold flex items-center">
+                    Filter Tasks
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5"
+                        stroke="currentColor" class="size-6 ml-3">
+                        <path stroke-linecap="round" stroke-linejoin="round"
+                            d="M12 3c2.755 0 5.455.232 8.083.678.533.09.917.556.917 1.096v1.044a2.25 2.25 0 0 1-.659 1.591l-5.432 5.432a2.25 2.25 0 0 0-.659 1.591v2.927a2.25 2.25 0 0 1-1.244 2.013L9.75 21v-6.568a2.25 2.25 0 0 0-.659-1.591L3.659 7.409A2.25 2.25 0 0 1 3 5.818V4.774c0-.54.384-1.006.917-1.096A48.32 48.32 0 0 1 12 3Z" />
+                    </svg>
+                </h2>
+            </div>
+            <div class="border-b-2 border-orange-600 mb-4 mt-2"></div>
+
+            <div class="grid grid-cols-4 gap-4 flex items-center">
+                <select id="productFilter"
+                    class="py-2 w-3/4 rounded-lg bg-gray-900 text-white px-2 border border-orange-600">
+                    <option value="all">All Products</option>
+                    <option value="Widget">Widget</option>
+                    <option value="Gadget">Gadget</option>
+                    <option value="Tool">Tool</option>
+                </select>
+                <div class="w-full col-span-2 flex items-center">
+                    <input type="range" id="timeWindow" min="1" max="14" value="7" class="w-4/5" />
+                    <span id="timeWindowValue" class="text-white font-semi ml-2">7 days</span>
+                </div>
+                <button onclick="autoResolveConflicts()"
+                    class="font-bold py-2 w-full rounded-lg bg-orange-500 text-gray-900 px-2 hover:bg-orange-600 flex items-center justify-center">
+                    Auto-Resolve Conflicts
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5"
+                        stroke="currentColor" class="size-6 ml-2">
+                        <path stroke-linecap="round" stroke-linejoin="round"
+                            d="m3.75 13.5 10.5-11.25L12 10.5h8.25L9.75 21.75 12 13.5H3.75Z" />
+                    </svg>
+                </button>
+            </div>
+        </div>
+        <div class="grid grid-cols-3 gap-4">
+            <div class="bg-gray-800 rounded-lg p-2 grid grid-cols-1 border border-orange-600">
+                <div class="mr-2" id="ganttChart"></div>
+            </div>
+            <div class="bg-gray-800 rounded-lg p-2 grid grid-cols-1 border border-orange-600">
+                <div class="mr-2" id="resourceChart"></div>
+            </div>
+            <div class="bg-gray-800 rounded-lg p-2 grid grid-cols-1 border border-orange-600">
+                <div class="mr-2" id="outputChart"></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Hardcoded batch data
+        let batches = [
+            {
+                id: "B1",
+                product: "Widget",
+                start: new Date("2025-04-11T08:00"),
+                end: new Date("2025-04-11T12:00"),
+                resources: ["Machine1", "Worker1"],
+                quantity: 100,
+            },
+            {
+                id: "B2",
+                product: "Gadget",
+                start: new Date("2025-04-11T09:00"),
+                end: new Date("2025-04-11T13:00"),
+                resources: ["Machine2", "Worker1"],
+                quantity: 150,
+            },
+            {
+                id: "B3",
+                product: "Tool",
+                start: new Date("2025-04-11T14:00"),
+                end: new Date("2025-04-11T18:00"),
+                resources: ["Machine1", "Worker2"],
+                quantity: 80,
+            },
+            {
+                id: "B4",
+                product: "Widget",
+                start: new Date("2025-04-12T08:00"),
+                end: new Date("2025-04-12T11:00"),
+                resources: ["Machine2", "Worker2"],
+                quantity: 120,
+            },
+            {
+                id: "B5",
+                product: "Gadget",
+                start: new Date("2025-04-12T12:00"),
+                end: new Date("2025-04-12T16:00"),
+                resources: ["Machine1", "Worker1"],
+                quantity: 200,
+            },
+        ];
+
+        // Initialize controls
+        const productFilter = document.getElementById("productFilter");
+        const timeWindow = document.getElementById("timeWindow");
+        const timeWindowValue = document.getElementById("timeWindowValue");
+        const conflictsDiv = document.getElementById("conflicts");
+
+        // Update time window display
+        timeWindow.addEventListener("input", () => {
+            timeWindowValue.textContent = `${timeWindow.value} days`;
+            updateCharts();
+        });
+
+        // Update charts on product filter change
+        productFilter.addEventListener("change", updateCharts);
+
+        // Detect conflicts (overlaps or resource overuse)
+        function detectConflicts() {
+            let conflicts = [];
+            for (let i = 0; i < batches.length; i++) {
+                for (let j = i + 1; j < batches.length; j++) {
+                    const b1 = batches[i];
+                    const b2 = batches[j];
+                    // Check time overlap
+                    if (b1.start < b2.end && b2.start < b1.end) {
+                        // Check resource overlap
+                        const sharedResources = b1.resources.filter((r) =>
+                            b2.resources.includes(r),
+                        );
+                        if (sharedResources.length > 0) {
+                            conflicts.push(
+                                `Conflict between ${b1.id} and ${b2.id}: overlapping resources (${sharedResources.join(", ")})`,
+                            );
+                        }
+                    }
+                }
+            }
+            return conflicts;
+        }
+
+        // Auto-resolve conflicts by shifting batches
+        function autoResolveConflicts() {
+            for (let i = 0; i < batches.length; i++) {
+                for (let j = i + 1; j < batches.length; j++) {
+                    const b1 = batches[i];
+                    const b2 = batches[j];
+                    if (b1.start < b2.end && b2.start < b1.end) {
+                        const sharedResources = b1.resources.filter((r) =>
+                            b2.resources.includes(r),
+                        );
+                        if (sharedResources.length > 0) {
+                            // Shift b2 to start after b1
+                            const duration = b2.end - b2.start;
+                            b2.start = new Date(b1.end);
+                            b2.end = new Date(
+                                b2.start.getTime() + duration,
+                            );
+                        }
+                    }
+                }
+            }
+            updateCharts();
+        }
+
+        // Update all charts
+        function updateCharts() {
+            const selectedProduct = productFilter.value;
+            const days = parseInt(timeWindow.value);
+            const filteredBatches =
+                selectedProduct === "all"
+                    ? batches
+                    : batches.filter((b) => b.product === selectedProduct);
+            const endDate = new Date(
+                batches[0].start.getTime() + days * 24 * 60 * 60 * 1000,
+            );
+
+            // Filter batches within time window
+            const timeFilteredBatches = filteredBatches.filter(
+                (b) => b.start < endDate,
+            );
+
+            // Update conflicts
+            const conflicts = detectConflicts();
+            conflictsDiv.style.display =
+                conflicts.length > 0 ? "block" : "none";
+            conflictsDiv.innerHTML =
+                conflicts.length > 0
+                    ? `<strong>Conflicts Detected:</strong><br>${conflicts.join("<br>")}`
+                    : "";
+
+            // Gantt Chart
+            const ganttData = timeFilteredBatches.map((b) => ({
+                Task: b.id,
+                Start: b.start,
+                Finish: b.end,
+                Time: (b.end - b.start) / (1000 * 60 * 60),
+                Resource: b.product,
+            }));
+            const ganttLayout = {
+                title: "Batch Schedule (Gantt Chart)",
+                barmode: "stack",
+                font: { family: "Poppins" },
+                xaxis: { title: "Time" },
+                yaxis: { title: "Batch ID" },
+                plot_bgcolor: "rgba(17, 24, 39, 0.8)",
+                paper_bgcolor: "rgb(31, 41, 55)",
+                font: { color: "#e0e0e0" },
+                showlegend: true,
+            };
+            Plotly.newPlot(
+                "ganttChart",
+                [
+                    {
+                        type: "bar",
+                        orientation: "h",
+                        x: ganttData.map((d) => d.Start),
+                        y: ganttData.map((d) => d.Task),
+                        text: ganttData.map((d) => d.Resource),
+                        marker: {
+                            color: ganttData.map((d) =>
+                                d.Resource === "Widget"
+                                    ? "#00aaff"
+                                    : d.Resource === "Gadget"
+                                        ? "#ea580c"
+                                        : "#00ffaa",
+                            ),
+                        },
+                        showlegend: false,
+                    },
+                ],
+                ganttLayout,
+            );
+
+            // Resource Utilization Bar Chart
+            const resources = [
+                "Machine1",
+                "Machine2",
+                "Worker1",
+                "Worker2",
+            ];
+            const utilization = resources.map((r) => {
+                let totalHours = 0;
+                timeFilteredBatches.forEach((b) => {
+                    if (b.resources.includes(r)) {
+                        totalHours += (b.end - b.start) / (1000 * 60 * 60);
+                    }
+                });
+                return totalHours;
+            });
+            const resourceData = [
+                {
+                    x: resources,
+                    y: utilization,
+                    type: "bar",
+                    marker: { color: "#00aaff" },
+                },
+            ];
+            const resourceLayout = {
+                title: "Resource Utilization",
+                xaxis: { title: "Resource" },
+                yaxis: { title: "Hours Used" },
+                plot_bgcolor: "rgba(17, 24, 39, 0.8)",
+                paper_bgcolor: "rgb(31, 41, 55)",
+                font: { color: "#e0e0e0" },
+            };
+            Plotly.newPlot("resourceChart", resourceData, resourceLayout);
+
+            // Production Output Line Chart
+            const dates = [];
+            const startDate = new Date(batches[0].start);
+            for (let d = 0; d < days; d++) {
+                dates.push(
+                    new Date(startDate.getTime() + d * 24 * 60 * 60 * 1000),
+                );
+            }
+            const output = dates.map((date) => {
+                let total = 0;
+                timeFilteredBatches.forEach((b) => {
+                    if (
+                        b.end >= date &&
+                        b.end <
+                        new Date(date.getTime() + 24 * 60 * 60 * 1000)
+                    ) {
+                        total += b.quantity;
+                    }
+                });
+                return total;
+            });
+            const outputData = [
+                {
+                    x: dates,
+                    y: output,
+                    type: "scatter",
+                    mode: "lines+markers",
+                    line: { color: "#ea580c" },
+                },
+            ];
+            const outputLayout = {
+                title: "Production Output Over Time",
+                xaxis: { title: "Date" },
+                yaxis: { title: "Quantity Produced" },
+                plot_bgcolor: "rgba(17, 24, 39, 0.8)",
+                paper_bgcolor: "rgb(31, 41, 55)",
+                font: { color: "white" },
+            };
+            Plotly.newPlot("outputChart", outputData, outputLayout);
+        }
+        document
+            .getElementById("addTaskForm")
+            .addEventListener("submit", function (e) {
+                e.preventDefault();
+                const resource_input =
+                    document.getElementById("resources").value;
+                const resources = resource_input
+                    .split(",")
+                    .map((resource) => resource.trim())
+                    .filter((resource) => resource !== "");
+                const newTask = {
+                    id: `B${batches.length + 1}`,
+                    product: document.getElementById("product").value,
+                    start: new Date(document.getElementById("startDate").value),
+                    end: new Date(document.getElementById("endDate").value),
+                    quantity: document.getElementById("quantity").value,
+                    resources: resources,
+                };
+
+                batches.unshift(newTask);
+                updateCharts();
+            });
+
+        // Initial chart render
+        updateCharts();
+    </script>
+</body>
+
+</html>

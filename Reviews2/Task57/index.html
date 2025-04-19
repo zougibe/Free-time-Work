@@ -1,0 +1,591 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Secure Pattern Lock</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        .dot {
+            width: 40px;
+            height: 40px;
+            background-color: #3b82f6;
+            border-radius: 50%;
+            position: absolute;
+            transform: translate(-50%, -50%);
+            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+            z-index: 10;
+            border: 2px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .dot.selected {
+            background-color: #10b981;
+            transform: translate(-50%, -50%) scale(1.2);
+            box-shadow: 0 0 20px rgba(16, 185, 129, 0.7);
+            border-color: rgba(255, 255, 255, 0.3);
+        }
+
+        .dot.error {
+            background-color: #ef4444;
+            box-shadow: 0 0 20px rgba(239, 68, 68, 0.5);
+        }
+
+        .dot.success {
+            background-color: #10b981;
+            box-shadow: 0 0 20px rgba(16, 185, 129, 0.7);
+        }
+
+        .dot.highlight {
+            animation: pulse 1.5s infinite;
+        }
+
+        @keyframes pulse {
+            0% {
+                box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7);
+            }
+
+            70% {
+                box-shadow: 0 0 0 12px rgba(16, 185, 129, 0);
+            }
+
+            100% {
+                box-shadow: 0 0 0 0 rgba(16, 185, 129, 0);
+            }
+        }
+
+        #patternCanvas {
+            position: absolute;
+            top: 0;
+            left: 0;
+            pointer-events: none;
+            z-index: 5;
+        }
+
+        #gridContainer {
+            touch-action: none;
+        }
+
+        @keyframes fadeIn {
+            0% {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+
+            100% {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .fade-in {
+            animation: fadeIn 0.3s ease-out forwards;
+        }
+
+        @keyframes fadeOut {
+            0% {
+                opacity: 1;
+                transform: translateY(0);
+            }
+
+            100% {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+        }
+
+        .fade-out {
+            animation: fadeOut 0.3s ease-out forwards;
+        }
+
+        @keyframes shake {
+
+            0%,
+            100% {
+                transform: translateX(0);
+            }
+
+            20%,
+            60% {
+                transform: translateX(-8px);
+            }
+
+            40%,
+            80% {
+                transform: translateX(8px);
+            }
+        }
+
+        .shake {
+            animation: shake 0.5s cubic-bezier(0.36, 0.07, 0.19, 0.97) both;
+        }
+
+        @keyframes dotAppear {
+            0% {
+                opacity: 0;
+                transform: translate(-50%, -50%) scale(0.5);
+            }
+
+            100% {
+                opacity: 1;
+                transform: translate(-50%, -50%) scale(1);
+            }
+        }
+
+        .dot-appear {
+            animation: dotAppear 0.3s ease-out forwards;
+        }
+
+        .lockout-overlay {
+            background: rgba(0, 0, 0, 0.7);
+            backdrop-filter: blur(4px);
+        }
+
+        .pattern-line {
+            stroke-linecap: round;
+            stroke-linejoin: round;
+        }
+    </style>
+</head>
+
+<body
+    class="font-['Inter'] bg-gradient-to-br from-gray-900 to-gray-800 min-h-screen flex items-center justify-center p-4 text-white">
+    <div
+        class="w-full max-w-md bg-white/5 backdrop-blur-lg rounded-2xl shadow-xl overflow-hidden border border-white/10">
+        <div class="p-6 space-y-6">
+            <div class="text-center space-y-2">
+                <div class="flex items-center justify-center gap-3">
+                    <i data-lucide="lock" class="w-8 h-8 text-blue-400"></i>
+                    <h1 class="text-2xl font-bold tracking-tight">Secure Pattern Lock</h1>
+                </div>
+                <p class="text-sm text-gray-300">Draw your pattern to unlock</p>
+            </div>
+
+            <div id="gridContainer"
+                class="relative w-full aspect-square bg-gray-800/30 rounded-xl border border-gray-700/50 mx-auto overflow-hidden">
+                <canvas id="patternCanvas" class="absolute top-0 left-0 w-full h-full"></canvas>
+
+                <div id="lockoutOverlay"
+                    class="lockout-overlay absolute inset-0 z-20 hidden flex-col items-center justify-center gap-4">
+                    <i data-lucide="lock" class="w-16 h-16 text-red-400"></i>
+                    <div class="text-center">
+                        <p class="font-medium">Too many attempts</p>
+                        <p id="countdown" class="text-2xl font-bold mt-1">30s</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="space-y-4">
+                <div class="flex justify-between items-center">
+                    <div id="status" class="text-center flex-1 min-h-[24px]">
+                        <span id="statusText" class="fade-in"></span>
+                    </div>
+                </div>
+
+                <div class="flex items-center justify-between text-sm">
+                    <div id="attempts" class="text-gray-300">
+                        <span id="attemptsCount">5</span> attempts remaining
+                    </div>
+                    <button id="resetPattern"
+                        class="text-blue-400 hover:text-blue-300 transition-colors flex items-center gap-1">
+                        <i data-lucide="refresh-ccw" class="w-4 h-4"></i>
+                        <span>Reset</span>
+                    </button>
+                </div>
+            </div>
+
+            <div class="flex flex-col gap-3">
+                <button id="setPattern"
+                    class="w-full bg-blue-600 hover:bg-blue-500 text-white px-4 py-3 rounded-lg font-medium flex items-center justify-center gap-2 transition-all active:scale-[0.98]">
+                    <i data-lucide="key" class="w-5 h-5"></i>
+                    <span>Set New Pattern</span>
+                </button>
+
+                <button id="toggleGrid"
+                    class="w-full bg-gray-700 hover:bg-gray-600 text-white px-4 py-3 rounded-lg font-medium flex items-center justify-center gap-2 transition-all active:scale-[0.98]">
+                    <i data-lucide="layout-grid" class="w-5 h-5"></i>
+                    <span id="toggleGridText">Switch to 4×4 Grid</span>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // DOM Elements
+        const gridContainer = document.getElementById('gridContainer');
+        const canvas = document.getElementById('patternCanvas');
+        const ctx = canvas.getContext('2d');
+        const statusText = document.getElementById('statusText');
+        const attemptsCount = document.getElementById('attemptsCount');
+        const countdown = document.getElementById('countdown');
+        const lockoutOverlay = document.getElementById('lockoutOverlay');
+        const setPatternBtn = document.getElementById('setPattern');
+        const toggleGridBtn = document.getElementById('toggleGrid');
+        const resetPatternBtn = document.getElementById('resetPattern');
+
+        // Configuration
+        let gridSize = 3;
+        let dots = [];
+        let currentPattern = [];
+        let isDrawing = false;
+        let failedAttempts = 0;
+        const maxAttempts = 5;
+        let isLockedOut = false;
+        let lockoutTimer = null;
+        let isSettingPattern = false;
+        let hasPattern = false;
+
+        // Initialize
+        function init() {
+            resizeCanvas();
+            generateGrid();
+            checkForExistingPattern();
+            setupEventListeners();
+            lucide.createIcons();
+        }
+
+        // Check if pattern exists in localStorage
+        function checkForExistingPattern() {
+            hasPattern = !!localStorage.getItem(`patternHash${gridSize}`);
+            updateUIState();
+        }
+
+        // Resize canvas to container
+        function resizeCanvas() {
+            const rect = gridContainer.getBoundingClientRect();
+            canvas.width = rect.width;
+            canvas.height = rect.height;
+        }
+
+        // Generate the dot grid
+        function generateGrid() {
+            // Clear existing dots
+            gridContainer.querySelectorAll('.dot').forEach(dot => dot.remove());
+            dots = [];
+
+            const rect = gridContainer.getBoundingClientRect();
+            const padding = rect.width * 0.15;
+            const spacing = (rect.width - 2 * padding) / (gridSize - 1);
+
+            // Create dots
+            for (let row = 0; row < gridSize; row++) {
+                for (let col = 0; col < gridSize; col++) {
+                    const id = row * gridSize + col;
+                    const x = padding + col * spacing;
+                    const y = padding + row * spacing;
+
+                    const dot = document.createElement('div');
+                    dot.className = 'dot dot-appear';
+                    dot.style.left = `${x}px`;
+                    dot.style.top = `${y}px`;
+                    dot.dataset.id = id;
+
+                    gridContainer.appendChild(dot);
+                    dots.push({ id, x, y, element: dot });
+                }
+            }
+
+            // Update grid toggle button text
+            toggleGridBtn.querySelector('span').textContent =
+                `Switch to ${gridSize === 3 ? '4×4' : '3×3'} Grid`;
+
+            // Reset pattern state
+            resetDrawing();
+        }
+
+        // Custom hash function for pattern
+        function hashPattern(pattern) {
+            let hash = 0;
+            const primes = [2, 3, 5, 7, 11, 13, 17, 19, 23];
+
+            pattern.forEach((dotId, index) => {
+                hash = (hash << 5) - hash + dotId * primes[index % primes.length];
+                hash |= 0; // Convert to 32-bit integer
+            });
+
+            return hash.toString(16);
+        }
+
+        // Handle touch/mouse start
+        function handleStart(e) {
+            if (isLockedOut) return;
+
+            e.preventDefault();
+            isDrawing = true;
+            const point = getEventPoint(e);
+            const dot = findDotAtPoint(point.x, point.y);
+
+            if (dot) {
+                currentPattern.push(dot.id);
+                dot.element.classList.add('selected');
+                drawPattern();
+            }
+        }
+
+        // Handle touch/mouse move
+        function handleMove(e) {
+            if (!isDrawing || isLockedOut) return;
+
+            e.preventDefault();
+            const point = getEventPoint(e);
+            const dot = findDotAtPoint(point.x, point.y);
+
+            if (dot && !currentPattern.includes(dot.id)) {
+                currentPattern.push(dot.id);
+                dot.element.classList.add('selected');
+            }
+
+            drawPattern(point);
+        }
+
+        // Handle touch/mouse end
+        function handleEnd() {
+            if (!isDrawing || isLockedOut) return;
+            isDrawing = false;
+
+            if (currentPattern.length > 0) {
+                processPattern();
+            }
+
+            resetDrawing();
+        }
+
+        // Process the drawn pattern
+        function processPattern() {
+            if (currentPattern.length < 2) {
+                showStatus('Pattern too short!', 'error');
+                return;
+            }
+
+            const patternHash = hashPattern(currentPattern);
+            const storedHash = localStorage.getItem(`patternHash${gridSize}`);
+
+            if (isSettingPattern) {
+                localStorage.setItem(`patternHash${gridSize}`, patternHash);
+                showStatus('Pattern set successfully!', 'success');
+                isSettingPattern = false;
+                hasPattern = true;
+                updateUIState();
+                highlightPattern('success');
+                return;
+            }
+
+            if (!storedHash) {
+                showStatus('No pattern set. Please set one.', 'info');
+                return;
+            }
+
+            if (patternHash === storedHash) {
+                showStatus('Unlocked successfully!', 'success');
+                failedAttempts = 0;
+                updateAttemptsDisplay();
+                highlightPattern('success');
+            } else {
+                failedAttempts++;
+                updateAttemptsDisplay();
+                highlightPattern('error');
+
+                if (failedAttempts >= maxAttempts) {
+                    startLockout();
+                    showStatus('Too many attempts! Locked out.', 'error');
+                } else {
+                    showStatus('Incorrect pattern!', 'error');
+                }
+            }
+        }
+
+        // Reset drawing state
+        function resetDrawing() {
+            currentPattern = [];
+            dots.forEach(dot => {
+                dot.element.classList.remove('selected', 'error', 'success');
+            });
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+        }
+
+        // Draw the pattern lines
+        function drawPattern(currentPoint = null) {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            if (currentPattern.length === 0) return;
+
+            ctx.beginPath();
+            ctx.strokeStyle = '#10b981';
+            ctx.lineWidth = 4;
+
+            // Draw lines between dots
+            for (let i = 0; i < currentPattern.length; i++) {
+                const dot = dots.find(d => d.id === currentPattern[i]);
+
+                if (i === 0) {
+                    ctx.moveTo(dot.x, dot.y);
+                } else {
+                    ctx.lineTo(dot.x, dot.y);
+                }
+            }
+
+            // Draw line to current pointer position
+            if (currentPoint && isDrawing) {
+                ctx.lineTo(currentPoint.x, currentPoint.y);
+            }
+
+            ctx.stroke();
+        }
+
+        // Find dot at coordinates
+        function findDotAtPoint(x, y) {
+            return dots.find(dot => {
+                const dx = x - dot.x;
+                const dy = y - dot.y;
+                return Math.sqrt(dx * dx + dy * dy) < 30;
+            });
+        }
+
+        // Get event coordinates
+        function getEventPoint(e) {
+            const rect = gridContainer.getBoundingClientRect();
+            const clientX = e.type.includes('touch') ? e.touches[0].clientX : e.clientX;
+            const clientY = e.type.includes('touch') ? e.touches[0].clientY : e.clientY;
+
+            return {
+                x: clientX - rect.left,
+                y: clientY - rect.top
+            };
+        }
+
+        // Show status message
+        function showStatus(message, type) {
+            // Clear any existing animations/classes
+            statusText.className = '';
+            void statusText.offsetWidth; // Trigger reflow
+
+            // Set message and styling
+            statusText.textContent = message;
+
+            switch (type) {
+                case 'success':
+                    statusText.className = 'text-green-400 fade-in';
+                    break;
+                case 'error':
+                    statusText.className = 'text-red-400 fade-in shake';
+                    break;
+                case 'info':
+                    statusText.className = 'text-blue-400 fade-in';
+                    break;
+                default:
+                    statusText.className = 'text-gray-300 fade-in';
+            }
+
+            // Auto-hide after delay
+            setTimeout(() => {
+                statusText.classList.add('fade-out');
+                setTimeout(() => {
+                    statusText.textContent = '';
+                    statusText.className = '';
+                }, 300);
+            }, 2000);
+        }
+
+        // Highlight pattern dots
+        function highlightPattern(type) {
+            dots.forEach(dot => {
+                if (currentPattern.includes(dot.id)) {
+                    dot.element.classList.add(type);
+                }
+            });
+        }
+
+        // Update attempts display
+        function updateAttemptsDisplay() {
+            attemptsCount.textContent = maxAttempts - failedAttempts;
+        }
+
+        // Start lockout period
+        function startLockout() {
+            isLockedOut = true;
+            let seconds = 30;
+
+            lockoutOverlay.classList.remove('hidden');
+            countdown.textContent = `${seconds}s`;
+
+            lockoutTimer = setInterval(() => {
+                seconds--;
+                countdown.textContent = `${seconds}s`;
+
+                if (seconds <= 0) {
+                    clearInterval(lockoutTimer);
+                    isLockedOut = false;
+                    failedAttempts = 0;
+                    updateAttemptsDisplay();
+                    lockoutOverlay.classList.add('hidden');
+                    showStatus('Try again', 'info');
+                }
+            }, 1000);
+        }
+
+        // Update UI state based on current mode
+        function updateUIState() {
+            if (hasPattern) {
+                setPatternBtn.innerHTML = '<i data-lucide="key" class="w-5 h-5"></i><span>Change Pattern</span>';
+            } else {
+                setPatternBtn.innerHTML = '<i data-lucide="key" class="w-5 h-5"></i><span>Set Pattern</span>';
+            }
+
+            lucide.createIcons();
+        }
+
+        // Set up event listeners
+        function setupEventListeners() {
+            // Drawing events
+            gridContainer.addEventListener('mousedown', handleStart);
+            gridContainer.addEventListener('mousemove', handleMove);
+            gridContainer.addEventListener('mouseup', handleEnd);
+            gridContainer.addEventListener('mouseleave', handleEnd);
+
+            gridContainer.addEventListener('touchstart', handleStart, { passive: false });
+            gridContainer.addEventListener('touchmove', handleMove, { passive: false });
+            gridContainer.addEventListener('touchend', handleEnd);
+
+            // Button events
+            setPatternBtn.addEventListener('click', () => {
+                if (isLockedOut) return;
+
+                isSettingPattern = true;
+                showStatus('Draw your new pattern', 'info');
+                resetDrawing();
+            });
+
+            toggleGridBtn.addEventListener('click', () => {
+                if (isLockedOut) return;
+
+                gridSize = gridSize === 3 ? 4 : 3;
+                generateGrid();
+                checkForExistingPattern();
+                resetDrawing();
+            });
+
+            resetPatternBtn.addEventListener('click', () => {
+                if (isLockedOut) return;
+
+                localStorage.removeItem(`patternHash${gridSize}`);
+                hasPattern = false;
+                updateUIState();
+                showStatus('Pattern reset', 'info');
+                resetDrawing();
+            });
+
+            // Window resize
+            window.addEventListener('resize', () => {
+                resizeCanvas();
+                generateGrid();
+            });
+        }
+
+        // Initialize the app
+        init();
+    </script>
+</body>
+
+</html>

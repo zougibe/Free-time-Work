@@ -1,0 +1,1150 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Quality Control Dashboard</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/plotly.js/2.24.2/plotly.min.js"></script>
+    <style>
+        :root {
+            --primary-color: #2c3e50;
+            --secondary-color: #3498db;
+            --alert-color: #e74c3c;
+            --warning-color: #f39c12;
+            --success-color: #2ecc71;
+            --background-color: #f5f7fa;
+            --card-color: #ffffff;
+            --border-color: #dfe6e9;
+            --text-muted: #7f8c8d;
+            --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.1);
+            --shadow-md: 0 4px 6px rgba(0, 0, 0, 0.1);
+            --shadow-lg: 0 10px 15px rgba(0, 0, 0, 0.1);
+            --transition: all 0.3s ease;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Roboto', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        body {
+            background-color: var(--background-color);
+            color: var(--primary-color);
+            padding: 20px;
+            line-height: 1.6;
+        }
+
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 25px;
+            padding-bottom: 15px;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .title {
+            font-size: 28px;
+            font-weight: 700;
+            color: var(--primary-color);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .title-icon {
+            width: 32px;
+            height: 32px;
+            fill: var(--secondary-color);
+        }
+
+        .timestamp {
+            font-size: 14px;
+            color: var(--text-muted);
+            font-weight: 500;
+        }
+
+        .controls {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 20px;
+            margin-bottom: 25px;
+            padding: 20px;
+            background-color: var(--card-color);
+            border-radius: 10px;
+            box-shadow: var(--shadow-sm);
+            border: 1px solid var(--border-color);
+        }
+
+        .control-group {
+            display: flex;
+            flex-direction: column;
+            min-width: 220px;
+            flex-grow: 1;
+        }
+
+        label {
+            margin-bottom: 8px;
+            font-weight: 500;
+            font-size: 14px;
+            color: var(--primary-color);
+        }
+
+        select,
+        button {
+            padding: 10px 15px;
+            border-radius: 6px;
+            border: 1px solid var(--border-color);
+            background-color: white;
+            font-size: 14px;
+            transition: var(--transition);
+        }
+
+        select {
+            cursor: pointer;
+            appearance: none;
+            background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
+            background-repeat: no-repeat;
+            background-position: right 10px center;
+            background-size: 16px;
+        }
+
+        select:focus,
+        button:focus {
+            outline: none;
+            border-color: var(--secondary-color);
+            box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.2);
+        }
+
+        button {
+            background-color: var(--secondary-color);
+            color: white;
+            border: none;
+            cursor: pointer;
+            transition: var(--transition);
+            font-weight: 500;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            min-width: 180px;
+        }
+
+        button:hover {
+            background-color: #2980b9;
+            transform: translateY(-1px);
+            box-shadow: var(--shadow-md);
+        }
+
+        .button-icon {
+            width: 16px;
+            height: 16px;
+            fill: currentColor;
+        }
+
+        .slider-container {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            flex-grow: 1;
+        }
+
+        input[type="range"] {
+            -webkit-appearance: none;
+            width: 100%;
+            height: 8px;
+            border-radius: 4px;
+            background: #dfe6e9;
+            outline: none;
+            padding: 0;
+            margin: 10px 0;
+        }
+
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background: var(--secondary-color);
+            cursor: pointer;
+            transition: var(--transition);
+            box-shadow: var(--shadow-sm);
+        }
+
+        input[type="range"]::-webkit-slider-thumb:hover {
+            transform: scale(1.1);
+            box-shadow: var(--shadow-md);
+        }
+
+        .slider-labels {
+            display: flex;
+            justify-content: space-between;
+            font-size: 12px;
+            color: var(--text-muted);
+        }
+
+        .dashboard {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+            gap: 25px;
+            margin-bottom: 25px;
+        }
+
+        .chart-container {
+            background-color: var(--card-color);
+            border-radius: 10px;
+            padding: 20px;
+            box-shadow: var(--shadow-sm);
+            border: 1px solid var(--border-color);
+            min-height: 350px;
+            display: flex;
+            flex-direction: column;
+            transition: var(--transition);
+        }
+
+        .chart-container:hover {
+            box-shadow: var(--shadow-md);
+            transform: translateY(-2px);
+        }
+
+        .metrics-row {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 20px;
+            margin-bottom: 25px;
+        }
+
+        .metric-card {
+            background-color: var(--card-color);
+            border-radius: 10px;
+            padding: 20px;
+            box-shadow: var(--shadow-sm);
+            border: 1px solid var(--border-color);
+            display: flex;
+            flex-direction: column;
+            align-items: flex-start;
+            justify-content: center;
+            transition: var(--transition);
+        }
+
+        .metric-card:hover {
+            box-shadow: var(--shadow-md);
+            transform: translateY(-2px);
+        }
+
+        .metric-title {
+            font-size: 14px;
+            font-weight: 500;
+            color: var(--text-muted);
+            margin-bottom: 8px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .metric-icon {
+            width: 16px;
+            height: 16px;
+            fill: currentColor;
+        }
+
+        .metric-value {
+            font-size: 28px;
+            font-weight: 700;
+        }
+
+        .alert {
+            color: var(--alert-color);
+        }
+
+        .warning {
+            color: var(--warning-color);
+        }
+
+        .success {
+            color: var(--success-color);
+        }
+
+        .alert-panel {
+            background-color: var(--card-color);
+            border-radius: 10px;
+            padding: 20px;
+            box-shadow: var(--shadow-sm);
+            border: 1px solid var(--border-color);
+            margin-bottom: 25px;
+            transition: var(--transition);
+        }
+
+        .alert-panel:hover {
+            box-shadow: var(--shadow-md);
+            transform: translateY(-2px);
+        }
+
+        .alert-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .alert-header h3 {
+            font-size: 18px;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .alert-icon {
+            width: 20px;
+            height: 20px;
+            fill: var(--alert-color);
+        }
+
+        .alert-count {
+            font-weight: 600;
+            color: var(--alert-color);
+        }
+
+        .alert-list {
+            max-height: 200px;
+            overflow-y: auto;
+            list-style: none;
+            scrollbar-width: thin;
+            scrollbar-color: var(--secondary-color) var(--border-color);
+        }
+
+        .alert-list::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        .alert-list::-webkit-scrollbar-track {
+            background: var(--border-color);
+            border-radius: 3px;
+        }
+
+        .alert-list::-webkit-scrollbar-thumb {
+            background-color: var(--secondary-color);
+            border-radius: 3px;
+        }
+
+        .alert-item {
+            padding: 12px;
+            margin-bottom: 8px;
+            border-radius: 6px;
+            font-size: 14px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            transition: var(--transition);
+        }
+
+        .alert-item:hover {
+            transform: translateX(2px);
+        }
+
+        .alert-critical {
+            background-color: rgba(231, 76, 60, 0.08);
+            border-left: 4px solid var(--alert-color);
+        }
+
+        .alert-warning {
+            background-color: rgba(241, 196, 15, 0.08);
+            border-left: 4px solid var(--warning-color);
+        }
+
+        .alert-info {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+
+        .alert-product {
+            font-weight: 600;
+            color: var(--primary-color);
+        }
+
+        .alert-details {
+            color: var(--text-muted);
+            font-size: 13px;
+        }
+
+        .alert-time {
+            font-size: 12px;
+            color: var(--text-muted);
+            white-space: nowrap;
+            margin-left: 10px;
+        }
+
+        .chart-title {
+            font-size: 18px;
+            font-weight: 600;
+            margin-bottom: 15px;
+            text-align: center;
+            color: var(--primary-color);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+
+        .chart-icon {
+            width: 20px;
+            height: 20px;
+            fill: var(--secondary-color);
+        }
+
+        .empty-state {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            color: var(--text-muted);
+            padding: 20px;
+            text-align: center;
+        }
+
+        .empty-icon {
+            width: 40px;
+            height: 40px;
+            fill: var(--border-color);
+        }
+
+        .status-badge {
+            display: inline-flex;
+            align-items: center;
+            padding: 4px 10px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .badge-critical {
+            background-color: rgba(231, 76, 60, 0.1);
+            color: var(--alert-color);
+        }
+
+        .badge-warning {
+            background-color: rgba(241, 196, 15, 0.1);
+            color: var(--warning-color);
+        }
+
+        .badge-normal {
+            background-color: rgba(46, 204, 113, 0.1);
+            color: var(--success-color);
+        }
+
+        @media (max-width: 768px) {
+            .dashboard {
+                grid-template-columns: 1fr;
+            }
+
+            .metrics-row {
+                grid-template-columns: repeat(2, 1fr);
+            }
+
+            .controls {
+                flex-direction: column;
+                gap: 15px;
+            }
+
+            .control-group {
+                min-width: 100%;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .metrics-row {
+                grid-template-columns: 1fr;
+            }
+
+            .header {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 10px;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="header">
+        <div class="title">
+            <svg class="title-icon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                <path
+                    d="M12 2L4 5v6.09c0 5.05 3.41 9.76 8 10.91 4.59-1.15 8-5.86 8-10.91V5l-8-3zm-1.06 13.54L7.4 12l1.41-1.41 2.12 2.12 4.24-4.24 1.41 1.41-5.64 5.66z" />
+            </svg>
+            Quality Control Dashboard
+        </div>
+        <div class="timestamp" id="current-time"></div>
+    </div>
+
+    <div class="controls">
+        <div class="control-group">
+            <label for="product-line">Product Line</label>
+            <select id="product-line">
+                <option value="all">All Product Lines</option>
+                <option value="electronics">Electronics</option>
+                <option value="mechanical">Mechanical</option>
+                <option value="chemical">Chemical</option>
+                <option value="textile">Textile</option>
+            </select>
+        </div>
+
+        <div class="slider-container">
+            <label for="time-range">Time Period: <span id="time-range-value">30</span> days</label>
+            <input type="range" id="time-range" min="1" max="30" value="30">
+            <div class="slider-labels">
+                <span>1 day</span>
+                <span>30 days</span>
+            </div>
+        </div>
+
+        <button id="trigger-alert">
+            <svg class="button-icon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                <path
+                    d="M12 22c1.1 0 2-.9 2-2h-4c0 1.1.9 2 2 2zm6-6v-5c0-3.07-1.63-5.64-4.5-6.32V4c0-.83-.67-1.5-1.5-1.5s-1.5.67-1.5 1.5v.68C7.64 5.36 6 7.92 6 11v5l-2 2v1h16v-1l-2-2z" />
+            </svg>
+            Trigger Test Alert
+        </button>
+    </div>
+
+    <div class="metrics-row">
+        <div class="metric-card">
+            <div class="metric-title">
+                <svg class="metric-icon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                    <path
+                        d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zM9 17H7v-7h2v7zm4 0h-2V7h2v10zm4 0h-2v-4h2v4z" />
+                </svg>
+                Total Products Tested
+            </div>
+            <div class="metric-value" id="total-tested">0</div>
+        </div>
+        <div class="metric-card">
+            <div class="metric-title">
+                <svg class="metric-icon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                    <path
+                        d="M11 15h2v2h-2zm0-8h2v6h-2zm.99-5C6.47 2 2 6.48 2 12s4.47 10 9.99 10C17.52 22 22 17.52 22 12S17.52 2 11.99 2zM12 20c-4.42 0-8-3.58-8-8s3.58-8 8-8 8 3.58 8 8-3.58 8-8 8z" />
+                </svg>
+                Average Defect Rate
+            </div>
+            <div class="metric-value" id="avg-defect-rate">0%</div>
+        </div>
+        <div class="metric-card">
+            <div class="metric-title">
+                <svg class="metric-icon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                    <path
+                        d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.42 0-8-3.58-8-8 0-1.85.63-3.55 1.69-4.9L16.9 18.31C15.55 19.37 13.85 20 12 20zm6.31-3.1L7.1 5.69C8.45 4.63 10.15 4 12 4c4.42 0 8 3.58 8 8 0 1.85-.63 3.55-1.69 4.9z" />
+                </svg>
+                Products Out of Spec
+            </div>
+            <div class="metric-value" id="out-of-spec">0</div>
+        </div>
+        <div class="metric-card">
+            <div class="metric-title">
+                <svg class="metric-icon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                    <path
+                        d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 17.93c-3.95-.49-7-3.85-7-7.93 0-.62.08-1.21.21-1.79L9 15v1c0 1.1.9 2 2 2v1.93zm6.9-2.54c-.26-.81-1-1.39-1.9-1.39h-1v-3c0-.55-.45-1-1-1H8v-2h2c.55 0 1-.45 1-1V7h2c1.1 0 2-.9 2-2v-.41c2.93 1.19 5 4.06 5 7.41 0 2.08-.8 3.97-2.1 5.39z" />
+                </svg>
+                Current Status
+            </div>
+            <div class="metric-value">
+                <span id="current-status" class="status-badge badge-normal">Normal</span>
+            </div>
+        </div>
+    </div>
+
+    <div class="alert-panel">
+        <div class="alert-header">
+            <h3>
+                <svg class="alert-icon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                    <path
+                        d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z" />
+                </svg>
+                Quality Alerts
+            </h3>
+            <div><span id="alert-count" class="alert-count">0</span> active alerts</div>
+        </div>
+        <ul class="alert-list" id="alert-list">
+            <!-- Alerts will be added here dynamically -->
+        </ul>
+    </div>
+
+    <div class="dashboard">
+        <div class="chart-container">
+            <div class="chart-title">
+                <svg class="chart-icon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                    <path
+                        d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zM9 17H7v-5h2v5zm4 0h-2v-3h2v3zm0-5h-2v-2h2v2zm4 5h-2V7h2v10z" />
+                </svg>
+                Control Chart: Defect Rate Over Time
+            </div>
+            <div id="control-chart"></div>
+        </div>
+        <div class="chart-container">
+            <div class="chart-title">
+                <svg class="chart-icon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M5 9.2h3V19H5zM10.6 5h2.8v14h-2.8zm5.6 8H19v6h-2.8z" />
+                </svg>
+                Defects by Product Line
+            </div>
+            <div id="product-chart"></div>
+        </div>
+        <div class="chart-container">
+            <div class="chart-title">
+                <svg class="chart-icon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M16 6l2.29 2.29-4.88 4.88-4-4L2 16.59 3.41 18l6-6 4 4 6.3-6.29L22 12V6z" />
+                </svg>
+                Quality Trend Over Time
+            </div>
+            <div id="trend-chart"></div>
+        </div>
+    </div>
+
+    <script>
+        // Enhanced sample data generation with more realistic patterns
+        const productLines = ['electronics', 'mechanical', 'chemical', 'textile'];
+        const productNames = {
+            'electronics': ['Circuit Board', 'Microchip', 'Sensor', 'Display Panel'],
+            'mechanical': ['Gear Assembly', 'Hydraulic Valve', 'Bearing', 'Piston'],
+            'chemical': ['Polymer Resin', 'Liquid Solvent', 'Adhesive', 'Cleaning Agent'],
+            'textile': ['Fabric Roll', 'Synthetic Fiber', 'Dyed Cloth', 'Woven Material']
+        };
+        const productPrefixes = {
+            'electronics': 'EL',
+            'mechanical': 'ME',
+            'chemical': 'CH',
+            'textile': 'TX'
+        };
+
+        // Generate more realistic quality control data with weekly patterns
+        function generateQualityData(days = 30) {
+            const data = [];
+            const endDate = new Date();
+            const startDate = new Date();
+            startDate.setDate(endDate.getDate() - days);
+
+            // Generate multiple entries per day with weekly patterns
+            for (let d = 0; d < days; d++) {
+                const currentDate = new Date(startDate);
+                currentDate.setDate(startDate.getDate() + d);
+                const dayOfWeek = currentDate.getDay(); // 0 (Sun) to 6 (Sat)
+
+                // Generate entries per day per product line with weekly patterns
+                for (const productLine of productLines) {
+                    // Base entries per day varies by day of week
+                    let entriesPerDay;
+                    if (dayOfWeek === 0 || dayOfWeek === 6) { // Weekend
+                        entriesPerDay = Math.floor(Math.random() * 2) + 1; // 1-2 entries
+                    } else {
+                        entriesPerDay = Math.floor(Math.random() * 4) + 3; // 3-6 entries
+                    }
+
+                    // Base defect rate varies by product line and day of week
+                    let baseDefectRate;
+                    switch (productLine) {
+                        case 'electronics':
+                            baseDefectRate = 0.03 + (dayOfWeek === 1 ? 0.01 : 0); // Higher on Mondays
+                            break;
+                        case 'mechanical':
+                            baseDefectRate = 0.04 + (dayOfWeek === 5 ? 0.015 : 0); // Higher on Fridays
+                            break;
+                        case 'chemical':
+                            baseDefectRate = 0.02;
+                            break;
+                        case 'textile':
+                            baseDefectRate = 0.05 - (dayOfWeek === 3 ? 0.01 : 0); // Lower on Wednesdays
+                            break;
+                        default:
+                            baseDefectRate = 0.03;
+                    }
+
+                    for (let i = 0; i < entriesPerDay; i++) {
+                        const productIndex = Math.floor(Math.random() * productNames[productLine].length);
+                        const productName = productNames[productLine][productIndex];
+                        const productId = `${productPrefixes[productLine]}-${Math.floor(1000 + Math.random() * 9000)}`;
+
+                        // Add some randomness and occasional spikes
+                        let defectRate = baseDefectRate + (Math.random() * 0.02 - 0.01);
+
+                        // Add occasional defect spike (5% chance)
+                        if (Math.random() > 0.95) {
+                            defectRate += Math.random() * 0.1;
+                        }
+
+                        // Add time component to the date (work hours)
+                        const hours = Math.floor(Math.random() * 9) + 7; // 7 AM to 4 PM
+                        const minutes = Math.floor(Math.random() * 60);
+                        const timestamp = new Date(currentDate);
+                        timestamp.setHours(hours, minutes);
+
+                        // Specification threshold varies by product line
+                        const specThreshold = baseDefectRate * (1.3 + Math.random() * 0.4); // 1.3-1.7x base rate
+
+                        // Generate more realistic total tested values
+                        const totalTested = Math.floor(Math.random() * 800) + 200; // 200-1000 units tested
+
+                        data.push({
+                            productId,
+                            productName,
+                            productLine,
+                            defectRate,
+                            timestamp,
+                            specThreshold,
+                            totalTested,
+                            defectCount: Math.round(defectRate * totalTested)
+                        });
+                    }
+                }
+            }
+
+            return data;
+        }
+
+        // Initialize dashboard state
+        let allData = generateQualityData(30);
+        let filteredData = [...allData];
+        let selectedProductLine = 'all';
+        let selectedDays = 30;
+        let alerts = [];
+        let lastAlertCheck = new Date();
+
+        // Update dashboard based on filters
+        function updateDashboard() {
+            // Filter data based on selected options
+            filteredData = allData.filter(item => {
+                const itemDate = new Date(item.timestamp);
+                const cutoffDate = new Date();
+                cutoffDate.setDate(cutoffDate.getDate() - selectedDays);
+
+                const matchesProductLine = selectedProductLine === 'all' || item.productLine === selectedProductLine;
+                const matchesTimeframe = itemDate >= cutoffDate;
+
+                return matchesProductLine && matchesTimeframe;
+            });
+
+            updateMetrics();
+            updateControlChart();
+            updateProductChart();
+            updateTrendChart();
+            checkForAlerts();
+        }
+
+        // Update summary metrics
+        function updateMetrics() {
+            const totalTested = filteredData.reduce((sum, item) => sum + item.totalTested, 0);
+            const totalDefects = filteredData.reduce((sum, item) => sum + item.defectCount, 0);
+            const avgDefectRate = totalTested > 0 ? (totalDefects / totalTested) : 0;
+
+            // Count products out of spec
+            const outOfSpec = filteredData.filter(item => item.defectRate > item.specThreshold).length;
+
+            // Update the metrics in the UI
+            document.getElementById('total-tested').innerText = totalTested.toLocaleString();
+            document.getElementById('avg-defect-rate').innerText = `${(avgDefectRate * 100).toFixed(2)}%`;
+            document.getElementById('out-of-spec').innerText = outOfSpec;
+
+            // Update status indicator
+            const statusElement = document.getElementById('current-status');
+            if (outOfSpec > 5) {
+                statusElement.innerText = 'Critical';
+                statusElement.className = 'status-badge badge-critical';
+            } else if (outOfSpec > 0) {
+                statusElement.innerText = 'Warning';
+                statusElement.className = 'status-badge badge-warning';
+            } else {
+                statusElement.innerText = 'Normal';
+                statusElement.className = 'status-badge badge-normal';
+            }
+        }
+
+        // Enhanced control chart with more features
+        function updateControlChart() {
+            if (filteredData.length === 0) {
+                document.getElementById('control-chart').innerHTML = `
+                    <div class="empty-state">
+                        <svg class="empty-icon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                            <path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 16H5V5h14v14z"/>
+                        </svg>
+                        No data available for the selected filters
+                    </div>
+                `;
+                return;
+            }
+
+            // Sort data by timestamp
+            const sortedData = [...filteredData].sort((a, b) => a.timestamp - b.timestamp);
+
+            // Calculate control limits using moving range for more accurate SPC
+            const defectRates = sortedData.map(item => item.defectRate);
+            const mean = defectRates.reduce((sum, rate) => sum + rate, 0) / defectRates.length;
+
+            // Calculate moving ranges
+            let movingRanges = [];
+            for (let i = 1; i < defectRates.length; i++) {
+                movingRanges.push(Math.abs(defectRates[i] - defectRates[i - 1]));
+            }
+            const avgMovingRange = movingRanges.reduce((sum, range) => sum + range, 0) / movingRanges.length;
+
+            // Calculate control limits based on moving range
+            const upperControlLimit = mean + 2.66 * avgMovingRange;
+            const lowerControlLimit = Math.max(0, mean - 2.66 * avgMovingRange);
+
+            // Prepare data for Plotly
+            const trace1 = {
+                x: sortedData.map(item => item.timestamp),
+                y: sortedData.map(item => item.defectRate),
+                mode: 'lines+markers',
+                name: 'Defect Rate',
+                line: {
+                    color: '#3498db',
+                    width: 1
+                },
+                marker: {
+                    size: 6,
+                    color: sortedData.map(item => item.defectRate > item.specThreshold ? '#e74c3c' : '#3498db'),
+                    line: {
+                        color: 'white',
+                        width: 1
+                    }
+                },
+                hovertemplate: `
+                    <b>%{text}</b><br>
+                    Date: %{x|%Y-%m-%d %H:%M}<br>
+                    Defect Rate: %{y:.2%}<br>
+                    Threshold: ${(sortedData[0].specThreshold * 100).toFixed(2)}%
+                    <extra></extra>
+                `,
+                text: sortedData.map(item => item.productName)
+            };
+
+            const trace2 = {
+                x: [sortedData[0].timestamp, sortedData[sortedData.length - 1].timestamp],
+                y: [upperControlLimit, upperControlLimit],
+                mode: 'lines',
+                name: 'UCL',
+                line: {
+                    color: '#e74c3c',
+                    dash: 'dash',
+                    width: 1.5
+                },
+                hovertemplate: 'Upper Control Limit: %{y:.2%}<extra></extra>'
+            };
+
+            const trace3 = {
+                x: [sortedData[0].timestamp, sortedData[sortedData.length - 1].timestamp],
+                y: [mean, mean],
+                mode: 'lines',
+                name: 'Mean',
+                line: {
+                    color: '#2ecc71',
+                    dash: 'solid',
+                    width: 1.5
+                },
+                hovertemplate: 'Process Mean: %{y:.2%}<extra></extra>'
+            };
+
+            const trace4 = {
+                x: [sortedData[0].timestamp, sortedData[sortedData.length - 1].timestamp],
+                y: [lowerControlLimit, lowerControlLimit],
+                mode: 'lines',
+                name: 'LCL',
+                line: {
+                    color: '#e74c3c',
+                    dash: 'dash',
+                    width: 1.5
+                },
+                hovertemplate: 'Lower Control Limit: %{y:.2%}<extra></extra>'
+            };
+
+            // Add specification threshold line
+            const trace5 = {
+                x: [sortedData[0].timestamp, sortedData[sortedData.length - 1].timestamp],
+                y: [sortedData[0].specThreshold, sortedData[0].specThreshold],
+                mode: 'lines',
+                name: 'Spec Threshold',
+                line: {
+                    color: '#f39c12',
+                    dash: 'dot',
+                    width: 1.5
+                },
+                hovertemplate: 'Specification Threshold: %{y:.2%}<extra></extra>'
+            };
+
+            const layout = {
+                margin: { t: 10, r: 30, l: 60, b: 50 },
+                showlegend: true,
+                legend: {
+                    orientation: 'h',
+                    y: -0.2,
+                    font: {
+                        size: 12
+                    }
+                },
+                xaxis: {
+                    title: 'Time',
+                    type: 'date',
+                    gridcolor: '#f0f0f0',
+                    showline: true,
+                    linecolor: '#dfe6e9'
+                },
+                yaxis: {
+                    title: 'Defect Rate',
+                    tickformat: ',.0%',
+                    gridcolor: '#f0f0f0',
+                    showline: true,
+                    linecolor: '#dfe6e9'
+                },
+                hovermode: 'closest',
+                plot_bgcolor: 'rgba(0,0,0,0)',
+                paper_bgcolor: 'rgba(0,0,0,0)'
+            };
+
+            Plotly.newPlot('control-chart', [trace1, trace2, trace3, trace4, trace5], layout, {
+                responsive: true,
+                displayModeBar: false
+            });
+        }
+
+        // Bar chart for defects by product line
+        function updateProductChart() {
+            if (filteredData.length === 0) {
+                document.getElementById('product-chart').innerHTML = `
+            <div class="empty-state">
+                <svg class="empty-icon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 16H5V5h14v14z"/>
+                </svg>
+                No data available for the selected filters
+            </div>
+        `;
+                return;
+            }
+
+            // Aggregate defect counts by product line
+            const defectCounts = productLines.reduce((acc, line) => {
+                const lineData = filteredData.filter(item => item.productLine === line);
+                const totalDefects = lineData.reduce((sum, item) => sum + item.defectCount, 0);
+                acc[line] = totalDefects;
+                return acc;
+            }, {});
+
+            const trace = {
+                x: productLines.map(line => line.charAt(0).toUpperCase() + line.slice(1)),
+                y: productLines.map(line => defectCounts[line] || 0),
+                type: 'bar',
+                marker: {
+                    color: '#3498db',
+                    line: {
+                        color: '#2c3e50',
+                        width: 1
+                    }
+                },
+                hovertemplate: '<b>%{x}</b><br>Defects: %{y}<extra></extra>'
+            };
+
+            const layout = {
+                margin: { t: 10, r: 30, l: 60, b: 50 },
+                showlegend: false,
+                xaxis: {
+                    title: 'Product Line',
+                    gridcolor: '#f0f0f0',
+                    showline: true,
+                    linecolor: '#dfe6e9'
+                },
+                yaxis: {
+                    title: 'Number of Defects',
+                    gridcolor: '#f0f0f0',
+                    showline: true,
+                    linecolor: '#dfe6e9'
+                },
+                plot_bgcolor: 'rgba(0,0,0,0)',
+                paper_bgcolor: 'rgba(0,0,0,0)'
+            };
+
+            Plotly.newPlot('product-chart', [trace], layout, {
+                responsive: true,
+                displayModeBar: false
+            });
+        }
+
+        // Line chart for quality trend over time
+        function updateTrendChart() {
+            if (filteredData.length === 0) {
+                document.getElementById('trend-chart').innerHTML = `
+            <div class="empty-state">
+                <svg class="empty-icon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 16H5V5h14v14z"/>
+                </svg>
+                No data available for the selected filters
+            </div>
+        `;
+                return;
+            }
+
+            // Aggregate defect rate by day
+            const dailyData = {};
+            filteredData.forEach(item => {
+                const date = new Date(item.timestamp).toISOString().split('T')[0];
+                if (!dailyData[date]) {
+                    dailyData[date] = { totalDefects: 0, totalTested: 0 };
+                }
+                dailyData[date].totalDefects += item.defectCount;
+                dailyData[date].totalTested += item.totalTested;
+            });
+
+            const dates = Object.keys(dailyData).sort();
+            const defectRates = dates.map(date => {
+                const { totalDefects, totalTested } = dailyData[date];
+                return totalTested > 0 ? totalDefects / totalTested : 0;
+            });
+
+            const trace = {
+                x: dates,
+                y: defectRates,
+                mode: 'lines+markers',
+                name: 'Defect Rate',
+                line: {
+                    color: '#3498db',
+                    width: 2
+                },
+                marker: {
+                    size: 6,
+                    color: '#3498db'
+                },
+                hovertemplate: 'Date: %{x}<br>Defect Rate: %{y:.2%}<extra></extra>'
+            };
+
+            const layout = {
+                margin: { t: 10, r: 30, l: 60, b: 50 },
+                showlegend: false,
+                xaxis: {
+                    title: 'Date',
+                    type: 'date',
+                    gridcolor: '#f0f0f0',
+                    showline: true,
+                    linecolor: '#dfe6e9'
+                },
+                yaxis: {
+                    title: 'Defect Rate',
+                    tickformat: ',.0%',
+                    gridcolor: '#f0f0f0',
+                    showline: true,
+                    linecolor: '#dfe6e9'
+                },
+                plot_bgcolor: 'rgba(0,0,0,0)',
+                paper_bgcolor: 'rgba(0,0,0,0)'
+            };
+
+            Plotly.newPlot('trend-chart', [trace], layout, {
+                responsive: true,
+                displayModeBar: false
+            });
+        }
+
+        // Check for quality alerts
+        function checkForAlerts() {
+            const newAlerts = filteredData
+                .filter(item => item.defectRate > item.specThreshold && item.timestamp > lastAlertCheck)
+                .map(item => ({
+                    productId: item.productId,
+                    productName: item.productName,
+                    productLine: item.productLine,
+                    defectRate: item.defectRate,
+                    timestamp: item.timestamp,
+                    severity: item.defectRate > item.specThreshold * 1.5 ? 'critical' : 'warning',
+                    specThreshold: item.specThreshold
+                }));
+
+            alerts = [...alerts, ...newAlerts].slice(-50); // Keep last 50 alerts
+            lastAlertCheck = new Date();
+
+            updateAlertPanel();
+        }
+
+        // Update alert panel UI
+        function updateAlertPanel() {
+            const alertList = document.getElementById('alert-list');
+            const alertCount = document.getElementById('alert-count');
+            alertCount.innerText = alerts.length;
+
+            alertList.innerHTML = alerts.length === 0
+                ? `<li class="empty-state">
+               <svg class="empty-icon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                   <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.42 0-8-3.58-8-8s3.58-8 8-8 8 3.58 8 8-3.58 8-8 8z"/>
+               </svg>
+               No active alerts
+           </li>`
+                : alerts.map(alert => `
+            <li class="alert-item alert-${alert.severity}">
+                <div class="alert-info">
+                    <span class="alert-product">${alert.productName} (${alert.productId})</span>
+                    <span class="alert-details">Defect Rate: ${(alert.defectRate * 100).toFixed(2)}% (Threshold: ${(alert.specThreshold * 100).toFixed(2)}%)</span>
+                </div>
+                <span class="alert-time">${alert.timestamp.toLocaleString()}</span>
+            </li>
+        `).join('');
+        }
+
+        // Update current time display
+        function updateTime() {
+            const timestamp = document.getElementById('current-time');
+            timestamp.innerText = `Last Updated: ${new Date().toLocaleString()}`;
+        }
+
+        // Event listeners for interactivity
+        document.getElementById('product-line').addEventListener('change', (e) => {
+            selectedProductLine = e.target.value;
+            updateDashboard();
+        });
+
+        document.getElementById('time-range').addEventListener('input', (e) => {
+            selectedDays = parseInt(e.target.value);
+            document.getElementById('time-range-value').innerText = selectedDays;
+            updateDashboard();
+        });
+
+        document.getElementById('trigger-alert').addEventListener('click', () => {
+            const productLine = productLines[Math.floor(Math.random() * productLines.length)];
+            const productIndex = Math.floor(Math.random() * productNames[productLine].length);
+            const productName = productNames[productLine][productIndex];
+            const productId = `${productPrefixes[productLine]}-${Math.floor(1000 + Math.random() * 9000)}`;
+
+            const testData = {
+                productId,
+                productName,
+                productLine,
+                defectRate: 0.1 + Math.random() * 0.1, // High defect rate for testing
+                timestamp: new Date(),
+                specThreshold: 0.05,
+                totalTested: Math.floor(Math.random() * 800) + 200,
+                defectCount: 0
+            };
+            testData.defectCount = Math.round(testData.defectRate * testData.totalTested);
+
+            allData.push(testData);
+            filteredData.push(testData);
+            checkForAlerts();
+            updateDashboard();
+        });
+
+        // Initialize dashboard
+        function initializeDashboard() {
+            updateTime();
+            updateDashboard();
+            setInterval(updateTime, 60000); // Update time every minute
+        }
+
+        initializeDashboard();
+    </script>
+</body>
+
+</html>
