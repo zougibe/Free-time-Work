@@ -1,0 +1,875 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Epic Sports Rivalry Storyboard</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css" />
+    <style>
+        :root {
+            --primary: #3b82f6;
+            --secondary: #10b981;
+            --accent: #f59e0b;
+            --dark: #1e293b;
+            --darker: #0f172a;
+            --light: #f8fafc;
+        }
+
+        body {
+            background: linear-gradient(to bottom, var(--darker), var(--dark));
+            color: var(--light);
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        .card {
+            background: rgba(30, 41, 59, 0.7);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            transition: all 0.3s ease;
+        }
+
+        .card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3);
+        }
+
+        .btn-primary {
+            background: var(--primary);
+            transition: all 0.3s ease;
+        }
+
+        .btn-primary:hover {
+            background: #2563eb;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
+        }
+
+        .btn-secondary {
+            background: var(--secondary);
+            transition: all 0.3s ease;
+        }
+
+        .btn-secondary:hover {
+            background: #059669;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
+        }
+
+        .select-custom {
+            background: rgba(30, 41, 59, 0.7);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            color: white;
+            transition: all 0.3s ease;
+        }
+
+        .select-custom:focus {
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.3);
+        }
+
+        .highlight-text {
+            background: linear-gradient(90deg, var(--accent), var(--primary));
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+            font-weight: 700;
+        }
+
+        .pulse {
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0% {
+                box-shadow: 0 0 0 0 rgba(59, 130, 246, 0.7);
+            }
+
+            70% {
+                box-shadow: 0 0 0 10px rgba(59, 130, 246, 0);
+            }
+
+            100% {
+                box-shadow: 0 0 0 0 rgba(59, 130, 246, 0);
+            }
+        }
+
+        .fade-in {
+            animation: fadeIn 0.5s ease-in;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .tooltip {
+            position: relative;
+        }
+
+        .tooltip-text {
+            visibility: hidden;
+            width: 200px;
+            background-color: var(--darker);
+            color: #fff;
+            text-align: center;
+            border-radius: 6px;
+            padding: 5px;
+            position: absolute;
+            z-index: 1;
+            bottom: 125%;
+            left: 50%;
+            margin-left: -100px;
+            opacity: 0;
+            transition: opacity 0.3s;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            font-size: 0.8rem;
+        }
+
+        .tooltip:hover .tooltip-text {
+            visibility: visible;
+            opacity: 1;
+        }
+
+        .sport-badge {
+            display: inline-block;
+            padding: 0.25rem 0.5rem;
+            border-radius: 9999px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+
+        .track-badge {
+            background: rgba(239, 68, 68, 0.2);
+            color: #ef4444;
+        }
+
+        .gymnastics-badge {
+            background: rgba(16, 185, 129, 0.2);
+            color: #10b981;
+        }
+
+        .diving-badge {
+            background: rgba(59, 130, 246, 0.2);
+            color: #3b82f6;
+        }
+    </style>
+</head>
+
+<body class="flex flex-col min-h-screen">
+    <header class="py-8 text-center">
+        <div class="container mx-auto px-4">
+            <h1
+                class="text-4xl md:text-5xl font-bold mb-4 bg-clip-text text-transparent bg-gradient-to-r from-orange-400 to-blue-500">
+                Epic Sports Rivalry Storyboard
+            </h1>
+            <p class="text-lg text-gray-300 max-w-2xl mx-auto">
+                Craft legendary sports rivalries with dynamic competitors, high stakes, and dramatic turning points
+            </p>
+            <div id="scoreboard" class="mt-6 flex justify-center gap-6">
+                <div class="flex items-center bg-slate-800 px-4 py-2 rounded-full">
+                    <span class="text-gray-400 mr-2">🔥 Streak:</span>
+                    <span id="streak" class="font-bold text-yellow-400">0</span>
+                </div>
+                <div class="flex items-center bg-slate-800 px-4 py-2 rounded-full">
+                    <span class="text-gray-400 mr-2">🏆 Points:</span>
+                    <span id="points" class="font-bold text-green-400">0</span>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <main class="flex-1 container mx-auto px-4 py-6">
+        <section class="mb-8 card p-6 rounded-xl">
+            <h2 class="text-xl font-semibold mb-4 flex items-center">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" viewBox="0 0 20 20" fill="currentColor">
+                    <path fill-rule="evenodd"
+                        d="M11.3 1.046A1 1 0 0112 2v5h4a1 1 0 01.82 1.573l-7 10A1 1 0 018 18v-5H4a1 1 0 01-.82-1.573l7-10a1 1 0 011.12-.38z"
+                        clip-rule="evenodd" />
+                </svg>
+                Configuration
+            </h2>
+            <div class="flex flex-col md:flex-row gap-4 mb-4">
+                <div class="flex-1">
+                    <label for="sportFilter" class="block text-sm font-medium text-gray-300 mb-1">Select Sport</label>
+                    <select id="sportFilter" class="select-custom w-full p-3 rounded-lg">
+                        <option value="">Choose a sport...</option>
+                        <option value="all">All Sports (Mega Rivalries)</option>
+                        <option value="track">Track & Field</option>
+                        <option value="gymnastics">Gymnastics</option>
+                        <option value="diving">Diving</option>
+                    </select>
+                </div>
+                <div class="flex items-center">
+                    <label class="inline-flex items-center mt-6 cursor-pointer">
+                        <input type="checkbox" id="clashMode" class="sr-only peer">
+                        <div
+                            class="relative w-11 h-6 bg-gray-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600">
+                        </div>
+                        <span class="ml-3 text-sm font-medium text-gray-300">Clash Mode (Cross-Sport)</span>
+                        <div class="tooltip ml-2">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-gray-400" fill="none"
+                                viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                            </svg>
+                            <span class="tooltip-text">Enable to create rivalries between competitors from different
+                                sports</span>
+                        </div>
+                    </label>
+                </div>
+            </div>
+        </section>
+
+        <section id="competitorSelection" class="mb-8 hidden fade-in">
+            <h2 class="text-xl font-semibold mb-4 flex items-center">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" viewBox="0 0 20 20" fill="currentColor">
+                    <path
+                        d="M13 6a3 3 0 11-6 0 3 3 0 016 0zM18 8a2 2 0 11-4 0 2 2 0 014 0zM14 15a4 4 0 00-8 0v1h8v-1zM6 8a2 2 0 11-4 0 2 2 0 014 0zM16 18v-1a5.972 5.972 0 00-.75-2.906A3.005 3.005 0 0119 15v1h-3zM4.75 12.094A5.973 5.973 0 004 15v1H1v-1a3 3 0 013.75-2.906z" />
+                </svg>
+                Choose Competitors
+            </h2>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                <div class="card p-4 rounded-lg">
+                    <h3 class="text-lg font-medium mb-3">First Competitor</h3>
+                    <select id="competitor1" class="select-custom w-full p-3 rounded-lg"></select>
+                    <div id="competitor1-sport" class="mt-2"></div>
+                </div>
+                <div class="card p-4 rounded-lg">
+                    <h3 class="text-lg font-medium mb-3">Second Competitor</h3>
+                    <select id="competitor2" class="select-custom w-full p-3 rounded-lg"></select>
+                    <div id="competitor2-sport" class="mt-2"></div>
+                </div>
+            </div>
+            <div class="text-center">
+                <button id="buildBtn" class="btn-primary px-8 py-3 rounded-full font-bold text-lg pulse" disabled>
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 inline mr-2" viewBox="0 0 20 20"
+                        fill="currentColor">
+                        <path fill-rule="evenodd"
+                            d="M12.395 2.553a1 1 0 00-1.45-.385c-.345.23-.614.558-.822.88-.214.33-.403.713-.57 1.116-.334.804-.614 1.768-.84 2.734a31.365 31.365 0 00-.613 3.58 2.64 2.64 0 01-.945-1.067c-.328-.68-.398-1.534-.398-2.654A1 1 0 005.05 6.05 6.981 6.981 0 003 11a7 7 0 1011.95-4.95c-.592-.591-.98-.985-1.348-1.467-.363-.476-.724-1.063-1.207-2.03zM12.12 15.12A3 3 0 017 13s.879.5 2.5.5c0-1 .5-4 1.25-4.5.5 1 .786 1.293 1.371 1.879A2.99 2.99 0 0113 13a2.99 2.99 0 01-.879 2.121z"
+                            clip-rule="evenodd" />
+                    </svg>
+                    Generate Rivalry
+                </button>
+            </div>
+        </section>
+
+        <section id="narrative" class="mb-8 hidden animate__animated animate__fadeIn">
+            <div class="card p-6 rounded-xl">
+                <div class="flex justify-between items-center mb-4">
+                    <h2 class="text-2xl font-bold">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 inline mr-2 text-yellow-400" fill="none"
+                            viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
+                        </svg>
+                        The Rivalry
+                    </h2>
+                    <div class="flex gap-2">
+                        <button id="newRivalryBtn"
+                            class="px-3 py-1 bg-slate-700 hover:bg-slate-600 rounded-full text-sm flex items-center">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24"
+                                stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                            </svg>
+                            New
+                        </button>
+                        <button id="shareBtn"
+                            class="px-3 py-1 bg-slate-700 hover:bg-slate-600 rounded-full text-sm flex items-center">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24"
+                                stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z" />
+                            </svg>
+                            Share
+                        </button>
+                    </div>
+                </div>
+                <div class="bg-slate-800/50 p-6 rounded-lg border border-slate-700/50">
+                    <p id="story" class="text-lg leading-relaxed"></p>
+                </div>
+                <div id="storyElements" class="mt-6 grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div class="bg-slate-800/30 p-4 rounded-lg border border-slate-700/30">
+                        <h4 class="text-sm font-semibold text-gray-400 mb-2">COMPETITORS</h4>
+                        <p id="competitorsText" class="font-medium"></p>
+                    </div>
+                    <div class="bg-slate-800/30 p-4 rounded-lg border border-slate-700/30">
+                        <h4 class="text-sm font-semibold text-gray-400 mb-2">STAKES</h4>
+                        <p id="stakesText" class="font-medium"></p>
+                    </div>
+                    <div class="bg-slate-800/30 p-4 rounded-lg border border-slate-700/30">
+                        <h4 class="text-sm font-semibold text-gray-400 mb-2">TURNING POINT</h4>
+                        <p id="turningPointText" class="font-medium"></p>
+                    </div>
+                </div>
+                <div id="shareMsg"
+                    class="mt-4 text-center text-sm text-green-400 hidden flex items-center justify-center">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24"
+                        stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+                    </svg>
+                    Link copied to clipboard!
+                </div>
+            </div>
+        </section>
+
+        <section id="statsSection" class="mb-8">
+            <div class="card p-6 rounded-xl">
+                <h2 class="text-xl font-semibold mb-4 flex items-center">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24"
+                        stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                    </svg>
+                    Rivalry Statistics
+                </h2>
+                <div class="mb-4 flex flex-wrap gap-2">
+                    <button id="showCompetitors" class="px-3 py-1 bg-blue-600 rounded-full text-sm">Competitors</button>
+                    <button id="showStakes" class="px-3 py-1 bg-slate-700 rounded-full text-sm">Stakes</button>
+                    <button id="showTurningPoints" class="px-3 py-1 bg-slate-700 rounded-full text-sm">Turning
+                        Points</button>
+                </div>
+                <div id="statsChart" class="w-full h-96"></div>
+            </div>
+        </section>
+    </main>
+
+    <footer class="py-6 text-center text-gray-500 text-sm">
+        <div class="container mx-auto px-4">
+            <p>&copy; 2025 Epic Sports Rivalry Storyboard | Crafted with passion for sports drama</p>
+        </div>
+    </footer>
+
+    <script>
+        // Enhanced data structure with more variety
+        const components = {
+            track: {
+                name: "Track & Field",
+                competitors: [
+                    { name: "underdog sprinter", desc: "A determined runner with everything to prove" },
+                    { name: "veteran marathoner", desc: "Seasoned athlete with years of experience" },
+                    { name: "prodigy hurdler", desc: "Young talent taking the sport by storm" },
+                    { name: "comeback miler", desc: "Returning after career-threatening injury" },
+                    { name: "dark horse relay star", desc: "Unexpected standout in team events" },
+                    { name: "legendary distance runner", desc: "Record-holder facing new challengers" },
+                    { name: "rising sprint sensation", desc: "Fastest newcomer in years" },
+                    { name: "defending champion", desc: "Current title holder under pressure" },
+                    { name: "record-breaking veteran", desc: "Aging star chasing one last glory" },
+                    { name: "hometown hero", desc: "Local favorite with crowd support" }
+                ],
+                stakes: [
+                    { name: "Olympic gold", desc: "The ultimate prize in sports" },
+                    { name: "world championship title", desc: "Global recognition as the best" },
+                    { name: "national record", desc: "A place in the history books" },
+                    { name: "hometown pride", desc: "Representing where they came from" },
+                    { name: "personal redemption", desc: "Overcoming past failures" },
+                    { name: "family legacy", desc: "Living up to expectations" },
+                    { name: "career-defining moment", desc: "What they'll be remembered for" },
+                    { name: "historic milestone", desc: "Breaking barriers in the sport" },
+                    { name: "rival's challenge", desc: "Proving themselves against a nemesis" },
+                    { name: "team glory", desc: "Carrying the hopes of teammates" }
+                ],
+                turningPoints: [
+                    { name: "overcomes career-threatening injury", desc: "Defying medical expectations" },
+                    { name: "record-breaking final sprint", desc: "Unprecedented finish" },
+                    { name: "dramatic photo-finish", desc: "Too close to call" },
+                    { name: "unexpected strategy shift", desc: "Changing tactics mid-event" },
+                    { name: "weather-defying performance", desc: "Thriving in adverse conditions" },
+                    { name: "emotional breakthrough moment", desc: "Mental barrier overcome" },
+                    { name: "last-second surge", desc: "Incredible final effort" },
+                    { name: "technical perfection", desc: "Flawless execution under pressure" },
+                    { name: "crowd-inspiring comeback", desc: "From behind to victory" },
+                    { name: "historic achievement", desc: "Something never done before" }
+                ]
+            },
+            gymnastics: {
+                name: "Gymnastics",
+                competitors: [
+                    { name: "seasoned gymnast", desc: "Years of elite competition" },
+                    { name: "teen prodigy", desc: "Young phenom with unlimited potential" },
+                    { name: "artistic master", desc: "Unmatched grace and style" },
+                    { name: "power tumbler", desc: "Explosive strength and difficulty" },
+                    { name: "technical specialist", desc: "Precision and perfection" },
+                    { name: "comeback champion", desc: "Returning after time away" },
+                    { name: "innovative performer", desc: "Introducing new elements" },
+                    { name: "precision expert", desc: "Consistency under pressure" },
+                    { name: "dynamic talent", desc: "Versatile across all apparatus" },
+                    { name: "artistic revolutionary", desc: "Changing how the sport is performed" }
+                ],
+                stakes: [
+                    { name: "perfect 10 pursuit", desc: "Chasing gymnastic perfection" },
+                    { name: "Olympic team spot", desc: "Final chance to make the squad" },
+                    { name: "world title defense", desc: "Protecting their championship" },
+                    { name: "national team legacy", desc: "Upholding country's tradition" },
+                    { name: "qualifying final", desc: "Last opportunity to advance" },
+                    { name: "international recognition", desc: "Proving themselves globally" },
+                    { name: "championship redemption", desc: "Overcoming past mistakes" },
+                    { name: "team leadership role", desc: "Guiding younger teammates" },
+                    { name: "historic routine debut", desc: "First attempt at new skills" },
+                    { name: "career-defining moment", desc: "What they'll be remembered for" }
+                ],
+                turningPoints: [
+                    { name: "flawless routine execution", desc: "Perfect when it mattered most" },
+                    { name: "groundbreaking new element", desc: "Introducing innovative moves" },
+                    { name: "mental barrier breakthrough", desc: "Overcoming psychological blocks" },
+                    { name: "technical innovation", desc: "New approach to training" },
+                    { name: "artistic transformation", desc: "Elevating performance style" },
+                    { name: "pressure-defying performance", desc: "Thriving under scrutiny" },
+                    { name: "signature move mastery", desc: "Perfecting their trademark" },
+                    { name: "competitive spirit triumph", desc: "Will to win overcomes all" },
+                    { name: "perfect landing sequence", desc: "Sticking every dismount" },
+                    { name: "historic scoring achievement", desc: "Record-breaking results" }
+                ]
+            },
+            diving: {
+                name: "Diving",
+                competitors: [
+                    { name: "platform specialist", desc: "Master of the high dive" },
+                    { name: "springboard master", desc: "Technical perfection on springboard" },
+                    { name: "synchronized expert", desc: "Team diving standout" },
+                    { name: "technical perfectionist", desc: "Focus on form and precision" },
+                    { name: "artistic diver", desc: "Emphasis on grace and style" },
+                    { name: "aerial innovator", desc: "Pushing difficulty boundaries" },
+                    { name: "comeback veteran", desc: "Returning to top form" },
+                    { name: "rising talent", desc: "Newcomer making waves" },
+                    { name: "precision specialist", desc: "Minimal splash, maximum scores" },
+                    { name: "dynamic performer", desc: "Combining power and artistry" }
+                ],
+                stakes: [
+                    { name: "Olympic qualification", desc: "Final chance to make the team" },
+                    { name: "world record attempt", desc: "Chasing diving history" },
+                    { name: "championship final", desc: "Pinnacle of competition" },
+                    { name: "team selection", desc: "Earning a spot on national squad" },
+                    { name: "international ranking", desc: "Moving up global standings" },
+                    { name: "perfect score chase", desc: "Pursuit of judging perfection" },
+                    { name: "rivalry showdown", desc: "Head-to-head with nemesis" },
+                    { name: "national team position", desc: "Representing their country" },
+                    { name: "historic achievement", desc: "Breaking new ground" },
+                    { name: "career milestone", desc: "Defining moment in their journey" }
+                ],
+                turningPoints: [
+                    { name: "perfect entry execution", desc: "Minimal splash, maximum scores" },
+                    { name: "innovative dive creation", desc: "Introducing new combinations" },
+                    { name: "mental breakthrough", desc: "Overcoming psychological barriers" },
+                    { name: "technical mastery moment", desc: "Years of training realized" },
+                    { name: "pressure performance", desc: "Best dive when it mattered most" },
+                    { name: "artistic excellence", desc: "Unmatched grace and style" },
+                    { name: "competitive spirit triumph", desc: "Refusing to be outdone" },
+                    { name: "signature move perfection", desc: "Trademark dive executed flawlessly" },
+                    { name: "historic difficulty level", desc: "Attempting unprecedented complexity" },
+                    { name: "crowd-stunning execution", desc: "Performance that wowed everyone" }
+                ]
+            }
+        };
+
+        const stats = {
+            competitors: {},
+            stakes: {},
+            turningPoints: {},
+        };
+
+        const el = {
+            sportFilter: document.getElementById("sportFilter"),
+            clashMode: document.getElementById("clashMode"),
+            competitorSelection: document.getElementById("competitorSelection"),
+            competitor1: document.getElementById("competitor1"),
+            competitor2: document.getElementById("competitor2"),
+            competitor1Sport: document.getElementById("competitor1-sport"),
+            competitor2Sport: document.getElementById("competitor2-sport"),
+            buildBtn: document.getElementById("buildBtn"),
+            newRivalryBtn: document.getElementById("newRivalryBtn"),
+            narrative: document.getElementById("narrative"),
+            story: document.getElementById("story"),
+            competitorsText: document.getElementById("competitorsText"),
+            stakesText: document.getElementById("stakesText"),
+            turningPointText: document.getElementById("turningPointText"),
+            shareBtn: document.getElementById("shareBtn"),
+            shareMsg: document.getElementById("shareMsg"),
+            streak: document.getElementById("streak"),
+            points: document.getElementById("points"),
+            showCompetitors: document.getElementById("showCompetitors"),
+            showStakes: document.getElementById("showStakes"),
+            showTurningPoints: document.getElementById("showTurningPoints"),
+            statsChart: document.getElementById("statsChart")
+        };
+
+        let session = {
+            streak: sessionStorage.getItem("streak") || 0,
+            points: sessionStorage.getItem("points") || 0,
+            currentSport: null,
+            currentCompetitors: [],
+            currentStake: null,
+            currentTurningPoint: null
+        };
+
+        let currentChartType = 'competitors';
+
+        // Initialize UI
+        function initUI() {
+            el.streak.textContent = session.streak;
+            el.points.textContent = session.points;
+            updateChart('competitors');
+        }
+
+        function updateStats(competitor1, competitor2, stake, turningPoint) {
+            // Update competitor stats
+            stats.competitors[competitor1] = (stats.competitors[competitor1] || 0) + 1;
+            stats.competitors[competitor2] = (stats.competitors[competitor2] || 0) + 1;
+
+            // Update stake stats
+            stats.stakes[stake] = (stats.stakes[stake] || 0) + 1;
+
+            // Update turning point stats
+            stats.turningPoints[turningPoint] = (stats.turningPoints[turningPoint] || 0) + 1;
+
+            updateChart(currentChartType);
+        }
+
+        function updateChart(type = 'competitors') {
+            currentChartType = type;
+
+            let data, title;
+            const colors = {
+                competitors: '#3b82f6',
+                stakes: '#10b981',
+                turningPoints: '#f59e0b'
+            };
+
+            switch (type) {
+                case 'competitors':
+                    data = stats.competitors;
+                    title = 'Most Popular Competitors';
+                    break;
+                case 'stakes':
+                    data = stats.stakes;
+                    title = 'Most Common Stakes';
+                    break;
+                case 'turningPoints':
+                    data = stats.turningPoints;
+                    title = 'Most Dramatic Turning Points';
+                    break;
+            }
+
+            // Sort data by count (descending) and take top 10
+            const sortedEntries = Object.entries(data).sort((a, b) => b[1] - a[1]).slice(0, 10);
+            const labels = sortedEntries.map(entry => entry[0]);
+            const values = sortedEntries.map(entry => entry[1]);
+
+            const trace = {
+                x: labels,
+                y: values,
+                type: 'bar',
+                marker: {
+                    color: colors[type],
+                    opacity: 0.7,
+                    line: {
+                        color: colors[type],
+                        width: 1.5
+                    }
+                },
+                text: values.map(v => v + (v === 1 ? ' use' : ' uses')),
+                textposition: 'auto',
+                hoverinfo: 'text'
+            };
+
+            const layout = {
+                title: {
+                    text: title,
+                    font: {
+                        color: '#f8fafc'
+                    }
+                },
+                paper_bgcolor: 'rgba(0,0,0,0)',
+                plot_bgcolor: 'rgba(0,0,0,0)',
+                font: {
+                    color: '#f8fafc'
+                },
+                margin: {
+                    l: 50,
+                    r: 50,
+                    t: 60,
+                    b: 150
+                },
+                xaxis: {
+                    tickangle: -45,
+                    tickfont: {
+                        size: 10
+                    }
+                },
+                yaxis: {
+                    gridcolor: 'rgba(255,255,255,0.1)'
+                },
+                showlegend: false
+            };
+
+            Plotly.react(el.statsChart, [trace], layout);
+        }
+
+        function populateCompetitors(sport) {
+            session.currentSport = sport;
+            el.competitorSelection.classList.remove("hidden");
+            el.competitorSelection.classList.add("animate__fadeIn");
+
+            let competitors = [];
+            if (sport === "all") {
+                Object.keys(components).forEach((s) => {
+                    components[s].competitors.forEach((c) => {
+                        competitors.push({
+                            name: c.name,
+                            sport: s,
+                            desc: c.desc
+                        });
+                    });
+                });
+            } else {
+                competitors = components[sport].competitors.map((c) => ({
+                    name: c.name,
+                    sport: sport,
+                    desc: c.desc
+                }));
+            }
+
+            [el.competitor1, el.competitor2].forEach((select) => {
+                select.innerHTML =
+                    '<option value="">Select a competitor...</option>' +
+                    competitors
+                        .map(
+                            (c) =>
+                                `<option value="${c.name}" data-sport="${c.sport}" data-desc="${c.desc}">
+                    ${c.name} (${components[c.sport].name})
+                  </option>`
+                        )
+                        .join("");
+            });
+
+            // Reset competitor sport badges
+            el.competitor1Sport.innerHTML = '';
+            el.competitor2Sport.innerHTML = '';
+
+            // Hide narrative section when changing competitors
+            el.narrative.classList.add("hidden");
+        }
+
+        function updateCompetitorBadges() {
+            const c1 = el.competitor1.selectedOptions[0];
+            const c2 = el.competitor2.selectedOptions[0];
+
+            if (c1 && c1.value) {
+                const sport = c1.dataset.sport;
+                el.competitor1Sport.innerHTML = `
+            <span class="sport-badge ${sport}-badge">
+              ${components[sport].name}
+            </span>
+            <p class="text-sm text-gray-400 mt-1">${c1.dataset.desc}</p>
+          `;
+            } else {
+                el.competitor1Sport.innerHTML = '';
+            }
+
+            if (c2 && c2.value) {
+                const sport = c2.dataset.sport;
+                el.competitor2Sport.innerHTML = `
+            <span class="sport-badge ${sport}-badge">
+              ${components[sport].name}
+            </span>
+            <p class="text-sm text-gray-400 mt-1">${c2.dataset.desc}</p>
+          `;
+            } else {
+                el.competitor2Sport.innerHTML = '';
+            }
+        }
+
+        function validateSelections() {
+            const c1 = el.competitor1.value;
+            const c2 = el.competitor2.value;
+            const sport1 = el.competitor1.selectedOptions[0]?.dataset?.sport || "";
+            const sport2 = el.competitor2.selectedOptions[0]?.dataset?.sport || "";
+            const isClash = el.clashMode.checked;
+
+            const valid = c1 && c2 && c1 !== c2 && (isClash || sport1 === sport2);
+
+            el.buildBtn.disabled = !valid;
+            updateCompetitorBadges();
+        }
+
+        function getRandom(arr) {
+            return arr[Math.floor(Math.random() * arr.length)];
+        }
+
+        function updateScore() {
+            session.streak = parseInt(session.streak) + 1;
+            session.points = parseInt(session.points) + 10;
+            sessionStorage.setItem("streak", session.streak);
+            sessionStorage.setItem("points", session.points);
+            el.streak.textContent = session.streak;
+            el.points.textContent = session.points;
+        }
+
+        function generateRivalry() {
+            const c1 = el.competitor1.selectedOptions[0];
+            const c2 = el.competitor2.selectedOptions[0];
+            const sport1 = c1.dataset.sport;
+            const sport2 = c2.dataset.sport;
+
+            // Store current selections for regeneration
+            session.currentCompetitors = [c1.value, c2.value];
+
+            // Determine which sport to use for stakes/turning points
+            const primarySport = el.clashMode.checked ?
+                (Math.random() > 0.5 ? sport1 : sport2) :
+                sport1;
+
+            const stake = getRandom(components[primarySport].stakes);
+            const turning = getRandom(components[primarySport].turningPoints);
+
+            // Store for regeneration
+            session.currentStake = stake;
+            session.currentTurningPoint = turning;
+
+            const isClash = sport1 !== sport2;
+            const story = `In an ${isClash ? 'unprecedented cross-sport showdown' : 'intense rivalry'}, ` +
+                `a <span class="highlight-text">${c1.value}</span> ${isClash ? `from ${components[sport1].name}` : ''} ` +
+                `faces off against a <span class="highlight-text">${c2.value}</span> ${isClash ? `from ${components[sport2].name}` : ''} ` +
+                `with <span class="highlight-text">${stake.name}</span> on the line. ` +
+                `The competition takes a dramatic turn when <span class="highlight-text">${turning.name}</span>, ` +
+                `changing everything in this epic confrontation.`;
+
+            el.narrative.classList.remove("hidden");
+            el.story.innerHTML = story;
+            el.shareMsg.classList.add("hidden");
+
+            // Update element breakdown
+            el.competitorsText.innerHTML = `
+          <span class="text-blue-400">${c1.value}</span> vs 
+          <span class="text-blue-400">${c2.value}</span>
+          ${isClash ? `<br><span class="text-xs text-gray-400">${components[sport1].name} × ${components[sport2].name}</span>` : ''}
+        `;
+            el.stakesText.innerHTML = `
+          <span class="text-green-400">${stake.name}</span>
+          <br><span class="text-xs text-gray-400">${stake.desc}</span>
+        `;
+            el.turningPointText.innerHTML = `
+          <span class="text-yellow-400">${turning.name}</span>
+          <br><span class="text-xs text-gray-400">${turning.desc}</span>
+        `;
+
+            updateScore();
+            updateStats(c1.value, c2.value, stake.name, turning.name);
+
+            // Scroll to narrative section
+            el.narrative.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+
+        function regenerateRivalry() {
+            if (session.currentCompetitors.length === 2 && session.currentStake && session.currentTurningPoint) {
+                // Find the selected competitors in the dropdowns
+                const c1 = Array.from(el.competitor1.options).find(opt => opt.value === session.currentCompetitors[0]);
+                const c2 = Array.from(el.competitor2.options).find(opt => opt.value === session.currentCompetitors[1]);
+
+                if (c1 && c2) {
+                    el.competitor1.value = c1.value;
+                    el.competitor2.value = c2.value;
+                    validateSelections();
+                    generateRivalry();
+                }
+            }
+        }
+
+        function shareStory() {
+            const storyText = encodeURIComponent(el.story.textContent);
+            const url = `${window.location.origin}${window.location.pathname}?story=${storyText}`;
+            navigator.clipboard.writeText(url).then(() => {
+                el.shareMsg.classList.remove("hidden");
+                setTimeout(() => {
+                    el.shareMsg.classList.add("hidden");
+                }, 3000);
+            });
+        }
+
+        function checkSharedStory() {
+            const params = new URLSearchParams(window.location.search);
+            const shared = params.get("story");
+            if (shared) {
+                el.narrative.classList.remove("hidden");
+                el.story.textContent = decodeURIComponent(shared);
+                el.story.classList.add("animate__fadeIn");
+
+                // Hide competitor selection and show narrative directly
+                el.competitorSelection.classList.add("hidden");
+                el.narrative.scrollIntoView({ behavior: 'smooth' });
+            }
+        }
+
+        // Event Listeners
+        el.sportFilter.addEventListener("change", (e) => {
+            const sport = e.target.value;
+            if (sport) {
+                populateCompetitors(sport);
+            } else {
+                el.competitorSelection.classList.add("hidden");
+                el.narrative.classList.add("hidden");
+            }
+            el.narrative.classList.add("hidden");
+            el.competitor1.selectedIndex = 0;
+            el.competitor2.selectedIndex = 0;
+            validateSelections();
+        });
+
+        el.competitor1.addEventListener("change", validateSelections);
+        el.competitor2.addEventListener("change", validateSelections);
+        el.clashMode.addEventListener("change", validateSelections);
+        el.buildBtn.addEventListener("click", generateRivalry);
+        el.newRivalryBtn.addEventListener("click", regenerateRivalry);
+        el.shareBtn.addEventListener("click", shareStory);
+
+        // Chart filter buttons
+        el.showCompetitors.addEventListener("click", () => {
+            updateChart('competitors');
+            el.showCompetitors.classList.remove("bg-slate-700");
+            el.showCompetitors.classList.add("bg-blue-600");
+            el.showStakes.classList.remove("bg-green-600");
+            el.showStakes.classList.add("bg-slate-700");
+            el.showTurningPoints.classList.remove("bg-yellow-600");
+            el.showTurningPoints.classList.add("bg-slate-700");
+        });
+
+        el.showStakes.addEventListener("click", () => {
+            updateChart('stakes');
+            el.showCompetitors.classList.remove("bg-blue-600");
+            el.showCompetitors.classList.add("bg-slate-700");
+            el.showStakes.classList.remove("bg-slate-700");
+            el.showStakes.classList.add("bg-green-600");
+            el.showTurningPoints.classList.remove("bg-yellow-600");
+            el.showTurningPoints.classList.add("bg-slate-700");
+        });
+
+        el.showTurningPoints.addEventListener("click", () => {
+            updateChart('turningPoints');
+            el.showCompetitors.classList.remove("bg-blue-600");
+            el.showCompetitors.classList.add("bg-slate-700");
+            el.showStakes.classList.remove("bg-green-600");
+            el.showStakes.classList.add("bg-slate-700");
+            el.showTurningPoints.classList.remove("bg-slate-700");
+            el.showTurningPoints.classList.add("bg-yellow-600");
+        });
+
+        // Initialize
+        initUI();
+        checkSharedStory();
+    </script>
+</body>
+
+</html>

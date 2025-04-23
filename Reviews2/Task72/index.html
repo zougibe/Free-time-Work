@@ -1,0 +1,1136 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Interactive Customer Retention Dashboard for analyzing retention trends">
+    <title>Customer Retention Dashboard</title>
+    <script src="https://cdn.jsdelivr.net/npm/d3@7"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-dark: #0f172a;
+            --bg-panel: #1e293b;
+            --primary: #3b82f6;
+            --primary-hover: #2563eb;
+            --secondary: #10b981;
+            --accent: #8b5cf6;
+            --text-primary: #f1f5f9;
+            --text-secondary: #cbd5e1;
+            --text-muted: #94a3b8;
+            --border: #334155;
+            --big-companies: #3b82f6;
+            --small-businesses: #10b981;
+            --individuals: #8b5cf6;
+            --tooltip-bg: rgba(15, 23, 42, 0.95);
+            --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.15);
+            --shadow-md: 0 4px 16px rgba(0, 0, 0, 0.2);
+            --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Inter', sans-serif;
+        }
+
+        body {
+            background: linear-gradient(135deg, var(--bg-dark), #1a2234);
+            color: var(--text-primary);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 1rem;
+        }
+
+        .dashboard {
+            display: grid;
+            grid-template-areas:
+                "header header"
+                "sidebar charts";
+            grid-template-columns: minmax(280px, 1fr) 3fr;
+            grid-template-rows: auto 1fr;
+            gap: 1.5rem;
+            width: 95%;
+            max-width: 1600px;
+            height: 90vh;
+            background: var(--bg-panel);
+            border-radius: 1.25rem;
+            box-shadow: var(--shadow-md);
+            padding: 2rem;
+            overflow: hidden;
+        }
+
+        .header {
+            grid-area: header;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 1.5rem;
+            background: linear-gradient(90deg, rgba(59, 130, 246, 0.15), rgba(139, 92, 246, 0.15));
+            border-radius: 1rem;
+            border: 1px solid rgba(59, 130, 246, 0.2);
+            box-shadow: var(--shadow-sm);
+        }
+
+        .header h1 {
+            font-size: 2rem;
+            font-weight: 600;
+            letter-spacing: -0.025em;
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        .header h1 svg {
+            width: 2.25rem;
+            height: 2.25rem;
+            color: var(--primary);
+        }
+
+        .header .subtitle {
+            color: var(--text-muted);
+            font-size: 1rem;
+            margin-left: 3rem;
+            margin-top: 0.5rem;
+            font-weight: 400;
+        }
+
+        .date-range {
+            font-size: 0.95rem;
+            color: var(--text-secondary);
+            background: rgba(51, 65, 85, 0.4);
+            padding: 0.75rem 1.25rem;
+            border-radius: 0.75rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            transition: var(--transition);
+        }
+
+        .date-range:hover {
+            background: rgba(51, 65, 85, 0.6);
+        }
+
+        .date-range svg {
+            width: 1.25rem;
+            height: 1.25rem;
+        }
+
+        .sidebar {
+            grid-area: sidebar;
+            background: rgba(30, 41, 59, 0.4);
+            padding: 2rem;
+            border-radius: 1rem;
+            display: flex;
+            flex-direction: column;
+            gap: 2rem;
+            border: 1px solid var(--border);
+        }
+
+        .control-panel {
+            display: flex;
+            flex-direction: column;
+            gap: 1.5rem;
+        }
+
+        .control-panel h3 {
+            color: var(--text-secondary);
+            font-weight: 500;
+            font-size: 0.95rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            margin-bottom: 0.75rem;
+        }
+
+        .select-wrapper {
+            position: relative;
+        }
+
+        .select-wrapper::after {
+            content: '▼';
+            font-size: 0.8rem;
+            position: absolute;
+            right: 1.25rem;
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--text-muted);
+            pointer-events: none;
+            transition: var(--transition);
+        }
+
+        .sidebar select {
+            width: 100%;
+            padding: 1rem 1.25rem;
+            background: rgba(51, 65, 85, 0.4);
+            border: 1px solid var(--border);
+            border-radius: 0.75rem;
+            color: var(--text-primary);
+            font-size: 1rem;
+            font-weight: 400;
+            appearance: none;
+            cursor: pointer;
+            transition: var(--transition);
+        }
+
+        .sidebar select:hover {
+            background: rgba(51, 65, 85, 0.6);
+            border-color: var(--primary);
+        }
+
+        .sidebar select:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.2);
+            background: rgba(51, 65, 85, 0.6);
+        }
+
+        .sidebar select option {
+            background: var(--bg-panel);
+            color: var(--text-primary);
+        }
+
+        .sidebar button {
+            padding: 1rem 1.5rem;
+            background: var(--primary);
+            color: white;
+            border: none;
+            border-radius: 0.75rem;
+            font-weight: 500;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: var(--transition);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+        }
+
+        .sidebar button:hover {
+            background: var(--primary-hover);
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-sm);
+        }
+
+        .sidebar button:focus {
+            outline: none;
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.2);
+        }
+
+        .sidebar button:active {
+            transform: translateY(0);
+            box-shadow: none;
+        }
+
+        .sidebar button svg {
+            width: 1.25rem;
+            height: 1.25rem;
+        }
+
+        .legend {
+            margin-top: 1.5rem;
+            padding-top: 1.5rem;
+            border-top: 1px solid var(--border);
+        }
+
+        .legend h3 {
+            color: var(--text-secondary);
+            font-weight: 500;
+            font-size: 0.95rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            margin-bottom: 1rem;
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            margin-bottom: 1rem;
+            font-size: 0.95rem;
+            transition: var(--transition);
+            padding: 0.5rem;
+            border-radius: 0.5rem;
+        }
+
+        .legend-item:hover {
+            background: rgba(51, 65, 85, 0.2);
+        }
+
+        .legend-color {
+            width: 16px;
+            height: 16px;
+            border-radius: 4px;
+            margin-right: 12px;
+            box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.1);
+        }
+
+        .big-companies {
+            background-color: var(--big-companies);
+        }
+
+        .small-businesses {
+            background-color: var(--small-businesses);
+        }
+
+        .individuals {
+            background-color: var(--individuals);
+        }
+
+        .charts {
+            grid-area: charts;
+            display: grid;
+            grid-template-rows: 1fr 1fr;
+            gap: 1.5rem;
+            overflow: hidden;
+        }
+
+        .chart-container {
+            background: rgba(30, 41, 59, 0.4);
+            border-radius: 1rem;
+            padding: 1.5rem;
+            box-shadow: var(--shadow-sm);
+            border: 1px solid var(--border);
+            position: relative;
+            overflow: hidden;
+            min-height: 360px;
+            transition: var(--transition);
+        }
+
+        .chart-container h3 {
+            font-size: 1.25rem;
+            font-weight: 500;
+            margin-bottom: 1.25rem;
+            color: var(--text-primary);
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        .chart-container h3 svg {
+            width: 1.5rem;
+            height: 1.5rem;
+            color: var(--primary);
+        }
+
+        svg text {
+            fill: var(--text-muted);
+            font-size: 0.85rem;
+            font-weight: 400;
+        }
+
+        svg .axis path,
+        svg .axis line {
+            stroke: var(--border);
+        }
+
+        svg .axis .tick line {
+            stroke: var(--border);
+            opacity: 0.3;
+            stroke-dasharray: 3, 3;
+        }
+
+        .tooltip {
+            position: absolute;
+            background: var(--tooltip-bg);
+            color: var(--text-primary);
+            padding: 1rem 1.25rem;
+            border-radius: 0.75rem;
+            font-size: 0.9rem;
+            pointer-events: none;
+            transition: opacity 0.3s, transform 0.3s;
+            z-index: 100;
+            box-shadow: var(--shadow-md);
+            border: 1px solid var(--border);
+            max-width: 240px;
+            transform: translateY(10px);
+            opacity: 0;
+        }
+
+        .tooltip.show {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        .tooltip-header {
+            font-weight: 600;
+            margin-bottom: 0.75rem;
+            padding-bottom: 0.5rem;
+            border-bottom: 1px solid var(--border);
+            color: var(--text-primary);
+        }
+
+        .tooltip-row {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 0.5rem;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .tooltip-label {
+            color: var(--text-muted);
+            font-weight: 400;
+        }
+
+        .tooltip-value {
+            font-weight: 500;
+            color: var(--text-primary);
+        }
+
+        .bar {
+            transition: var(--transition);
+            fill-opacity: 0.85;
+        }
+
+        .bar:hover {
+            fill-opacity: 1;
+            filter: brightness(1.15);
+        }
+
+        .line {
+            fill: none;
+            stroke-width: 2.5;
+            transition: var(--transition);
+            stroke-opacity: 0.9;
+        }
+
+        .line-point {
+            transition: var(--transition);
+            cursor: pointer;
+        }
+
+        .loading-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(30, 41, 59, 0.8);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 1rem;
+            z-index: 10;
+            opacity: 0;
+            visibility: hidden;
+            transition: var(--transition);
+        }
+
+        .loading-overlay.active {
+            opacity: 1;
+            visibility: visible;
+        }
+
+        .spinner {
+            width: 40px;
+            height: 40px;
+            border: 4px solid var(--primary);
+            border-top-color: transparent;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            to {
+                transform: rotate(360deg);
+            }
+        }
+
+        @media (max-width: 1200px) {
+            .dashboard {
+                grid-template-columns: minmax(250px, 1fr) 3fr;
+                padding: 1.5rem;
+            }
+
+            .header h1 {
+                font-size: 1.75rem;
+            }
+
+            .chart-container {
+                min-height: 340px;
+            }
+        }
+
+        @media (max-width: 1000px) {
+            .dashboard {
+                grid-template-areas:
+                    "header"
+                    "sidebar"
+                    "charts";
+                grid-template-columns: 1fr;
+                grid-template-rows: auto auto 1fr;
+                height: auto;
+                min-height: 100vh;
+                gap: 1.25rem;
+            }
+
+            .sidebar {
+                padding: 1.5rem;
+            }
+
+            .control-panel {
+                display: grid;
+                grid-template-columns: 1fr 1fr;
+                gap: 1.25rem;
+            }
+
+            .legend {
+                display: grid;
+                grid-template-columns: repeat(3, 1fr);
+                gap: 0.75rem;
+                border-top: none;
+                margin-top: 0;
+                padding-top: 0;
+            }
+
+            .legend h3 {
+                grid-column: 1 / -1;
+            }
+
+            .charts {
+                grid-template-rows: auto auto;
+                gap: 1.25rem;
+            }
+
+            .chart-container {
+                padding: 1.25rem;
+                min-height: 360px;
+            }
+        }
+
+        @media (max-width: 600px) {
+            .dashboard {
+                padding: 1rem;
+            }
+
+            .header {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 1rem;
+                padding: 1.25rem;
+            }
+
+            .header h1 {
+                font-size: 1.5rem;
+            }
+
+            .header .subtitle {
+                margin-left: 0;
+            }
+
+            .date-range {
+                margin-top: 0;
+                align-self: flex-start;
+                width: 100%;
+                justify-content: center;
+            }
+
+            .control-panel {
+                grid-template-columns: 1fr;
+            }
+
+            .legend {
+                grid-template-columns: 1fr;
+            }
+
+            .charts {
+                gap: 1.5rem;
+            }
+
+            .chart-container {
+                min-height: 320px;
+            }
+        }
+
+        /* Accessibility improvements */
+        .sr-only {
+            position: absolute;
+            width: 1px;
+            height: 1px;
+            padding: 0;
+            margin: -1px;
+            overflow: hidden;
+            clip: rect(0, 0, 0, 0);
+            border: 0;
+        }
+
+        [role="button"]:focus,
+        button:focus,
+        select:focus {
+            outline: none;
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.3);
+        }
+    </style>
+</head>
+
+<body>
+    <div class="dashboard" role="main">
+        <div class="header" role="banner">
+            <div>
+                <h1>
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+                        <path
+                            d="M18.375 2.25c-1.035 0-1.875.84-1.875 1.875v15.75c0 1.035.84 1.875 1.875 1.875h.75c1.035 0 1.875-.84 1.875-1.875V4.125c0-1.036-.84-1.875-1.875-1.875h-.75zM9.75 8.625c0-1.036.84-1.875 1.875-1.875h.75c1.036 0 1.875.84 1.875 1.875v11.25c0 1.035-.84 1.875-1.875 1.875h-.75a1.875 1.875 0 01-1.875-1.875V8.625zM3 13.125c0-1.036.84-1.875 1.875-1.875h.75c1.036 0 1.875.84 1.875 1.875v6.75c0 1.035-.84 1.875-1.875 1.875h-.75A1.875 1.875 0 013 19.875v-6.75z" />
+                    </svg>
+                    Customer Retention Dashboard
+                </h1>
+                <div class="subtitle">Interactive analysis of customer retention trends</div>
+            </div>
+            <div class="date-range" role="status">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+                    <path fill-rule="evenodd"
+                        d="M6.75 2.25A.75.75 0 017.5 3v1.5h9V3A.75.75 0 0118 3v1.5h.75a3 3 0 013 3v11.25a3 3 0 01-3 3H5.25a3 3 0 01-3-3V7.5a3 3 0 013-3H6V3a.75.75 0 01.75-.75zm13.5 9a1.5 1.5 0 00-1.5-1.5H5.25a1.5 1.5 0 00-1.5 1.5v7.5a1.5 1.5 0 001.5 1.5h13.5a1.5 1.5 0 001.5-1.5v-7.5z"
+                        clip-rule="evenodd" />
+                </svg>
+                <span>Data Period: 2010 - 2024</span>
+            </div>
+        </div>
+
+        <div class="sidebar" role="complementary">
+            <div class="control-panel">
+                <div>
+                    <h3>Filter by Customer Group</h3>
+                    <div class="select-wrapper">
+                        <label for="groupFilter" class="sr-only">Select Customer Group</label>
+                        <select id="groupFilter" aria-label="Select customer group to filter data">
+                            <option value="all">All Groups</option>
+                            <option value="big_companies">Big Companies</option>
+                            <option value="small_businesses">Small Businesses</option>
+                            <option value="individuals">Individuals</option>
+                        </select>
+                    </div>
+                </div>
+                <div>
+                    <h3>Data View</h3>
+                    <button id="resetButton" aria-label="Reset all filters and view">
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"
+                            aria-hidden="true">
+                            <path fill-rule="evenodd"
+                                d="M4.755 10.059a7.5 7.5 0 0112.548-3.364l1.903 1.903h-3.183a.75.75 0 100 1.5h4.992a.75.75 0 00.75-.75V4.356a.75.75 0 00-1.5 0v3.18l-1.9-1.9A9 9 0 003.306 9.67a.75.75 0 101.45.388zm15.408 3.352a.75.75 0 00-.919.53 7.5 7.5 0 01-12.548 3.364l-1.902-1.903h3.183a.75.75 0 000-1.5H2.984a.75.75 0 00-.75.75v4.992a.75.75 0 001.5 0v-3.18l1.9 1.9a9 9 0 0015.059-4.035.75.75 0 00-.53-.918z"
+                                clip-rule="evenodd" />
+                        </svg>
+                        Reset View
+                    </button>
+                </div>
+            </div>
+
+            <div class="legend">
+                <h3>Customer Groups</h3>
+                <div class="legend-item" role="listitem">
+                    <div class="legend-color big-companies"></div>
+                    <span>Big Companies</span>
+                </div>
+                <div class="legend-item" role="listitem">
+                    <div class="legend-color small-businesses"></div>
+                    <span>Small Businesses</span>
+                </div>
+                <div class="legend-item" role="listitem">
+                    <div class="legend-color individuals"></div>
+                    <span>Individuals</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="charts" role="region" aria-label="Data visualizations">
+            <div class="chart-container">
+                <div class="loading-overlay" id="barChartLoading">
+                    <div class="spinner"></div>
+                </div>
+                <h3>
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+                        <path
+                            d="M18.375 2.25c-1.035 0-1.875.84-1.875 1.875v15.75c0 1.035.84 1.875 1.875 1.875h.75c1.035 0 1.875-.84 1.875-1.875V4.125c0-1.036-.84-1.875-1.875-1.875h-.75zM9.75 8.625c0-1.036.84-1.875 1.875-1.875h.75c1.036 0 1.875.84 1.875 1.875v11.25c0 1.035-.84 1.875-1.875 1.875h-.75a1.875 1.875 0 01-1.875-1.875V8.625zM3 13.125c0-1.036.84-1.875 1.875-1.875h.75c1.036 0 1.875.84 1.875 1.875v6.75c0 1.035-.84 1.875-1.875 1.875h-.75A1.875 1.875 0 013 19.875v-6.75z" />
+                    </svg>
+                    Average Retention Rate by Customer Group
+                </h3>
+                <div id="barChart"></div>
+            </div>
+            <div class="chart-container">
+                <div class="loading-overlay" id="lineChartLoading">
+                    <div class="spinner"></div>
+                </div>
+                <h3>
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+                        <path fill-rule="evenodd"
+                            d="M3 6a3 3 0 013-3h12a3 3 0 013 3v12a3 3 0 01-3 3H6a3 3 0 01-3-3V6zm4.5 7.5a.75.75 0 01.75.75v2.25a.75.75 0 01-1.5 0v-2.25a.75.75 0 01.75-.75zm3.75-1.5a.75.75 0 00-1.5 0v4.5a.75.75 0 001.5 0V12zm2.25-3a.75.75 0 01.75.75v6.75a.75.75 0 01-1.5 0V9.75A.75.75 0 0113.5 9zm3.75-1.5a.75.75 0 00-1.5 0v9a.75.75 0 001.5 0v-9z"
+                            clip-rule="evenodd" />
+                    </svg>
+                    Retention Rate Trends Over Time
+                </h3>
+                <div id="lineChart"></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Sample data (unchanged)
+        const data = [];
+        const groups = ['big_companies', 'small_businesses', 'individuals'];
+        const colors = {
+            big_companies: 'var(--big-companies)',
+            small_businesses: 'var(--small-businesses)',
+            individuals: 'var(--individuals)'
+        };
+
+        const groupDisplayNames = {
+            big_companies: 'Big Companies',
+            small_businesses: 'Small Businesses',
+            individuals: 'Individuals'
+        };
+
+        for (let year = 2010; year <= 2024; year++) {
+            for (let quarter = 1; quarter <= 4; quarter++) {
+                const timePoint = (year - 2010) * 4 + quarter;
+                let bigCompanyRetention = 0.82 + 0.001 * timePoint + (Math.random() * 0.04 - 0.02);
+                let smallBusinessRetention = 0.74 + 0.0005 * timePoint + (Math.random() * 0.06 - 0.03);
+                let individualRetention = 0.65 + 0.0015 * timePoint + (Math.random() * 0.08 - 0.04);
+
+                const seasonalEffect = {
+                    1: -0.01,
+                    2: -0.02,
+                    3: 0.01,
+                    4: 0.02
+                };
+
+                bigCompanyRetention += seasonalEffect[quarter] * 0.5;
+                smallBusinessRetention += seasonalEffect[quarter];
+                individualRetention += seasonalEffect[quarter] * 1.5;
+
+                const cycleEffect = Math.sin((timePoint / 20) * Math.PI * 2) * 0.02;
+                bigCompanyRetention += cycleEffect * 0.5;
+                smallBusinessRetention += cycleEffect;
+                individualRetention += cycleEffect * 1.2;
+
+                bigCompanyRetention = Math.min(Math.max(bigCompanyRetention, 0.75), 0.95);
+                smallBusinessRetention = Math.min(Math.max(smallBusinessRetention, 0.65), 0.85);
+                individualRetention = Math.min(Math.max(individualRetention, 0.55), 0.8);
+
+                const bigCompanyCustomers = Math.floor(300 + Math.random() * 200);
+                const smallBusinessCustomers = Math.floor(2000 + Math.random() * 1000);
+                const individualCustomers = Math.floor(8000 + Math.random() * 4000);
+
+                data.push({
+                    year,
+                    quarter,
+                    group: 'big_companies',
+                    retention: bigCompanyRetention,
+                    customers: bigCompanyCustomers
+                });
+
+                data.push({
+                    year,
+                    quarter,
+                    group: 'small_businesses',
+                    retention: smallBusinessRetention,
+                    customers: smallBusinessCustomers
+                });
+
+                data.push({
+                    year,
+                    quarter,
+                    group: 'individuals',
+                    retention: individualRetention,
+                    customers: individualCustomers
+                });
+            }
+        }
+
+        // Create tooltip
+        const tooltip = d3.select('body')
+            .append('div')
+            .attr('class', 'tooltip')
+            .attr('role', 'tooltip')
+            .style('opacity', 0);
+
+        function getChartDimensions(containerId) {
+            const container = document.getElementById(containerId);
+            const margin = { top: 20, right: 40, bottom: 60, left: 70 };
+            let width = container.clientWidth || 600;
+            let height = container.clientHeight || 360;
+            width = width - margin.left - margin.right;
+            height = height - margin.top - margin.bottom - 40;
+            if (height < 80) height = 80;
+            return { width, height, margin };
+        }
+
+        function showLoading(chartId) {
+            d3.select(`#${chartId}Loading`).classed('active', true);
+        }
+
+        function hideLoading(chartId) {
+            d3.select(`#${chartId}Loading`).classed('active', false);
+        }
+
+        function drawBarChart(dataset) {
+            showLoading('barChart');
+            d3.select('#barChart').selectAll('*').remove();
+
+            const { width, height, margin } = getChartDimensions('barChart');
+
+            const svg = d3.select('#barChart')
+                .append('svg')
+                .attr('width', width + margin.left + margin.right)
+                .attr('height', height + margin.top + margin.bottom)
+                .attr('role', 'img')
+                .attr('aria-label', 'Bar chart showing average retention rate by customer group')
+                .append('g')
+                .attr('transform', `translate(${margin.left},${margin.top})`);
+
+            const filteredData = d3.rollup(
+                dataset,
+                v => ({
+                    retention: d3.mean(v, d => d.retention),
+                    customers: d3.sum(v, d => d.customers)
+                }),
+                d => d.group
+            );
+
+            const barData = Array.from(filteredData, ([group, values]) => ({
+                group,
+                retention: values.retention,
+                customers: values.customers
+            }));
+
+            const x = d3.scaleBand()
+                .domain(barData.map(d => d.group))
+                .range([0, width])
+                .padding(0.35);
+
+            const y = d3.scaleLinear()
+                .domain([0, d3.max(barData, d => d.retention) * 1.15])
+                .nice()
+                .range([height, 0]);
+
+            svg.append('g')
+                .attr('class', 'axis')
+                .attr('transform', `translate(0,${height})`)
+                .call(d3.axisBottom(x).tickFormat(d => groupDisplayNames[d]))
+                .selectAll("text")
+                .attr("transform", "translate(-10,0)rotate(-25)")
+                .style("text-anchor", "end");
+
+            svg.append('g')
+                .attr('class', 'axis')
+                .call(d3.axisLeft(y).tickFormat(d => `${(d * 100).toFixed(0)}%`).ticks(5));
+
+            svg.append('g')
+                .attr('class', 'grid')
+                .call(d3.axisLeft(y)
+                    .tickSize(-width)
+                    .tickFormat('')
+                    .ticks(5)
+                );
+
+            svg.selectAll('.bar')
+                .data(barData)
+                .enter()
+                .append('rect')
+                .attr('class', 'bar')
+                .attr('x', d => x(d.group))
+                .attr('width', x.bandwidth())
+                .attr('y', height)
+                .attr('height', 0)
+                .attr('fill', d => colors[d.group])
+                .attr('rx', 6)
+                .on('mouseover', function (event, d) {
+                    d3.select(this)
+                        .transition()
+                        .duration(200)
+                        .attr('filter', 'brightness(1.15)');
+
+                    tooltip.transition()
+                        .duration(200)
+                        .style('opacity', 1)
+                        .attr('class', 'tooltip show');
+
+                    tooltip.html(`
+            <div class="tooltip-header">${groupDisplayNames[d.group]}</div>
+            <div class="tooltip-row">
+              <span class="tooltip-label">Avg. Retention:</span>
+              <span class="tooltip-value">${(d.retention * 100).toFixed(1)}%</span>
+            </div>
+            <div class="tooltip-row">
+              <span class="tooltip-label">Total Customers:</span>
+              <span class="tooltip-value">${d.customers.toLocaleString()}</span>
+            </div>
+          `)
+                        .style('left', (event.pageX + 15) + 'px')
+                        .style('top', (event.pageY - 30) + 'px');
+                })
+                .on('mouseout', function () {
+                    d3.select(this)
+                        .transition()
+                        .duration(200)
+                        .attr('filter', null);
+
+                    tooltip.transition()
+                        .duration(200)
+                        .style('opacity', 0)
+                        .attr('class', 'tooltip');
+                })
+                .transition()
+                .duration(1000)
+                .attr('y', d => y(d.retention))
+                .attr('height', d => height - y(d.retention))
+                .delay((d, i) => i * 150)
+                .on('end', () => hideLoading('barChart'));
+
+            svg.selectAll('.bar-label')
+                .data(barData)
+                .enter()
+                .append('text')
+                .attr('class', 'bar-label')
+                .attr('x', d => x(d.group) + x.bandwidth() / 2)
+                .attr('y', d => y(d.retention) - 12)
+                .attr('text-anchor', 'middle')
+                .style('fill', 'var(--text-primary)')
+                .style('font-size', '0.9rem')
+                .style('font-weight', '500')
+                .style('opacity', 0)
+                .text(d => `${(d.retention * 100).toFixed(1)}%`)
+                .transition()
+                .duration(800)
+                .style('opacity', 1)
+                .delay((d, i) => i * 150 + 400);
+
+            svg.append('text')
+                .attr('class', 'axis-title')
+                .attr('x', width / 2)
+                .attr('y', height + margin.bottom - 10)
+                .attr('text-anchor', 'middle')
+                .style('fill', 'var(--text-secondary)')
+                .style('font-size', '0.95rem')
+                .text('Customer Group');
+
+            svg.append('text')
+                .attr('class', 'axis-title')
+                .attr('transform', 'rotate(-90)')
+                .attr('x', -height / 2)
+                .attr('y', -margin.left + 20)
+                .attr('text-anchor', 'middle')
+                .style('fill', 'var(--text-secondary)')
+                .style('font-size', '0.95rem')
+                .text('Retention Rate');
+        }
+
+        function drawLineChart(dataset) {
+            showLoading('lineChart');
+            d3.select('#lineChart').selectAll('*').remove();
+
+            const { width, height, margin } = getChartDimensions('lineChart');
+
+            const svg = d3.select('#lineChart')
+                .append('svg')
+                .attr('width', width + margin.left + margin.right)
+                .attr('height', height + margin.top + margin.bottom)
+                .attr('role', 'img')
+                .attr('aria-label', 'Line chart showing retention rate trends over time')
+                .append('g')
+                .attr('transform', `translate(${margin.left},${margin.top})`);
+
+            const nestedData = d3.groups(dataset, d => `${d.year}-Q${d.quarter}`);
+
+            nestedData.sort((a, b) => {
+                const dateA = new Date(a[0].replace('Q', '-'));
+                const dateB = new Date(b[0].replace('Q', '-'));
+                return dateA - dateB;
+            });
+
+            const lineData = {};
+
+            groups.forEach(group => {
+                lineData[group] = nestedData.map(([timeKey, values]) => {
+                    const groupValues = values.filter(d => d.group === group);
+                    return {
+                        time: timeKey,
+                        retention: groupValues.length > 0 ? d3.mean(groupValues, d => d.retention) : 0,
+                        customers: groupValues.length > 0 ? d3.sum(groupValues, d => d.customers) : 0
+                    };
+                });
+            });
+
+            const parseTime = d => {
+                const [year, quarter] = d.split('-Q');
+                const month = (parseInt(quarter) - 1) * 3 + 1;
+                return new Date(parseInt(year), month, 15);
+            };
+
+            const x = d3.scaleTime()
+                .domain([
+                    parseTime(nestedData[0][0]),
+                    parseTime(nestedData[nestedData.length - 1][0])
+                ])
+                .range([0, width]);
+
+            const y = d3.scaleLinear()
+                .domain([
+                    d3.min(Object.values(lineData).flat(), d => d.retention) * 0.9,
+                    d3.max(Object.values(lineData).flat(), d => d.retention) * 1.1
+                ])
+                .nice()
+                .range([height, 0]);
+
+            svg.append('g')
+                .attr('class', 'axis')
+                .attr('transform', `translate(0,${height})`)
+                .call(d3.axisBottom(x).ticks(6).tickFormat(d3.timeFormat('%Y-%q')));
+
+            svg.append('g')
+                .attr('class', 'axis')
+                .call(d3.axisLeft(y).tickFormat(d => `${(d * 100).toFixed(0)}%`).ticks(5));
+
+            svg.append('g')
+                .attr('class', 'grid')
+                .call(d3.axisLeft(y)
+                    .tickSize(-width)
+                    .tickFormat('')
+                    .ticks(5)
+                );
+
+            const line = d3.line()
+                .x(d => x(parseTime(d.time)))
+                .y(d => y(d.retention))
+                .curve(d3.curveMonotoneX);
+
+            Object.entries(lineData).forEach(([group, values]) => {
+                const path = svg.append('path')
+                    .datum(values)
+                    .attr('class', 'line')
+                    .attr('fill', 'none')
+                    .attr('stroke', colors[group])
+                    .attr('stroke-width', 2.5)
+                    .attr('d', line)
+                    .style('opacity', 0.9);
+
+                const pathLength = path.node().getTotalLength();
+
+                path
+                    .attr('stroke-dasharray', pathLength)
+                    .attr('stroke-dashoffset', pathLength)
+                    .transition()
+                    .duration(1800)
+                    .attr('stroke-dashoffset', 0)
+                    .delay(groups.indexOf(group) * 400)
+                    .on('end', () => hideLoading('lineChart'));
+
+                svg.selectAll(`.point-${group}`)
+                    .data(values)
+                    .enter()
+                    .append('circle')
+                    .attr('class', `line-point point-${group}`)
+                    .attr('cx', d => x(parseTime(d.time)))
+                    .attr('cy', d => y(d.retention))
+                    .attr('r', 0)
+                    .attr('fill', colors[group])
+                    .style('opacity', 0.9)
+                    .on('mouseover', function (event, d) {
+                        d3.select(this)
+                            .transition()
+                            .duration(200)
+                            .attr('r', 7)
+                            .attr('filter', 'brightness(1.15)');
+
+                        tooltip.transition()
+                            .duration(200)
+                            .style('opacity', 1)
+                            .attr('class', 'tooltip show');
+
+                        tooltip.html(`
+              <div class="tooltip-header">${groupDisplayNames[group]}: ${d.time}</div>
+              <div class="tooltip-row">
+                <span class="tooltip-label">Retention Rate:</span>
+                <span class="tooltip-value">${(d.retention * 100).toFixed(1)}%</span>
+              </div>
+              <div class="tooltip-row">
+                <span class="tooltip-label">Customers:</span>
+                <span class="tooltip-value">${d.customers.toLocaleString()}</span>
+              </div>
+            `)
+                            .style('left', (event.pageX + 15) + 'px')
+                            .style('top', (event.pageY - 30) + 'px');
+                    })
+                    .on('mouseout', function () {
+                        d3.select(this)
+                            .transition()
+                            .duration(200)
+                            .attr('r', 4.5)
+                            .attr('filter', null);
+
+                        tooltip.transition()
+                            .duration(200)
+                            .style('opacity', 0)
+                            .attr('class', 'tooltip');
+                    })
+                    .transition()
+                    .duration(1000)
+                    .attr('r', 4.5)
+                    .delay((d, i) => i * 60 + groups.indexOf(group) * 400 + 600);
+            });
+
+            svg.append('text')
+                .attr('class', 'axis-title')
+                .attr('x', width / 2)
+                .attr('y', height + margin.bottom - 10)
+                .attr('text-anchor', 'middle')
+                .style('fill', 'var(--text-secondary)')
+                .style('font-size', '0.95rem')
+                .text('Time Period');
+
+            svg.append('text')
+                .attr('class', 'axis-title')
+                .attr('transform', 'rotate(-90)')
+                .attr('x', -height / 2)
+                .attr('y', -margin.left + 20)
+                .attr('text-anchor', 'middle')
+                .style('fill', 'var(--text-secondary)')
+                .style('font-size', '0.95rem')
+                .text('Retention Rate');
+        }
+
+        function filterData() {
+            const selectedGroup = d3.select('#groupFilter').property('value');
+            let filteredData = data;
+
+            if (selectedGroup !== 'all') {
+                filteredData = data.filter(d => d.group === selectedGroup);
+            }
+
+            return filteredData;
+        }
+
+        function updateCharts() {
+            const filteredData = filterData();
+            drawBarChart(filteredData);
+            drawLineChart(filteredData);
+        }
+
+        d3.select('#groupFilter').on('change', updateCharts);
+
+        d3.select('#resetButton').on('click', function () {
+            d3.select('#groupFilter').property('value', 'all');
+            updateCharts();
+        });
+
+        function initializeCharts() {
+            updateCharts();
+            window.addEventListener('resize', debounce(updateCharts, 300));
+        }
+
+        function debounce(func, wait) {
+            let timeout;
+            return function () {
+                const context = this;
+                const args = arguments;
+                clearTimeout(timeout);
+                timeout = setTimeout(() => func.apply(context, args), wait);
+            };
+        }
+
+        initializeCharts();
+    </script>
+</body>
+
+</html>

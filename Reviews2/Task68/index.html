@@ -1,0 +1,483 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Shift Planner</title>
+    <script src="https://cdn.plot.ly/plotly-2.27.0.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap"
+        rel="stylesheet" />
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/dist/tabler-icons.min.css" />
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        html {
+            color: #f8fafc;
+            background-color: #0f172a;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
+            padding: 1rem;
+            gap: 1rem;
+        }
+
+        header {
+            display: flex;
+            gap: .5rem;
+        }
+
+        header h1 {
+            font-size: 1.5rem;
+            font-weight: 600;
+            color: #f8fafc;
+        }
+
+        header i {
+            font-size: 1.8rem;
+        }
+
+        main {
+            width: 100%;
+            display: flex;
+            gap: 1rem;
+            flex: 1;
+        }
+
+        .form-section {
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+            flex: 0 0 350px;
+            background: #1e293b;
+            border-radius: 12px;
+            padding: 1.2rem;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+            border: 1px solid #334155;
+        }
+
+        .timeline-section {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            background: #1e293b;
+            border-radius: 12px;
+            padding: 1.2rem;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+            border: 1px solid #334155;
+        }
+
+        h1 {
+            color: #f8fafc;
+            font-size: 2rem;
+            font-weight: 600;
+            text-align: left;
+            margin-bottom: 0.5rem;
+        }
+
+        h2 {
+            font-size: 1rem;
+            font-weight: 500;
+        }
+
+        form {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+            flex: 1;
+        }
+
+        input,
+        select {
+            padding: 10px 14px;
+            border-radius: 10rem;
+            font-size: 14px;
+            background-color: #334155;
+            color: #f8fafc;
+            border: 1px solid #475569;
+            transition: border-color 0.2s;
+        }
+
+        input::placeholder {
+            color: #f8fafc;
+            opacity: 0.7;
+        }
+
+        input:focus,
+        select:focus {
+            outline: none;
+            border-color: #81f8a3;
+            box-shadow: 0 0 0 3px rgba(129, 140, 248, 0.2);
+        }
+
+        .form-actions {
+            display: flex;
+            gap: 12px;
+            margin-top: auto;
+        }
+
+        button {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            padding: 12px 16px;
+            height: 48px;
+            border-radius: 24px;
+            font-size: 16px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        button[type="submit"] {
+            background-color: #43d36c;
+            border: none;
+            color: white;
+            flex: 1;
+        }
+
+        button[type="submit"]:hover {
+            background-color: #3bc063;
+        }
+
+        button[type="button"] {
+            border: 1px solid #475569;
+            background-color: transparent;
+            color: white;
+            flex: 1;
+        }
+
+        button[type="button"]:hover {
+            background-color: rgba(71, 85, 105, 0.3);
+        }
+
+        #timeline {
+            width: 100%;
+            flex: 1;
+        }
+
+        /* Toast Notification */
+        .toast {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background-color: #334155;
+            color: #f8fafc;
+            padding: 16px 24px;
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+            border-left: 4px solid #6366f1;
+            transform: translateX(120%);
+            transition: transform 0.3s ease-out;
+            z-index: 1000;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .toast.visible {
+            transform: translateX(0);
+        }
+
+        .toast-icon {
+            font-size: 20px;
+            color: #6366f1;
+        }
+
+        @media (max-width: 1024px) {
+            main {
+                flex-direction: column;
+                height: auto;
+                flex: 1;
+                gap: 1rem;
+                min-height: 0;
+                overflow: auto;
+                padding-bottom: 1rem;
+                box-sizing: border-box;
+                -webkit-overflow-scrolling: touch;
+                overscroll-behavior: contain;
+                scrollbar-width: none;
+                -ms-overflow-style: none;
+                scroll-behavior: smooth;
+                will-change: transform;
+                backface-visibility: hidden;
+                perspective: 1000px;
+                transform-style: preserve-3d;
+            }
+
+            main::-webkit-scrollbar {
+                display: none;
+            }
+
+            .form-section {
+                flex: 0;
+            }
+
+            .timeline-section {
+                flex: 1;
+                min-height: 400px;
+            }
+        }
+
+        @media (max-width: 768px) {
+            body {
+                padding: 20px 15px;
+            }
+
+            h1 {
+                font-size: 1.75rem;
+            }
+
+            .form-actions {
+                flex-direction: row;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <header>
+        <i class="ti ti-calendar-time"></i>
+        <h1>Shift Planner</h1>
+    </header>
+    <main>
+        <section class="form-section">
+            <h2>Task Setup</h2>
+            <form id="taskForm">
+                <input type="text" id="taskName" placeholder="Task Name" required>
+                <input type="number" id="taskDuration" placeholder="Duration (hours)" min="0.5" step="0.5" required>
+                <select id="taskPriority" required aria-label="task priority">
+                    <option value="" disabled selected>Select Priority</option>
+                    <option value="high">High</option>
+                    <option value="medium">Medium</option>
+                    <option value="low">Low</option>
+                </select>
+
+                <div class="form-actions">
+                    <button type="submit">
+                        <i class="ti ti-circle-plus"></i>
+                        Add Task
+                    </button>
+                    <button type="button" id="resetButton">
+                        <i class="ti ti-restore"></i>
+                        Reset
+                    </button>
+                </div>
+            </form>
+        </section>
+
+        <section class="timeline-section">
+            <h2>Shift Schedule Timeline</h2>
+            <div id="timeline"></div>
+        </section>
+    </main>
+
+    <div id="toast" class="toast">
+        <span class="toast-icon">✓</span>
+        <span>All data has been reset successfully</span>
+    </div>
+
+    <script>
+        let tasks = [];
+        const shifts = [
+            { name: "Morning", capacity: 8, assignedTasks: [], totalDuration: 0 },
+            { name: "Afternoon", capacity: 8, assignedTasks: [], totalDuration: 0 },
+            { name: "Night", capacity: 8, assignedTasks: [], totalDuration: 0 }
+        ];
+
+        const priorityColors = {
+            high: "#ffadad",
+            medium: "#ffd6a5",
+            low: "#caffbf"
+        };
+
+        const priorityLabels = {
+            high: "HIGH",
+            medium: "MED",
+            low: "LOW"
+        };
+
+        // Toast notification functions
+        function showToast() {
+            const toast = document.getElementById('toast');
+            toast.classList.add('visible');
+
+            setTimeout(() => {
+                toast.classList.remove('visible');
+            }, 3000);
+        }
+
+        // Reset confirmation
+        document.getElementById('resetButton').addEventListener('click', function () {
+            if (tasks.length > 0 || shifts.some(shift => shift.assignedTasks.length > 0)) {
+                if (confirm('Are you sure you want to reset all data?')) {
+                    resetData();
+                    showToast();
+                }
+            } else {
+                showToast();
+            }
+        });
+
+        document.getElementById("taskForm").addEventListener("submit", function (e) {
+            e.preventDefault();
+            const name = document.getElementById("taskName").value;
+            const duration = parseFloat(document.getElementById("taskDuration").value);
+            const priority = document.getElementById("taskPriority").value;
+
+            if (!name || isNaN(duration) || duration <= 0 || !priority) {
+                alert("Please fill all fields with valid values.");
+                return;
+            }
+
+            tasks.push({ name, duration, priority });
+            assignTasks();
+            renderTimeline();
+            document.getElementById("taskForm").reset();
+        });
+
+        function assignTasks() {
+            shifts.forEach(shift => {
+                shift.assignedTasks = [];
+                shift.totalDuration = 0;
+            });
+
+            const priorityOrder = { high: 1, medium: 2, low: 3 };
+            tasks.sort((a, b) => priorityOrder[a.priority] - priorityOrder[b.priority]);
+
+            tasks.forEach(task => {
+                let assigned = false;
+                shifts.sort((a, b) => a.totalDuration - b.totalDuration);
+                for (let shift of shifts) {
+                    if (shift.totalDuration + task.duration <= shift.capacity) {
+                        shift.assignedTasks.push(task);
+                        shift.totalDuration += task.duration;
+                        assigned = true;
+                        break;
+                    }
+                }
+                if (!assigned) {
+                    alert(`Task "${task.name}" could not be assigned due to shift capacity constraints.`);
+                }
+            });
+        }
+
+        function renderTimeline() {
+            const data = [];
+            let currentTime = 0;
+
+            shifts.forEach(shift => {
+                currentTime = 0;
+                shift.assignedTasks.forEach(task => {
+                    data.push({
+                        x: [currentTime, currentTime + task.duration],
+                        y: [shift.name, shift.name],
+                        mode: "lines",
+                        line: {
+                            color: priorityColors[task.priority],
+                            width: 60,
+                            shape: 'spline'
+                        },
+                        type: "scatter",
+                        hoverinfo: "none",
+                        showlegend: false
+                    });
+
+                    data.push({
+                        x: [currentTime + task.duration],
+                        y: [shift.name],
+                        text: `${task.name}, ${priorityLabels[task.priority]}`,
+                        mode: "text",
+                        textposition: "middle right",
+                        textfont: {
+                            color: "#ffffff",
+                            size: 12,
+                            family: "Inter"
+                        },
+                        hoverinfo: "none",
+                        showlegend: false
+                    });
+
+                    currentTime += task.duration;
+                });
+            });
+
+            const layout = {
+                xaxis: {
+                    title: {
+                        text: "Hours",
+                        font: {
+                            color: "#94a3b8",
+                            family: "Inter",
+                            size: 14
+                        }
+                    },
+                    range: [0, 8],
+                    tick0: 0,
+                    dtick: 1,
+                    color: "#94a3b8",
+                    gridcolor: "#334155",
+                    zerolinecolor: "#334155",
+                    showline: true,
+                    linecolor: "#475569",
+                    linewidth: 2
+                },
+                yaxis: {
+                    title: {
+                        text: "Shifts",
+                        font: {
+                            color: "#94a3b8",
+                            family: "Inter",
+                            size: 14
+                        }
+                    },
+                    autorange: "reversed",
+                    color: "#94a3b8",
+                    gridcolor: "#334155",
+                    showline: true,
+                    linecolor: "#475569",
+                    linewidth: 2
+                },
+                plot_bgcolor: "#1e293b",
+                paper_bgcolor: "#1e293b",
+                showlegend: false,
+                margin: { t: 30, b: 60, l: 80, r: 120 },
+                hovermode: "closest",
+                font: {
+                    family: "Inter"
+                }
+            };
+
+            const config = {
+                responsive: true,
+                displayModeBar: false
+            };
+
+            Plotly.newPlot("timeline", data, layout, config);
+        }
+
+        function resetData() {
+            tasks = [];
+            shifts.forEach(shift => {
+                shift.assignedTasks = [];
+                shift.totalDuration = 0;
+            });
+            renderTimeline();
+            document.getElementById("taskForm").reset();
+        }
+
+        renderTimeline();
+
+    </script>
+</body>
+
+</html>

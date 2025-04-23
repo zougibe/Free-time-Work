@@ -1,0 +1,1377 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>TV Genre Character Designer</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdn.plot.ly/plotly-3.0.1.min.js" charset="utf-8"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400..900&family=VT323&display=swap"
+        rel="stylesheet">
+    <link rel="stylesheet"
+        href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" />
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        primary: {
+                            light: '#38bdf8',
+                            dark: '#0ea5e9'
+                        }
+                    },
+                    transitionProperty: {
+                        'background': 'background-color',
+                    },
+                    transitionDuration: {
+                        '2000': '2000ms',
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        canvas {
+            display: block;
+            margin: 0 auto;
+            border-radius: 1rem;
+        }
+
+        .material-symbols-outlined {
+            position: relative;
+            bottom: -5px;
+            font-variation-settings:
+                'FILL' 0,
+                'wght' 400,
+                'GRAD' 0,
+                'opsz' 24
+        }
+
+        .vt323-regular {
+            font-family: "VT323", monospace;
+            font-weight: 400;
+            font-style: normal;
+        }
+
+        .orbitron {
+            font-family: "Orbitron", sans-serif;
+            font-optical-sizing: auto;
+            font-weight: 400;
+            font-style: normal;
+        }
+
+        /* Static noise effect */
+        .tv {
+            background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)' opacity='0.05'/%3E%3C/svg%3E");
+        }
+
+        /* Custom tooltip */
+        .tooltip {
+            position: relative;
+            display: inline-block;
+        }
+
+        .tooltip .tooltiptext {
+            visibility: hidden;
+            width: 200px;
+            background-color: rgba(0, 0, 0, 0.8);
+            color: #fff;
+            text-align: center;
+            border-radius: 6px;
+            padding: 5px;
+            position: absolute;
+            z-index: 1;
+            bottom: 125%;
+            left: 50%;
+            margin-left: -100px;
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+
+        .tooltip:hover .tooltiptext {
+            visibility: visible;
+            opacity: 1;
+        }
+
+        /* Smooth background transitions for genre changes */
+        .scene-container {
+            transition: background-color 1.5s ease;
+        }
+
+        /* Dark mode transitions */
+        .dark-transition {
+            transition: background-color 0.5s ease, color 0.5s ease, border-color 0.5s ease;
+        }
+
+        /* Expressions */
+        .face-confident {
+            border-radius: 50%;
+            border-bottom: 0.1em solid #000;
+        }
+
+        .face-playful {
+            border-radius: 50%;
+            border-top: 0.1em solid #000;
+        }
+
+        .face-mysterious {
+            border-radius: 50%;
+            border-left: 0.1em solid #000;
+        }
+
+        /* Popup styles */
+        .popup-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: rgba(0, 0, 0, 0.7);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+            opacity: 0;
+            visibility: hidden;
+            transition: opacity 0.3s, visibility 0.3s;
+        }
+
+        .popup-overlay.active {
+            opacity: 1;
+            visibility: visible;
+        }
+
+        .popup-content {
+            background-color: white;
+            padding: 20px;
+            border-radius: 10px;
+            max-width: 500px;
+            width: 90%;
+            transform: scale(0.7);
+            transition: transform 0.3s;
+        }
+
+        .dark .popup-content {
+            background-color: #1f2937;
+            color: white;
+        }
+
+        .popup-overlay.active .popup-content {
+            transform: scale(1);
+        }
+
+        /* Custom dropdown styling */
+        select {
+            appearance: none;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
+            background-repeat: no-repeat;
+            background-position: right 0.75rem center;
+            background-size: 1em;
+            padding-right: 2.5rem;
+        }
+
+        /* Unified slider styling */
+        input[type="range"] {
+            -webkit-appearance: none;
+            appearance: none;
+            height: 8px;
+            border-radius: 4px;
+            background: #e5e7eb;
+        }
+
+        .dark input[type="range"] {
+            background: #4b5563;
+        }
+
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background: #3b82f6;
+            cursor: pointer;
+            border: none;
+            box-shadow: 0 0 2px rgba(0, 0, 0, 0.2);
+        }
+
+        /* Gauge chart container */
+        .gauge-container {
+            padding: 15px;
+            height: 250px;
+            width: 100%;
+            position: relative;
+            overflow: visible;
+        }
+
+        /* Force plotly visibility */
+        .js-plotly-plot,
+        .plot-container {
+            opacity: 1 !important;
+        }
+
+        .bg-transparent {
+            background: transparent !important;
+        }
+
+        /* Value display for slider */
+        .slider-value {
+            min-width: 36px;
+            text-align: center;
+            padding: 2px 8px;
+            border-radius: 4px;
+            background-color: #e5e7eb;
+            color: #1f2937;
+        }
+
+        .dark .slider-value {
+            background-color: #4b5563;
+            color: #f9fafb;
+        }
+
+        /* Feedback animation */
+        @keyframes pulse {
+            0% {
+                transform: scale(1);
+            }
+
+            50% {
+                transform: scale(1.05);
+            }
+
+            100% {
+                transform: scale(1);
+            }
+        }
+
+        .pulse {
+            animation: pulse 0.5s ease-in-out;
+        }
+
+        /* Saved design card styles */
+        .design-card {
+            border-radius: 0.5rem;
+            overflow: hidden;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+
+        .design-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+        }
+
+        .design-thumbnail {
+            width: 100%;
+            height: 140px;
+            background-position: center;
+            background-size: cover;
+        }
+
+        /* Additional saved designs popup styles */
+        .saved-designs-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: 1rem;
+            padding: 0.5rem;
+        }
+    </style>
+</head>
+
+<body class="bg-gray-50 dark:bg-gray-900 tv dark-transition">
+    <div id="main" class="flex flex-col lg:items-center w-full lg:h-full z-50 overflow-auto">
+        <header class="w-full vt323-regular z-50">
+            <h1 class="text-4xl text-gray-800 dark:text-white text-center">TV Genre Character Designer</h1>
+            <button onclick="toggleDarkMode()"
+                class="absolute right-5 top-5 p-2 rounded-full dark:bg-gray-800 bg-gray-200 dark-transition">
+                <span id="darkMode" class="material-symbols-outlined text-gray-800 dark:text-white dark-transition">
+                    dark_mode
+                </span>
+                <span id="lightMode" class="material-symbols-outlined text-yellow-600 hidden">
+                    light_mode
+                </span>
+            </button>
+        </header>
+
+        <!-- Custom popup component -->
+        <div id="popup" class="popup-overlay">
+            <div class="popup-content">
+                <h3 id="popup-title" class="text-xl font-bold mb-2">Title</h3>
+                <p id="popup-message">Message here</p>
+                <div class="mt-4 flex justify-end">
+                    <button id="popup-close"
+                        class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded">
+                        Got it
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Saved designs popup -->
+        <div id="saved-designs-popup" class="popup-overlay">
+            <div class="popup-content max-w-2xl w-full max-h-[80vh] flex flex-col">
+                <div class="flex justify-between items-center mb-4">
+                    <h3 class="text-xl font-bold">Saved Designs</h3>
+                    <button id="saved-designs-close"
+                        class="text-gray-500 hover:text-gray-700 dark:text-gray-300 dark:hover:text-white">
+                        <span class="material-symbols-outlined">close</span>
+                    </button>
+                </div>
+                <div id="no-saved-designs" class="text-center p-6 hidden">
+                    <span class="material-symbols-outlined text-4xl text-gray-400 mb-2">inventory_2</span>
+                    <p>No saved designs found</p>
+                </div>
+                <div id="saved-designs-list" class="overflow-auto flex-1 mb-4">
+                    <!-- Saved designs will be populated here -->
+                </div>
+                <div class="flex justify-between">
+                    <button id="delete-all-designs"
+                        class="bg-red-500 hover:bg-red-700 text-white py-2 px-4 rounded flex items-center">
+                        <span class="material-symbols-outlined mr-1">delete</span>
+                        <span>Delete All</span>
+                    </button>
+                    <button id="saved-designs-close-btn"
+                        class="bg-blue-500 hover:bg-blue-700 text-white py-2 px-4 rounded">
+                        Close
+                    </button>
+                </div>
+            </div>
+        </div>
+        <div
+            class="flex-1 flex flex-row flex-wrap w-full xl:w-[80%] overflow-auto p-2.5 gap-2.5 orbitron text-gray-800 dark:text-white dark-transition">
+            <div class="flex lg:flex-col flex-wrap lg:flex-nowrap gap-5 flex-1 lg:flex-none lg:w-[300px] h-full">
+                <div id="controls"
+                    class="flex-1 flex flex-col gap-4 min-w-[300px] bg-white dark:bg-gray-800 p-5 rounded shadow-md shadow-gray-100 dark:shadow-gray-900 overflow-auto dark-transition">
+                    <div>
+                        <h2 class="text-xl font-semibold mb-2">Character Customization</h2>
+                        <div class="bg-gray-300 dark:bg-gray-600 h-0.5 w-full dark-transition"></div>
+                    </div>
+                    <div class="mb-2">
+                        <label for="genre" class="block mb-2 font-semibold">Select Genre:</label>
+                        <select id="genre"
+                            class="w-full p-2.5 rounded border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white text-gray-800 dark-transition focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                            <option>Space Opera</option>
+                            <option>Historical Drama</option>
+                            <option>Teen Comedy</option>
+                        </select>
+                    </div>
+                    <div class="mb-2">
+                        <label for="outfit" class="block mb-2 font-semibold">Outfit</label>
+                        <select id="outfit"
+                            class="w-full p-2.5 rounded border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white text-gray-800 dark-transition focus:ring-2 focus:ring-blue-500 focus:border-blue-500"></select>
+                    </div>
+                    <div class="mb-2">
+                        <label for="hair" class="block mb-2 font-semibold">Hairstyle</label>
+                        <select id="hair"
+                            class="w-full p-2.5 rounded border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white text-gray-800 dark-transition focus:ring-2 focus:ring-blue-500 focus:border-blue-500"></select>
+                    </div>
+                    <div class="mb-2">
+                        <label for="accessory" class="block mb-2 font-semibold">Accessory</label>
+                        <select id="accessory"
+                            class="w-full p-2.5 rounded border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white text-gray-800 dark-transition focus:ring-2 focus:ring-blue-500 focus:border-blue-500"></select>
+                    </div>
+                    <div class="mb-2">
+                        <label for="expression" class="block mb-2 font-semibold">Expression</label>
+                        <select id="expression"
+                            class="w-full p-2.5 rounded border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white text-gray-800 dark-transition focus:ring-2 focus:ring-blue-500 focus:border-blue-500"></select>
+                    </div>
+                    <div class="mt-2">
+                        <button id="resetBtn"
+                            class="w-full bg-gray-500 hover:bg-gray-600 text-white px-4 py-2 rounded shadow transition-all duration-300 font-semibold">
+                            Reset Character
+                            <span class="material-symbols-outlined">restart_alt</span>
+                        </button>
+                    </div>
+                </div>
+                <div
+                    class="relative flex-1 min-w-[300px] min-h-[300px] bg-white dark:bg-gray-800 rounded p-4 dark-transition">
+                    <div id="scoreGauge" class="gauge-container text-gray-800 dark:text-white"></div>
+                    <div class="mt-4 text-sm">
+                        <div class="flex items-center mb-1">
+                            <div class="w-4 h-4 bg-red-300 mr-2 rounded"></div>
+                            <span class="tooltip">
+                                Low Score (0-50)
+                                <span class="tooltiptext">Character doesn't match genre expectations or has limited
+                                    appeal</span>
+                            </span>
+                        </div>
+                        <div class="flex items-center mb-1">
+                            <div class="w-4 h-4 bg-yellow-200 mr-2 rounded"></div>
+                            <span class="tooltip">
+                                Medium Score (50-80)
+                                <span class="tooltiptext">Good genre fit with some unique elements</span>
+                            </span>
+                        </div>
+                        <div class="flex items-center">
+                            <div class="w-4 h-4 bg-green-300 mr-2 rounded"></div>
+                            <span class="tooltip">
+                                High Score (80-100)
+                                <span class="tooltiptext">Perfect genre match with highly unique design choices</span>
+                            </span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div
+                class="flex-1 flex flex-col gap-2.5 min-w-[400px] bg-white dark:bg-gray-800 rounded shadow-md shadow-gray-100 dark:shadow-gray-900 p-4 dark-transition">
+                <div id="actions" class="w-full flex flex-wrap gap-3 justify-center mb-4">
+                    <button id="saveBtn"
+                        class="action-btn bg-blue-500 hover:bg-blue-700 text-white px-5 py-3 rounded-full shadow-md hover:shadow-lg transition-all duration-300 font-semibold flex items-center">
+                        <span>Save Design</span>
+                        <span class="material-symbols-outlined ml-1">
+                            save
+                        </span>
+                    </button>
+                    <button id="viewSavedBtn"
+                        class="action-btn bg-indigo-500 hover:bg-indigo-700 text-white px-5 py-3 rounded-full shadow-md hover:shadow-lg transition-all duration-300 font-semibold flex items-center">
+                        <span>View Saved</span>
+                        <span class="material-symbols-outlined ml-1">
+                            folder_open
+                        </span>
+                    </button>
+                    <button id="exportBtn"
+                        class="action-btn bg-green-500 hover:bg-green-700 text-white px-5 py-3 rounded-full shadow-md hover:shadow-lg transition-all duration-300 font-semibold flex items-center">
+                        <span>Export PNG</span>
+                        <span class="material-symbols-outlined ml-1">
+                            output
+                        </span>
+                    </button>
+                    <button id="poseToggle"
+                        class="action-btn bg-purple-500 hover:bg-purple-700 text-white px-5 py-3 rounded-full shadow-md hover:shadow-lg transition-all duration-300 font-semibold flex items-center">
+                        <span>Animate Pose</span>
+                        <span class="material-symbols-outlined ml-1">
+                            animated_images
+                        </span>
+                    </button>
+                    <button id="auditionBtn"
+                        class="action-btn bg-red-500 hover:bg-red-700 text-white px-5 py-3 rounded-full shadow-md hover:shadow-lg transition-all duration-300 font-semibold flex items-center">
+                        <span>Live Audition</span>
+                        <span class="material-symbols-outlined ml-1">
+                            video_camera_front
+                        </span>
+                    </button>
+                </div>
+                <div class="flex-1 flex flex-col w-full">
+                    <div class="my-4">
+                        <label class="block mb-2 font-semibold">3D Lighting:</label>
+                        <div class="flex items-center gap-3">
+                            <input type="range" id="lightIntensity" min="0" max="2" step="0.1" value="1"
+                                class="w-full h-2 rounded-lg appearance-none cursor-pointer"
+                                oninput="lightIntensity(event)">
+                            <span id="lightValue" class="slider-value">1.0</span>
+                        </div>
+                    </div>
+                    <div id="3dContainer"
+                        class="relative overflow-hidden flex-1 w-full min-h-[300px] min-w-[300px] mb-4 rounded-lg scene-container">
+                        <div id="canvas" class="absolute w-full h-full top-0 left-0 block"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Popup functionality
+        const showPopup = (title, message) => {
+            document.getElementById('popup-title').textContent = title;
+            document.getElementById('popup-message').textContent = message;
+            document.getElementById('popup').classList.add('active');
+        };
+
+        document.getElementById('popup-close').addEventListener('click', () => {
+            document.getElementById('popup').classList.remove('active');
+        });
+
+        // Show saved designs popup
+        const showSavedDesignsPopup = () => {
+            loadSavedDesignsList();
+            document.getElementById('saved-designs-popup').classList.add('active');
+        };
+
+        // Close saved designs popup
+        const closeSavedDesignsPopup = () => {
+            document.getElementById('saved-designs-popup').classList.remove('active');
+        };
+
+        // Setup saved designs popup event listeners
+        document.getElementById('saved-designs-close').addEventListener('click', closeSavedDesignsPopup);
+        document.getElementById('saved-designs-close-btn').addEventListener('click', closeSavedDesignsPopup);
+
+        const toggleDarkMode = () => {
+            document.documentElement.classList.toggle("dark");
+            document.getElementById("lightMode").classList.toggle("hidden");
+            document.getElementById("darkMode").classList.toggle("hidden");
+
+            // Update the gauge to match the new theme
+            updateScore();
+        };
+    </script>
+
+    <script>
+        const lightValue = document.getElementById('lightValue');
+
+        const lightIntensity = (e) => {
+            const value = parseFloat(e.target.value);
+            directional.intensity = value;
+            lightValue.textContent = value.toFixed(1);
+
+            // Update material visibility based on light intensity
+            const materials = [
+                ...Object.values(hairstyles),
+                ...Object.values(outfits),
+                ...Object.values(accessories)
+            ];
+
+            materials.forEach(obj => {
+                if (obj.visible) {
+                    const material = obj.material;
+                    // Adjust material properties based on light intensity
+                    material.roughness = Math.max(0.2, 1 - value * 0.5);
+                    material.metalness = Math.min(0.8, value * 0.4);
+                }
+            });
+        };
+
+        // Store character components in a structured array/object as per requirements
+        const characterComponents = {
+            genre: [
+                'Space Opera',
+                'Historical Drama',
+                'Teen Comedy'
+            ],
+            outfit: [
+                { name: 'Spacesuit', color: 0x999999, genreMatch: 'Space Opera' },
+                { name: 'Tunic', color: 0x8b0000, genreMatch: 'Historical Drama' },
+                { name: 'Hoodie', color: 0x4444ff, genreMatch: 'Teen Comedy' }
+            ],
+            hair: [
+                { name: 'Spiky', color: 0x000000, genreMatch: 'Teen Comedy' },
+                { name: 'Curly', color: 0x552200, genreMatch: 'Historical Drama' },
+                { name: 'Ponytail', color: 0x222222, genreMatch: 'Space Opera' }
+            ],
+            accessory: [
+                { name: 'Laser Gun', color: 0xff0000, genreMatch: 'Space Opera' },
+                { name: 'Quill', color: 0x00ff00, genreMatch: 'Historical Drama' },
+                { name: 'Smartphone', color: 0x000000, genreMatch: 'Teen Comedy' }
+            ],
+            expression: [
+                { name: 'Confident', class: 'face-confident', genreMatch: 'Space Opera' },
+                { name: 'Playful', class: 'face-playful', genreMatch: 'Teen Comedy' },
+                { name: 'Mysterious', class: 'face-mysterious', genreMatch: 'Historical Drama' }
+            ]
+        };
+
+        // Populate dropdowns
+        const selects = ['outfit', 'hair', 'accessory', 'expression'];
+        selects.forEach(type => {
+            const sel = document.getElementById(type);
+            characterComponents[type].forEach(item => {
+                sel.innerHTML += `<option>${item.name}</option>`;
+            });
+        });
+
+        const container = document.getElementById('3dContainer');
+        const scene = new THREE.Scene();
+        scene.background = new THREE.Color(0xf0f0f0);
+        const camera = new THREE.PerspectiveCamera(75, 1, 0.1, 1000);
+        const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+
+        // Set initial size
+        renderer.setSize(container.clientWidth, container.clientHeight);
+
+        renderer.shadowMap.enabled = true;
+
+        document.getElementById("canvas").appendChild(renderer.domElement);
+        camera.position.set(0, 1, 5);
+
+        const ambient = new THREE.AmbientLight(0xffffff, 0.4);
+        scene.add(ambient);
+        const directional = new THREE.DirectionalLight(0xffffff, 1);
+        directional.position.set(5, 10, 7.5);
+        directional.castShadow = true;
+        scene.add(directional);
+
+        // Add a subtle point light for better 3D visualization
+        const pointLight = new THREE.PointLight(0xffffff, 0.5);
+        pointLight.position.set(-3, 2, 3);
+        scene.add(pointLight);
+
+        // Create character
+        const character = new THREE.Group();
+        const body = new THREE.Mesh(new THREE.CylinderGeometry(0.7, 0.7, 2, 90), new THREE.MeshStandardMaterial({ color: 0xf5deb3 }));
+        body.castShadow = true;
+        const head = new THREE.Mesh(new THREE.SphereGeometry(0.5, 32, 32), new THREE.MeshStandardMaterial({ color: 0xffe0bd }));
+        head.position.y = 1.5;
+        head.castShadow = true;
+        character.add(body);
+        character.add(head);
+
+        // Create face features for expressions
+        const face = new THREE.Group();
+        // Eyes
+        const leftEye = new THREE.Mesh(
+            new THREE.SphereGeometry(0.08, 16, 16),
+            new THREE.MeshBasicMaterial({ color: 0x000000 })
+        );
+        leftEye.position.set(-0.2, 0.05, 0.4);
+        face.add(leftEye);
+
+        const rightEye = new THREE.Mesh(
+            new THREE.SphereGeometry(0.08, 16, 16),
+            new THREE.MeshBasicMaterial({ color: 0x000000 })
+        );
+        rightEye.position.set(0.2, 0.05, 0.4);
+        face.add(rightEye);
+
+        // Mouth - will be modified for different expressions
+        const mouth = new THREE.Mesh(
+            new THREE.BoxGeometry(0.3, 0.05, 0.1),
+            new THREE.MeshBasicMaterial({ color: 0x000000 })
+        );
+        mouth.position.set(0, -0.2, 0.4);
+        face.add(mouth);
+
+        face.position.y = 1.5;
+        character.add(face);
+
+        // Hairstyles
+        const hairstyles = {
+            Spiky: new THREE.Mesh(new THREE.ConeGeometry(0.3, 0.7, 8), new THREE.MeshStandardMaterial({ color: 0x000000 })),
+            Curly: new THREE.Mesh(new THREE.TorusKnotGeometry(0.3, 0.1, 64, 8), new THREE.MeshStandardMaterial({ color: 0x552200 })),
+            Ponytail: new THREE.Mesh(new THREE.CylinderGeometry(0.1, 0.1, 0.7, 8), new THREE.MeshStandardMaterial({ color: 0x222222 }))
+        };
+        hairstyles.Spiky.position.y = 2.2;
+        hairstyles.Curly.position.y = 2;
+        hairstyles.Ponytail.position.set(0, 1.8, -0.5);
+
+        // Outfits
+        const outfits = {
+            Spacesuit: new THREE.Mesh(new THREE.BoxGeometry(1.5, 2, 0.7), new THREE.MeshStandardMaterial({ color: 0x999999 })),
+            Tunic: new THREE.Mesh(new THREE.ConeGeometry(2, 2, 90), new THREE.MeshStandardMaterial({ color: 0x8b0000 })),
+            Hoodie: new THREE.Mesh(new THREE.BoxGeometry(1.4, 2, 1), new THREE.MeshStandardMaterial({ color: 0x4444ff }))
+        };
+        Object.values(outfits).forEach(outfit => outfit.position.y = 0);
+
+        // Accessories
+        const accessories = {
+            'Laser Gun': new THREE.Mesh(new THREE.BoxGeometry(0.5, 0.3, 1.5), new THREE.MeshStandardMaterial({ color: 0xff0000 })),
+            'Quill': new THREE.Mesh(new THREE.ConeGeometry(0.5, 0.5, 12), new THREE.MeshStandardMaterial({ color: 0x00ff00 })),
+            'Smartphone': new THREE.Mesh(new THREE.BoxGeometry(0.5, 0.5, 0.08), new THREE.MeshStandardMaterial({ color: 0x000000 }))
+        };
+        Object.values(accessories).forEach(a => a.position.set(0.6, 0.5, 0));
+
+        // Genre-specific effects
+        const genreEffects = {
+            'Space Opera': new THREE.Mesh(
+                new THREE.SphereGeometry(0.2, 16, 16),
+                new THREE.MeshBasicMaterial({ color: 0xffff00, transparent: true, opacity: 0.8 })
+            ),
+            'Historical Drama': new THREE.Mesh(
+                new THREE.TorusGeometry(0.3, 0.05, 16, 32),
+                new THREE.MeshBasicMaterial({ color: 0xdaa520, transparent: true, opacity: 0.8 })
+            ),
+            'Teen Comedy': new THREE.Mesh(
+                new THREE.OctahedronGeometry(0.3),
+                new THREE.MeshBasicMaterial({ color: 0xff69b4, transparent: true, opacity: 0.8 })
+            )
+        };
+        genreEffects['Space Opera'].position.set(-0.8, 1.8, 0);
+        genreEffects['Historical Drama'].position.set(-0.8, 1.5, 0);
+        genreEffects['Teen Comedy'].position.set(-0.8, 1.5, 0);
+
+        // Add all elements to character
+        Object.values(hairstyles).forEach(h => character.add(h));
+        Object.values(outfits).forEach(o => character.add(o));
+        Object.values(accessories).forEach(a => character.add(a));
+        Object.values(genreEffects).forEach(e => {
+            e.visible = false;
+            character.add(e);
+        });
+
+        // Create a simple floor/ground
+        const floor = new THREE.Mesh(
+            new THREE.CircleGeometry(5, 32),
+            new THREE.MeshStandardMaterial({
+                color: 0xdddddd,
+                roughness: 0.8,
+                metalness: 0.2
+            })
+        );
+        floor.rotation.x = -Math.PI / 2;
+        floor.position.y = -1;
+        floor.receiveShadow = true;
+        scene.add(floor);
+
+        scene.add(character);
+
+        // Handle window resize
+        const resizeObserver = new ResizeObserver(() => {
+            const width = container.clientWidth;
+            const height = container.clientHeight;
+
+            camera.aspect = width / height;
+            camera.updateProjectionMatrix();
+            renderer.setSize(width, height);
+        });
+        resizeObserver.observe(container);
+
+        // Dictionary to store current audition state
+        let auditionState = {
+            active: false,
+            startTime: 0,
+            duration: 2000, // ms
+            type: null
+        };
+
+        // Store default character state
+        const defaultCharacter = {
+            genre: 'Space Opera',
+            outfit: 'Spacesuit',
+            hair: 'Spiky',
+            accessory: 'Laser Gun',
+            expression: 'Confident'
+        };
+
+        const updateCharacter = () => {
+            const hair = document.getElementById('hair').value;
+            const outfit = document.getElementById('outfit').value;
+            const accessory = document.getElementById('accessory').value;
+            const expression = document.getElementById('expression').value;
+            const genre = document.getElementById('genre').value;
+
+            Object.entries(hairstyles).forEach(([k, m]) => m.visible = k === hair);
+            Object.entries(outfits).forEach(([k, m]) => m.visible = k === outfit);
+            Object.entries(accessories).forEach(([k, m]) => m.visible = k === accessory);
+
+            // Update expression
+            updateExpression(expression);
+
+            // Apply genre-specific visuals to the character
+            applyGenreVisuals(genre);
+        };
+
+        const applyGenreVisuals = (genre) => {
+            // Reset any previous effects
+            character.scale.set(1, 1, 1);
+            floor.material.color.set(0xdddddd);
+
+            // Apply genre-specific visual effects to the character
+            switch (genre) {
+                case 'Space Opera':
+                    // Shiny, futuristic look
+                    Object.values(outfits).forEach(o => {
+                        if (o.visible) {
+                            o.material.metalness = 0.7;
+                            o.material.roughness = 0.2;
+                        }
+                    });
+                    // Slightly larger scale for heroic presence
+                    character.scale.set(1.05, 1.05, 1.05);
+                    // Space-like floor
+                    floor.material.color.set(0x0a0a1a);
+                    break;
+
+                case 'Historical Drama':
+                    // Weathered, aged look
+                    Object.values(outfits).forEach(o => {
+                        if (o.visible) {
+                            o.material.metalness = 0.1;
+                            o.material.roughness = 0.9;
+                        }
+                    });
+                    // Historical floor
+                    floor.material.color.set(0x8B4513);
+                    break;
+
+                case 'Teen Comedy':
+                    // Bright, vibrant look
+                    Object.values(outfits).forEach(o => {
+                        if (o.visible) {
+                            o.material.metalness = 0.3;
+                            o.material.roughness = 0.4;
+                        }
+                    });
+                    // Modern floor
+                    floor.material.color.set(0xbababa);
+                    break;
+            }
+
+            // Show genre-specific effects
+            Object.entries(genreEffects).forEach(([k, m]) => {
+                m.visible = k === genre;
+            });
+        };
+
+        const updateExpression = (expression) => {
+            // Reset mouth position
+            mouth.position.set(0, -0.2, 0.4);
+            mouth.rotation.set(0, 0, 0);
+            leftEye.position.set(-0.2, 0.05, 0.4);
+            rightEye.position.set(0.2, 0.05, 0.4);
+
+            switch (expression) {
+                case 'Confident':
+                    // Slight smile, eyes slightly narrowed
+                    mouth.position.y = -0.15;
+                    mouth.scale.set(1.2, 1, 1);
+                    leftEye.scale.set(1, 0.7, 1);
+                    rightEye.scale.set(1, 0.7, 1);
+                    break;
+                case 'Playful':
+                    // Big smile, wide eyes
+                    mouth.position.y = -0.18;
+                    mouth.scale.set(1.5, 1.2, 1);
+                    mouth.rotation.z = 0.1;
+                    leftEye.scale.set(1.2, 1.2, 1);
+                    rightEye.scale.set(1.2, 1.2, 1);
+                    break;
+                case 'Mysterious':
+                    // Thin horizontal line for mouth, one eyebrow raised
+                    mouth.scale.set(0.8, 0.5, 1);
+                    leftEye.scale.set(0.9, 1, 1);
+                    rightEye.scale.set(0.9, 1, 1);
+                    rightEye.position.y += 0.05;
+                    break;
+                default:
+                    // Reset to neutral
+                    mouth.scale.set(1, 1, 1);
+                    leftEye.scale.set(1, 1, 1);
+                    rightEye.scale.set(1, 1, 1);
+            }
+        };
+
+        // Genre backgrounds configuration
+        const genreBackgrounds = {
+            'Space Opera': 0x000033, // Dark blue space
+            'Historical Drama': 0x8B4513, // Brown historical
+            'Teen Comedy': 0xF8C8DC // Pink fun
+        };
+
+        const calculateScore = () => {
+            const genre = document.getElementById("genre").value;
+            const outfit = document.getElementById("outfit").value;
+            const hair = document.getElementById("hair").value;
+            const accessory = document.getElementById("accessory").value;
+            const expression = document.getElementById("expression").value;
+
+            // Find the component objects
+            const outfitObj = characterComponents.outfit.find(o => o.name === outfit);
+            const hairObj = characterComponents.hair.find(h => h.name === hair);
+            const accessoryObj = characterComponents.accessory.find(a => a.name === accessory);
+            const expressionObj = characterComponents.expression.find(e => e.name === expression);
+
+            // Calculate genre match score (0-70 points)
+            let genreMatchScore = 0;
+            if (outfitObj.genreMatch === genre) genreMatchScore += 20;
+            if (hairObj.genreMatch === genre) genreMatchScore += 15;
+            if (accessoryObj.genreMatch === genre) genreMatchScore += 20;
+            if (expressionObj.genreMatch === genre) genreMatchScore += 15;
+
+            // Calculate uniqueness score (0-30 points)
+            // More uniqueness if some components don't match genre but harmonize together
+            const totalMatches = [outfitObj, hairObj, accessoryObj, expressionObj]
+                .filter(item => item.genreMatch === genre).length;
+
+            let uniquenessScore = 0;
+            if (totalMatches === 2) uniquenessScore = 20; // Perfect balance of genre-matching and unique elements
+            else if (totalMatches === 3) uniquenessScore = 15; // Good balance
+            else if (totalMatches === 1) uniquenessScore = 10; // Too unique, not enough genre elements
+            else if (totalMatches === 4) uniquenessScore = 5; // Too generic
+            else uniquenessScore = 0; // No genre elements at all
+
+            // Add some mild randomness (0-10 points) for audience preferences
+            const audienceScore = Math.floor(Math.random() * 10);
+
+            return Math.min(100, genreMatchScore + uniquenessScore + audienceScore);
+        };
+
+        const updateScore = () => {
+            const genre = document.getElementById("genre").value;
+
+            // Update background based on genre with smooth transition
+            const container = document.getElementById('3dContainer');
+            container.style.backgroundColor = `#${genreBackgrounds[genre].toString(16).padStart(6, '0')}`;
+
+            // Apply genre-specific visuals
+            applyGenreVisuals(genre);
+
+            const score = calculateScore();
+
+            // Update the gauge
+            const gaugeContainer = document.getElementById('scoreGauge');
+
+            // Clear any previous chart
+            gaugeContainer.innerHTML = '';
+
+            // Ensure proper dimensions
+            gaugeContainer.style.width = '100%';
+            gaugeContainer.style.height = '250px';
+
+            const isDarkMode = document.documentElement.classList.contains('dark');
+            const textColor = isDarkMode ? 'white' : 'black';
+            const tickColor = isDarkMode ? "white" : "darkgray";
+            const borderColor = isDarkMode ? "white" : "gray";
+            const barColor = isDarkMode ? "#38bdf8" : "#0ea5e9";
+
+            const data = [{
+                type: "indicator",
+                mode: "gauge+number",
+                value: score,
+                title: {
+                    text: "Fan Favorite Score",
+                    font: { size: 20, color: textColor }
+                },
+                number: {
+                    font: { color: textColor }
+                },
+                gauge: {
+                    axis: {
+                        range: [0, 100],
+                        tickwidth: 1,
+                        tickcolor: tickColor,
+                        tickfont: { color: textColor }
+                    },
+                    bar: { color: barColor },
+                    bgcolor: "rgba(0,0,0,0)",
+                    borderwidth: 2,
+                    bordercolor: borderColor,
+                    steps: [
+                        { range: [0, 50], color: "#fca5a5" },
+                        { range: [50, 80], color: "#fde68a" },
+                        { range: [80, 100], color: "#86efac" }
+                    ]
+                }
+            }];
+
+            const layout = {
+                margin: { l: 25, r: 25, t: 30, b: 10 },
+                autosize: true,
+                plot_bgcolor: 'rgba(0,0,0,0)',
+                paper_bgcolor: 'rgba(0,0,0,0)',
+                font: {
+                    color: textColor
+                }
+            };
+
+            const config = {
+                responsive: true,
+                displayModeBar: false
+            };
+
+            // Force a small delay to ensure the container is properly sized
+            setTimeout(() => {
+                Plotly.newPlot('scoreGauge', data, layout, config);
+            }, 50);
+        };
+
+        const resetCharacter = () => {
+            // Reset all dropdowns to default values
+            document.getElementById('genre').value = defaultCharacter.genre;
+            document.getElementById('outfit').value = defaultCharacter.outfit;
+            document.getElementById('hair').value = defaultCharacter.hair;
+            document.getElementById('accessory').value = defaultCharacter.accessory;
+            document.getElementById('expression').value = defaultCharacter.expression;
+
+            // Update character and score
+            updateCharacter();
+            updateScore();
+
+            // Show feedback
+            showPopup("Character Reset", "Your character has been reset to default settings.");
+
+            // Add pulse animation to the character
+            character.scale.set(1, 1, 1);
+            setTimeout(() => {
+                character.scale.set(1.1, 1.1, 1.1);
+                setTimeout(() => {
+                    character.scale.set(1, 1, 1);
+                }, 150);
+            }, 150);
+        };
+
+        window.addEventListener('resize', function () {
+            Plotly.Plots.resize('scoreGauge');
+        });
+
+        // Event listeners
+        document.getElementById("genre").addEventListener("change", updateScore);
+        selects.forEach(id => document.getElementById(id).addEventListener("change", () => {
+            updateCharacter();
+            updateScore();
+        }));
+
+        document.getElementById("resetBtn").addEventListener("click", resetCharacter);
+
+        document.getElementById("saveBtn").addEventListener("click", () => {
+            // Get current design configuration
+            const currentDesign = {
+                genre: document.getElementById("genre").value,
+                outfit: document.getElementById("outfit").value,
+                hair: document.getElementById("hair").value,
+                accessory: document.getElementById("accessory").value,
+                expression: document.getElementById("expression").value,
+                timestamp: Date.now(),
+                name: `Design ${new Date().toLocaleString()}`
+            };
+
+            // Generate thumbnail
+            renderer.render(scene, camera);
+            currentDesign.thumbnail = renderer.domElement.toDataURL("image/png");
+
+            // Save to localStorage - now we'll store an array of designs
+            const savedDesigns = getSavedDesigns();
+            savedDesigns.push(currentDesign);
+            localStorage.setItem("savedCharacterDesigns", JSON.stringify(savedDesigns));
+
+            // Add visual feedback with pulse animation
+            const saveBtn = document.getElementById("saveBtn");
+            saveBtn.classList.add("pulse");
+            setTimeout(() => {
+                saveBtn.classList.remove("pulse");
+            }, 500);
+
+            // Use custom popup instead of alert
+            showPopup("Design Saved", "Your character design has been saved successfully!");
+        });
+
+        // Handle view saved designs button
+        document.getElementById("viewSavedBtn").addEventListener("click", () => {
+            showSavedDesignsPopup();
+
+            // Add visual feedback
+            const viewSavedBtn = document.getElementById("viewSavedBtn");
+            viewSavedBtn.classList.add("pulse");
+            setTimeout(() => {
+                viewSavedBtn.classList.remove("pulse");
+            }, 500);
+        });
+
+        // Export functionality
+        document.getElementById("exportBtn").addEventListener("click", () => {
+            // Add visual feedback
+            const exportBtn = document.getElementById("exportBtn");
+            exportBtn.classList.add("pulse");
+
+            renderer.render(scene, camera);
+            const dataURL = renderer.domElement.toDataURL("image/png");
+            const a = document.createElement("a");
+            a.href = dataURL;
+            a.download = "character.png";
+            a.click();
+
+            setTimeout(() => {
+                exportBtn.classList.remove("pulse");
+            }, 500);
+
+            // Use custom popup
+            showPopup("Export Complete", "Your character image has been exported as PNG.");
+        });
+
+        // Delete all saved designs
+        document.getElementById("delete-all-designs").addEventListener("click", () => {
+            if (confirm("Are you sure you want to delete all saved designs? This cannot be undone.")) {
+                localStorage.removeItem("savedCharacterDesigns");
+                loadSavedDesignsList();
+                showPopup("Designs Deleted", "All saved designs have been deleted.");
+            }
+        });
+
+        let animatePose = false;
+        document.getElementById("poseToggle").addEventListener("click", () => {
+            animatePose = !animatePose;
+
+            // Add visual feedback
+            const poseBtn = document.getElementById("poseToggle");
+            poseBtn.classList.add("pulse");
+            setTimeout(() => {
+                poseBtn.classList.remove("pulse");
+            }, 500);
+
+            // Provide feedback through popup
+            if (animatePose) {
+                showPopup("Animation Enabled", "Your character will now animate with a rotating pose.");
+            } else {
+                showPopup("Animation Disabled", "Your character pose is now static.");
+            }
+        });
+
+        document.getElementById("auditionBtn").addEventListener("click", () => {
+            const genre = document.getElementById("genre").value;
+
+            // Add visual feedback
+            const auditionBtn = document.getElementById("auditionBtn");
+            auditionBtn.classList.add("pulse");
+            setTimeout(() => {
+                auditionBtn.classList.remove("pulse");
+            }, 500);
+
+            // Start audition animation instead of just showing an alert
+            auditionState = {
+                active: true,
+                startTime: Date.now(),
+                duration: 3000,
+                type: genre
+            };
+
+            // Show popup with audition message
+            const messages = {
+                'Space Opera': "🚀 'The galaxy is mine to conquer! I will travel to the furthest stars!'",
+                'Historical Drama': "🏰 'My honor shall prevail against the tests of time. For king and country!'",
+                'Teen Comedy': "🎉 'OMG, that's so cringe! Can you even believe what happened at lunch today?'"
+            };
+
+            showPopup(`${genre} Audition`, messages[genre]);
+        });
+
+        const performAudition = (genre, progress) => {
+            // Reset any previous audition effects
+            character.position.y = 0;
+            character.rotation.x = 0;
+
+            // Different animations based on genre
+            const animationProgress = Math.sin(progress * Math.PI); // 0 to 1 to 0 smooth curve
+
+            switch (genre) {
+                case 'Space Opera':
+                    // Heroic pose, arms raised
+                    character.position.y = animationProgress * 0.5; // Float up
+                    face.rotation.y = Math.sin(progress * Math.PI * 3) * 0.2; // Look around dramatically
+                    break;
+
+                case 'Historical Drama':
+                    // Dramatic bow or curtsy
+                    character.rotation.x = animationProgress * 0.3; // Bow forward
+                    break;
+
+                case 'Teen Comedy':
+                    // Silly dance move
+                    character.position.y = Math.sin(progress * Math.PI * 4) * 0.2; // Bouncy movement
+                    character.rotation.z = Math.sin(progress * Math.PI * 3) * 0.1; // Side to side tilt
+                    break;
+            }
+        };
+
+        const animate = () => {
+            requestAnimationFrame(animate);
+
+            const time = Date.now();
+
+            // Handle audition animation if active
+            if (auditionState.active) {
+                const elapsed = time - auditionState.startTime;
+                if (elapsed > auditionState.duration) {
+                    // End audition
+                    auditionState.active = false;
+                    // Reset character position
+                    character.position.y = 0;
+                    character.rotation.x = 0;
+                    character.rotation.z = 0;
+                    face.rotation.y = 0;
+                } else {
+                    // Perform audition animation
+                    const progress = elapsed / auditionState.duration;
+                    performAudition(auditionState.type, progress);
+                }
+            }
+
+            if (animatePose && !auditionState.active) {
+                character.rotation.y += 0.01;
+            }
+
+            // Add subtle animation to genre effects
+            const genre = document.getElementById("genre").value;
+            if (genre === 'Space Opera' && genreEffects['Space Opera'].visible) {
+                genreEffects['Space Opera'].rotation.y += 0.05;
+            }
+            if (genre === 'Historical Drama' && genreEffects['Historical Drama'].visible) {
+                genreEffects['Historical Drama'].rotation.z += 0.02;
+            }
+            if (genre === 'Teen Comedy' && genreEffects['Teen Comedy'].visible) {
+                genreEffects['Teen Comedy'].rotation.x += 0.03;
+            }
+
+            renderer.render(scene, camera);
+        };
+
+        // Get all saved designs from localStorage
+        const getSavedDesigns = () => {
+            const saved = localStorage.getItem("savedCharacterDesigns");
+            return saved ? JSON.parse(saved) : [];
+        };
+
+        // Load a specific saved design
+        const loadDesign = (design) => {
+            // Set all dropdowns to saved values
+            if (design.genre) document.getElementById('genre').value = design.genre;
+            if (design.outfit) document.getElementById('outfit').value = design.outfit;
+            if (design.hair) document.getElementById('hair').value = design.hair;
+            if (design.accessory) document.getElementById('accessory').value = design.accessory;
+            if (design.expression) document.getElementById('expression').value = design.expression;
+
+            // Update character and score
+            updateCharacter();
+            updateScore();
+
+            // Close popup
+            closeSavedDesignsPopup();
+
+            // Show feedback
+            showPopup("Design Loaded", `The design "${design.name}" has been loaded.`);
+        };
+
+        // Delete a specific saved design
+        const deleteDesign = (index) => {
+            const savedDesigns = getSavedDesigns();
+            const designName = savedDesigns[index].name;
+
+            savedDesigns.splice(index, 1);
+            localStorage.setItem("savedCharacterDesigns", JSON.stringify(savedDesigns));
+
+            loadSavedDesignsList();
+            showPopup("Design Deleted", `The design "${designName}" has been deleted.`);
+        };
+
+        // Load saved designs into the popup
+        const loadSavedDesignsList = () => {
+            const savedDesigns = getSavedDesigns();
+            const listContainer = document.getElementById('saved-designs-list');
+            const noSavedDesigns = document.getElementById('no-saved-designs');
+
+            // Clear the container
+            listContainer.innerHTML = '';
+
+            if (savedDesigns.length === 0) {
+                noSavedDesigns.classList.remove('hidden');
+                return;
+            }
+
+            noSavedDesigns.classList.add('hidden');
+
+            // Create grid container
+            const gridContainer = document.createElement('div');
+            gridContainer.className = 'saved-designs-grid';
+            listContainer.appendChild(gridContainer);
+
+            // Add each design as a card
+            savedDesigns.forEach((design, index) => {
+                const card = document.createElement('div');
+                card.className = 'design-card bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700';
+
+                // Create thumbnail if available
+                let thumbnailHtml = '';
+                if (design.thumbnail) {
+                    thumbnailHtml = `<div class="design-thumbnail" style="background-image: url('${design.thumbnail}')"></div>`;
+                } else {
+                    thumbnailHtml = `<div class="design-thumbnail bg-gray-200 dark:bg-gray-700 flex items-center justify-center">
+            <span class="material-symbols-outlined text-4xl text-gray-400">person</span>
+          </div>`;
+                }
+
+                // Format the date if available
+                const date = design.timestamp ? new Date(design.timestamp).toLocaleDateString() : 'Unknown date';
+
+                card.innerHTML = `
+          ${thumbnailHtml}
+          <div class="p-3">
+            <h4 class="font-bold text-sm truncate" title="${design.name || 'Unnamed Design'}">${design.name || 'Unnamed Design'}</h4>
+            <div class="flex items-center text-xs text-gray-500 dark:text-gray-400 mt-1">
+              <span class="material-symbols-outlined text-sm mr-1">calendar_today</span>
+              <span>${date}</span>
+            </div>
+            <div class="flex items-center mt-2 text-xs">
+              <span class="px-2 py-1 bg-gray-100 dark:bg-gray-700 rounded mr-1">${design.genre}</span>
+            </div>
+            <div class="flex justify-between mt-3">
+              <button class="load-design-btn text-blue-500 hover:text-blue-700 text-sm flex items-center" data-index="${index}">
+                <span class="material-symbols-outlined text-sm mr-1">play_arrow</span>
+                Load
+              </button>
+              <button class="delete-design-btn text-red-500 hover:text-red-700 text-sm flex items-center" data-index="${index}">
+                <span class="material-symbols-outlined text-sm mr-1">delete</span>
+                Delete
+              </button>
+            </div>
+          </div>
+        `;
+
+                gridContainer.appendChild(card);
+            });
+
+            // Add event listeners for load and delete buttons
+            document.querySelectorAll('.load-design-btn').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    const index = parseInt(e.currentTarget.dataset.index);
+                    loadDesign(savedDesigns[index]);
+                });
+            });
+
+            document.querySelectorAll('.delete-design-btn').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    const index = parseInt(e.currentTarget.dataset.index);
+                    if (confirm(`Are you sure you want to delete the design "${savedDesigns[index].name}"?`)) {
+                        deleteDesign(index);
+                    }
+                });
+            });
+        };
+
+        // Check if there's a saved design and load it
+        const loadSavedDesign = () => {
+            // We now look for the "savedCharacterDesigns" instead of "characterDesign"
+            const savedDesigns = getSavedDesigns();
+
+            // If there are saved designs, load the most recent one
+            if (savedDesigns.length > 0) {
+                const mostRecent = savedDesigns.reduce((latest, design) => {
+                    return (design.timestamp > latest.timestamp) ? design : latest;
+                }, savedDesigns[0]);
+
+                // Set all dropdowns to saved values
+                if (mostRecent.genre) document.getElementById('genre').value = mostRecent.genre;
+                selects.forEach(id => {
+                    if (mostRecent[id]) document.getElementById(id).value = mostRecent[id];
+                });
+            } else {
+                // Check for legacy saved design (from previous version)
+                const legacySaved = localStorage.getItem("characterDesign");
+                if (legacySaved) {
+                    try {
+                        const design = JSON.parse(legacySaved);
+                        // Set all dropdowns to saved values
+                        if (design.genre) document.getElementById('genre').value = design.genre;
+                        selects.forEach(id => {
+                            if (design[id]) document.getElementById(id).value = design[id];
+                        });
+
+                        // Migrate to new format
+                        const newDesign = {
+                            ...design,
+                            timestamp: Date.now(),
+                            name: `Migrated Design ${new Date().toLocaleString()}`
+                        };
+
+                        // Save to new format
+                        const savedDesigns = [];
+                        savedDesigns.push(newDesign);
+                        localStorage.setItem("savedCharacterDesigns", JSON.stringify(savedDesigns));
+
+                        // Remove legacy saved design
+                        localStorage.removeItem("characterDesign");
+                    } catch (e) {
+                        console.error("Error loading saved design", e);
+                    }
+                }
+            }
+        };
+
+        // Initialize
+        loadSavedDesign();
+        updateCharacter();
+        updateScore();
+        animate();
+    </script>
+</body>
+
+</html>

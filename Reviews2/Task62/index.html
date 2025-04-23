@@ -1,0 +1,648 @@
+<!DOCTYPE html>
+<html lang="en" class="h-full">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Casting Call Manager</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Sortable/1.15.0/Sortable.min.js"></script>
+    <style>
+        .fade-enter-active,
+        .fade-leave-active {
+            transition: opacity 0.3s;
+        }
+
+        .fade-enter,
+        .fade-leave-to {
+            opacity: 0;
+        }
+
+        .candidate-card {
+            transition: all 0.2s ease;
+        }
+
+        .candidate-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+        }
+
+        .ranked-item {
+            transition: all 0.3s ease;
+        }
+
+        .ranked-item:hover {
+            background-color: rgba(14, 165, 233, 0.1);
+        }
+
+        .modal-overlay {
+            background-color: rgba(0, 0, 0, 0.5);
+        }
+
+        .modal-enter-active,
+        .modal-leave-active {
+            transition: all 0.3s ease;
+        }
+
+        .modal-enter-from,
+        .modal-leave-to {
+            opacity: 0;
+            transform: translateY(-20px);
+        }
+    </style>
+</head>
+
+<body class="min-h-screen bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-gray-100 transition-colors duration-300">
+    <div class="container mx-auto px-4 py-6">
+        <header
+            class="bg-gradient-to-r from-blue-600 to-indigo-700 dark:from-blue-800 dark:to-indigo-900 text-white p-6 rounded-lg shadow-lg mb-8 flex justify-between items-center">
+            <div>
+                <h1 class="text-3xl font-bold">Casting Call Manager</h1>
+                <p class="text-blue-100 dark:text-blue-200 mt-1">Organize and rank your audition candidates</p>
+            </div>
+        </header>
+
+        <main class="space-y-8">
+            <!-- Form Section -->
+            <section class="bg-white dark:bg-gray-800 p-6 rounded-xl shadow-md">
+                <h2 class="text-2xl font-semibold mb-6 text-blue-600 dark:text-blue-400 flex items-center gap-2">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24"
+                        stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z" />
+                    </svg>
+                    Add New Candidate
+                </h2>
+                <form id="candidate-form" class="grid gap-6 sm:grid-cols-2">
+                    <div class="space-y-2">
+                        <label for="field"
+                            class="block text-sm font-medium text-gray-700 dark:text-gray-300">Field</label>
+                        <select id="field"
+                            class="w-full p-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition">
+                            <option value="film">Film</option>
+                            <option value="theater">Theater</option>
+                            <option value="voice">Voice Acting</option>
+                        </select>
+                    </div>
+                    <div class="space-y-2">
+                        <label for="name"
+                            class="block text-sm font-medium text-gray-700 dark:text-gray-300">Name</label>
+                        <input type="text" id="name" required
+                            class="w-full p-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition">
+                    </div>
+                    <div class="space-y-2">
+                        <label for="role" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Role
+                            Auditioned</label>
+                        <input type="text" id="role" required
+                            class="w-full p-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition">
+                    </div>
+                    <div class="space-y-2">
+                        <label for="rating" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Rating
+                            (1-10)</label>
+                        <div class="flex items-center gap-2">
+                            <input type="range" id="rating" min="1" max="10" value="5"
+                                class="w-full h-2 bg-gray-200 dark:bg-gray-600 rounded-lg appearance-none cursor-pointer">
+                            <span id="rating-value" class="text-lg font-medium w-8 text-center">5</span>
+                        </div>
+                    </div>
+                    <div class="sm:col-span-2 space-y-2">
+                        <label for="notes"
+                            class="block text-sm font-medium text-gray-700 dark:text-gray-300">Notes</label>
+                        <textarea id="notes" rows="3"
+                            class="w-full p-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition"></textarea>
+                    </div>
+                    <button type="submit"
+                        class="sm:col-span-2 bg-blue-600 hover:bg-blue-700 text-white font-medium py-3 px-6 rounded-lg transition-colors flex items-center justify-center gap-2">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24"
+                            stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                        </svg>
+                        Add Candidate
+                    </button>
+                </form>
+            </section>
+
+            <!-- Filter and Actions Section -->
+            <section class="bg-white dark:bg-gray-800 p-6 rounded-xl shadow-md">
+                <h2 class="text-2xl font-semibold mb-6 text-blue-600 dark:text-blue-400 flex items-center gap-2">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24"
+                        stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z" />
+                    </svg>
+                    Filter & Actions
+                </h2>
+                <div class="flex flex-wrap gap-4">
+                    <div class="flex-1 min-w-[200px] space-y-2">
+                        <label for="role-filter"
+                            class="block text-sm font-medium text-gray-700 dark:text-gray-300">Filter by Role</label>
+                        <select id="role-filter"
+                            class="w-full p-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition">
+                            <option value="">All Roles</option>
+                            <option value="Lead">Lead</option>
+                            <option value="Supporting">Supporting</option>
+                            <option value="Extra">Extra</option>
+                            <option value="Villain">Villain</option>
+                            <option value="Hero">Hero</option>
+                        </select>
+                    </div>
+                    <div class="flex-1 min-w-[200px] space-y-2">
+                        <label for="field-filter"
+                            class="block text-sm font-medium text-gray-700 dark:text-gray-300">Filter by Field</label>
+                        <select id="field-filter"
+                            class="w-full p-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition">
+                            <option value="">All Fields</option>
+                            <option value="film">Film</option>
+                            <option value="theater">Theater</option>
+                            <option value="voice">Voice Acting</option>
+                        </select>
+                    </div>
+                    <div class="flex items-end gap-4">
+                        <button id="save-rankings"
+                            class="bg-green-600 hover:bg-green-700 text-white font-medium py-3 px-6 rounded-lg transition-colors flex items-center gap-2">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24"
+                                stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M5 13l4 4L19 7" />
+                            </svg>
+                            Save Rankings
+                        </button>
+                        <button id="export-rankings"
+                            class="bg-purple-600 hover:bg-purple-700 text-white font-medium py-3 px-6 rounded-lg transition-colors flex items-center gap-2">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24"
+                                stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                            </svg>
+                            Export
+                        </button>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Rankings and Preview -->
+            <div class="grid lg:grid-cols-3 gap-8">
+                <!-- Candidate Rankings -->
+                <section class="bg-white dark:bg-gray-800 p-6 rounded-xl shadow-md lg:col-span-2">
+                    <div class="flex justify-between items-center mb-6">
+                        <h2 class="text-2xl font-semibold text-blue-600 dark:text-blue-400 flex items-center gap-2">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24"
+                                stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M4 6h16M4 12h16M4 18h16" />
+                            </svg>
+                            Candidate Rankings
+                        </h2>
+                        <span class="text-sm text-gray-500 dark:text-gray-400">
+                            Drag to reorder
+                        </span>
+                    </div>
+                    <div id="candidate-list" class="space-y-3"></div>
+                    <div id="empty-state" class="text-center py-12 text-gray-500 dark:text-gray-400">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-12 w-12 mx-auto mb-4" fill="none"
+                            viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
+                                d="M9.172 16.172a4 4 0 015.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                        <p class="text-lg">No candidates added yet</p>
+                        <p class="mt-1">Add your first candidate using the form above</p>
+                    </div>
+                </section>
+
+                <!-- Top Picks Preview -->
+                <section class="bg-white dark:bg-gray-800 p-6 rounded-xl shadow-md">
+                    <h2 class="text-2xl font-semibold mb-6 text-blue-600 dark:text-blue-400 flex items-center gap-2">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24"
+                            stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z" />
+                        </svg>
+                        Top Picks Preview
+                    </h2>
+                    <div id="top-picks" class="space-y-4">
+                        <div class="text-center py-12 text-gray-500 dark:text-gray-400">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-12 w-12 mx-auto mb-4" fill="none"
+                                viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
+                                    d="M9.172 16.172a4 4 0 015.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                            </svg>
+                            <p class="text-lg">No rankings yet</p>
+                            <p class="mt-1">Rank candidates to see your top picks here</p>
+                        </div>
+                    </div>
+                </section>
+            </div>
+        </main>
+    </div>
+
+    <!-- Modal -->
+    <div id="modal-overlay"
+        class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50 opacity-0 pointer-events-none transition-opacity duration-300">
+        <div
+            class="bg-white dark:bg-gray-800 rounded-xl shadow-2xl max-w-md w-full transform transition-all duration-300 scale-95">
+            <div class="p-6">
+                <div class="flex justify-between items-start mb-4">
+                    <h3 id="modal-title" class="text-2xl font-bold text-blue-600 dark:text-blue-400"></h3>
+                    <button id="close-modal" class="text-gray-400 hover:text-gray-500 dark:hover:text-gray-300">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24"
+                            stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M6 18L18 6M6 6l12 12" />
+                        </svg>
+                    </button>
+                </div>
+                <div class="space-y-4">
+                    <div class="flex items-center gap-3">
+                        <span
+                            class="bg-blue-100 dark:bg-blue-900/50 text-blue-800 dark:text-blue-200 px-3 py-1 rounded-full text-sm font-medium">
+                            <span id="modal-field"></span>
+                        </span>
+                        <span
+                            class="bg-green-100 dark:bg-green-900/50 text-green-800 dark:text-green-200 px-3 py-1 rounded-full text-sm font-medium">
+                            <span id="modal-role"></span>
+                        </span>
+                        <span
+                            class="bg-yellow-100 dark:bg-yellow-900/50 text-yellow-800 dark:text-yellow-200 px-3 py-1 rounded-full text-sm font-medium">
+                            Rating: <span id="modal-rating"></span>/10
+                        </span>
+                    </div>
+                    <div>
+                        <h4 class="font-medium text-gray-700 dark:text-gray-300 mb-2">Notes:</h4>
+                        <p id="modal-notes"
+                            class="text-gray-600 dark:text-gray-400 bg-gray-50 dark:bg-gray-700 p-3 rounded-lg"></p>
+                    </div>
+                </div>
+                <div class="mt-6 flex justify-end">
+                    <button id="delete-candidate"
+                        class="bg-red-600 hover:bg-red-700 text-white font-medium py-2 px-4 rounded-lg transition-colors mr-3">
+                        Delete
+                    </button>
+                    <button id="edit-candidate"
+                        class="bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded-lg transition-colors">
+                        Edit
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Enhanced mock dataset with more realistic data
+        let candidates = [
+            { id: 1, name: "Emma Stone", field: "film", role: "Lead", rating: 8, notes: "Strong presence, great emotional range. Perfect for dramatic roles." },
+            { id: 2, name: "John Smith", field: "theater", role: "Supporting", rating: 7, notes: "Good stage control. Needs work on vocal projection." },
+            { id: 3, name: "Ava Chen", field: "voice", role: "Lead", rating: 9, notes: "Versatile voice, perfect for animation. Can do multiple accents." },
+            { id: 4, name: "Michael Johnson", field: "film", role: "Villain", rating: 9, notes: "Intense screen presence. Excellent at portraying complex antagonists." },
+            { id: 5, name: "Sophia Rodriguez", field: "theater", role: "Hero", rating: 8, notes: "Charismatic performer with strong singing voice." },
+            { id: 6, name: "David Kim", field: "voice", role: "Supporting", rating: 7, notes: "Great comedic timing. Specializes in quirky side characters." }
+        ];
+
+        // Current state
+        let currentModalCandidateId = null;
+        let isEditing = false;
+
+        // DOM elements
+        const candidateForm = document.getElementById('candidate-form');
+        const candidateList = document.getElementById('candidate-list');
+        const topPicks = document.getElementById('top-picks');
+        const emptyState = document.getElementById('empty-state');
+        const modalOverlay = document.getElementById('modal-overlay');
+        const ratingInput = document.getElementById('rating');
+        const ratingValue = document.getElementById('rating-value');
+
+        // Initialize the app
+        function init() {
+            // Load saved rankings and theme
+            const savedRankings = localStorage.getItem('candidateRankings');
+            if (savedRankings) {
+                candidates = JSON.parse(savedRankings);
+            }
+
+            if (localStorage.getItem('theme') === 'dark' ||
+                (!localStorage.getItem('theme') && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+                document.body.classList.add('dark');
+            }
+
+            // Event listeners
+            candidateForm.addEventListener('submit', handleFormSubmit);
+            document.getElementById('role-filter').addEventListener('change', handleFilterChange);
+            document.getElementById('field-filter').addEventListener('change', handleFilterChange);
+            document.getElementById('save-rankings').addEventListener('click', saveRankings);
+            document.getElementById('export-rankings').addEventListener('click', exportRankings);
+            document.getElementById('theme-toggle').addEventListener('click', toggleTheme);
+            document.getElementById('close-modal').addEventListener('click', closeModal);
+            document.getElementById('delete-candidate').addEventListener('click', deleteCandidate);
+            document.getElementById('edit-candidate').addEventListener('click', editCandidate);
+            ratingInput.addEventListener('input', updateRatingValue);
+
+            // Initial render
+            renderCandidates();
+            updateRatingValue();
+        }
+
+        // Render candidates with filtering
+        function renderCandidates() {
+            const roleFilter = document.getElementById('role-filter').value;
+            const fieldFilter = document.getElementById('field-filter').value;
+
+            const filteredCandidates = candidates.filter(candidate => {
+                const matchesRole = !roleFilter || candidate.role.toLowerCase() === roleFilter.toLowerCase();
+                const matchesField = !fieldFilter || candidate.field.toLowerCase() === fieldFilter.toLowerCase();
+                return matchesRole && matchesField;
+            });
+
+            candidateList.innerHTML = '';
+
+            if (filteredCandidates.length === 0) {
+                emptyState.classList.remove('hidden');
+                return;
+            }
+
+            emptyState.classList.add('hidden');
+
+            filteredCandidates.forEach((candidate, index) => {
+                const card = document.createElement('div');
+                card.className = 'ranked-item candidate-card bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg p-4 cursor-move flex justify-between items-center';
+                card.dataset.id = candidate.id;
+
+                // Star rating display
+                const stars = Array(5).fill().map((_, i) =>
+                    i < Math.floor(candidate.rating / 2) ?
+                        '<svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-yellow-400" viewBox="0 0 20 20" fill="currentColor"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" /></svg>' :
+                        '<svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-gray-300 dark:text-gray-500" viewBox="0 0 20 20" fill="currentColor"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" /></svg>'
+                ).join('');
+
+                card.innerHTML = `
+                    <div class="flex items-center gap-4">
+                        <span class="text-gray-500 dark:text-gray-400 font-medium w-6 text-center">${index + 1}</span>
+                        <div>
+                            <h3 class="font-semibold">${candidate.name}</h3>
+                            <div class="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400">
+                                <span>${candidate.role}</span>
+                                <span>•</span>
+                                <span class="capitalize">${candidate.field}</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="flex items-center gap-3">
+                        <div class="flex">${stars}</div>
+                        <button class="view-details text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 font-medium p-2 rounded-full hover:bg-blue-50 dark:hover:bg-blue-900/30 transition-colors" data-id="${candidate.id}">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                            </svg>
+                        </button>
+                    </div>
+                `;
+                candidateList.appendChild(card);
+            });
+
+            // Initialize Sortable.js for drag and drop
+            new Sortable(candidateList, {
+                animation: 150,
+                handle: '.candidate-card',
+                ghostClass: 'bg-blue-50 dark:bg-blue-900/20',
+                onEnd: () => {
+                    updateRankings();
+                    renderTopPicks();
+                }
+            });
+
+            // Add event listeners for view details
+            document.querySelectorAll('.view-details').forEach(btn => {
+                btn.addEventListener('click', () => showModal(parseInt(btn.dataset.id)));
+            });
+
+            // Update top picks
+            renderTopPicks();
+        }
+
+        // Update rankings based on DOM order
+        function updateRankings() {
+            const candidateElements = Array.from(candidateList.children);
+            const newOrder = candidateElements.map(el => {
+                const id = parseInt(el.dataset.id);
+                return candidates.find(c => c.id === id);
+            }).filter(c => c); // Filter out any undefined entries
+
+            candidates = newOrder;
+        }
+
+        // Render top picks (top 3)
+        function renderTopPicks() {
+            topPicks.innerHTML = '';
+
+            if (candidates.length === 0) {
+                topPicks.innerHTML = `
+                    <div class="text-center py-12 text-gray-500 dark:text-gray-400">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-12 w-12 mx-auto mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9.172 16.172a4 4 0 015.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                        <p class="text-lg">No rankings yet</p>
+                        <p class="mt-1">Rank candidates to see your top picks here</p>
+                    </div>
+                `;
+                return;
+            }
+
+            const topCandidates = candidates.slice(0, 3);
+
+            topCandidates.forEach((candidate, index) => {
+                const card = document.createElement('div');
+                card.className = 'candidate-card bg-gradient-to-br from-blue-50 to-white dark:from-blue-900/30 dark:to-gray-800 border border-blue-200 dark:border-blue-800 rounded-xl p-5 shadow-sm';
+
+                // Medal emoji for top 3
+                const medal = ['🥇', '🥈', '🥉'][index] || '🌟';
+
+                // Star rating display
+                const stars = Array(5).fill().map((_, i) =>
+                    i < Math.floor(candidate.rating / 2) ?
+                        '<svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-yellow-400" viewBox="0 0 20 20" fill="currentColor"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" /></svg>' :
+                        '<svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-gray-300 dark:text-gray-500" viewBox="0 0 20 20" fill="currentColor"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" /></svg>'
+                ).join('');
+
+                card.innerHTML = `
+                    <div class="flex justify-between items-start mb-3">
+                        <span class="text-4xl">${medal}</span>
+                        <span class="bg-blue-100 dark:bg-blue-900/50 text-blue-800 dark:text-blue-200 px-3 py-1 rounded-full text-sm font-medium capitalize">
+                            ${candidate.field}
+                        </span>
+                    </div>
+                    <h3 class="text-xl font-bold mb-1">${candidate.name}</h3>
+                    <p class="text-gray-600 dark:text-gray-400 mb-3">${candidate.role}</p>
+                    <div class="flex mb-4">${stars}</div>
+                    <p class="text-sm text-gray-600 dark:text-gray-400 line-clamp-3">${candidate.notes || 'No notes available'}</p>
+                `;
+                topPicks.appendChild(card);
+            });
+        }
+
+        // Show modal with candidate details
+        function showModal(id) {
+            const candidate = candidates.find(c => c.id === id);
+            if (!candidate) return;
+
+            currentModalCandidateId = id;
+            document.getElementById('modal-title').textContent = candidate.name;
+            document.getElementById('modal-field').textContent = candidate.field.charAt(0).toUpperCase() + candidate.field.slice(1);
+            document.getElementById('modal-role').textContent = candidate.role;
+            document.getElementById('modal-rating').textContent = candidate.rating;
+            document.getElementById('modal-notes').textContent = candidate.notes || 'No notes available';
+
+            // Show modal with animation
+            modalOverlay.classList.remove('pointer-events-none');
+            modalOverlay.classList.add('pointer-events-auto');
+            setTimeout(() => {
+                modalOverlay.classList.remove('opacity-0');
+                modalOverlay.querySelector('div').classList.remove('scale-95');
+            }, 10);
+        }
+
+        // Close modal
+        function closeModal() {
+            modalOverlay.classList.add('opacity-0');
+            modalOverlay.querySelector('div').classList.add('scale-95');
+            setTimeout(() => {
+                modalOverlay.classList.add('pointer-events-none');
+                modalOverlay.classList.remove('pointer-events-auto');
+                currentModalCandidateId = null;
+                isEditing = false;
+            }, 300);
+        }
+
+        // Delete candidate
+        function deleteCandidate() {
+            if (!currentModalCandidateId) return;
+
+            if (confirm('Are you sure you want to delete this candidate?')) {
+                candidates = candidates.filter(c => c.id !== currentModalCandidateId);
+                renderCandidates();
+                renderTopPicks();
+                closeModal();
+            }
+        }
+
+        // Edit candidate (placeholder - would need form implementation)
+        function editCandidate() {
+            if (!currentModalCandidateId) return;
+
+            const candidate = candidates.find(c => c.id === currentModalCandidateId);
+            if (!candidate) return;
+
+            // In a real app, we'd populate the form with the candidate data
+            // For this example, we'll just show an alert
+            alert(`Editing ${candidate.name}. In a full implementation, this would open the form with the candidate's data.`);
+            closeModal();
+        }
+
+        // Handle form submission
+        function handleFormSubmit(e) {
+            e.preventDefault();
+
+            const newCandidate = {
+                id: candidates.length ? Math.max(...candidates.map(c => c.id)) + 1 : 1,
+                field: document.getElementById('field').value,
+                name: document.getElementById('name').value.trim(),
+                role: document.getElementById('role').value.trim(),
+                rating: parseInt(document.getElementById('rating').value),
+                notes: document.getElementById('notes').value.trim()
+            };
+
+            candidates.push(newCandidate);
+            candidateForm.reset();
+            renderCandidates();
+            renderTopPicks();
+
+            // Show success feedback
+            const submitBtn = candidateForm.querySelector('button[type="submit"]');
+            const originalText = submitBtn.innerHTML;
+            submitBtn.innerHTML = `
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+                </svg>
+                Candidate Added!
+            `;
+            submitBtn.classList.remove('bg-blue-600', 'hover:bg-blue-700');
+            submitBtn.classList.add('bg-green-600', 'hover:bg-green-700');
+
+            setTimeout(() => {
+                submitBtn.innerHTML = originalText;
+                submitBtn.classList.remove('bg-green-600', 'hover:bg-green-700');
+                submitBtn.classList.add('bg-blue-600', 'hover:bg-blue-700');
+            }, 2000);
+        }
+
+        // Handle filter changes
+        function handleFilterChange() {
+            renderCandidates();
+        }
+
+        // Save rankings to localStorage
+        function saveRankings() {
+            localStorage.setItem('candidateRankings', JSON.stringify(candidates));
+
+            // Show feedback
+            const btn = document.getElementById('save-rankings');
+            const originalText = btn.innerHTML;
+            btn.innerHTML = `
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+                </svg>
+                Saved!
+            `;
+
+            setTimeout(() => {
+                btn.innerHTML = originalText;
+            }, 2000);
+        }
+
+        // Export rankings as text file
+        function exportRankings() {
+            const date = new Date().toLocaleDateString();
+            const text = `Casting Call Rankings - ${date}\n\n` +
+                candidates.map((c, i) => `${i + 1}. ${c.name} - ${c.role} (${c.rating}/10)\nField: ${c.field}\nNotes: ${c.notes || 'None'}\n`).join('\n');
+
+            const blob = new Blob([text], { type: 'text/plain' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `casting_rankings_${date.replace(/\//g, '-')}.txt`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        }
+
+        // Toggle dark/light theme
+        function toggleTheme() {
+            document.body.classList.toggle('dark');
+            localStorage.setItem('theme', document.body.classList.contains('dark') ? 'dark' : 'light');
+
+            const themeToggle = document.getElementById('theme-toggle');
+            if (document.body.classList.contains('dark')) {
+                themeToggle.innerHTML = `
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" />
+                    </svg>
+                `;
+            } else {
+                themeToggle.innerHTML = `
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z" />
+                    </svg>
+                `;
+            }
+        }
+
+        // Update rating value display
+        function updateRatingValue() {
+            ratingValue.textContent = ratingInput.value;
+        }
+
+        // Initialize the app
+        document.addEventListener('DOMContentLoaded', init);
+    </script>
+</body>
+
+</html>

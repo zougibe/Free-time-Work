@@ -1,0 +1,1369 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>SupplierSync Analytics</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://unpkg.com/aos@2.3.1/dist/aos.css" rel="stylesheet" />
+    <script src="https://unpkg.com/aos@2.3.1/dist/aos.js"></script>
+    <script>
+        // Fallback for Plotly if CDN fails
+        if (!window.Plotly) {
+            document.write('<script src="plotly.min.js"><\/script>');
+        }
+    </script>
+    <style>
+        :root {
+            --bg-color: #1e1e2f;
+            --text-color: #ffffff;
+            --accent-color: #60a5fa;
+            --card-bg: rgba(255, 255, 255, 0.15);
+            --border-color: rgba(255, 255, 255, 0.3);
+        }
+
+        [data-theme="light"] {
+            --bg-color: #ffffff;
+            --text-color: #1e1e2f;
+            --accent-color: #2563eb;
+            --card-bg: rgba(0, 0, 0, 0.1);
+            --border-color: rgba(0, 0, 0, 0.2);
+        }
+
+        body {
+            background: var(--bg-color);
+            color: var(--text-color);
+            min-height: 100vh;
+            margin: 0;
+            font-family: "Inter", sans-serif;
+            position: relative;
+            overflow-x: hidden;
+            transition: background 0.3s ease, color 0.3s ease;
+        }
+
+        .bg-gradient {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -2;
+            background: linear-gradient(135deg,
+                    rgba(0, 0, 0, 0.2),
+                    rgba(96, 165, 250, 0.1));
+            opacity: 0.5;
+        }
+
+        [data-theme="light"] .bg-gradient {
+            background: linear-gradient(135deg,
+                    rgba(255, 255, 255, 0.3),
+                    rgba(37, 99, 235, 0.1));
+        }
+
+        .wave-bg,
+        .wave-bg-2,
+        .wave-bg-top,
+        .wave-bg-top-2 {
+            position: fixed;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -1;
+            opacity: 0.3;
+            will-change: background-position, filter;
+        }
+
+        .wave-bg {
+            bottom: 0;
+            background: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1440 320"><path fill="%2360a5fa" fill-opacity="0.3" d="M0,160L48,176C96,192,192,224,288,213.3C384,203,480,149,576,144C672,139,768,181,864,181.3C960,181,1056,139,1152,133.3C1248,128,1344,160,1392,176L1440,192L1440,320L1392,320C1344,320,1248,320,1152,320C1056,320,960,320,864,320C768,320,672,320,576,320C480,320,384,320,288,320C192,320,96,320,48,320L0,320Z"></path></svg>') repeat-x bottom;
+            animation: wave 20s linear infinite;
+        }
+
+        .wave-bg-2 {
+            bottom: 0;
+            background: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1440 320"><path fill="%23f87171" fill-opacity="0.3" d="M0,192L48,181.3C96,171,192,149,288,165.3C384,181,480,235,576,229.3C672,224,768,160,864,149.3C960,139,1056,181,1152,192C1248,203,1344,181,1392,170.7L1440,160L1440,320L1392,320C1344,320,1248,320,1152,320C1056,320,960,320,864,320C768,320,672,320,576,320C480,320,384,320,288,320C192,320,96,320,48,320L0,320Z"></path></svg>') repeat-x bottom;
+            animation: wave2 30s linear infinite;
+        }
+
+        .wave-bg-top {
+            top: 0;
+            background: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1440 320"><path fill="%2360a5fa" fill-opacity="0.3" d="M0,160L48,176C96,192,192,224,288,213.3C384,203,480,149,576,144C672,139,768,181,864,181.3C960,181,1056,139,1152,133.3C1248,128,1344,160,1392,176L1440,192L1440,0L1392,0C1344,0,1248,0,1152,0C1056,0,960,0,864,0C768,0,672,0,576,0C480,0,384,0,288,0C192,0,96,0,48,0L0,0Z"></path></svg>') repeat-x top;
+            animation: wave-top 20s linear infinite;
+        }
+
+        .wave-bg-top-2 {
+            top: 0;
+            background: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1440 320"><path fill="%23f87171" fill-opacity="0.3" d="M0,192L48,181.3C96,171,192,149,288,165.3C384,181,480,235,576,229.3C672,224,768,160,864,149.3C960,139,1056,181,1152,192C1248,203,1344,181,1392,170.7L1440,160L1440,0L1392,0C1344,0,1248,0,1152,0C1056,0,960,0,864,0C768,0,672,0,576,0C480,0,384,0,288,0C192,0,96,0,48,0L0,0Z"></path></svg>') repeat-x top;
+            animation: wave2-top 30s linear infinite;
+        }
+
+        @keyframes wave {
+            0% {
+                background-position: 0 bottom;
+                filter: hue-rotate(0deg);
+            }
+
+            50% {
+                filter: hue-rotate(30deg);
+            }
+
+            100% {
+                background-position: 1440px bottom;
+                filter: hue-rotate(0deg);
+            }
+        }
+
+        @keyframes wave2 {
+            0% {
+                background-position: 1440px bottom;
+                filter: hue-rotate(60deg);
+            }
+
+            50% {
+                filter: hue-rotate(90deg);
+            }
+
+            100% {
+                background-position: 0 bottom;
+                filter: hue-rotate(60deg);
+            }
+        }
+
+        @keyframes wave-top {
+            0% {
+                background-position: 1440px top;
+                filter: hue-rotate(0deg);
+            }
+
+            50% {
+                filter: hue-rotate(30deg);
+            }
+
+            100% {
+                background-position: 0 top;
+                filter: hue-rotate(0deg);
+            }
+        }
+
+        @keyframes wave2-top {
+            0% {
+                background-position: 0 top;
+                filter: hue-rotate(60deg);
+            }
+
+            50% {
+                filter: hue-rotate(90deg);
+            }
+
+            100% {
+                background-position: 1440px top;
+                filter: hue-rotate(60deg);
+            }
+        }
+
+        .radar-chart {
+            width: 100%;
+            max-width: 600px;
+            height: 400px;
+            transition: opacity 0.3s ease, transform 0.3s ease;
+            border: 2px solid var(--accent-color);
+            border-radius: 8px;
+            padding: 2px;
+            background: var(--card-bg);
+        }
+
+        .radar-chart.hidden {
+            opacity: 0;
+            transform: scale(0.95);
+        }
+
+        .radar-placeholder {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            height: 400px;
+            text-align: center;
+            color: var(--text-color);
+            font-size: 1rem;
+            opacity: 0.7;
+        }
+
+        @media (max-width: 768px) {
+            .radar-placeholder {
+                height: 300px;
+            }
+        }
+
+        .summary-card,
+        .comparison-table {
+            background: var(--card-bg);
+            backdrop-filter: blur(18px);
+            border: 1px solid var(--border-color);
+            transition: transform 0.3s ease, box-shadow 0.3s ease,
+                border-color 0.3s ease;
+        }
+
+        .summary-card:hover,
+        .btn:hover {
+            transform: scale(1.02);
+            box-shadow: 0 0 15px var(--accent-color);
+        }
+
+        .summary-card.updated {
+            animation: glowBorder 1s ease;
+        }
+
+        @keyframes glowBorder {
+
+            0%,
+            100% {
+                border-color: var(--border-color);
+            }
+
+            50% {
+                border-color: var(--accent-color);
+            }
+        }
+
+        .summary-content {
+            animation: fadeIn 0.3s ease;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+            }
+
+            to {
+                opacity: 1;
+            }
+        }
+
+        .number-counter {
+            display: inline-block;
+            width: 40px;
+            text-align: center;
+        }
+
+        .logo-highlight {
+            color: var(--accent-color);
+            font-weight: bold;
+        }
+
+        .sticky-header {
+            position: sticky;
+            top: 0;
+            z-index: 10;
+            background: var(--card-bg);
+            backdrop-filter: blur(18px);
+        }
+
+        .sort-btn:hover {
+            background-color: rgba(0, 0, 0, 0.2);
+        }
+
+        .score-high {
+            background-color: rgba(34, 197, 94, 0.2);
+        }
+
+        .score-mid {
+            background-color: rgba(234, 179, 8, 0.2);
+        }
+
+        .score-low {
+            background-color: rgba(239, 68, 68, 0.2);
+        }
+
+        .loading-spinner {
+            border: 4px solid rgba(0, 0, 0, 0.2);
+            border-top: 4px solid var(--accent-color);
+            border-radius: 50%;
+            width: 24px;
+            height: 24px;
+            animation: spin 1s linear infinite;
+            margin: 20px auto;
+            display: none;
+        }
+
+        .table-loading {
+            border: 3px solid rgba(0, 0, 0, 0.2);
+            border-top: 3px solid var(--accent-color);
+            border-radius: 50%;
+            width: 20px;
+            height: 20px;
+            animation: spin 1s linear infinite;
+            margin: 10px auto;
+            display: none;
+        }
+
+        @keyframes spin {
+            0% {
+                transform: rotate(0deg);
+            }
+
+            100% {
+                transform: rotate(360deg);
+            }
+        }
+
+        .highlight-glow {
+            box-shadow: 0 0 10px var(--accent-color),
+                0 0 20px var(--accent-color);
+            animation: scaleHighlight 0.2s ease;
+        }
+
+        @keyframes scaleHighlight {
+            0% {
+                transform: scale(1);
+            }
+
+            50% {
+                transform: scale(1.02);
+            }
+
+            100% {
+                transform: scale(1);
+            }
+        }
+
+        .controls-grid {
+            display: grid;
+            grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+            gap: 0.75rem;
+            align-items: start;
+        }
+
+        .toast {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background: var(--accent-color);
+            color: var(--bg-color);
+            padding: 10px 20px;
+            border-radius: 8px;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+            z-index: 30;
+        }
+
+        .toast.show {
+            opacity: 1;
+        }
+
+        .back-to-top {
+            position: fixed;
+            bottom: 20px;
+            left: 20px;
+            background: var(--accent-color);
+            color: var(--bg-color);
+            padding: 10px;
+            border-radius: 50%;
+            display: none;
+            z-index: 20;
+            transition: transform 0.3s ease;
+        }
+
+        .back-to-top:hover {
+            transform: scale(1.1);
+        }
+
+        .back-to-top.show {
+            display: block;
+        }
+
+        tr:hover {
+            background: rgba(0, 0, 0, 0.1);
+            cursor: pointer;
+        }
+
+        .tooltip {
+            visibility: hidden;
+            opacity: 0;
+            transition: visibility 0s linear 0.2s, opacity 0.2s ease;
+        }
+
+        .group:hover .tooltip {
+            visibility: visible;
+            opacity: 1;
+            transition: visibility 0s linear, opacity 0.2s ease;
+        }
+
+        .error-message {
+            color: #ef4444;
+            text-align: center;
+            margin: 20px 0;
+            font-size: 1rem;
+            display: none;
+        }
+
+        @media (max-width: 768px) {
+            .controls-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .summary-card,
+            .compare-controls {
+                width: 100%;
+                max-width: 320px;
+                padding: 0.75rem;
+            }
+
+            .comparison-table table {
+                display: block;
+                overflow-x: auto;
+                white-space: nowrap;
+            }
+
+            .btn {
+                width: 100%;
+            }
+
+            .compare-controls details {
+                background: var(--card-bg);
+                border-radius: 8px;
+                padding: 0.5rem;
+            }
+
+            .compare-controls summary {
+                cursor: pointer;
+                font-weight: bold;
+                color: var(--accent-color);
+            }
+
+            .radar-chart {
+                height: 300px;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="bg-gradient"></div>
+    <div class="wave-bg"></div>
+    <div class="wave-bg-2"></div>
+    <div class="wave-bg-top"></div>
+    <div class="wave-bg-top-2"></div>
+    <header class="sticky-header py-4" data-aos="fade-down">
+        <div class="container mx-auto px-4 flex flex-col items-center gap-2">
+            <h1 class="text-2xl md:text-3xl font-bold text-[var(--accent-color)]">
+                SupplierSync Analytics
+            </h1>
+            <nav class="flex justify-center items-center gap-4">
+                <button id="themeToggle"
+                    class="p-2 bg-[var(--card-bg)] rounded-lg text-[var(--text-color)] hover:bg-[var(--border-color)] transition relative group btn"
+                    aria-label="Switch to light mode" data-aos="zoom-in">
+                    Toggle Dark Mode
+                    <span
+                        class="tooltip absolute bg-[var(--card-bg)] text-[var(--text-color)] text-xs rounded py-1 px-2 -top-8 left-1/2 transform -translate-x-1/2"
+                        id="themeTooltip">Switch to light mode</span>
+                </button>
+                <a href="#instructions"
+                    class="text-[var(--text-color)] hover:text-[var(--accent-color)] transition">Guide</a>
+            </nav>
+        </div>
+    </header>
+
+    <main class="container mx-auto px-4 py-8">
+        <section id="instructions" class="bg-[var(--card-bg)] rounded-lg p-6 mb-8" data-aos="fade-up">
+            <h2 class="text-xl font-semibold text-[var(--accent-color)] mb-4">
+                How to Use
+            </h2>
+            <p class="text-[var(--text-color)] leading-relaxed">
+                Select a supplier to view their performance metrics
+                (Timeliness, Quality, Cost) in the summary card, radar
+                chart, and comparison table. Choose "None" to clear the main
+                selection. Double-click a table row to toggle highlighting a
+                supplier, compare suppliers via checkboxes, sort the table,
+                or export as CSV. Clear comparisons to reset highlights, or
+                copy the summary for reports. Toggle dark mode for better
+                viewing.
+            </p>
+        </section>
+
+        <section class="controls-grid mb-8" data-aos="fade-up" data-aos-delay="100">
+            <div class="summary-card rounded-lg p-3 flex-1 max-w-xs" id="summaryCard" role="status">
+                <div id="summaryContent" class="summary-content text-[var(--text-color)]"></div>
+                <button id="copySummary"
+                    class="mt-3 p-2 bg-[var(--accent-color)] rounded-lg text-[var(--bg-color)] hover:bg-[var(--text-color)] hover:text-[var(--bg-color)] transition relative group btn text-sm"
+                    aria-label="Copy summary to clipboard" data-aos="zoom-in" data-aos-delay="150">
+                    Copy Summary
+                    <span
+                        class="tooltip absolute bg-[var(--card-bg)] text-[var(--text-color)] text-xs rounded py-1 px-2 -top-8 left-1/2 transform -translate-x-1/2">Copy
+                        summary text</span>
+                </button>
+            </div>
+            <div class="flex flex-col gap-4 flex-1 max-w-xs">
+                <div>
+                    <label for="supplierSelect" class="block text-sm font-medium text-[var(--text-color)] mb-2">Select
+                        Supplier</label>
+                    <select id="supplierSelect"
+                        class="w-full p-3 bg-[var(--card-bg)] rounded-lg text-[var(--text-color)] focus:ring-2 focus:ring-[var(--accent-color)] transition"
+                        aria-label="Select a supplier" aria-describedby="summaryCard">
+                        <option class="text-black" value="None">None</option>
+                        <option class="text-black" value="Supplier A">Supplier A</option>
+                        <option class="text-black" value="Supplier B">Supplier B</option>
+                        <option class="text-black" value="Supplier C">Supplier C</option>
+                        <option class="text-black" value="Supplier D">Supplier D</option>
+                        <option class="text-black" value="Supplier E">Supplier E</option>
+                    </select>
+                </div>
+                <div class="compare-controls">
+                    <label class="block text-sm font-medium text-[var(--text-color)] mb-2">Compare Suppliers</label>
+                    <details>
+                        <summary>Show Comparison Options</summary>
+                        <div id="compareControls" class="flex flex-col gap-2 bg-[var(--card-bg)] p-3 rounded-lg mt-2">
+                            <label class="flex items-center"><input type="checkbox" value="Supplier A"
+                                    class="mr-2 accent-[var(--accent-color)]" aria-label="Compare Supplier A" />
+                                Supplier A</label>
+                            <label class="flex items-center"><input type="checkbox" value="Supplier B"
+                                    class="mr-2 accent-[var(--accent-color)]" aria-label="Compare Supplier B" />
+                                Supplier B</label>
+                            <label class="flex items-center"><input type="checkbox" value="Supplier C"
+                                    class="mr-2 accent-[var(--accent-color)]" aria-label="Compare Supplier C" />
+                                Supplier C</label>
+                            <label class="flex items-center"><input type="checkbox" value="Supplier D"
+                                    class="mr-2 accent-[var(--accent-color)]" aria-label="Compare Supplier D" />
+                                Supplier D</label>
+                            <label class="flex items-center"><input type="checkbox" value="Supplier E"
+                                    class="mr-2 accent-[var(--accent-color)]" aria-label="Compare Supplier E" />
+                                Supplier E</label>
+                            <button id="clearCompare"
+                                class="mt-2 p-2 bg-red-600 rounded-lg text-white hover:bg-red-700 transition relative group btn text-sm"
+                                aria-label="Clear all comparisons" data-aos="zoom-in" data-aos-delay="200">
+                                Clear Comparison
+                                <span
+                                    class="tooltip absolute bg-[var(--card-bg)] text-[var(--text-color)] text-xs rounded py-1 px-2 -top-8 left-1/2 transform -translate-x-1/2">Reset
+                                    comparison selections</span>
+                            </button>
+                        </div>
+                    </details>
+                </div>
+            </div>
+        </section>
+
+        <section class="bg-[var(--card-bg)] rounded-lg p-6 mb-8 relative" data-aos="fade-up" data-aos-delay="200">
+            <div id="loadingSpinner" class="loading-spinner"></div>
+            <div id="chartError" class="error-message">
+                Failed to load chart. Check console for details or refresh
+                the page.
+            </div>
+            <div id="radarChart" class="radar-chart mx-auto" role="region" aria-live="polite"></div>
+            <div id="radarPlaceholder" class="radar-placeholder hidden">
+                Select a supplier or compare suppliers to view the radar
+                chart.
+            </div>
+        </section>
+
+        <section id="comparison" class="comparison-table rounded-lg p-6 mb-8" data-aos="fade-up" data-aos-delay="300">
+            <div class="flex justify-between items-center mb-4">
+                <h2 class="text-xl font-semibold text-[var(--accent-color)]">
+                    Comparison Table
+                </h2>
+                <button id="exportCsv"
+                    class="p-2 bg-green-600 rounded-lg text-white hover:bg-green-700 transition btn text-sm"
+                    aria-label="Export table as CSV" data-aos="zoom-in" data-aos-delay="400">
+                    Export CSV
+                    <span
+                        class="tooltip absolute bg-[var(--card-bg)] text-[var(--text-color)] text-xs rounded py-1 px-2 -top-8 left-1/2 transform -translate-x-1/2">Export
+                        table as CSV</span>
+                </button>
+            </div>
+            <div id="tableLoading" class="table-loading"></div>
+            <div id="comparisonTable" class="overflow-x-auto">
+                <table class="w-full text-left text-[var(--text-color)]" aria-label="Supplier comparison table">
+                    <thead>
+                        <tr class="bg-[var(--card-bg)]">
+                            <th class="p-3">Supplier</th>
+                            <th class="p-3 cursor-pointer sort-btn" data-sort="timeliness" aria-sort="none">
+                                Timeliness <span class="sort-icon">↕</span>
+                            </th>
+                            <th class="p-3 cursor-pointer sort-btn" data-sort="quality" aria-sort="none">
+                                Quality <span class="sort-icon">↕</span>
+                            </th>
+                            <th class="p-3 cursor-pointer sort-btn" data-sort="cost" aria-sort="none">
+                                Cost <span class="sort-icon">↕</span>
+                            </th>
+                        </tr>
+                    </thead>
+                    <tbody id="tableBody"></tbody>
+                </table>
+            </div>
+        </section>
+
+        <div id="toast" class="toast" role="alert">
+            Summary copied to clipboard!
+        </div>
+        <button id="backToTop" class="back-to-top" aria-label="Back to top" data-aos="fade-up">
+            ↑
+        </button>
+    </main>
+
+    <footer class="bg-[var(--card-bg)] py-4 text-center text-[var(--text-color)]" data-aos="fade-up"
+        data-aos-delay="400">
+        <p>
+            © 2025 SupplierSync Analytics. Powered by Plotly & Tailwind CSS.
+        </p>
+    </footer>
+
+    <script src="https://cdn.plot.ly/plotly-2.27.0.min.js"></script>
+    <script>
+        // Initialize AOS
+        AOS.init({ duration: 800, once: true });
+
+        // Supplier data
+        const supplierData = {
+            "Supplier A": {
+                timeliness: 85,
+                quality: 90,
+                cost: 75,
+                logo: "🛠️",
+            },
+            "Supplier B": {
+                timeliness: 70,
+                quality: 80,
+                cost: 85,
+                logo: "🚚",
+            },
+            "Supplier C": {
+                timeliness: 95,
+                quality: 65,
+                cost: 80,
+                logo: "🏭",
+            },
+            "Supplier D": {
+                timeliness: 60,
+                quality: 85,
+                cost: 90,
+                logo: "🔩",
+            },
+            "Supplier E": {
+                timeliness: 80,
+                quality: 75,
+                cost: 70,
+                logo: "📦",
+            },
+        };
+
+        const colors = [
+            "#60a5fa",
+            "#f87171",
+            "#4ecdc4",
+            "#ffcc00",
+            "#9ca3af",
+        ];
+        let chartInitialized = false;
+        let highlightedSupplier = null;
+
+        // Initialize radar chart
+        function createRadarChart(
+            suppliers,
+            highlightSupplier = null,
+            retryCount = 0
+        ) {
+            const maxRetries = 5;
+            const chartDiv = document.getElementById("radarChart");
+            const placeholderDiv =
+                document.getElementById("radarPlaceholder");
+            const spinner = document.getElementById("loadingSpinner");
+            const errorDiv = document.getElementById("chartError");
+
+            if (!chartDiv || !placeholderDiv) {
+                console.error(
+                    "Radar chart or placeholder container not found"
+                );
+                errorDiv.textContent =
+                    "Chart container missing. Please refresh the page.";
+                errorDiv.style.display = "block";
+                spinner.style.display = "none";
+                return;
+            }
+
+            if (
+                !suppliers ||
+                !suppliers.length ||
+                !suppliers.every((s) => supplierData[s])
+            ) {
+                console.warn(
+                    "No valid suppliers for chart, showing placeholder"
+                );
+                chartDiv.classList.add("hidden");
+                placeholderDiv.classList.remove("hidden");
+                spinner.style.display = "none";
+                errorDiv.style.display = "none";
+                if (chartInitialized) {
+                    Plotly.purge("radarChart");
+                    chartInitialized = false;
+                }
+                return;
+            }
+
+            if (!window.Plotly) {
+                console.error("Plotly library not loaded");
+                errorDiv.textContent =
+                    "Chart library failed to load. Check console or try refreshing.";
+                errorDiv.style.display = "block";
+                spinner.style.display = "none";
+                if (retryCount < maxRetries) {
+                    console.log(
+                        `Retrying chart render (${retryCount + 1
+                        }/${maxRetries})`
+                    );
+                    setTimeout(
+                        () =>
+                            createRadarChart(
+                                suppliers,
+                                highlightSupplier,
+                                retryCount + 1
+                            ),
+                        2000
+                    );
+                }
+                return;
+            }
+
+            console.log(
+                "Creating radar chart with suppliers:",
+                suppliers,
+                "highlight:",
+                highlightSupplier
+            );
+            console.log(
+                "Supplier data:",
+                suppliers.map((s) => ({ [s]: supplierData[s] }))
+            );
+
+            const data = suppliers.map((supplier, i) => {
+                const metrics = supplierData[supplier];
+                return {
+                    type: "scatterpolar",
+                    r: [
+                        metrics.timeliness,
+                        metrics.quality,
+                        metrics.cost,
+                        metrics.timeliness,
+                    ],
+                    theta: ["Timeliness", "Quality", "Cost", "Timeliness"],
+                    fill: "toself",
+                    name: supplier,
+                    hovertemplate: `<b>${supplier}</b><br>%{theta}: %{r}<extra></extra>`,
+                    line: {
+                        color: colors[i % colors.length],
+                        width: supplier === highlightSupplier ? 4 : 2,
+                    },
+                    fillcolor:
+                        colors[i % colors.length] +
+                        (supplier === highlightSupplier ? "66" : "33"),
+                };
+            });
+
+            const textColor =
+                getComputedStyle(document.documentElement)
+                    .getPropertyValue("--text-color")
+                    .trim() ||
+                (document.documentElement.dataset.theme === "light"
+                    ? "#1e1e2f"
+                    : "#ffffff");
+            const borderColor =
+                getComputedStyle(document.documentElement)
+                    .getPropertyValue("--border-color")
+                    .trim() ||
+                (document.documentElement.dataset.theme === "light"
+                    ? "rgba(0,0,0,0.2)"
+                    : "rgba(255,255,255,0.3)");
+
+            const layout = {
+                polar: {
+                    radialaxis: {
+                        visible: true,
+                        range: [0, 100],
+                        tickfont: { color: textColor },
+                        gridcolor: borderColor,
+                    },
+                    angularaxis: {
+                        tickfont: { color: textColor },
+                    },
+                    bgcolor: "rgba(0,0,0,0)",
+                },
+                showlegend: true,
+                legend: { font: { color: textColor }, x: 1, y: 1 },
+                paper_bgcolor: "rgba(0,0,0,0)",
+                font: { color: textColor },
+                margin: { t: 20, b: 20, l: 20, r: 20 },
+            };
+
+            const config = {
+                responsive: true,
+                displayModeBar: false,
+            };
+
+            chartDiv.classList.add("hidden");
+            placeholderDiv.classList.add("hidden");
+            spinner.style.display = "block";
+            errorDiv.style.display = "none";
+
+            try {
+                if (chartInitialized) {
+                    Plotly.purge("radarChart");
+                    Plotly.react("radarChart", data, layout, config)
+                        .then(() => {
+                            chartDiv.classList.remove("hidden");
+                            spinner.style.display = "none";
+                            Plotly.Plots.resize(chartDiv);
+                            console.log("Chart updated successfully");
+                        })
+                        .catch((err) => {
+                            console.error("Chart update error:", err);
+                            errorDiv.textContent =
+                                "Chart update failed. Check console for details.";
+                            errorDiv.style.display = "block";
+                            spinner.style.display = "none";
+                            if (retryCount < maxRetries) {
+                                console.log(
+                                    `Retrying chart render (${retryCount + 1
+                                    }/${maxRetries})`
+                                );
+                                setTimeout(
+                                    () =>
+                                        createRadarChart(
+                                            suppliers,
+                                            highlightSupplier,
+                                            retryCount + 1
+                                        ),
+                                    2000
+                                );
+                            }
+                        });
+                } else {
+                    Plotly.newPlot("radarChart", data, layout, config)
+                        .then(() => {
+                            chartDiv.classList.remove("hidden");
+                            spinner.style.display = "none";
+                            chartInitialized = true;
+                            Plotly.Plots.resize(chartDiv);
+                            console.log("Chart initialized successfully");
+                        })
+                        .catch((err) => {
+                            console.error("Chart init error:", err);
+                            errorDiv.textContent =
+                                "Chart initialization failed. Check console for details.";
+                            errorDiv.style.display = "block";
+                            spinner.style.display = "none";
+                            if (retryCount < maxRetries) {
+                                console.log(
+                                    `Retrying chart render (${retryCount + 1
+                                    }/${maxRetries})`
+                                );
+                                setTimeout(
+                                    () =>
+                                        createRadarChart(
+                                            suppliers,
+                                            highlightSupplier,
+                                            retryCount + 1
+                                        ),
+                                    2000
+                                );
+                            }
+                        });
+                }
+            } catch (err) {
+                console.error("Chart rendering error:", err);
+                errorDiv.textContent =
+                    "Chart rendering failed. Check console for details.";
+                errorDiv.style.display = "block";
+                spinner.style.display = "none";
+                if (retryCount < maxRetries) {
+                    console.log(
+                        `Retrying chart render (${retryCount + 1
+                        }/${maxRetries})`
+                    );
+                    setTimeout(
+                        () =>
+                            createRadarChart(
+                                suppliers,
+                                highlightSupplier,
+                                retryCount + 1
+                            ),
+                        2000
+                    );
+                }
+            }
+        }
+
+        // Update comparison table
+        function updateComparisonTable(
+            suppliers,
+            highlightSupplier = null
+        ) {
+            const tbody = document.getElementById("tableBody");
+            const tableLoading = document.getElementById("tableLoading");
+            tableLoading.style.display = "block";
+            tbody.innerHTML = "";
+
+            if (
+                !suppliers ||
+                !suppliers.length ||
+                !suppliers.every((s) => supplierData[s])
+            ) {
+                console.warn(
+                    "No valid suppliers for table, showing placeholder"
+                );
+                const row = document.createElement("tr");
+                row.innerHTML = `<td colspan="4" class="p-3 text-center text-[var(--text-color)] opacity-70">No suppliers selected. Choose suppliers to compare.</td>`;
+                tbody.appendChild(row);
+                tbody.style.opacity = "1";
+                tableLoading.style.display = "none";
+                return;
+            }
+
+            console.log(
+                "Updating comparison table with suppliers:",
+                suppliers
+            );
+            suppliers.forEach((supplier) => {
+                const data = supplierData[supplier];
+                const row = document.createElement("tr");
+                row.className = `border-b border-[var(--border-color)] cursor-pointer ${supplier === highlightSupplier ? "highlight-glow" : ""
+                    }`;
+                row.tabIndex = 0;
+                row.setAttribute(
+                    "aria-pressed",
+                    supplier === highlightSupplier ? "true" : "false"
+                );
+                row.innerHTML = `
+                    <td class="p-3 flex items-center"><span class="mr-2 text-[var(--accent-color)]">${data.logo
+                    }</span> ${supplier}</td>
+                    <td class="p-3 ${getScoreClass(data.timeliness)}">${data.timeliness
+                    }</td>
+                    <td class="p-3 ${getScoreClass(data.quality)}">${data.quality
+                    }</td>
+                    <td class="p-3 ${getScoreClass(data.cost)}">${data.cost
+                    }</td>
+                `;
+                row.addEventListener("dblclick", () => {
+                    highlightedSupplier =
+                        highlightedSupplier === supplier ? null : supplier;
+                    row.setAttribute(
+                        "aria-pressed",
+                        highlightedSupplier === supplier ? "true" : "false"
+                    );
+                    updateChartImmediate();
+                });
+                row.addEventListener("keypress", (e) => {
+                    if (e.key === "Enter") {
+                        highlightedSupplier =
+                            highlightedSupplier === supplier
+                                ? null
+                                : supplier;
+                        row.setAttribute(
+                            "aria-pressed",
+                            highlightedSupplier === supplier
+                                ? "true"
+                                : "false"
+                        );
+                        updateChartImmediate();
+                    }
+                });
+                tbody.appendChild(row);
+            });
+            tbody.style.opacity = "0";
+            setTimeout(() => {
+                tbody.style.opacity = "1";
+                tbody.style.transition = "opacity 0.5s ease";
+                tableLoading.style.display = "none";
+            }, 100);
+        }
+
+        // Get score class for table cell styling
+        function getScoreClass(score) {
+            if (score >= 85) return "score-high";
+            if (score >= 75) return "score-mid";
+            return "score-low";
+        }
+
+        // Update summary card
+        let animationFrameId = null;
+        const summaryCard = document.getElementById("summaryCard");
+        const summaryContent = document.getElementById("summaryContent");
+        function updateSummary(supplier) {
+            if (!summaryContent) {
+                console.error("Summary content element not found");
+                return;
+            }
+            console.log("Updating summary for supplier:", supplier);
+
+            if (animationFrameId) {
+                cancelAnimationFrame(animationFrameId);
+                animationFrameId = null;
+            }
+
+            if (supplier === "None" || !supplierData[supplier]) {
+                summaryContent.innerHTML = `<p class="text-sm">Select a supplier to view metrics.</p>`;
+                summaryCard.classList.add("updated");
+                setTimeout(
+                    () => summaryCard.classList.remove("updated"),
+                    1000
+                );
+                return;
+            }
+
+            const data = supplierData[supplier];
+            const strengths = Object.entries(data)
+                .filter(([key, value]) => key !== "logo" && value >= 85)
+                .map(([key]) => key.charAt(0).toUpperCase() + key.slice(1));
+            const weaknesses = Object.entries(data)
+                .filter(([key, value]) => key !== "logo" && value < 75)
+                .map(([key]) => key.charAt(0).toUpperCase() + key.slice(1));
+
+            summaryContent.innerHTML = `
+                <div class="flex items-center mb-3">
+                    <span class="text-3xl mr-2 logo-highlight">${data.logo
+                }</span>
+                    <h3 class="text-base font-semibold">${supplier}</h3>
+                </div>
+                <p class="text-xs"><strong>Timeliness:</strong> <span class="number-counter" data-target="${data.timeliness
+                }">0</span></p>
+                <p class="text-xs"><strong>Quality:</strong> <span class="number-counter" data-target="${data.quality
+                }">0</span></p>
+                <p class="text-xs"><strong>Cost:</strong> <span class="number-counter" data-target="${data.cost
+                }">0</span></p>
+                <p class="text-xs"><strong>Strengths:</strong> ${strengths.length ? strengths.join(", ") : "None"
+                }</p>
+                <p class="text-xs"><strong>Weaknesses:</strong> ${weaknesses.length ? weaknesses.join(", ") : "None"
+                }</p>
+            `;
+            summaryCard.classList.add("updated");
+            setTimeout(() => summaryCard.classList.remove("updated"), 1000);
+
+            document
+                .querySelectorAll(".number-counter")
+                .forEach((counter) => {
+                    const target = parseInt(counter.dataset.target);
+                    let current = 0;
+                    const increment = target / 20;
+                    const updateCounter = () => {
+                        current += increment;
+                        counter.textContent = Math.round(current);
+                        if (current < target) {
+                            animationFrameId =
+                                requestIdleCallback(updateCounter);
+                        } else {
+                            counter.textContent = target;
+                            animationFrameId = null;
+                        }
+                    };
+                    requestIdleCallback(updateCounter);
+                });
+        }
+
+        // Copy summary to clipboard
+        function copySummary(supplier) {
+            if (supplier === "None" || !supplierData[supplier]) {
+                const toast = document.getElementById("toast");
+                toast.textContent = "No supplier selected to copy.";
+                toast.classList.add("show");
+                setTimeout(() => toast.classList.remove("show"), 2000);
+                return;
+            }
+            const data = supplierData[supplier];
+            const strengths = Object.entries(data)
+                .filter(([key, value]) => key !== "logo" && value >= 85)
+                .map(([key]) => key.charAt(0).toUpperCase() + key.slice(1));
+            const weaknesses = Object.entries(data)
+                .filter(([key, value]) => key !== "logo" && value < 75)
+                .map(([key]) => key.charAt(0).toUpperCase() + key.slice(1));
+            const text = `${supplier}\nTimeliness: ${data.timeliness
+                }\nQuality: ${data.quality}\nCost: ${data.cost}\nStrengths: ${strengths.length ? strengths.join(", ") : "None"
+                }\nWeaknesses: ${weaknesses.length ? weaknesses.join(", ") : "None"
+                }`;
+            navigator.clipboard.writeText(text).then(() => {
+                const toast = document.getElementById("toast");
+                toast.textContent = "Summary copied to clipboard!";
+                toast.classList.add("show");
+                setTimeout(() => toast.classList.remove("show"), 2000);
+            });
+        }
+
+        // Export table as CSV
+        function exportCsv(suppliers) {
+            if (
+                !suppliers ||
+                !suppliers.length ||
+                !suppliers.every((s) => supplierData[s])
+            ) {
+                const toast = document.getElementById("toast");
+                toast.textContent = "No suppliers selected to export.";
+                toast.classList.add("show");
+                setTimeout(() => toast.classList.remove("show"), 2000);
+                return;
+            }
+            const headers = ["Supplier", "Timeliness", "Quality", "Cost"];
+            const rows = suppliers.map((supplier) => {
+                const data = supplierData[supplier];
+                return [
+                    supplier,
+                    data.timeliness,
+                    data.quality,
+                    data.cost,
+                ].join(",");
+            });
+            const csv = [headers.join(","), ...rows].join("\n");
+            const blob = new Blob([csv], { type: "text/csv" });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement("a");
+            a.href = url;
+            a.download = "supplier_comparison.csv";
+            a.click();
+            URL.revokeObjectURL(url);
+        }
+
+        // Table sorting
+        let sortState = { column: null, direction: "asc" };
+        function sortTable(column) {
+            const suppliers = Array.from(
+                document.querySelectorAll("#compareControls input:checked")
+            )
+                .map((checkbox) => checkbox.value)
+                .concat(
+                    document.getElementById("supplierSelect").value !==
+                        "None"
+                        ? [document.getElementById("supplierSelect").value]
+                        : []
+                )
+                .filter((v, i, a) => a.indexOf(v) === i);
+
+            if (!suppliers.length) {
+                updateComparisonTable([]);
+                return;
+            }
+
+            const direction =
+                sortState.column === column && sortState.direction === "asc"
+                    ? "desc"
+                    : "asc";
+            sortState = { column, direction };
+
+            suppliers.sort((a, b) => {
+                const valA = supplierData[a][column];
+                const valB = supplierData[b][column];
+                return direction === "asc" ? valA - valB : valB - valA;
+            });
+
+            updateComparisonTable(suppliers, highlightedSupplier);
+
+            document.querySelectorAll(".sort-btn").forEach((btn) => {
+                const icon = btn.querySelector(".sort-icon");
+                if (btn.dataset.sort === column) {
+                    icon.textContent = direction === "asc" ? "↑" : "↓";
+                    btn.setAttribute("aria-sort", direction);
+                } else {
+                    icon.textContent = "↕";
+                    btn.setAttribute("aria-sort", "none");
+                }
+            });
+        }
+
+        // Update all components
+        function updateAll() {
+            const supplierSelect =
+                document.getElementById("supplierSelect");
+            if (!supplierSelect) {
+                console.error("Supplier select element not found");
+                return;
+            }
+            const supplierValue = supplierSelect.value;
+            const selectedSuppliers =
+                supplierValue !== "None" ? [supplierValue] : [];
+            document
+                .querySelectorAll("#compareControls input:checked")
+                .forEach((checkbox) => {
+                    if (!selectedSuppliers.includes(checkbox.value)) {
+                        selectedSuppliers.push(checkbox.value);
+                    }
+                });
+            console.log(
+                "Updating all with suppliers:",
+                selectedSuppliers,
+                "highlight:",
+                highlightedSupplier
+            );
+
+            try {
+                updateSummary(supplierValue);
+                createRadarChart(selectedSuppliers, highlightedSupplier);
+                updateComparisonTable(
+                    selectedSuppliers,
+                    highlightedSupplier
+                );
+            } catch (error) {
+                console.error("Error updating dashboard:", error);
+            }
+        }
+
+        function updateChartImmediate() {
+            const supplierSelect =
+                document.getElementById("supplierSelect");
+            if (!supplierSelect) {
+                console.error("Supplier select element not found");
+                return;
+            }
+            const supplierValue = supplierSelect.value;
+            const selectedSuppliers =
+                supplierValue !== "None" ? [supplierValue] : [];
+            document
+                .querySelectorAll("#compareControls input:checked")
+                .forEach((checkbox) => {
+                    if (!selectedSuppliers.includes(checkbox.value)) {
+                        selectedSuppliers.push(checkbox.value);
+                    }
+                });
+            console.log(
+                "Updating chart immediately with suppliers:",
+                selectedSuppliers,
+                "highlight:",
+                highlightedSupplier
+            );
+
+            try {
+                createRadarChart(selectedSuppliers, highlightedSupplier);
+                updateComparisonTable(
+                    selectedSuppliers,
+                    highlightedSupplier
+                );
+            } catch (error) {
+                console.error("Error updating chart:", error);
+            }
+        }
+
+        // Update theme tooltip
+        function updateThemeTooltip() {
+            const themeTooltip = document.getElementById("themeTooltip");
+            const currentTheme =
+                document.documentElement.dataset.theme || "dark";
+            themeTooltip.textContent = currentTheme === "dark" ? "" : "";
+            document
+                .getElementById("themeToggle")
+                .setAttribute("aria-label", themeTooltip.textContent);
+        }
+
+        // Back to top visibility
+        function toggleBackToTop() {
+            const button = document.getElementById("backToTop");
+            if (window.scrollY > 300) {
+                button.classList.add("show");
+            } else {
+                button.classList.remove("show");
+            }
+        }
+
+        // Event listeners
+        document
+            .getElementById("supplierSelect")
+            .addEventListener("change", updateAll);
+        document
+            .querySelectorAll("#compareControls input")
+            .forEach((checkbox) => {
+                checkbox.addEventListener("change", updateAll);
+            });
+        document
+            .getElementById("clearCompare")
+            .addEventListener("click", () => {
+                document
+                    .querySelectorAll("#compareControls input")
+                    .forEach((checkbox) => {
+                        checkbox.checked = false;
+                    });
+                highlightedSupplier = null;
+                updateAll();
+            });
+        document
+            .getElementById("copySummary")
+            .addEventListener("click", () => {
+                copySummary(
+                    document.getElementById("supplierSelect").value
+                );
+            });
+        document
+            .getElementById("exportCsv")
+            .addEventListener("click", () => {
+                const suppliers = Array.from(
+                    document.querySelectorAll(
+                        "#compareControls input:checked"
+                    )
+                )
+                    .map((checkbox) => checkbox.value)
+                    .concat(
+                        document.getElementById("supplierSelect").value !==
+                            "None"
+                            ? [
+                                document.getElementById("supplierSelect")
+                                    .value,
+                            ]
+                            : []
+                    )
+                    .filter((v, i, a) => a.indexOf(v) === i);
+                exportCsv(suppliers);
+            });
+        document.querySelectorAll(".sort-btn").forEach((btn) => {
+            btn.addEventListener("click", () =>
+                sortTable(btn.dataset.sort)
+            );
+        });
+        document
+            .getElementById("themeToggle")
+            .addEventListener("click", () => {
+                document.documentElement.dataset.theme =
+                    document.documentElement.dataset.theme === "light"
+                        ? "dark"
+                        : "light";
+                updateThemeTooltip();
+                updateChartImmediate();
+                const chartDiv = document.getElementById("radarChart");
+                if (chartDiv && window.Plotly) {
+                    Plotly.Plots.resize(chartDiv);
+                }
+            });
+        document
+            .getElementById("backToTop")
+            .addEventListener("click", () => {
+                window.scrollTo({ top: 0, behavior: "smooth" });
+            });
+        window.addEventListener("scroll", toggleBackToTop);
+        window.addEventListener("resize", () => {
+            const chartDiv = document.getElementById("radarChart");
+            if (chartDiv && window.Plotly) {
+                Plotly.Plots.resize(chartDiv);
+            }
+        });
+
+        // Accessibility: Keyboard navigation
+        document
+            .querySelectorAll("#compareControls input")
+            .forEach((checkbox) => {
+                checkbox.addEventListener("keypress", (e) => {
+                    if (e.key === "Enter") {
+                        checkbox.checked = !checkbox.checked;
+                        updateAll();
+                    }
+                });
+            });
+        document.querySelectorAll(".sort-btn").forEach((btn) => {
+            btn.addEventListener("keypress", (e) => {
+                if (e.key === "Enter") {
+                    sortTable(btn.dataset.sort);
+                }
+            });
+        });
+
+        // Initialize theme tooltip
+        updateThemeTooltip();
+
+        // Initial render
+        document.addEventListener("DOMContentLoaded", () => {
+            console.log("DOM loaded, initializing dashboard");
+            updateAll();
+        });
+    </script>
+</body>
+
+</html>

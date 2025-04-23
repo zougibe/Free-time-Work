@@ -1,0 +1,1012 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Training Scenario Designer</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.9.0/p5.min.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        /* Enhanced animations and transitions */
+        @keyframes float {
+
+            0%,
+            100% {
+                transform: translateY(0);
+            }
+
+            50% {
+                transform: translateY(-5px);
+            }
+        }
+
+        @keyframes pulse-glow {
+
+            0%,
+            100% {
+                box-shadow: 0 0 0 0 rgba(59, 130, 246, 0.7);
+            }
+
+            50% {
+                box-shadow: 0 0 10px 5px rgba(59, 130, 246, 0.7);
+            }
+        }
+
+        @keyframes shake {
+
+            0%,
+            100% {
+                transform: translateX(0);
+            }
+
+            25% {
+                transform: translateX(-5px);
+            }
+
+            75% {
+                transform: translateX(5px);
+            }
+        }
+
+        @keyframes scale-in {
+            0% {
+                transform: scale(0.8);
+                opacity: 0;
+            }
+
+            100% {
+                transform: scale(1);
+                opacity: 1;
+            }
+        }
+
+        /* Canvas styling */
+        #canvas-container {
+            position: relative;
+            width: 100%;
+            height: 400px;
+            overflow: hidden;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+            border-radius: 12px;
+            transition: all 0.3s ease;
+            background-color: rgba(243, 244, 246, 0.5);
+            border: 2px solid rgba(59, 130, 246, 0.2);
+        }
+
+        .dark #canvas-container {
+            background-color: rgba(31, 41, 55, 0.5);
+            border-color: rgba(59, 130, 246, 0.1);
+        }
+
+        canvas {
+            display: block;
+            border-radius: 8px;
+            animation: scale-in 0.3s ease-out;
+        }
+
+        /* Scenario card styling */
+        .scenario-card {
+            transition: all 0.3s ease;
+            transform-origin: center;
+        }
+
+        .scenario-card:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+        }
+
+        .dark .scenario-card:hover {
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3);
+        }
+
+        /* Score meter styling */
+        .score-meter {
+            height: 8px;
+            border-radius: 4px;
+            background: linear-gradient(to right,
+                    #ef4444 0%, #ef4444 30%,
+                    #f97316 30%, #f97316 70%,
+                    #22c55e 70%, #22c55e 100%);
+        }
+
+        .score-fill {
+            height: 100%;
+            border-radius: 4px;
+            transition: width 0.5s ease;
+            background: rgba(255, 255, 255, 0.7);
+        }
+
+        .dark .score-fill {
+            background: rgba(0, 0, 0, 0.3);
+        }
+
+        /* Floating action button */
+        .fab {
+            position: fixed;
+            bottom: 2rem;
+            right: 2rem;
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+            z-index: 50;
+            transition: all 0.3s ease;
+        }
+
+        .fab:hover {
+            transform: scale(1.1);
+        }
+
+        /* Responsive adjustments */
+        @media (max-width: 768px) {
+            #canvas-container {
+                height: 300px;
+            }
+
+            .fab {
+                bottom: 1rem;
+                right: 1rem;
+                width: 40px;
+                height: 40px;
+            }
+        }
+    </style>
+</head>
+
+<body
+    class="bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-gray-100 min-h-screen flex flex-col transition-colors duration-300">
+    <!-- Floating action button for theme toggle -->
+    <button id="theme-toggle" class="fab bg-blue-500 text-white hover:bg-blue-600 dark:hover:bg-blue-700">
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z" />
+        </svg>
+    </button>
+
+    <header class="bg-white dark:bg-gray-800 shadow-md py-4 px-6">
+        <div class="container mx-auto flex justify-between items-center">
+            <div class="flex items-center space-x-2">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8 text-blue-500" fill="none" viewBox="0 0 24 24"
+                    stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+                <h1 class="text-2xl font-bold bg-gradient-to-r from-blue-500 to-blue-600 bg-clip-text text-transparent">
+                    Training Scenario Designer</h1>
+            </div>
+            <div class="flex items-center space-x-4">
+                <button id="help-button"
+                    class="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24"
+                        stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <main class="flex-grow container mx-auto p-4 md:p-6">
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <!-- Scenario Configuration Panel -->
+            <div class="lg:col-span-1 bg-white dark:bg-gray-800 rounded-xl shadow-md overflow-hidden scenario-card">
+                <div class="p-6">
+                    <h2 class="text-xl font-semibold mb-6 flex items-center">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 mr-2 text-blue-500" fill="none"
+                            viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                        </svg>
+                        Scenario Configuration
+                    </h2>
+
+                    <div class="space-y-5">
+                        <div>
+                            <label for="industry"
+                                class="block text-sm font-medium mb-1 text-gray-700 dark:text-gray-300">Industry</label>
+                            <select id="industry"
+                                class="w-full p-3 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all">
+                                <option value="healthcare">Healthcare</option>
+                                <option value="aviation">Aviation</option>
+                                <option value="retail">Retail</option>
+                                <option value="education">Education</option>
+                                <option value="manufacturing">Manufacturing</option>
+                            </select>
+                        </div>
+
+                        <div>
+                            <label for="role"
+                                class="block text-sm font-medium mb-1 text-gray-700 dark:text-gray-300">Role</label>
+                            <select id="role"
+                                class="w-full p-3 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"></select>
+                        </div>
+
+                        <div>
+                            <label for="objective"
+                                class="block text-sm font-medium mb-1 text-gray-700 dark:text-gray-300">Objective</label>
+                            <select id="objective"
+                                class="w-full p-3 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"></select>
+                        </div>
+
+                        <div>
+                            <label for="obstacle"
+                                class="block text-sm font-medium mb-1 text-gray-700 dark:text-gray-300">Obstacle
+                                (Optional)</label>
+                            <select id="obstacle"
+                                class="w-full p-3 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all">
+                                <option value="">-- No Obstacle --</option>
+                            </select>
+                        </div>
+
+                        <div class="pt-2">
+                            <button id="run-scenario"
+                                class="w-full py-3 px-4 bg-blue-500 hover:bg-blue-600 text-white font-medium rounded-lg transition-colors flex items-center justify-center space-x-2">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24"
+                                    stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                        d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z" />
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                        d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                </svg>
+                                <span>Run Scenario</span>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Results Panel -->
+                <div class="bg-gray-50 dark:bg-gray-700 p-6 border-t border-gray-200 dark:border-gray-600">
+                    <h3 class="text-lg font-semibold mb-4 flex items-center">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2 text-blue-500" fill="none"
+                            viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                        </svg>
+                        Training Effectiveness
+                    </h3>
+
+                    <div class="flex items-end space-x-2 mb-3">
+                        <p id="score" class="text-4xl font-bold text-blue-500 dark:text-blue-400">--</p>
+                        <p class="text-lg font-medium text-gray-500 dark:text-gray-400">/ 100</p>
+                    </div>
+
+                    <div class="score-meter mb-4">
+                        <div id="score-fill" class="score-fill" style="width: 0%"></div>
+                    </div>
+
+                    <div id="challenge" class="text-sm italic text-orange-500 dark:text-orange-400 min-h-5"></div>
+
+                    <div class="grid grid-cols-2 gap-3 mt-6">
+                        <button id="save-scenario"
+                            class="py-2 px-4 bg-green-500 hover:bg-green-600 text-white rounded-lg transition-colors flex items-center justify-center space-x-2">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24"
+                                stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z" />
+                            </svg>
+                            <span>Save</span>
+                        </button>
+                        <button id="export-scenario"
+                            class="py-2 px-4 bg-purple-500 hover:bg-purple-600 text-white rounded-lg transition-colors flex items-center justify-center space-x-2">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24"
+                                stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                            </svg>
+                            <span>Export</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Simulation Canvas -->
+            <div class="lg:col-span-2">
+                <div id="canvas-container" class="relative">
+                    <div id="simulation-loading"
+                        class="absolute inset-0 flex items-center justify-center bg-white dark:bg-gray-800 bg-opacity-90 z-10 transition-opacity duration-300 opacity-0 pointer-events-none">
+                        <div class="text-center p-6 rounded-lg">
+                            <div
+                                class="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500 mx-auto mb-4">
+                            </div>
+                            <p class="text-gray-700 dark:text-gray-300">Preparing simulation...</p>
+                        </div>
+                    </div>
+                    <div id="simulation-placeholder"
+                        class="absolute inset-0 flex flex-col items-center justify-center text-center p-6">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-16 w-16 text-gray-300 dark:text-gray-600 mb-4"
+                            fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1"
+                                d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
+                        </svg>
+                        <h3 class="text-lg font-medium text-gray-500 dark:text-gray-400 mb-1">No Scenario Running</h3>
+                        <p class="text-sm text-gray-400 dark:text-gray-500">Configure your scenario and click "Run" to
+                            start</p>
+                    </div>
+                </div>
+
+                <div class="mt-4 flex justify-between items-center">
+                    <div id="speed-display" class="text-sm text-gray-500 dark:text-gray-400">
+                        <span class="font-medium">Speed:</span> <span id="speed-value">-- px/sec</span>
+                    </div>
+                    <div id="time-display" class="text-sm text-gray-500 dark:text-gray-400">
+                        <span class="font-medium">Duration:</span> <span id="time-value">-- sec</span>
+                    </div>
+                </div>
+
+                <!-- Saved Scenarios -->
+                <div id="saved-scenarios" class="mt-6">
+                    <h3 class="text-lg font-semibold mb-3 flex items-center">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2 text-blue-500" fill="none"
+                            viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M5 8h14M5 8a2 2 0 110-4h14a2 2 0 110 4M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8m-9 4h4" />
+                        </svg>
+                        Saved Scenarios
+                    </h3>
+
+                    <div id="scenarios-list" class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                        <!-- Scenarios will be loaded here -->
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Help Modal -->
+    <div id="help-modal"
+        class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 opacity-0 pointer-events-none transition-opacity duration-300">
+        <div
+            class="bg-white dark:bg-gray-800 rounded-xl shadow-xl max-w-md w-full mx-4 max-h-[90vh] overflow-y-auto transform scale-95 transition-transform duration-300">
+            <div class="p-6">
+                <div class="flex justify-between items-center mb-4">
+                    <h3 class="text-xl font-bold">How to Use</h3>
+                    <button id="close-help" class="p-1 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24"
+                            stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M6 18L18 6M6 6l12 12" />
+                        </svg>
+                    </button>
+                </div>
+
+                <div class="space-y-4 text-gray-700 dark:text-gray-300">
+                    <div>
+                        <h4 class="font-medium text-gray-900 dark:text-white mb-1">1. Configure Scenario</h4>
+                        <p class="text-sm">Select an industry, role, objective, and optional obstacle to design your
+                            training scenario.</p>
+                    </div>
+
+                    <div>
+                        <h4 class="font-medium text-gray-900 dark:text-white mb-1">2. Run Simulation</h4>
+                        <p class="text-sm">Click "Run Scenario" to see an animated simulation of your training scenario.
+                        </p>
+                    </div>
+
+                    <div>
+                        <h4 class="font-medium text-gray-900 dark:text-white mb-1">3. View Results</h4>
+                        <p class="text-sm">The effectiveness score reflects how well the scenario is designed. Higher
+                            scores indicate better training potential.</p>
+                    </div>
+
+                    <div>
+                        <h4 class="font-medium text-gray-900 dark:text-white mb-1">4. Save or Export</h4>
+                        <p class="text-sm">Save scenarios to your browser or export them as text files for
+                            documentation.</p>
+                    </div>
+                </div>
+
+                <div class="mt-6 pt-4 border-t border-gray-200 dark:border-gray-700">
+                    <h4 class="font-medium text-gray-900 dark:text-white mb-2">Tips for Better Scenarios</h4>
+                    <ul class="text-sm space-y-2">
+                        <li class="flex items-start">
+                            <svg xmlns="http://www.w3.org/2000/svg"
+                                class="h-4 w-4 mt-0.5 mr-2 text-blue-500 flex-shrink-0" fill="none" viewBox="0 0 24 24"
+                                stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M5 13l4 4L19 7" />
+                            </svg>
+                            <span>Include realistic obstacles to test trainees' problem-solving skills</span>
+                        </li>
+                        <li class="flex items-start">
+                            <svg xmlns="http://www.w3.org/2000/svg"
+                                class="h-4 w-4 mt-0.5 mr-2 text-blue-500 flex-shrink-0" fill="none" viewBox="0 0 24 24"
+                                stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M5 13l4 4L19 7" />
+                            </svg>
+                            <span>Emergency objectives typically yield higher effectiveness scores</span>
+                        </li>
+                        <li class="flex items-start">
+                            <svg xmlns="http://www.w3.org/2000/svg"
+                                class="h-4 w-4 mt-0.5 mr-2 text-blue-500 flex-shrink-0" fill="none" viewBox="0 0 24 24"
+                                stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M5 13l4 4L19 7" />
+                            </svg>
+                            <span>Random challenges will occasionally appear to test adaptability</span>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <footer
+        class="bg-white dark:bg-gray-800 border-t border-gray-200 dark:border-gray-700 py-4 px-6 text-center text-sm text-gray-500 dark:text-gray-400">
+        <p>© <span id="current-year"></span> Training Scenario Designer. All rights reserved.</p>
+    </footer>
+
+    <script>
+        // Enhanced data structure with more industries and details
+        const scenarioData = {
+            healthcare: {
+                roles: ["Doctor", "Nurse", "Paramedic", "Surgeon", "Pharmacist"],
+                objectives: [
+                    { name: "Treat Patient", difficulty: 3, emergency: false },
+                    { name: "Administer Medication", difficulty: 2, emergency: false },
+                    { name: "Emergency Response", difficulty: 4, emergency: true },
+                    { name: "Diagnose Condition", difficulty: 4, emergency: false },
+                    { name: "Perform Surgery", difficulty: 5, emergency: true }
+                ],
+                obstacles: [
+                    { name: "Equipment Failure", impact: -15, frequency: 0.3 },
+                    { name: "Staff Shortage", impact: -20, frequency: 0.2 },
+                    { name: "Patient Non-Compliance", impact: -10, frequency: 0.4 },
+                    { name: "Power Outage", impact: -25, frequency: 0.1 }
+                ]
+            },
+            aviation: {
+                roles: ["Pilot", "Co-Pilot", "Air Traffic Controller", "Flight Engineer", "Cabin Crew"],
+                objectives: [
+                    { name: "Safe Takeoff", difficulty: 3, emergency: false },
+                    { name: "Navigate Turbulence", difficulty: 4, emergency: true },
+                    { name: "Emergency Landing", difficulty: 5, emergency: true },
+                    { name: "Communicate with Tower", difficulty: 2, emergency: false },
+                    { name: "Perform System Check", difficulty: 3, emergency: false }
+                ],
+                obstacles: [
+                    { name: "Weather Disruption", impact: -20, frequency: 0.3 },
+                    { name: "System Malfunction", impact: -25, frequency: 0.2 },
+                    { name: "Communication Failure", impact: -15, frequency: 0.3 },
+                    { name: "Bird Strike", impact: -30, frequency: 0.1 }
+                ]
+            },
+            retail: {
+                roles: ["Cashier", "Store Manager", "Sales Associate", "Inventory Specialist", "Customer Service Rep"],
+                objectives: [
+                    { name: "Customer Service", difficulty: 2, emergency: false },
+                    { name: "Inventory Management", difficulty: 3, emergency: false },
+                    { name: "Sales Target", difficulty: 3, emergency: false },
+                    { name: "Handle Complaint", difficulty: 4, emergency: true },
+                    { name: "Emergency Evacuation", difficulty: 5, emergency: true }
+                ],
+                obstacles: [
+                    { name: "Customer Complaint", impact: -10, frequency: 0.4 },
+                    { name: "Supply Delay", impact: -15, frequency: 0.3 },
+                    { name: "System Crash", impact: -20, frequency: 0.2 },
+                    { name: "Theft Incident", impact: -25, frequency: 0.1 }
+                ]
+            },
+            education: {
+                roles: ["Teacher", "Principal", "Librarian", "Counselor", "IT Specialist"],
+                objectives: [
+                    { name: "Deliver Lesson", difficulty: 2, emergency: false },
+                    { name: "Manage Classroom", difficulty: 3, emergency: false },
+                    { name: "Emergency Lockdown", difficulty: 5, emergency: true },
+                    { name: "Resolve Conflict", difficulty: 4, emergency: true },
+                    { name: "Tech Support", difficulty: 3, emergency: false }
+                ],
+                obstacles: [
+                    { name: "Disruptive Student", impact: -10, frequency: 0.4 },
+                    { name: "Technology Failure", impact: -15, frequency: 0.3 },
+                    { name: "Parent Complaint", impact: -10, frequency: 0.3 },
+                    { name: "Facility Issue", impact: -20, frequency: 0.1 }
+                ]
+            },
+            manufacturing: {
+                roles: ["Line Worker", "Supervisor", "Quality Inspector", "Maintenance Tech", "Safety Officer"],
+                objectives: [
+                    { name: "Assemble Product", difficulty: 2, emergency: false },
+                    { name: "Quality Check", difficulty: 3, emergency: false },
+                    { name: "Equipment Maintenance", difficulty: 4, emergency: false },
+                    { name: "Safety Incident", difficulty: 5, emergency: true },
+                    { name: "Meet Production Target", difficulty: 4, emergency: false }
+                ],
+                obstacles: [
+                    { name: "Machine Breakdown", impact: -25, frequency: 0.2 },
+                    { name: "Material Shortage", impact: -20, frequency: 0.3 },
+                    { name: "Quality Issue", impact: -15, frequency: 0.3 },
+                    { name: "Safety Hazard", impact: -30, frequency: 0.1 }
+                ]
+            }
+        };
+
+        // Enhanced challenges with more variety
+        const challenges = [
+            { name: "Unexpected Delay", impact: -10, frequency: 0.3 },
+            { name: "Resource Shortage", impact: -15, frequency: 0.25 },
+            { name: "Miscommunication", impact: -20, frequency: 0.2 },
+            { name: "Technical Glitch", impact: -15, frequency: 0.15 },
+            { name: "Personality Conflict", impact: -10, frequency: 0.1 },
+            { name: "Unexpected Help", impact: 15, frequency: 0.1, positive: true }
+        ];
+
+        // DOM Elements
+        const industrySelect = document.getElementById("industry");
+        const roleSelect = document.getElementById("role");
+        const objectiveSelect = document.getElementById("objective");
+        const obstacleSelect = document.getElementById("obstacle");
+        const runButton = document.getElementById("run-scenario");
+        const saveButton = document.getElementById("save-scenario");
+        const exportButton = document.getElementById("export-scenario");
+        const scoreDisplay = document.getElementById("score");
+        const scoreFill = document.getElementById("score-fill");
+        const challengeDisplay = document.getElementById("challenge");
+        const themeToggle = document.getElementById("theme-toggle");
+        const helpButton = document.getElementById("help-button");
+        const closeHelp = document.getElementById("close-help");
+        const helpModal = document.getElementById("help-modal");
+        const canvasContainer = document.getElementById('canvas-container');
+        const simulationLoading = document.getElementById('simulation-loading');
+        const simulationPlaceholder = document.getElementById('simulation-placeholder');
+        const speedValue = document.getElementById('speed-value');
+        const timeValue = document.getElementById('time-value');
+        const scenariosList = document.getElementById('scenarios-list');
+
+        // Simulation State
+        let currentScenario = {
+            industry: "healthcare",
+            role: "",
+            objective: "",
+            obstacle: "",
+            effectiveness: 0,
+            challenge: null,
+            timestamp: null
+        };
+
+        let character = null;
+        let effectiveness = 0;
+        let activeChallenge = null;
+        let p5Instance = null;
+        let isRunning = false;
+        let obstaclePos = null;
+        let goalPos = null;
+        let challengeFlash = 0;
+        let obstacleHitFlash = 0;
+        let goalReachedFlash = 0;
+        let particles = [];
+        let startTime = 0;
+        let isObstacleActiveThisRun = false;
+        const targetFrameRate = 60;
+
+        // Initialize the application
+        function init() {
+            updateDropdowns();
+            loadSavedScenarios();
+            setupEventListeners();
+            setCurrentYear();
+
+            // Initialize p5.js sketch
+            p5Instance = new p5(sketch, canvasContainer);
+        }
+
+        // Update dropdown menus based on selected industry
+        function updateDropdowns() {
+            const industry = industrySelect.value;
+            currentScenario.industry = industry;
+
+            // Update roles
+            roleSelect.innerHTML = scenarioData[industry].roles
+                .map(role => `<option value="${role}">${role}</option>`)
+                .join("");
+
+            // Update objectives
+            objectiveSelect.innerHTML = scenarioData[industry].objectives
+                .map(obj => `<option value="${obj.name}">${obj.name}</option>`)
+                .join("");
+
+            // Update obstacles
+            const obstacleOptions = scenarioData[industry].obstacles
+                .map(obs => `<option value="${obs.name}">${obs.name}</option>`)
+                .join("");
+            obstacleSelect.innerHTML = `<option value="">-- No Obstacle --</option>${obstacleOptions}`;
+
+            // Reset scenario
+            currentScenario.role = roleSelect.value;
+            currentScenario.objective = objectiveSelect.value;
+            currentScenario.obstacle = obstacleSelect.value;
+            resetSimulation();
+        }
+
+        // Reset the simulation to initial state
+        function resetSimulation() {
+            isRunning = false;
+            character = null;
+            activeChallenge = null;
+            effectiveness = 0;
+            challengeFlash = 0;
+            obstacleHitFlash = 0;
+            goalReachedFlash = 0;
+            particles = [];
+            isObstacleActiveThisRun = false;
+            startTime = 0;
+
+            // Update UI
+            scoreDisplay.textContent = "--";
+            scoreFill.style.width = "0%";
+            challengeDisplay.textContent = "";
+            speedValue.textContent = "-- px/sec";
+            timeValue.textContent = "-- sec";
+
+            // Show placeholder
+            simulationPlaceholder.style.display = "flex";
+
+            if (p5Instance) {
+                p5Instance.loop();
+                p5Instance.redraw();
+            }
+        }
+
+        // Load saved scenarios from localStorage
+        function loadSavedScenarios() {
+            const savedScenarios = JSON.parse(localStorage.getItem("scenarios") || "[]");
+            scenariosList.innerHTML = "";
+
+            if (savedScenarios.length === 0) {
+                scenariosList.innerHTML = `
+                    <div class="col-span-full text-center py-4 text-gray-500 dark:text-gray-400">
+                        No saved scenarios yet. Run and save a scenario to see it here.
+                    </div>
+                `;
+                return;
+            }
+
+            // Display the 6 most recent scenarios
+            savedScenarios.slice(-6).reverse().forEach((scenario, index) => {
+                const scenarioCard = document.createElement("div");
+                scenarioCard.className = "bg-white dark:bg-gray-700 rounded-lg p-3 shadow-sm hover:shadow-md transition-shadow cursor-pointer";
+                scenarioCard.innerHTML = `
+                    <div class="flex justify-between items-start mb-1">
+                        <h4 class="font-medium truncate">${scenario.industry} - ${scenario.role}</h4>
+                        <span class="text-xs px-2 py-1 rounded-full ${getScoreColorClass(scenario.effectiveness)}">
+                            ${scenario.effectiveness}%
+                        </span>
+                    </div>
+                    <p class="text-sm text-gray-600 dark:text-gray-300 truncate mb-1">${scenario.objective}</p>
+                    <p class="text-xs text-gray-500 dark:text-gray-400 truncate">${scenario.obstacle || "No obstacle"}</p>
+                    <div class="mt-2 flex justify-between items-center">
+                        <span class="text-xs text-gray-400">${formatDate(scenario.timestamp)}</span>
+                        <button class="text-xs text-blue-500 hover:text-blue-600 dark:hover:text-blue-400 run-saved" data-index="${savedScenarios.length - 1 - index}">
+                            Run
+                        </button>
+                    </div>
+                `;
+                scenariosList.appendChild(scenarioCard);
+            });
+
+            // Add event listeners to run buttons
+            document.querySelectorAll('.run-saved').forEach(button => {
+                button.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    const index = parseInt(button.getAttribute('data-index'));
+                    const savedScenarios = JSON.parse(localStorage.getItem("scenarios") || "[]");
+                    const scenario = savedScenarios[index];
+                    industrySelect.value = scenario.industry;
+                    updateDropdowns();
+                    roleSelect.value = scenario.role;
+                    objectiveSelect.value = scenario.objective;
+                    obstacleSelect.value = scenario.obstacle || "";
+                    runScenario();
+                });
+            });
+        }
+
+        // Run the selected scenario
+        function runScenario() {
+            // Update current scenario
+            currentScenario = {
+                industry: industrySelect.value,
+                role: roleSelect.value,
+                objective: objectiveSelect.value,
+                obstacle: obstacleSelect.value,
+                effectiveness: 0,
+                challenge: null,
+                timestamp: new Date().toISOString()
+            };
+
+            // Calculate effectiveness score
+            calculateEffectiveness();
+
+            // Initialize simulation
+            isRunning = true;
+            simulationPlaceholder.style.display = "none";
+            simulationLoading.style.opacity = "1";
+            simulationLoading.style.pointerEvents = "auto";
+
+            // Simulate loading delay
+            setTimeout(() => {
+                simulationLoading.style.opacity = "0";
+                simulationLoading.style.pointerEvents = "none";
+                startTime = p5Instance.millis();
+                character = {
+                    pos: p5Instance.createVector(50, canvasContainer.offsetHeight - 50),
+                    vel: p5Instance.createVector(2, 0),
+                    size: 30
+                };
+                goalPos = p5Instance.createVector(canvasContainer.offsetWidth - 50, canvasContainer.offsetHeight - 50);
+                obstaclePos = currentScenario.obstacle ? p5Instance.createVector(canvasContainer.offsetWidth / 2, canvasContainer.offsetHeight - 50) : null;
+                isObstacleActiveThisRun = !!currentScenario.obstacle;
+                particles = [];
+                p5Instance.loop();
+            }, 1000);
+        }
+
+        // Calculate training effectiveness score
+        function calculateEffectiveness() {
+            const industry = currentScenario.industry;
+            const objectiveData = scenarioData[industry].objectives.find(obj => obj.name === currentScenario.objective);
+            const obstacleData = currentScenario.obstacle ? scenarioData[industry].obstacles.find(obs => obs.name === currentScenario.obstacle) : null;
+
+            // Base score from objective difficulty
+            let score = objectiveData.difficulty * 15;
+
+            // Bonus for emergency objectives
+            if (objectiveData.emergency) {
+                score += 20;
+            }
+
+            // Penalty for obstacles
+            if (obstacleData) {
+                score += obstacleData.impact;
+            }
+
+            // Random challenge
+            activeChallenge = null;
+            if (Math.random() < 0.3) {
+                const possibleChallenges = challenges.filter(c => c.frequency > Math.random());
+                if (possibleChallenges.length > 0) {
+                    activeChallenge = possibleChallenges[Math.floor(Math.random() * possibleChallenges.length)];
+                    score += activeChallenge.impact;
+                    challengeDisplay.textContent = activeChallenge.positive
+                        ? `Positive Event: ${activeChallenge.name}`
+                        : `Challenge: ${activeChallenge.name}`;
+                    challengeDisplay.className = `text-sm italic ${activeChallenge.positive ? 'text-green-500 dark:text-green-400' : 'text-orange-500 dark:text-orange-400'} min-h-5 animate-pulse`;
+                    challengeFlash = 60;
+                }
+            } else {
+                challengeDisplay.textContent = "";
+            }
+
+            // Ensure score is within 0-100
+            effectiveness = Math.max(0, Math.min(100, Math.round(score)));
+            currentScenario.effectiveness = effectiveness;
+            currentScenario.challenge = activeChallenge ? activeChallenge.name : null;
+
+            // Update UI
+            scoreDisplay.textContent = effectiveness;
+            scoreFill.style.width = `${effectiveness}%`;
+        }
+
+        // Save scenario to localStorage
+        function saveScenario() {
+            if (!isRunning && effectiveness === 0) {
+                alert("Please run a scenario before saving.");
+                return;
+            }
+
+            const savedScenarios = JSON.parse(localStorage.getItem("scenarios") || "[]");
+            savedScenarios.push(currentScenario);
+            localStorage.setItem("scenarios", JSON.stringify(savedScenarios));
+            loadSavedScenarios();
+            runButton.classList.add('animate-pulse');
+            setTimeout(() => runButton.classList.remove('animate-pulse'), 1000);
+        }
+
+        // Export scenario as text file
+        function exportScenario() {
+            if (!isRunning && effectiveness === 0) {
+                alert("Please run a scenario before exporting.");
+                return;
+            }
+
+            const text = `Training Scenario
+Industry: ${currentScenario.industry}
+Role: ${currentScenario.role}
+Objective: ${currentScenario.objective}
+Obstacle: ${currentScenario.obstacle || "None"}
+Effectiveness: ${currentScenario.effectiveness}%
+Challenge: ${currentScenario.challenge || "None"}
+Timestamp: ${formatDate(currentScenario.timestamp)}`;
+
+            const blob = new Blob([text], { type: "text/plain" });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement("a");
+            a.href = url;
+            a.download = `scenario_${currentScenario.timestamp}.txt`;
+            a.click();
+            URL.revokeObjectURL(url);
+        }
+
+        // Utility to format date
+        function formatDate(isoString) {
+            const date = new Date(isoString);
+            return date.toLocaleString("en-US", {
+                month: "short",
+                day: "numeric",
+                year: "numeric",
+                hour: "numeric",
+                minute: "2-digit",
+                hour12: true
+            });
+        }
+
+        // Get score color class for saved scenarios
+        function getScoreColorClass(score) {
+            if (score >= 70) return "bg-green-100 text-green-800";
+            if (score >= 30) return "bg-yellow-100 text-yellow-800";
+            return "bg-red-100 text-red-800";
+        }
+
+        // Set up event listeners
+        function setupEventListeners() {
+            industrySelect.addEventListener("change", updateDropdowns);
+            roleSelect.addEventListener("change", () => {
+                currentScenario.role = roleSelect.value;
+                resetSimulation();
+            });
+            objectiveSelect.addEventListener("change", () => {
+                currentScenario.objective = objectiveSelect.value;
+                resetSimulation();
+            });
+            obstacleSelect.addEventListener("change", () => {
+                currentScenario.obstacle = obstacleSelect.value;
+                resetSimulation();
+            });
+            runButton.addEventListener("click", runScenario);
+            saveButton.addEventListener("click", saveScenario);
+            exportButton.addEventListener("click", exportScenario);
+
+            // Theme toggle
+            themeToggle.addEventListener("click", () => {
+                document.documentElement.classList.toggle("dark");
+                localStorage.setItem("theme", document.documentElement.classList.contains("dark") ? "dark" : "light");
+            });
+
+            // Help modal
+            helpButton.addEventListener("click", () => {
+                helpModal.classList.remove("opacity-0", "pointer-events-none");
+                helpModal.querySelector("div").classList.remove("scale-95");
+            });
+            closeHelp.addEventListener("click", () => {
+                helpModal.classList.add("opacity-0", "pointer-events-none");
+                helpModal.querySelector("div").classList.add("scale-95");
+            });
+
+            // Load theme preference
+            if (localStorage.getItem("theme") === "dark" ||
+                (!localStorage.getItem("theme") && window.matchMedia("(prefers-color-scheme: dark)").matches)) {
+                document.documentElement.classList.add("dark");
+            }
+        }
+
+        // Set current year in footer
+        function setCurrentYear() {
+            document.getElementById("current-year").textContent = new Date().getFullYear();
+        }
+
+        // p5.js sketch for simulation
+        const sketch = (p) => {
+            p.setup = () => {
+                const canvas = p.createCanvas(canvasContainer.offsetWidth, canvasContainer.offsetHeight);
+                canvas.parent(canvasContainer);
+                p.frameRate(targetFrameRate);
+                p.noLoop();
+            };
+
+            p.windowResized = () => {
+                p.resizeCanvas(canvasContainer.offsetWidth, canvasContainer.offsetHeight);
+                if (character) {
+                    character.pos.y = p.height - 50;
+                    goalPos = p.createVector(p.width - 50, p.height - 50);
+                    if (obstaclePos) {
+                        obstaclePos = p.createVector(p.width / 2, p.height - 50);
+                    }
+                }
+            };
+
+            p.draw = () => {
+                // Background
+                p.background(document.documentElement.classList.contains("dark") ? 55 : 243, 244, 246);
+
+                if (!isRunning || !character) {
+                    return;
+                }
+
+                // Update character position
+                character.pos.add(character.vel);
+
+                // Check for obstacle collision
+                if (isObstacleActiveThisRun && obstaclePos && p.dist(character.pos.x, character.pos.y, obstaclePos.x, obstaclePos.y) < (character.size + 40) / 2) {
+                    character.vel.x = 0;
+                    obstacleHitFlash = 30;
+                    isObstacleActiveThisRun = false;
+                    for (let i = 0; i < 10; i++) {
+                        particles.push({
+                            pos: obstaclePos.copy(),
+                            vel: p5.Vector.random2D().mult(p.random(2, 5)),
+                            life: 60
+                        });
+                    }
+                }
+
+                // Check if goal is reached
+                if (p.dist(character.pos.x, character.pos.y, goalPos.x, goalPos.y) < (character.size + 40) / 2) {
+                    character.vel.x = 0;
+                    goalReachedFlash = 30;
+                    isRunning = false;
+                    for (let i = 0; i < 20; i++) {
+                        particles.push({
+                            pos: goalPos.copy(),
+                            vel: p5.Vector.random2D().mult(p.random(2, 6)),
+                            life: 90
+                        });
+                    }
+                    // Update duration
+                    const duration = (p.millis() - startTime) / 1000;
+                    timeValue.textContent = `${duration.toFixed(1)} sec`;
+                }
+
+                // Draw obstacle
+                if (isObstacleActiveThisRun && obstaclePos) {
+                    p.fill(obstacleHitFlash > 0 ? 'red' : 'orange');
+                    p.noStroke();
+                    p.rect(obstaclePos.x - 20, obstaclePos.y - 40, 40, 40);
+                    if (obstacleHitFlash > 0) obstacleHitFlash--;
+                }
+
+                // Draw goal
+                p.fill(goalReachedFlash > 0 ? 'yellow' : 'green');
+                p.noStroke();
+                p.ellipse(goalPos.x, goalPos.y, 40, 40);
+                if (goalReachedFlash > 0) goalReachedFlash--;
+
+                // Draw character
+                p.fill(0, 102, 204);
+                p.ellipse(character.pos.x, character.pos.y, character.size, character.size);
+
+                // Draw particles
+                particles = particles.filter(particle => particle.life > 0);
+                p.fill(255, 150);
+                p.noStroke();
+                particles.forEach(particle => {
+                    p.ellipse(particle.pos.x, particle.pos.y, 5, 5);
+                    particle.pos.add(particle.vel);
+                    particle.life--;
+                });
+
+                // Update speed display
+                speedValue.textContent = `${character.vel.x.toFixed(1)} px/sec`;
+
+                // Flash effect for challenge
+                if (challengeFlash > 0) {
+                    p.fill(255, 255, 255, 50);
+                    p.rect(0, 0, p.width, p.height);
+                    challengeFlash--;
+                }
+            };
+        };
+
+        // Initialize the app
+        init();
+    </script>
+</body>
+
+</html>

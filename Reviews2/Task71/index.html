@@ -1,0 +1,957 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bolt Torque Calibration</title>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&family=Roboto:wght@300;400;500;700&display=swap"
+        rel="stylesheet" />
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet" />
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#233D4D',
+                        secondary: '#FE7F2D',
+                        accent: '#FCCA46',
+                        success: '#A1C181',
+                        info: '#619B8A',
+                        danger: '#EF476F',
+                        darkbg: '#111827',
+                        lightbg: '#F9FAFB'
+                    },
+                    fontFamily: {
+                        light: ['Poppins', 'sans-serif'],
+                        dark: ['Roboto', 'sans-serif']
+                    },
+                    boxShadow: {
+                        'neumorph': '8px 8px 16px #d1d9e6, -8px -8px 16px #ffffff',
+                        'neumorph-dark': '8px 8px 16px #0d131f, -8px -8px 16px #151d2f',
+                        'neumorph-inset': 'inset 4px 4px 8px #d1d9e6, inset -4px -4px 8px #ffffff',
+                        'neumorph-inset-dark': 'inset 4px 4px 8px #0d131f, inset -4px -4px 8px #151d2f'
+                    }
+                }
+            }
+        }
+    </script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.4.2/p5.min.js"></script>
+    <style>
+        :root {
+            --transition-duration: 200ms;
+        }
+
+        body {
+            transition: background-color var(--transition-duration) ease;
+        }
+
+        #toast-container {
+            position: fixed;
+            bottom: 1.5rem;
+            right: 1.5rem;
+            z-index: 50;
+            display: flex;
+            flex-direction: column;
+            gap: 0.75rem;
+        }
+
+        .toast {
+            min-width: 240px;
+            padding: 1rem 1.25rem;
+            border-radius: 0.75rem;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+            animation: fadeIn 0.3s ease-out, fadeOut 0.5s ease-in 2.5s forwards;
+            background-color: rgba(97, 155, 138, 0.95);
+            color: white;
+            font-weight: 500;
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            backdrop-filter: blur(8px);
+        }
+
+        .toast.success {
+            background-color: rgba(161, 193, 129, 0.95);
+        }
+
+        .toast.warning {
+            background-color: rgba(252, 202, 70, 0.95);
+        }
+
+        .toast.danger {
+            background-color: rgba(239, 71, 111, 0.95);
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @keyframes fadeOut {
+            to {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+        }
+
+        /* Custom scrollbar */
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: rgba(0, 0, 0, 0.05);
+            border-radius: 10px;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: rgba(0, 0, 0, 0.2);
+            border-radius: 10px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: rgba(0, 0, 0, 0.3);
+        }
+
+        .dark ::-webkit-scrollbar-track {
+            background: rgba(255, 255, 255, 0.05);
+        }
+
+        .dark ::-webkit-scrollbar-thumb {
+            background: rgba(255, 255, 255, 0.2);
+        }
+
+        .dark ::-webkit-scrollbar-thumb:hover {
+            background: rgba(255, 255, 255, 0.3);
+        }
+
+        /* Range input styling */
+        input[type="range"] {
+            -webkit-appearance: none;
+            height: 8px;
+            border-radius: 4px;
+            background: linear-gradient(to right, #619B8A 0%, #FE7F2D 100%);
+            outline: none;
+        }
+
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background: #FE7F2D;
+            cursor: pointer;
+            transition: all 0.15s ease;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+        }
+
+        input[type="range"]::-webkit-slider-thumb:hover {
+            transform: scale(1.2);
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+        }
+
+        .dark input[type="range"] {
+            background: linear-gradient(to right, #619B8A 0%, #FE7F2D 100%);
+        }
+
+        /* Focus styles */
+        *:focus-visible {
+            outline: 2px solid #FE7F2D;
+            outline-offset: 2px;
+        }
+
+        /* Button press effect */
+        button:active {
+            transform: scale(0.98);
+        }
+
+        /* Tooltip */
+        [data-tooltip] {
+            position: relative;
+        }
+
+        [data-tooltip]:hover::after {
+            content: attr(data-tooltip);
+            position: absolute;
+            bottom: 100%;
+            left: 50%;
+            transform: translateX(-50%);
+            background: #233D4D;
+            color: white;
+            padding: 0.5rem 0.75rem;
+            border-radius: 0.5rem;
+            font-size: 0.875rem;
+            white-space: nowrap;
+            pointer-events: none;
+            z-index: 10;
+            margin-bottom: 0.5rem;
+            opacity: 0.9;
+        }
+
+        .dark [data-tooltip]:hover::after {
+            background: #F9FAFB;
+            color: #233D4D;
+        }
+    </style>
+</head>
+
+<body
+    class="font-light dark:font-dark bg-lightbg dark:bg-darkbg text-gray-900 dark:text-gray-100 transition-colors duration-200 min-h-screen">
+    <div class="container mx-auto p-4 md:p-6 min-h-screen flex flex-col">
+        <!-- Header -->
+        <header class="flex justify-between items-center mb-6 md:mb-8">
+            <h1 class="flex items-center text-2xl md:text-3xl font-semibold">
+                <span class="material-icons-round text-secondary mr-2 text-3xl">bolt</span>
+                <span class="bg-gradient-to-r from-secondary to-accent bg-clip-text text-transparent">
+                    Bolt Torque Calibration
+                </span>
+            </h1>
+            <div class="flex items-center gap-2">
+                <button id="theme-toggle" aria-label="Toggle Dark Mode"
+                    class="p-2 rounded-xl bg-white dark:bg-gray-800 shadow-lg hover:shadow-xl transition-all hover:scale-105 active:scale-95"
+                    data-tooltip="Toggle theme">
+                    <span class="material-icons-round text-secondary dark:text-accent">dark_mode</span>
+                </button>
+                <button id="help-button" aria-label="Help"
+                    class="p-2 rounded-xl bg-white dark:bg-gray-800 shadow-lg hover:shadow-xl transition-all hover:scale-105 active:scale-95"
+                    data-tooltip="Help">
+                    <span class="material-icons-round text-info">help_outline</span>
+                </button>
+            </div>
+        </header>
+
+        <!-- Main Content -->
+        <main class="flex-1 flex items-center">
+            <div class="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-4 md:gap-6 w-full">
+                <!-- Controls Panel -->
+                <aside
+                    class="bg-white dark:bg-gray-800 p-4 md:p-6 rounded-2xl shadow-lg border border-gray-200 dark:border-gray-700 flex flex-col justify-between gap-6">
+                    <div class="space-y-6">
+                        <h2 class="flex items-center text-xl font-medium">
+                            <span class="material-icons-round text-info mr-2">settings</span>
+                            Controls
+                        </h2>
+                        <div class="space-y-4">
+                            <div>
+                                <label for="industry" class="block text-sm font-medium mb-1">Industry</label>
+                                <select id="industry"
+                                    class="mt-1 w-full p-3 border rounded-xl focus:outline-none focus:ring-2 focus:ring-secondary dark:bg-gray-700 dark:border-gray-600 transition-all">
+                                    <option value="heavy-machinery">Heavy Machinery</option>
+                                    <option value="bridge-construction">Bridge Construction</option>
+                                    <option value="automotive-assembly">Automotive Assembly</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label for="bolt" class="block text-sm font-medium mb-1">Bolt Type</label>
+                                <select id="bolt"
+                                    class="mt-1 w-full p-3 border rounded-xl focus:outline-none focus:ring-2 focus:ring-secondary dark:bg-gray-700 dark:border-gray-600 transition-all"></select>
+                            </div>
+                            <div>
+                                <label for="torque" class="block text-sm font-medium mb-1">Torque (Nm)</label>
+                                <div class="flex items-center gap-3">
+                                    <input type="range" id="torque" min="0" max="1000" value="0"
+                                        class="flex-1 h-2 bg-gray-200 dark:bg-gray-700 rounded-lg appearance-none cursor-pointer">
+                                    <input type="number" id="torque-input" min="0" max="1000" value="0"
+                                        class="w-24 p-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-secondary dark:bg-gray-700 dark:border-gray-600 transition-all text-center">
+                                </div>
+                                <div class="flex justify-between text-xs text-gray-500 dark:text-gray-400 mt-1">
+                                    <span>0 Nm</span>
+                                    <span id="max-torque">1000 Nm</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="space-y-3">
+                        <button id="save"
+                            class="w-full py-3 bg-secondary text-white rounded-xl shadow-md hover:bg-secondary/90 transition-all flex items-center justify-center gap-2 active:scale-[0.98]">
+                            <span class="material-icons-round">save</span>
+                            Save Calibration
+                        </button>
+                        <button id="export"
+                            class="w-full py-3 bg-success text-white rounded-xl shadow-md hover:bg-success/90 transition-all flex items-center justify-center gap-2 active:scale-[0.98]">
+                            <span class="material-icons-round">download</span>
+                            Export Report
+                        </button>
+                        <button id="clear-history"
+                            class="w-full py-3 bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-gray-200 rounded-xl shadow-md hover:bg-gray-300 dark:hover:bg-gray-600 transition-all flex items-center justify-center gap-2 active:scale-[0.98]">
+                            <span class="material-icons-round">delete_sweep</span>
+                            Clear History
+                        </button>
+                    </div>
+                </aside>
+
+                <!-- Visualization -->
+                <section id="canvas-container"
+                    class="bg-white dark:bg-gray-800 p-4 md:p-6 rounded-2xl shadow-lg border border-gray-200 dark:border-gray-700 md:col-span-2 lg:col-span-2 flex items-center justify-center relative">
+                    <!-- p5.js sketch -->
+                    <div class="absolute top-4 left-4 right-4 flex justify-between items-center">
+                        <div class="bg-white dark:bg-gray-700 px-3 py-2 rounded-lg shadow flex items-center gap-2">
+                            <span class="material-icons-round text-secondary">info</span>
+                            <span class="text-sm font-medium">Current Torque: <span id="current-torque-display"
+                                    class="font-bold">0</span> Nm</span>
+                        </div>
+                        <div class="bg-white dark:bg-gray-700 px-3 py-2 rounded-lg shadow flex items-center gap-2">
+                            <span class="material-icons-round text-info">speed</span>
+                            <span class="text-sm font-medium">Ideal: <span id="ideal-torque-display"
+                                    class="font-bold">0</span> Nm</span>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Info & History Panel -->
+                <aside
+                    class="bg-white dark:bg-gray-800 p-4 md:p-6 rounded-2xl shadow-lg border border-gray-200 dark:border-gray-700 flex flex-col">
+                    <div class="flex-1 flex flex-col">
+                        <h2 class="flex items-center text-xl font-medium mb-4">
+                            <span class="material-icons-round text-secondary mr-2">insights</span>
+                            Calibration Info
+                        </h2>
+
+                        <!-- Prominent Stat Cards -->
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6">
+                            <!-- Accuracy Card -->
+                            <div
+                                class="bg-secondary/10 dark:bg-secondary/20 p-4 rounded-xl flex flex-col items-center shadow-inner transition-all hover:scale-[1.02]">
+                                <span class="material-icons-round text-secondary text-4xl">speed</span>
+                                <span class="mt-2 text-sm font-medium text-gray-700 dark:text-gray-300">Accuracy</span>
+                                <span id="accuracy" class="mt-1 text-3xl font-bold text-secondary">0%</span>
+                                <div class="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-3 overflow-hidden mt-3">
+                                    <div id="accuracy-bar"
+                                        class="h-3 rounded-full bg-secondary transition-all duration-300"></div>
+                                </div>
+                            </div>
+
+                            <!-- Stress Level Card -->
+                            <div
+                                class="bg-info/10 dark:bg-info/20 p-4 rounded-xl flex flex-col items-center shadow-inner transition-all hover:scale-[1.02]">
+                                <span class="material-icons-round text-info text-4xl">show_chart</span>
+                                <span class="mt-2 text-sm font-medium text-gray-700 dark:text-gray-300">Stress
+                                    Level</span>
+                                <span id="stress-pill"
+                                    class="mt-1 text-3xl font-bold text-white px-4 py-1 rounded-full bg-success transition-all">Low</span>
+                            </div>
+                        </div>
+
+                        <h3 class="flex items-center text-lg font-medium mb-4">
+                            <span class="material-icons-round text-info mr-2">history</span>
+                            History
+                            <span id="history-count"
+                                class="ml-auto bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-gray-200 text-sm px-2 py-1 rounded-full">0</span>
+                        </h3>
+                        <div id="history" class="space-y-3 flex-1 overflow-y-auto overflow-x-hidden pr-2"></div>
+                    </div>
+                </aside>
+            </div>
+        </main>
+    </div>
+
+    <!-- Toast Container -->
+    <div id="toast-container"></div>
+
+    <!-- Help Modal -->
+    <div id="help-modal"
+        class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 opacity-0 pointer-events-none transition-opacity duration-300">
+        <div
+            class="bg-white dark:bg-gray-800 rounded-2xl p-6 max-w-md w-full mx-4 shadow-xl transform transition-all duration-300 scale-95">
+            <div class="flex justify-between items-center mb-4">
+                <h3 class="text-xl font-semibold">Help & Instructions</h3>
+                <button id="close-help" class="p-1 rounded-full hover:bg-gray-200 dark:hover:bg-gray-700">
+                    <span class="material-icons-round">close</span>
+                </button>
+            </div>
+            <div class="space-y-4 text-sm">
+                <p>This tool helps you calibrate bolt torques for different industrial applications.</p>
+                <div class="space-y-2">
+                    <h4 class="font-medium flex items-center gap-2">
+                        <span class="material-icons-round text-secondary text-lg">settings</span>
+                        How to use:
+                    </h4>
+                    <ol class="list-decimal list-inside space-y-1">
+                        <li>Select your industry from the dropdown</li>
+                        <li>Choose the appropriate bolt type</li>
+                        <li>Adjust the torque using the slider or input field</li>
+                        <li>Monitor the accuracy and stress indicators</li>
+                        <li>Save your calibrations for future reference</li>
+                    </ol>
+                </div>
+                <div class="space-y-2">
+                    <h4 class="font-medium flex items-center gap-2">
+                        <span class="material-icons-round text-info text-lg">info</span>
+                        Key Features:
+                    </h4>
+                    <ul class="list-disc list-inside space-y-1">
+                        <li>Real-time bolt visualization</li>
+                        <li>Accuracy percentage calculation</li>
+                        <li>Stress level monitoring</li>
+                        <li>Dark/light mode toggle</li>
+                        <li>Calibration history tracking</li>
+                        <li>Exportable reports</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Enhanced Bolt Torque Calibration App
+        document.addEventListener('DOMContentLoaded', () => {
+            // Theme toggle with improved transition
+            const savedTheme = localStorage.getItem('theme') ||
+                (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+            if (savedTheme === 'dark') document.documentElement.classList.add('dark');
+
+            const themeToggle = document.getElementById('theme-toggle');
+            themeToggle.addEventListener('click', () => {
+                document.documentElement.classList.toggle('dark');
+                const newTheme = document.documentElement.classList.contains('dark') ? 'dark' : 'light';
+                localStorage.setItem('theme', newTheme);
+                showToast(`Switched to ${newTheme} mode`, 'success');
+            });
+
+            // Help modal functionality
+            const helpButton = document.getElementById('help-button');
+            const helpModal = document.getElementById('help-modal');
+            const closeHelp = document.getElementById('close-help');
+
+            helpButton.addEventListener('click', () => {
+                helpModal.classList.remove('pointer-events-none');
+                helpModal.classList.add('pointer-events-auto');
+                helpModal.classList.replace('opacity-0', 'opacity-100');
+                helpModal.querySelector('div').classList.replace('scale-95', 'scale-100');
+            });
+
+            closeHelp.addEventListener('click', () => {
+                helpModal.classList.replace('opacity-100', 'opacity-0');
+                helpModal.querySelector('div').classList.replace('scale-100', 'scale-95');
+                setTimeout(() => {
+                    helpModal.classList.add('pointer-events-none');
+                    helpModal.classList.remove('pointer-events-auto');
+                }, 300);
+            });
+
+            // Improved toast notification system
+            function showToast(msg, type = 'info') {
+                const toast = document.createElement('div');
+                toast.className = `toast ${type}`;
+                toast.innerHTML = `
+          <span class="material-icons-round">${getToastIcon(type)}</span>
+          <span>${msg}</span>
+        `;
+
+                const container = document.getElementById('toast-container');
+                container.appendChild(toast);
+
+                setTimeout(() => {
+                    toast.style.opacity = '0';
+                    setTimeout(() => toast.remove(), 500);
+                }, 3000);
+            }
+
+            function getToastIcon(type) {
+                const icons = {
+                    'info': 'info',
+                    'success': 'check_circle',
+                    'warning': 'warning',
+                    'danger': 'error'
+                };
+                return icons[type] || 'info';
+            }
+
+            // Bolt data with enhanced specifications
+            const boltData = {
+                "heavy-machinery": [
+                    {
+                        id: "hm1",
+                        size: "M20",
+                        material: "Grade 8.8 Steel",
+                        idealTorque: 400,
+                        maxTorque: 600,
+                        tensileStrength: "800 MPa",
+                        proofLoad: "580 MPa"
+                    },
+                    {
+                        id: "hm2",
+                        size: "M30",
+                        material: "Alloy Steel A-286",
+                        idealTorque: 800,
+                        maxTorque: 1000,
+                        tensileStrength: "1000 MPa",
+                        proofLoad: "700 MPa"
+                    }
+                ],
+                "bridge-construction": [
+                    {
+                        id: "bc1",
+                        size: "M24",
+                        material: "A325 High-Strength Steel",
+                        idealTorque: 600,
+                        maxTorque: 800,
+                        tensileStrength: "830 MPa",
+                        proofLoad: "660 MPa"
+                    },
+                    {
+                        id: "bc2",
+                        size: "M36",
+                        material: "A490 Stainless Steel",
+                        idealTorque: 900,
+                        maxTorque: 1100,
+                        tensileStrength: "1030 MPa",
+                        proofLoad: "900 MPa"
+                    }
+                ],
+                "automotive-assembly": [
+                    {
+                        id: "aa1",
+                        size: "M12",
+                        material: "Class 10.9 Carbon Steel",
+                        idealTorque: 100,
+                        maxTorque: 150,
+                        tensileStrength: "1040 MPa",
+                        proofLoad: "940 MPa"
+                    },
+                    {
+                        id: "aa2",
+                        size: "M16",
+                        material: "Class 12.9 Alloy Steel",
+                        idealTorque: 200,
+                        maxTorque: 300,
+                        tensileStrength: "1220 MPa",
+                        proofLoad: "1100 MPa"
+                    }
+                ]
+            };
+
+            let currentIndustry = 'heavy-machinery',
+                currentBolt = {},
+                currentTorque = 0,
+                calibrations = JSON.parse(localStorage.getItem('calibrations')) || [];
+
+            // DOM references
+            const industrySelect = document.getElementById('industry'),
+                boltSelect = document.getElementById('bolt'),
+                torqueSlider = document.getElementById('torque'),
+                torqueInput = document.getElementById('torque-input'),
+                saveButton = document.getElementById('save'),
+                exportButton = document.getElementById('export'),
+                clearHistoryButton = document.getElementById('clear-history'),
+                historyDiv = document.getElementById('history'),
+                accuracyBar = document.getElementById('accuracy-bar'),
+                accuracySpan = document.getElementById('accuracy'),
+                stressPill = document.getElementById('stress-pill'),
+                maxTorqueSpan = document.getElementById('max-torque'),
+                currentTorqueDisplay = document.getElementById('current-torque-display'),
+                idealTorqueDisplay = document.getElementById('ideal-torque-display'),
+                historyCount = document.getElementById('history-count');
+
+            // Initialize the app
+            function initApp() {
+                updateBoltOptions();
+                renderHistory();
+                updateHistoryCount();
+
+                // Set up event listeners with improved debouncing where needed
+                industrySelect.addEventListener('change', handleIndustryChange);
+                boltSelect.addEventListener('change', handleBoltChange);
+                torqueSlider.addEventListener('input', handleTorqueChange);
+                torqueInput.addEventListener('input', handleTorqueInputChange);
+                saveButton.addEventListener('click', saveCalibration);
+                exportButton.addEventListener('click', exportReport);
+                clearHistoryButton.addEventListener('click', clearHistory);
+
+                // Add keyboard shortcuts
+                document.addEventListener('keydown', (e) => {
+                    if (e.ctrlKey && e.key === 's') {
+                        e.preventDefault();
+                        saveCalibration();
+                    }
+                    if (e.ctrlKey && e.key === 'e') {
+                        e.preventDefault();
+                        exportReport();
+                    }
+                });
+            }
+
+            function handleIndustryChange(e) {
+                currentIndustry = e.target.value;
+                updateBoltOptions();
+                showToast(`Industry changed to ${e.target.options[e.target.selectedIndex].text}`, 'info');
+            }
+
+            function handleBoltChange(e) {
+                const selectedBolt = boltData[currentIndustry].find(b => b.id === e.target.value);
+                if (selectedBolt) setCurrentBolt(selectedBolt);
+            }
+
+            function handleTorqueChange(e) {
+                updateTorque(e.target.value);
+            }
+
+            function handleTorqueInputChange(e) {
+                updateTorque(e.target.value);
+            }
+
+            function updateBoltOptions() {
+                const list = boltData[currentIndustry] || [];
+                boltSelect.innerHTML = '';
+
+                list.forEach(b => {
+                    const option = document.createElement('option');
+                    option.value = b.id;
+                    option.textContent = `${b.size} - ${b.material}`;
+                    boltSelect.append(option);
+                });
+
+                if (list.length) setCurrentBolt(list[0]);
+            }
+
+            function setCurrentBolt(b) {
+                currentBolt = b;
+                torqueSlider.max = b.maxTorque;
+                torqueInput.max = b.maxTorque;
+                maxTorqueSpan.textContent = `${b.maxTorque} Nm`;
+                idealTorqueDisplay.textContent = b.idealTorque;
+                updateTorque(0);
+                showToast(`Selected ${b.size} bolt`, 'info');
+
+                // Update visualization immediately
+                if (window.p5Instance) {
+                    window.p5Instance.redraw();
+                }
+            }
+
+            function updateTorque(v) {
+                const val = Math.min(Math.max(0, +v), currentBolt.maxTorque);
+                currentTorque = val;
+                torqueSlider.value = val;
+                torqueInput.value = val;
+                currentTorqueDisplay.textContent = val;
+                updateAccuracy();
+                updateStress();
+
+                // Update visualization immediately
+                if (window.p5Instance) {
+                    window.p5Instance.redraw();
+                }
+            }
+
+            function updateAccuracy() {
+                const deviation = Math.abs(currentTorque - currentBolt.idealTorque);
+                const maxDeviation = currentBolt.maxTorque * 0.5;
+                const accuracy = Math.max(0, 100 - (deviation / maxDeviation) * 100);
+
+                accuracyBar.style.width = `${accuracy}%`;
+                accuracySpan.textContent = `${accuracy.toFixed(1)}%`;
+
+                // Color the accuracy bar based on level
+                if (accuracy >= 90) {
+                    accuracyBar.classList.remove('bg-accent', 'bg-danger');
+                    accuracyBar.classList.add('bg-success');
+                } else if (accuracy >= 70) {
+                    accuracyBar.classList.remove('bg-success', 'bg-danger');
+                    accuracyBar.classList.add('bg-accent');
+                } else {
+                    accuracyBar.classList.remove('bg-success', 'bg-accent');
+                    accuracyBar.classList.add('bg-danger');
+                }
+            }
+
+            function updateStress() {
+                const ratio = currentTorque / currentBolt.maxTorque;
+                let level = 'Low', color = 'bg-success';
+
+                if (ratio >= 0.7 && ratio < 0.9) {
+                    level = 'Moderate';
+                    color = 'bg-accent';
+                } else if (ratio >= 0.9) {
+                    level = 'High';
+                    color = 'bg-danger';
+                }
+
+                stressPill.textContent = level;
+                stressPill.className = `mt-1 text-3xl font-bold text-white px-4 py-1 rounded-full ${color} transition-all`;
+            }
+
+            function renderHistory() {
+                historyDiv.innerHTML = '';
+
+                if (calibrations.length === 0) {
+                    historyDiv.innerHTML = `
+            <div class="text-center py-8 text-gray-500 dark:text-gray-400">
+              <span class="material-icons-round text-4xl opacity-50">history</span>
+              <p class="mt-2">No calibration history yet</p>
+            </div>
+          `;
+                    return;
+                }
+
+                calibrations.forEach((c, i) => {
+                    const stressColor = getStressColor(c.torque / c.bolt.maxTorque);
+                    const card = document.createElement('div');
+                    card.className = 'bg-white dark:bg-gray-700 p-3 rounded-xl shadow hover:shadow-md flex justify-between items-center transition-all hover:scale-[1.01] active:scale-[0.98] cursor-pointer';
+                    card.innerHTML = `
+            <div class="flex items-center gap-3">
+              <div class="w-3 h-3 rounded-full ${stressColor} flex-shrink-0"></div>
+              <div>
+                <p class="font-medium">${c.bolt.size} <span class="text-sm font-normal text-gray-500 dark:text-gray-400">${c.industry.split('-').join(' ')}</span></p>
+                <p class="text-sm text-gray-500 dark:text-gray-400">
+                  ${c.torque} Nm • ${c.accuracy}
+                </p>
+              </div>
+            </div>
+            <div class="flex gap-1">
+              <button onclick="event.stopPropagation(); loadCalibration(${i})" class="p-2 bg-info/10 text-info rounded-lg hover:bg-info/20 transition" data-tooltip="Load">
+                <span class="material-icons-round text-sm">play_arrow</span>
+              </button>
+              <button onclick="event.stopPropagation(); deleteCalibration(${i})" class="p-2 bg-danger/10 text-danger rounded-lg hover:bg-danger/20 transition" data-tooltip="Delete">
+                <span class="material-icons-round text-sm">delete</span>
+              </button>
+            </div>
+          `;
+                    card.addEventListener('click', () => loadCalibration(i));
+                    historyDiv.append(card);
+                });
+            }
+
+            function getStressColor(ratio) {
+                if (ratio >= 0.9) return 'bg-danger';
+                if (ratio >= 0.7) return 'bg-accent';
+                return 'bg-success';
+            }
+
+            function updateHistoryCount() {
+                historyCount.textContent = calibrations.length;
+            }
+
+            function saveCalibration() {
+                if (currentTorque === 0) {
+                    showToast('Please set a torque value before saving', 'warning');
+                    return;
+                }
+
+                const calibration = {
+                    industry: currentIndustry,
+                    bolt: currentBolt,
+                    torque: currentTorque,
+                    accuracy: accuracySpan.textContent,
+                    timestamp: new Date().toISOString()
+                };
+
+                calibrations.unshift(calibration);
+                if (calibrations.length > 20) calibrations.pop(); // Limit history
+
+                localStorage.setItem('calibrations', JSON.stringify(calibrations));
+                renderHistory();
+                updateHistoryCount();
+                showToast('Calibration saved successfully', 'success');
+            }
+
+            function deleteCalibration(index) {
+                calibrations.splice(index, 1);
+                localStorage.setItem('calibrations', JSON.stringify(calibrations));
+                renderHistory();
+                updateHistoryCount();
+                showToast('Calibration deleted', 'info');
+            }
+
+            function clearHistory() {
+                if (calibrations.length === 0) {
+                    showToast('History is already empty', 'info');
+                    return;
+                }
+
+                if (confirm('Are you sure you want to clear all calibration history?')) {
+                    calibrations = [];
+                    localStorage.removeItem('calibrations');
+                    renderHistory();
+                    updateHistoryCount();
+                    showToast('History cleared', 'success');
+                }
+            }
+
+            function loadCalibration(index) {
+                const calibration = calibrations[index];
+                if (!calibration) return;
+
+                currentIndustry = calibration.industry;
+                industrySelect.value = currentIndustry;
+                updateBoltOptions();
+
+                // Find the current bolt in case data structure changed
+                const currentBoltData = boltData[currentIndustry].find(b => b.id === calibration.bolt.id) || boltData[currentIndustry][0];
+                boltSelect.value = currentBoltData.id;
+                setCurrentBolt(currentBoltData);
+
+                updateTorque(calibration.torque);
+                showToast('Calibration loaded', 'success');
+            }
+
+            function exportReport() {
+                if (calibrations.length === 0) {
+                    showToast('No calibrations to export', 'warning');
+                    return;
+                }
+
+                const date = new Date().toISOString().split('T')[0];
+                let report = `Bolt Torque Calibration Report - ${date}\n\n`;
+                report += `Total Calibrations: ${calibrations.length}\n\n`;
+
+                report += calibrations.map((c, i) => {
+                    return `CALIBRATION #${i + 1}
+Industry: ${c.industry.replace('-', ' ').toUpperCase()}
+Bolt: ${c.bolt.size} (${c.bolt.material})
+Torque Applied: ${c.torque} Nm
+Ideal Torque: ${c.bolt.idealTorque} Nm
+Max Torque: ${c.bolt.maxTorque} Nm
+Accuracy: ${c.accuracy}
+Date: ${new Date(c.timestamp).toLocaleString()}\n`;
+                }).join('\n');
+
+                const blob = new Blob([report], { type: 'text/plain' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `bolt-torque-report-${date}.txt`;
+                a.click();
+                URL.revokeObjectURL(url);
+
+                showToast('Report exported successfully', 'success');
+            }
+
+            // Enhanced p5.js sketch with better visualization
+            function sketch(p) {
+                let boltRotation = 0;
+                let lastTorqueRatio = 0;
+
+                p.setup = function () {
+                    const container = document.getElementById('canvas-container');
+                    const canvas = p.createCanvas(container.offsetWidth, container.offsetWidth * 0.7);
+                    canvas.parent('canvas-container');
+                    p.angleMode(p.DEGREES);
+                    p.rectMode(p.CENTER);
+                    p.ellipseMode(p.CENTER);
+                    window.p5Instance = p;
+                };
+
+                p.draw = function () {
+                    const bg = p.color(p.red(p.color('#F9FAFB')), p.green(p.color('#F9FAFB')), p.blue(p.color('#F9FAFB')));
+                    const darkBg = p.color(p.red(p.color('#111827')), p.green(p.color('#111827')), p.blue(p.color('#111827')));
+                    const currentBg = document.documentElement.classList.contains('dark') ? darkBg : bg;
+
+                    p.background(currentBg);
+
+                    const torqueRatio = currentTorque / (currentBolt.maxTorque || 1);
+                    const smoothRatio = p.lerp(lastTorqueRatio, torqueRatio, 0.1);
+                    lastTorqueRatio = smoothRatio;
+
+                    // Draw bolt
+                    p.push();
+                    p.translate(p.width / 2, p.height / 2);
+
+                    // Bolt head
+                    p.fill(180);
+                    p.noStroke();
+                    p.beginShape();
+                    for (let j = 0; j < 6; j++) {
+                        const a = j * 60 + boltRotation;
+                        p.vertex(80 * p.cos(a), 80 * p.sin(a));
+                    }
+                    p.endShape(p.CLOSE);
+
+                    // Bolt shaft
+                    p.fill(140);
+                    p.rect(0, 0, 25, 150);
+
+                    // Nut (rotates with torque)
+                    p.fill(160);
+                    p.translate(0, 100);
+                    p.rotate(boltRotation * 0.5);
+                    p.beginShape();
+                    for (let j = 0; j < 6; j++) {
+                        const a = j * 60;
+                        p.vertex(40 * p.cos(a), 40 * p.sin(a));
+                    }
+                    p.endShape(p.CLOSE);
+
+                    p.pop();
+
+                    // Rotate based on torque
+                    boltRotation += smoothRatio * 2;
+
+                    // Draw torque meter
+                    p.push();
+                    p.translate(p.width / 2, p.height - 40);
+
+                    // Meter background
+                    p.fill(220);
+                    p.rect(0, 0, p.width * 0.8, 20, 10);
+
+                    // Meter fill
+                    const meterWidth = p.width * 0.8 * smoothRatio;
+                    const meterColor = p.lerpColor(
+                        p.color('#619B8A'),
+                        p.color('#FE7F2D'),
+                        smoothRatio
+                    );
+                    p.fill(meterColor);
+                    p.rect(-p.width * 0.4 + meterWidth / 2, 0, meterWidth, 20, 10);
+
+                    // Ideal torque marker
+                    const idealPos = (currentBolt.idealTorque / currentBolt.maxTorque) * p.width * 0.8 - p.width * 0.4;
+                    p.fill('#233D4D');
+                    p.triangle(
+                        idealPos, -15,
+                        idealPos - 10, 0,
+                        idealPos + 10, 0
+                    );
+
+                    p.pop();
+                };
+
+                p.windowResized = function () {
+                    const container = document.getElementById('canvas-container');
+                    p.resizeCanvas(container.offsetWidth, container.offsetWidth * 0.7);
+                };
+            }
+
+            // Initialize p5 sketch
+            new p5(sketch);
+
+            // Start the app
+            initApp();
+        });
+
+        // Make functions available globally for HTML onclick handlers
+        window.loadCalibration = function (index) {
+            document.dispatchEvent(new CustomEvent('loadCalibration', { detail: index }));
+        };
+
+        window.deleteCalibration = function (index) {
+            document.dispatchEvent(new CustomEvent('deleteCalibration', { detail: index }));
+        };
+
+        document.addEventListener('loadCalibration', (e) => {
+            const app = document.querySelector('script')._app;
+            if (app) app.loadCalibration(e.detail);
+        });
+
+        document.addEventListener('deleteCalibration', (e) => {
+            const app = document.querySelector('script')._app;
+            if (app) app.deleteCalibration(e.detail);
+        });
+    </script>
+</body>
+
+</html>

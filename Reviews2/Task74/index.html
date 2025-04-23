@@ -1,0 +1,652 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cable Stress Analysis</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body {
+            margin: 0;
+            overflow: hidden;
+            font-family: 'Inter', sans-serif;
+        }
+
+        #three-canvas {
+            width: 100%;
+            height: 100%;
+            display: block;
+        }
+
+        .snap-effect {
+            animation: snap 0.5s forwards;
+        }
+
+        @keyframes snap {
+            0% {
+                transform: scale(1);
+            }
+
+            50% {
+                transform: scale(1.2);
+                opacity: 0.8;
+            }
+
+            100% {
+                transform: scale(0);
+                opacity: 0;
+            }
+        }
+
+        .panel {
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+        }
+
+        .gauge {
+            height: 8px;
+            border-radius: 4px;
+            background: linear-gradient(to right, #10B981, #F59E0B, #EF4444);
+            margin-top: 4px;
+        }
+
+        .gauge-fill {
+            height: 100%;
+            border-radius: 4px;
+            background-color: rgba(255, 255, 255, 0.7);
+            transition: width 0.5s ease;
+        }
+
+        .cable-end {
+            position: absolute;
+            width: 40px;
+            height: 40px;
+            background-color: #6B7280;
+            border-radius: 50%;
+            transform: translate(-50%, -50%);
+        }
+
+        .progress-ring__circle {
+            transition: stroke-dashoffset 0.5s ease;
+            transform: rotate(-90deg);
+            transform-origin: 50% 50%;
+        }
+    </style>
+</head>
+
+<body class="bg-gray-100 dark:bg-gray-900 text-gray-900 dark:text-gray-100 transition-colors duration-300">
+    <header class="bg-blue-600 dark:bg-blue-800 text-white p-4 flex justify-between items-center shadow-md">
+        <h1 class="text-2xl font-bold">Cable Stress Analysis</h1>
+        <div class="flex items-center space-x-4">
+            <span id="status-indicator" class="h-3 w-3 rounded-full bg-gray-400"></span>
+            <button id="theme-toggle"
+                class="bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-gray-200 px-4 py-2 rounded-lg flex items-center space-x-2 hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24"
+                    stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z" />
+                </svg>
+                <span>Toggle Theme</span>
+            </button>
+        </div>
+    </header>
+    <main class="flex flex-col lg:flex-row h-[calc(100vh-72px)]">
+        <!-- Controls Panel -->
+        <div
+            class="panel w-full lg:w-1/4 bg-white dark:bg-gray-800 p-6 overflow-y-auto border-r border-gray-200 dark:border-gray-700">
+            <h2 class="text-xl font-semibold mb-6 text-blue-600 dark:text-blue-400">Controls</h2>
+            <div class="space-y-6">
+                <div>
+                    <label class="block text-sm font-medium mb-2 text-gray-700 dark:text-gray-300">Industry:</label>
+                    <select id="industry"
+                        class="w-full p-3 border rounded-lg dark:bg-gray-700 dark:border-gray-600 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition">
+                        <option value="elevator">Elevator Manufacturing</option>
+                        <option value="bridge">Bridge Construction</option>
+                        <option value="marine">Marine Rigging</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium mb-2 text-gray-700 dark:text-gray-300">Material:</label>
+                    <select id="material"
+                        class="w-full p-3 border rounded-lg dark:bg-gray-700 dark:border-gray-600 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition">
+                        <option value="steel">Steel</option>
+                        <option value="nylon">Nylon</option>
+                        <option value="carbon">Carbon Fiber</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium mb-2 text-gray-700 dark:text-gray-300">Diameter
+                        (mm):</label>
+                    <input id="diameter" type="number" min="1" max="100" value="10"
+                        class="w-full p-3 border rounded-lg dark:bg-gray-700 dark:border-gray-600 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium mb-2 text-gray-700 dark:text-gray-300">Load (kN):</label>
+                    <input id="load" type="range" min="0" max="500" value="100" step="1"
+                        class="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer dark:bg-gray-700">
+                    <div class="flex justify-between text-xs text-gray-500 dark:text-gray-400 mt-1">
+                        <span>0</span>
+                        <span id="load-value">100</span>
+                        <span>500</span>
+                    </div>
+                </div>
+                <div class="flex space-x-4">
+                    <button id="analyze"
+                        class="flex-1 bg-blue-600 hover:bg-blue-700 text-white p-3 rounded-lg font-medium flex items-center justify-center space-x-2 transition-colors">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24"
+                            stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M13 10V3L4 14h7v7l9-11h-7z" />
+                        </svg>
+                        <span>Analyze</span>
+                    </button>
+                    <button id="reset"
+                        class="bg-gray-200 hover:bg-gray-300 dark:bg-gray-700 dark:hover:bg-gray-600 text-gray-800 dark:text-gray-200 p-3 rounded-lg font-medium transition-colors">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24"
+                            stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                        </svg>
+                    </button>
+                </div>
+                <div class="border-t border-gray-200 dark:border-gray-700 pt-4">
+                    <button id="save"
+                        class="w-full bg-green-600 hover:bg-green-700 text-white p-3 rounded-lg font-medium flex items-center justify-center space-x-2 transition-colors">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24"
+                            stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z" />
+                        </svg>
+                        <span>Save Results</span>
+                    </button>
+                    <button id="export"
+                        class="w-full bg-purple-600 hover:bg-purple-700 text-white p-3 rounded-lg font-medium mt-3 flex items-center justify-center space-x-2 transition-colors">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24"
+                            stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                        </svg>
+                        <span>Export Report</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- 3D Visualization -->
+        <div class="panel w-full lg:w-2/4 relative">
+            <canvas id="three-canvas"></canvas>
+            <div id="cable-top" class="cable-end top-0 left-1/2"></div>
+            <div id="cable-bottom" class="cable-end bottom-0 left-1/2"></div>
+        </div>
+
+        <!-- Results Panel -->
+        <div
+            class="panel w-full lg:w-1/4 bg-white dark:bg-gray-800 p-6 overflow-y-auto border-l border-gray-200 dark:border-gray-700">
+            <h2 class="text-xl font-semibold mb-6 text-blue-600 dark:text-blue-400">Analysis Results</h2>
+            <div class="space-y-6">
+                <div class="bg-gray-50 dark:bg-gray-700 p-4 rounded-lg">
+                    <div class="flex justify-between items-center mb-2">
+                        <span class="font-medium">Stress Level:</span>
+                        <span id="stress" class="font-bold">0 MPa</span>
+                    </div>
+                    <div class="gauge">
+                        <div id="gauge-fill" class="gauge-fill" style="width: 0%"></div>
+                    </div>
+                </div>
+
+                <div class="bg-gray-50 dark:bg-gray-700 p-4 rounded-lg">
+                    <div class="flex justify-between items-center mb-2">
+                        <span class="font-medium">Tolerance Score:</span>
+                        <span id="score" class="font-bold">0%</span>
+                    </div>
+                    <svg class="w-full h-32" viewBox="0 0 100 100">
+                        <circle cx="50" cy="50" r="45" fill="none" stroke="#E5E7EB" stroke-width="8" />
+                        <circle id="progress-ring" cx="50" cy="50" r="45" fill="none" stroke="#3B82F6" stroke-width="8"
+                            stroke-linecap="round" stroke-dasharray="283" stroke-dashoffset="283" />
+                        <text id="progress-text" x="50" y="55" font-size="20" text-anchor="middle" fill="currentColor"
+                            class="text-gray-800 dark:text-gray-200">0%</text>
+                    </svg>
+                </div>
+
+                <div class="bg-gray-50 dark:bg-gray-700 p-4 rounded-lg">
+                    <div class="flex justify-between items-center mb-2">
+                        <span class="font-medium">Status:</span>
+                        <span id="status"
+                            class="font-bold px-3 py-1 rounded-full text-sm bg-gray-200 dark:bg-gray-600">Idle</span>
+                    </div>
+                    <div id="status-message" class="text-sm mt-2 text-gray-600 dark:text-gray-300">No analysis performed
+                        yet.</div>
+                </div>
+
+                <div class="bg-gray-50 dark:bg-gray-700 p-4 rounded-lg">
+                    <h3 class="font-medium mb-2">Cable Specifications</h3>
+                    <div class="grid grid-cols-2 gap-2 text-sm">
+                        <div>
+                            <span class="text-gray-500 dark:text-gray-400">Industry:</span>
+                            <span id="spec-industry" class="block font-medium">-</span>
+                        </div>
+                        <div>
+                            <span class="text-gray-500 dark:text-gray-400">Material:</span>
+                            <span id="spec-material" class="block font-medium">-</span>
+                        </div>
+                        <div>
+                            <span class="text-gray-500 dark:text-gray-400">Diameter:</span>
+                            <span id="spec-diameter" class="block font-medium">- mm</span>
+                        </div>
+                        <div>
+                            <span class="text-gray-500 dark:text-gray-400">Max Stress:</span>
+                            <span id="spec-max-stress" class="block font-medium">- MPa</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <script>
+        // Enhanced cable data with more properties
+        const cables = {
+            elevator: {
+                material: 'steel',
+                diameter: 10,
+                maxStress: 1000,
+                color: 0x888888,
+                description: 'High-strength steel cables for vertical lifts',
+                youngsModulus: 200 // GPa
+            },
+            bridge: {
+                material: 'steel',
+                diameter: 20,
+                maxStress: 1200,
+                color: 0x555555,
+                description: 'Structural steel cables for suspension bridges',
+                youngsModulus: 200 // GPa
+            },
+            marine: {
+                material: 'nylon',
+                diameter: 15,
+                maxStress: 800,
+                color: 0x0066cc,
+                description: 'Weather-resistant nylon for marine applications',
+                youngsModulus: 3 // GPa
+            }
+        };
+
+        // Material properties
+        const materials = {
+            steel: {
+                density: 7850, // kg/m³
+                tensileStrength: 1000, // MPa
+                color: 0x888888
+            },
+            nylon: {
+                density: 1150, // kg/m³
+                tensileStrength: 800, // MPa
+                color: 0x0066cc
+            },
+            carbon: {
+                density: 1600, // kg/m³
+                tensileStrength: 1500, // MPa
+                color: 0x333333
+            }
+        };
+
+        // Three.js setup
+        const scene = new THREE.Scene();
+        scene.background = new THREE.Color(0xf0f0f0);
+        const canvas = document.getElementById('three-canvas');
+        const renderer = new THREE.WebGLRenderer({ canvas, antialias: true });
+        renderer.setPixelRatio(window.devicePixelRatio);
+        renderer.setSize(canvas.clientWidth, canvas.clientHeight);
+
+        const camera = new THREE.PerspectiveCamera(45, canvas.clientWidth / canvas.clientHeight, 0.1, 1000);
+        camera.position.set(0, 0, 10);
+        camera.lookAt(0, 0, 0);
+
+        const controls = new THREE.OrbitControls(camera, renderer.domElement);
+        controls.enableDamping = true;
+        controls.dampingFactor = 0.05;
+        controls.minDistance = 5;
+        controls.maxDistance = 20;
+
+        // Lighting
+        const ambientLight = new THREE.AmbientLight(0x404040, 0.5);
+        scene.add(ambientLight);
+
+        const directionalLight = new THREE.DirectionalLight(0xffffff, 0.8);
+        directionalLight.position.set(1, 1, 1);
+        scene.add(directionalLight);
+
+        const hemisphereLight = new THREE.HemisphereLight(0xffffff, 0x444444, 0.6);
+        hemisphereLight.position.set(0, 1, 0);
+        scene.add(hemisphereLight);
+
+        // Cable geometry
+        const cableGeometry = new THREE.CylinderGeometry(0.2, 0.2, 2, 32);
+        const cableMaterial = new THREE.MeshPhongMaterial({
+            color: 0x888888,
+            shininess: 30,
+            specular: 0x111111
+        });
+        const cable = new THREE.Mesh(cableGeometry, cableMaterial);
+        scene.add(cable);
+
+        // Cable ends
+        const topEndGeometry = new THREE.SphereGeometry(0.25, 32, 32);
+        const bottomEndGeometry = new THREE.SphereGeometry(0.25, 32, 32);
+        const endMaterial = new THREE.MeshPhongMaterial({ color: 0x555555 });
+        const topEnd = new THREE.Mesh(topEndGeometry, endMaterial);
+        const bottomEnd = new THREE.Mesh(bottomEndGeometry, endMaterial);
+        topEnd.position.y = 1.2;
+        bottomEnd.position.y = -1.2;
+        scene.add(topEnd);
+        scene.add(bottomEnd);
+
+        // Animation loop
+        function animate() {
+            requestAnimationFrame(animate);
+            controls.update();
+            renderer.render(scene, camera);
+        }
+        animate();
+
+        // UI elements
+        const industrySelect = document.getElementById('industry');
+        const materialSelect = document.getElementById('material');
+        const diameterInput = document.getElementById('diameter');
+        const loadInput = document.getElementById('load');
+        const loadValue = document.getElementById('load-value');
+        const analyzeBtn = document.getElementById('analyze');
+        const resetBtn = document.getElementById('reset');
+        const saveBtn = document.getElementById('save');
+        const exportBtn = document.getElementById('export');
+        const stressSpan = document.getElementById('stress');
+        const scoreSpan = document.getElementById('score');
+        const statusSpan = document.getElementById('status');
+        const statusMessage = document.getElementById('status-message');
+        const statusIndicator = document.getElementById('status-indicator');
+        const themeToggle = document.getElementById('theme-toggle');
+        const gaugeFill = document.getElementById('gauge-fill');
+        const progressRing = document.getElementById('progress-ring');
+        const progressText = document.getElementById('progress-text');
+        const specIndustry = document.getElementById('spec-industry');
+        const specMaterial = document.getElementById('spec-material');
+        const specDiameter = document.getElementById('spec-diameter');
+        const specMaxStress = document.getElementById('spec-max-stress');
+
+        // Initialize UI
+        function updateUI() {
+            const industry = industrySelect.value;
+            const cableData = cables[industry];
+
+            materialSelect.value = cableData.material;
+            diameterInput.value = cableData.diameter;
+
+            // Update cable appearance
+            cableMaterial.color.setHex(cableData.color);
+            endMaterial.color.setHex(cableData.color);
+
+            // Update specifications
+            specIndustry.textContent = industrySelect.options[industrySelect.selectedIndex].text;
+            specMaterial.textContent = materialSelect.options[materialSelect.selectedIndex].text;
+            specDiameter.textContent = diameterInput.value;
+            specMaxStress.textContent = cableData.maxStress;
+
+            // Reset analysis
+            resetAnalysis();
+        }
+
+        function resetAnalysis() {
+            stressSpan.textContent = '0 MPa';
+            scoreSpan.textContent = '0%';
+            statusSpan.textContent = 'Idle';
+            statusSpan.className = 'font-bold px-3 py-1 rounded-full text-sm bg-gray-200 dark:bg-gray-600';
+            statusMessage.textContent = 'No analysis performed yet.';
+            statusIndicator.className = 'h-3 w-3 rounded-full bg-gray-400';
+            gaugeFill.style.width = '0%';
+            progressRing.style.strokeDashoffset = '283';
+            progressText.textContent = '0%';
+
+            // Reset cable visuals
+            cable.scale.set(1, 1, 1);
+            cable.position.y = 0;
+            topEnd.position.y = 1.2;
+            bottomEnd.position.y = -1.2;
+            cableMaterial.color.setHex(cables[industrySelect.value].color);
+        }
+
+        industrySelect.addEventListener('change', updateUI);
+        materialSelect.addEventListener('change', () => {
+            const material = materials[materialSelect.value];
+            cableMaterial.color.setHex(material.color);
+            endMaterial.color.setHex(material.color);
+            specMaterial.textContent = materialSelect.options[materialSelect.selectedIndex].text;
+        });
+
+        diameterInput.addEventListener('change', () => {
+            specDiameter.textContent = diameterInput.value + ' mm';
+        });
+
+        loadInput.addEventListener('input', () => {
+            loadValue.textContent = loadInput.value;
+        });
+
+        resetBtn.addEventListener('click', resetAnalysis);
+
+        // Stress analysis
+        analyzeBtn.addEventListener('click', () => {
+            const industry = industrySelect.value;
+            const material = materialSelect.value;
+            const load = parseFloat(loadInput.value) * 1000; // kN to N
+            const diameter = parseFloat(diameterInput.value) / 1000; // mm to m
+            const area = Math.PI * (diameter / 2) ** 2; // m^2
+            const stress = (load / area) / 1e6; // Pa to MPa
+            const maxStress = cables[industry].maxStress;
+            const score = Math.max(0, Math.min(100, 100 * (1 - stress / maxStress)));
+            const percentage = Math.min(100, (stress / maxStress) * 100);
+
+            // Update results
+            stressSpan.textContent = stress.toFixed(2) + ' MPa';
+            scoreSpan.textContent = score.toFixed(2) + '%';
+
+            // Update gauge
+            gaugeFill.style.width = `${percentage}%`;
+
+            // Update progress ring
+            const offset = 283 - (283 * (score / 100));
+            progressRing.style.strokeDashoffset = offset;
+            progressText.textContent = `${score.toFixed(0)}%`;
+
+            // Update status
+            if (stress > maxStress) {
+                statusSpan.textContent = 'Danger';
+                statusSpan.className = 'font-bold px-3 py-1 rounded-full text-sm bg-red-500 text-white';
+                statusMessage.textContent = 'Cable is overstressed and likely to fail!';
+                statusIndicator.className = 'h-3 w-3 rounded-full bg-red-500 animate-pulse';
+
+                // Snap effect
+                cable.scale.set(1, 1, 1);
+                cableMaterial.color.setHex(0xff0000);
+                setTimeout(() => {
+                    cable.visible = false;
+                    setTimeout(() => {
+                        cable.visible = true;
+                        cableMaterial.color.setHex(cables[industry].color);
+                        resetAnalysis();
+                    }, 500);
+                }, 500);
+            } else if (stress > maxStress * 0.8) {
+                statusSpan.textContent = 'Warning';
+                statusSpan.className = 'font-bold px-3 py-1 rounded-full text-sm bg-yellow-500 text-white';
+                statusMessage.textContent = 'Cable is near maximum stress limit.';
+                statusIndicator.className = 'h-3 w-3 rounded-full bg-yellow-500';
+            } else {
+                statusSpan.textContent = 'Safe';
+                statusSpan.className = 'font-bold px-3 py-1 rounded-full text-sm bg-green-500 text-white';
+                statusMessage.textContent = 'Cable is within safe operating limits.';
+                statusIndicator.className = 'h-3 w-3 rounded-full bg-green-500';
+            }
+
+            // Update cable visuals
+            const stretchFactor = 1 + (stress / maxStress) * 0.5; // Max 1.5x stretch
+            cable.scale.y = stretchFactor;
+
+            // Calculate elongation based on Young's modulus
+            const youngsModulus = cables[industry].youngsModulus * 1e9; // GPa to Pa
+            const strain = stress * 1e6 / youngsModulus;
+            const elongation = strain * 2; // Original length is 2 units
+
+            // Move the ends to show elongation
+            topEnd.position.y = 1.2 + elongation / 2;
+            bottomEnd.position.y = -1.2 - elongation / 2;
+
+            // Color change based on stress level
+            if (stress > maxStress * 0.9) {
+                const redIntensity = Math.min(255, Math.floor(255 * (stress / maxStress)));
+                cableMaterial.color.setRGB(redIntensity / 255, 0, 0);
+            } else {
+                const colorIntensity = 0.5 + (stress / maxStress) * 0.5;
+                const baseColor = new THREE.Color(cables[industry].color);
+                cableMaterial.color.setRGB(
+                    baseColor.r * colorIntensity,
+                    baseColor.g * colorIntensity,
+                    baseColor.b * colorIntensity
+                );
+            }
+        });
+
+        // Save results
+        saveBtn.addEventListener('click', () => {
+            const results = {
+                industry: industrySelect.options[industrySelect.selectedIndex].text,
+                material: materialSelect.options[materialSelect.selectedIndex].text,
+                diameter: diameterInput.value,
+                load: loadInput.value,
+                stress: stressSpan.textContent,
+                score: scoreSpan.textContent,
+                status: statusSpan.textContent,
+                timestamp: new Date().toISOString()
+            };
+
+            try {
+                localStorage.setItem('cableAnalysis', JSON.stringify(results));
+
+                // Show success feedback
+                const originalText = saveBtn.innerHTML;
+                saveBtn.innerHTML = `
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-green-400" viewBox="0 0 20 20" fill="currentColor">
+                        <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd" />
+                    </svg>
+                    <span>Saved!</span>
+                `;
+                saveBtn.classList.remove('bg-green-600', 'hover:bg-green-700');
+                saveBtn.classList.add('bg-green-500');
+
+                setTimeout(() => {
+                    saveBtn.innerHTML = originalText;
+                    saveBtn.classList.add('bg-green-600', 'hover:bg-green-700');
+                    saveBtn.classList.remove('bg-green-500');
+                }, 2000);
+            } catch (e) {
+                alert('Failed to save results: ' + e.message);
+            }
+        });
+
+        // Export report
+        exportBtn.addEventListener('click', () => {
+            const report = `
+Cable Stress Analysis Report
+===========================
+
+Analysis Date: ${new Date().toLocaleString()}
+
+Cable Specifications
+-------------------
+Industry: ${industrySelect.options[industrySelect.selectedIndex].text}
+Material: ${materialSelect.options[materialSelect.selectedIndex].text}
+Diameter: ${diameterInput.value} mm
+Maximum Stress: ${cables[industrySelect.value].maxStress} MPa
+
+Test Parameters
+--------------
+Applied Load: ${loadInput.value} kN
+
+Results
+-------
+Calculated Stress: ${stressSpan.textContent}
+Tolerance Score: ${scoreSpan.textContent}
+Status: ${statusSpan.textContent}
+
+Recommendation
+-------------
+${statusMessage.textContent}
+
+Generated by Cable Stress Analysis Tool
+            `;
+
+            const blob = new Blob([report], { type: 'text/plain' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `cable_analysis_${new Date().toISOString().slice(0, 10)}.txt`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+
+            // Show export feedback
+            const originalText = exportBtn.innerHTML;
+            exportBtn.innerHTML = `
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-purple-400" viewBox="0 0 20 20" fill="currentColor">
+                    <path fill-rule="evenodd" d="M3 17a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm3.293-7.707a1 1 0 011.414 0L9 10.586V3a1 1 0 112 0v7.586l1.293-1.293a1 1 0 111.414 1.414l-3 3a1 1 0 01-1.414 0l-3-3a1 1 0 010-1.414z" clip-rule="evenodd" />
+                </svg>
+                <span>Exported!</span>
+            `;
+            exportBtn.classList.remove('bg-purple-600', 'hover:bg-purple-700');
+            exportBtn.classList.add('bg-purple-500');
+
+            setTimeout(() => {
+                exportBtn.innerHTML = originalText;
+                exportBtn.classList.add('bg-purple-600', 'hover:bg-purple-700');
+                exportBtn.classList.remove('bg-purple-500');
+            }, 2000);
+        });
+
+        // Theme toggle
+        function toggleTheme() {
+            const isDark = document.body.classList.toggle('dark');
+            localStorage.setItem('theme', isDark ? 'dark' : 'light');
+
+            // Update Three.js scene background
+            scene.background = new THREE.Color(isDark ? 0x111111 : 0xf0f0f0);
+        }
+
+        if (localStorage.getItem('theme') === 'dark') {
+            document.body.classList.add('dark');
+            scene.background = new THREE.Color(0x111111);
+        }
+
+        themeToggle.addEventListener('click', toggleTheme);
+
+        // Resize handler
+        function handleResize() {
+            const width = canvas.clientWidth;
+            const height = canvas.clientHeight;
+
+            camera.aspect = width / height;
+            camera.updateProjectionMatrix();
+            renderer.setSize(width, height, false);
+        }
+
+        window.addEventListener('resize', handleResize);
+
+        // Initialize
+        updateUI();
+        handleResize();
+    </script>
+</body>
+
+</html>
