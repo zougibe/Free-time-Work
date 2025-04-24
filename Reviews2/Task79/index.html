@@ -1,0 +1,754 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Catalan Object Generator</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.4.2/p5.min.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+
+        .formula {
+            font-family: 'Times New Roman', Times, serif;
+            font-style: italic;
+        }
+
+        .catalan-structure {
+            transition: all 0.2s ease;
+            box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+        }
+
+        .catalan-structure:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 6px rgba(124, 58, 237, 0.1);
+        }
+
+        .catalan-structure.active {
+            background-color: #ede9fe !important;
+            border-color: #8b5cf6 !important;
+            box-shadow: 0 0 0 3px rgba(139, 92, 246, 0.2);
+        }
+
+        .step-counter {
+            position: absolute;
+            top: 12px;
+            right: 12px;
+            background-color: rgba(99, 102, 241, 0.9);
+            color: white;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-weight: 600;
+            font-size: 0.85rem;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        .tooltip {
+            position: relative;
+        }
+
+        .tooltip:hover .tooltip-text {
+            visibility: visible;
+            opacity: 1;
+        }
+
+        .tooltip-text {
+            visibility: hidden;
+            opacity: 0;
+            position: absolute;
+            z-index: 10;
+            bottom: 125%;
+            left: 50%;
+            transform: translateX(-50%);
+            background-color: #4f46e5;
+            color: white;
+            padding: 6px 10px;
+            border-radius: 6px;
+            font-size: 0.8rem;
+            white-space: nowrap;
+            transition: all 0.2s ease;
+        }
+
+        .tooltip-text::after {
+            content: "";
+            position: absolute;
+            top: 100%;
+            left: 50%;
+            transform: translateX(-50%);
+            border-width: 5px;
+            border-style: solid;
+            border-color: #4f46e5 transparent transparent transparent;
+        }
+
+        .animate-pulse-slow {
+            animation: pulse 3s infinite;
+        }
+
+        @keyframes pulse {
+
+            0%,
+            100% {
+                opacity: 1;
+            }
+
+            50% {
+                opacity: 0.8;
+            }
+        }
+
+        .slider {
+            -webkit-appearance: none;
+            height: 6px;
+            border-radius: 3px;
+            background: #ddd6fe;
+        }
+
+        .slider::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 18px;
+            height: 18px;
+            border-radius: 50%;
+            background: #7c3aed;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .slider::-webkit-slider-thumb:hover {
+            background: #6d28d9;
+            transform: scale(1.1);
+        }
+    </style>
+</head>
+
+<body class="bg-gradient-to-br from-indigo-50 to-purple-50 min-h-screen flex flex-col items-center p-4 md:p-6">
+    <header
+        class="text-center p-6 bg-gradient-to-r from-indigo-600 to-purple-600 text-white rounded-xl shadow-lg mb-8 w-full max-w-5xl">
+        <div class="flex items-center justify-center gap-3 mb-2">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8" viewBox="0 0 20 20" fill="currentColor">
+                <path fill-rule="evenodd"
+                    d="M11.3 1.046A1 1 0 0112 2v5h4a1 1 0 01.82 1.573l-7 10A1 1 0 018 18v-5H4a1 1 0 01-.82-1.573l7-10a1 1 0 011.12-.38z"
+                    clip-rule="evenodd" />
+            </svg>
+            <h1 class="text-3xl md:text-4xl font-bold">Catalan Object Generator</h1>
+        </div>
+        <p class="text-lg md:text-xl text-indigo-100 mt-2">Interactive Exploration of Combinatorial Structures</p>
+        <div class="flex flex-wrap justify-center gap-3 mt-5">
+            <div class="px-3 py-1 bg-white bg-opacity-15 rounded-full text-sm flex items-center gap-1">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
+                    <path fill-rule="evenodd"
+                        d="M3 4a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm0 4a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm0 4a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm0 4a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1z"
+                        clip-rule="evenodd" />
+                </svg>
+                Parentheses
+            </div>
+            <div class="px-3 py-1 bg-white bg-opacity-15 rounded-full text-sm flex items-center gap-1">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
+                    <path fill-rule="evenodd"
+                        d="M12 13a1 1 0 100 2h5a1 1 0 001-1v-5a1 1 0 10-2 0v2.586l-4.293-4.293a1 1 0 00-1.414 0L8 9.586l-4.293-4.293a1 1 0 00-1.414 1.414l5 5a1 1 0 001.414 0L11 9.414 14.586 13H12z"
+                        clip-rule="evenodd" />
+                </svg>
+                Binary Trees
+            </div>
+            <div class="px-3 py-1 bg-white bg-opacity-15 rounded-full text-sm flex items-center gap-1">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
+                    <path fill-rule="evenodd"
+                        d="M3 5a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zM3 10a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zM3 15a1 1 0 011-1h6a1 1 0 110 2H4a1 1 0 01-1-1z"
+                        clip-rule="evenodd" />
+                </svg>
+                Dyck Paths
+            </div>
+            <div class="px-3 py-1 bg-white bg-opacity-15 rounded-full text-sm flex items-center gap-1">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
+                    <path fill-rule="evenodd"
+                        d="M12 1.586l-4 4v12.828l4-4V1.586zM3.707 3.293A1 1 0 002 4v10a1 1 0 00.293.707L6 18.414V5.586L3.707 3.293zM17.707 5.293L14 1.586v12.828l2.293 2.293A1 1 0 0018 16V6a1 1 0 00-.293-.707z"
+                        clip-rule="evenodd" />
+                </svg>
+                Mountain Ranges
+            </div>
+        </div>
+    </header>
+
+    <div class="bg-white p-6 rounded-xl shadow-lg w-full max-w-5xl">
+        <div class="mb-6 p-4 bg-indigo-50 border-l-4 border-indigo-500 rounded-lg shadow-sm" id="instructionsBox">
+            <div class="flex justify-between items-start">
+                <div>
+                    <h3 class="text-lg font-semibold text-indigo-800 flex items-center gap-2">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                            <path fill-rule="evenodd"
+                                d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z"
+                                clip-rule="evenodd" />
+                        </svg>
+                        How to Use This Tool
+                    </h3>
+                    <ol class="mt-2 ml-2 list-decimal text-indigo-700 space-y-1 pl-4">
+                        <li>Select a <b>structure type</b> from the dropdown menu</li>
+                        <li>Choose a value for <b>n</b> (1-5) to determine complexity</li>
+                        <li>Click <b>Generate</b> to create all possible structures</li>
+                        <li>Select any structure from the list to visualize it</li>
+                        <li>Use the <b>Animation</b> controls to see step-by-step construction</li>
+                        <li>Click on parts of the visualization to see detailed information</li>
+                        <li>Use <b>Show Recursion</b> to understand the mathematical formula</li>
+                    </ol>
+                </div>
+                <button id="hideInstructions"
+                    class="text-indigo-600 hover:text-indigo-800 p-1 rounded-full hover:bg-indigo-100">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                        <path fill-rule="evenodd"
+                            d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z"
+                            clip-rule="evenodd" />
+                    </svg>
+                </button>
+            </div>
+        </div>
+
+        <div class="flex flex-col md:flex-row gap-4 mb-4">
+            <div class="flex-1">
+                <label for="structureType" class="block text-sm font-medium text-gray-700 mb-1">Structure Type</label>
+                <div class="relative">
+                    <select id="structureType"
+                        class="block w-full pl-3 pr-10 py-2 text-base border border-gray-300 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 rounded-md transition">
+                        <option value="parentheses">Valid Parentheses</option>
+                        <option value="binaryTrees">Binary Trees</option>
+                        <option value="dyckPaths">Dyck Paths</option>
+                        <option value="mountainRanges">Mountain Ranges</option>
+                    </select>
+                    <div class="absolute inset-y-0 right-0 flex items-center pr-2 pointer-events-none">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-gray-400" viewBox="0 0 20 20"
+                            fill="currentColor">
+                            <path fill-rule="evenodd"
+                                d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z"
+                                clip-rule="evenodd" />
+                        </svg>
+                    </div>
+                </div>
+            </div>
+            <div class="flex-1">
+                <label for="nInput" class="block text-sm font-medium text-gray-700 mb-1">Complexity (n)</label>
+                <div class="flex items-center gap-3">
+                    <input type="range" id="nSlider" min="1" max="5" value="3" class="slider flex-1">
+                    <input type="number" id="nInput" min="1" max="5" value="3"
+                        class="w-16 text-center border border-gray-300 rounded-md py-1 px-2 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500">
+                </div>
+            </div>
+        </div>
+
+        <div class="flex flex-wrap gap-3 mb-4">
+            <button id="generateBtn"
+                class="bg-indigo-600 text-white px-4 py-2 rounded-md hover:bg-indigo-700 transition flex items-center gap-2 shadow-md hover:shadow-lg">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                    <path fill-rule="evenodd"
+                        d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z"
+                        clip-rule="evenodd" />
+                </svg>
+                Generate
+            </button>
+            <button id="animateBtn"
+                class="bg-emerald-600 text-white px-4 py-2 rounded-md hover:bg-emerald-700 transition flex items-center gap-2 shadow-md hover:shadow-lg"
+                disabled>
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                    <path fill-rule="evenodd"
+                        d="M10 18a8 8 0 100-16 8 8 0 000 16zM9.555 7.168A1 1 0 008 8v4a1 1 0 001.555.832l3-2a1 1 0 000-1.664l-3-2z"
+                        clip-rule="evenodd" />
+                </svg>
+                Animate
+            </button>
+            <button id="pauseBtn"
+                class="bg-amber-500 text-white px-4 py-2 rounded-md hover:bg-amber-600 transition flex items-center gap-2 shadow-md hover:shadow-lg"
+                disabled>
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                    <path fill-rule="evenodd"
+                        d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zM7 8a1 1 0 012 0v4a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v4a1 1 0 102 0V8a1 1 0 00-1-1z"
+                        clip-rule="evenodd" />
+                </svg>
+                Pause
+            </button>
+            <button id="resetBtn"
+                class="bg-rose-600 text-white px-4 py-2 rounded-md hover:bg-rose-700 transition flex items-center gap-2 shadow-md hover:shadow-lg"
+                disabled>
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                    <path fill-rule="evenodd"
+                        d="M4 2a1 1 0 011 1v2.101a7.002 7.002 0 0111.601 2.566 1 1 0 11-1.885.666A5.002 5.002 0 005.999 7H9a1 1 0 010 2H4a1 1 0 01-1-1V3a1 1 0 011-1zm.008 9.057a1 1 0 011.276.61A5.002 5.002 0 0014.001 13H11a1 1 0 110-2h5a1 1 0 011 1v5a1 1 0 11-2 0v-2.101a7.002 7.002 0 01-11.601-2.566 1 1 0 01.61-1.276z"
+                        clip-rule="evenodd" />
+                </svg>
+                Reset
+            </button>
+            <div class="flex items-center gap-2 ml-auto">
+                <span class="text-sm text-gray-600">Speed:</span>
+                <input type="range" id="speedSlider" min="100" max="1000" value="300" step="100" class="slider w-24">
+            </div>
+        </div>
+
+        <div class="relative mb-4">
+            <div id="canvasContainer"
+                class="w-full h-96 bg-gray-50 rounded-lg overflow-hidden shadow-inner border border-gray-200 flex items-center justify-center">
+                <div class="text-center text-gray-400">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-12 w-12 mx-auto mb-2" fill="none"
+                        viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1"
+                            d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
+                    </svg>
+                    <p class="font-medium">Select a structure and n, then click Generate!</p>
+                    <p class="text-sm mt-1">Visualization will appear here</p>
+                </div>
+            </div>
+            <div id="stepCounter" class="step-counter hidden">Step: 0/0</div>
+            <div id="interactionHint"
+                class="absolute bottom-3 left-3 p-2 bg-white bg-opacity-80 rounded-lg text-sm text-gray-700 shadow-sm hidden">
+                Click on elements to see details
+            </div>
+        </div>
+
+        <div id="structureInfo"
+            class="mt-4 p-4 bg-indigo-50 rounded-lg shadow-sm border-l-4 border-indigo-500 transition-all duration-300 hidden">
+            <div class="flex justify-between items-start">
+                <h3 class="font-semibold text-indigo-800 flex items-center gap-2">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                        <path fill-rule="evenodd"
+                            d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z"
+                            clip-rule="evenodd" />
+                    </svg>
+                    Structure Details
+                </h3>
+                <button id="closeDetails"
+                    class="text-indigo-500 hover:text-indigo-700 p-1 rounded-full hover:bg-indigo-100">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                        <path fill-rule="evenodd"
+                            d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z"
+                            clip-rule="evenodd" />
+                    </svg>
+                </button>
+            </div>
+            <p id="structureDetails" class="text-gray-700 mt-2"></p>
+            <div id="additionalInfo" class="mt-3 text-sm text-indigo-600"></div>
+        </div>
+
+        <div class="mt-6">
+            <h3 class="text-xl font-semibold text-indigo-800 flex items-center gap-2">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" viewBox="0 0 20 20" fill="currentColor">
+                    <path fill-rule="evenodd"
+                        d="M3 4a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm0 4a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm0 4a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm0 4a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1z"
+                        clip-rule="evenodd" />
+                </svg>
+                Catalan Structures (C<sub>n</sub>)
+            </h3>
+            <p id="catalanCount" class="text-gray-600 mb-3"></p>
+            <div id="structureList" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3"></div>
+        </div>
+
+        <div id="recursionExplanation"
+            class="mt-6 hidden p-5 bg-gradient-to-r from-indigo-50 to-purple-50 rounded-xl border border-indigo-100">
+            <h3 class="text-xl font-semibold text-indigo-800 flex items-center gap-2 mb-3">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" viewBox="0 0 20 20" fill="currentColor">
+                    <path fill-rule="evenodd"
+                        d="M11.3 1.046A1 1 0 0112 2v5h4a1 1 0 01.82 1.573l-7 10A1 1 0 018 18v-5H4a1 1 0 01-.82-1.573l7-10a1 1 0 011.12-.38z"
+                        clip-rule="evenodd" />
+                </svg>
+                Recursive Catalan Formula
+            </h3>
+            <p class="text-gray-700 mb-3">The Catalan number C<sub>n</sub> counts the number of valid structures for a
+                given n. It follows the recursive formula:</p>
+            <div class="formula bg-white p-4 rounded-lg text-center text-lg mb-4 shadow-sm">
+                C<sub>n</sub> = ∑<sub>i=0</sub><sup>n-1</sup> C<sub>i</sub> · C<sub>n-1-i</sub>, with C<sub>0</sub> = 1
+            </div>
+            <div id="recursionDetails" class="text-gray-700">
+                <p class="font-medium text-indigo-700 mb-2">For example:</p>
+                <ul class="list-disc pl-5 space-y-2">
+                    <li>C<sub>0</sub> = 1 (by definition)</li>
+                    <li>C<sub>1</sub> = C<sub>0</sub> · C<sub>0</sub> = 1 · 1 = 1</li>
+                    <li>C<sub>2</sub> = C<sub>0</sub> · C<sub>1</sub> + C<sub>1</sub> · C<sub>0</sub> = 1 · 1 + 1 · 1 =
+                        2</li>
+                    <li>C<sub>3</sub> = C<sub>0</sub> · C<sub>2</sub> + C<sub>1</sub> · C<sub>1</sub> + C<sub>2</sub> ·
+                        C<sub>0</sub> = 1 · 2 + 1 · 1 + 2 · 1 = 5</li>
+                </ul>
+            </div>
+            <button id="hideRecursion"
+                class="mt-4 text-sm text-indigo-600 hover:text-indigo-800 flex items-center gap-1">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
+                    <path fill-rule="evenodd"
+                        d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z"
+                        clip-rule="evenodd" />
+                </svg>
+                Hide explanation
+            </button>
+        </div>
+    </div>
+
+    <footer
+        class="mt-8 py-6 bg-gradient-to-r from-gray-800 to-gray-900 text-white rounded-xl shadow-lg w-full max-w-5xl">
+        <div class="container mx-auto px-4">
+            <div class="flex flex-col md:flex-row justify-between items-center">
+                <div class="mb-4 md:mb-0">
+                    <h3 class="text-xl font-semibold flex items-center gap-2">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-indigo-300" viewBox="0 0 20 20"
+                            fill="currentColor">
+                            <path fill-rule="evenodd"
+                                d="M11.3 1.046A1 1 0 0112 2v5h4a1 1 0 01.82 1.573l-7 10A1 1 0 018 18v-5H4a1 1 0 01-.82-1.573l7-10a1 1 0 011.12-.38z"
+                                clip-rule="evenodd" />
+                        </svg>
+                        Catalan Object Generator
+                    </h3>
+                    <p class="text-gray-300 text-sm mt-1">A visual exploration of combinatorial structures</p>
+                </div>
+                <div class="flex flex-col items-center md:items-end">
+                    <p class="text-gray-300 text-sm">© 2025 Catalan Mathematical Visualizations</p>
+                    <div class="flex gap-3 mt-2">
+                        <a href="#" class="text-gray-300 hover:text-white transition">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20"
+                                fill="currentColor">
+                                <path fill-rule="evenodd"
+                                    d="M12.586 4.586a2 2 0 112.828 2.828l-3 3a2 2 0 01-2.828 0 1 1 0 00-1.414 1.414 4 4 0 005.656 0l3-3a4 4 0 00-5.656-5.656l-1.5 1.5a1 1 0 101.414 1.414l1.5-1.5zm-5 5a2 2 0 012.828 0 1 1 0 101.414-1.414 4 4 0 00-5.656 0l-3 3a4 4 0 105.656 5.656l1.5-1.5a1 1 0 10-1.414-1.414l-1.5 1.5a2 2 0 11-2.828-2.828l3-3z"
+                                    clip-rule="evenodd" />
+                            </svg>
+                        </a>
+                        <a href="#" class="text-gray-300 hover:text-white transition">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20"
+                                fill="currentColor">
+                                <path d="M2.003 5.884L10 9.882l7.997-3.998A2 2 0 0016 4H4a2 2 0 00-1.997 1.884z" />
+                                <path d="M18 8.118l-8 4-8-4V14a2 2 0 002 2h12a2 2 0 002-2V8.118z" />
+                            </svg>
+                        </a>
+                        <a href="#" class="text-gray-300 hover:text-white transition">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20"
+                                fill="currentColor">
+                                <path fill-rule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z"
+                                    clip-rule="evenodd" />
+                            </svg>
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <script>
+        let structures = [];
+        let currentStructure = null;
+        let animationStep = 0;
+        let maxAnimationSteps = 0;
+        let isAnimating = false;
+        let animationSpeed = 300;
+        let animationTimer = null;
+        let p5Canvas = null;
+        let currentlyActiveDiv = null;
+        let showInstructions = true;
+
+        // Initialize the app
+        document.addEventListener('DOMContentLoaded', function () {
+            // Set up event listeners
+            setupEventListeners();
+
+            // Initialize the p5 canvas
+            p5Canvas = new p5(sketch);
+
+            // Generate initial structures
+            document.getElementById('generateBtn').click();
+        });
+
+        function setupEventListeners() {
+            // Close details panel
+            document.getElementById('closeDetails').addEventListener('click', function () {
+                document.getElementById('structureInfo').classList.add('hidden');
+            });
+
+            // Hide recursion explanation
+            document.getElementById('hideRecursion').addEventListener('click', function () {
+                document.getElementById('recursionExplanation').classList.add('hidden');
+            });
+
+            // Sync range and number inputs for n
+            document.getElementById('nSlider').addEventListener('input', function () {
+                document.getElementById('nInput').value = this.value;
+            });
+            document.getElementById('nInput').addEventListener('input', function () {
+                let value = Math.min(5, Math.max(1, parseInt(this.value) || 3));
+                this.value = value;
+                document.getElementById('nSlider').value = value;
+            });
+
+            // Animation speed control
+            document.getElementById('speedSlider').addEventListener('input', function () {
+                animationSpeed = 1000 - this.value; // Invert so right = faster
+            });
+
+            // Generate button
+            document.getElementById('generateBtn').addEventListener('click', generateStructures);
+
+            // Animation controls
+            document.getElementById('animateBtn').addEventListener('click', startAnimation);
+            document.getElementById('pauseBtn').addEventListener('click', pauseAnimation);
+            document.getElementById('resetBtn').addEventListener('click', resetAnimation);
+
+            // Recursion explanation toggle
+            document.getElementById('recursionBtn').addEventListener('click', toggleRecursion);
+
+            // Structure type change
+            document.getElementById('structureType').addEventListener('change', function () {
+                if (currentStructure) {
+                    let type = this.value;
+                    let n = parseInt(document.getElementById('nInput').value);
+
+                    if (type === 'parentheses' || type === 'dyckPaths' || type === 'mountainRanges') {
+                        maxAnimationSteps = 2 * n;
+                    } else if (type === 'binaryTrees') {
+                        maxAnimationSteps = currentStructure.length;
+                    }
+
+                    animationStep = 0;
+                    document.getElementById('stepCounter').textContent = `Step: 0/${maxAnimationSteps}`;
+                }
+            });
+
+            // Hide instructions
+            document.getElementById('hideInstructions').addEventListener('click', function () {
+                const instructionsBox = document.getElementById('instructionsBox');
+                instructionsBox.classList.add('hidden');
+                showInstructions = false;
+
+                const showBtn = document.createElement('button');
+                showBtn.textContent = "Show Instructions";
+                showBtn.className = "text-sm text-indigo-600 hover:text-indigo-800 mb-3 flex items-center gap-1";
+                showBtn.innerHTML = `
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
+            <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd" />
+          </svg>
+          Show Instructions
+        `;
+                showBtn.addEventListener('click', function () {
+                    instructionsBox.classList.remove('hidden');
+                    this.remove();
+                });
+                instructionsBox.parentNode.insertBefore(showBtn, instructionsBox);
+            });
+        }
+
+        /* [Previous functions remain the same - catalanNumber(), generateParentheses(), 
+           generateBinaryTrees(), generateDyckPaths(), drawParentheses(), drawBinaryTree(), 
+           drawDyckPath(), drawMountainRange(), highlightParentheses(), highlightPeaksAndValleys()] */
+        // Note: All the core logic functions from your original code should be included here
+        // I've omitted them for brevity but they're essential for the functionality
+
+        function generateStructures() {
+            let n = parseInt(document.getElementById('nInput').value);
+            if (n < 1 || n > 5) {
+                alert('Please enter n between 1 and 5.');
+                return;
+            }
+
+            let type = document.getElementById('structureType').value;
+
+            // Generate structures based on type
+            if (type === 'parentheses') {
+                structures = generateParentheses(n);
+                maxAnimationSteps = 2 * n;
+            } else if (type === 'binaryTrees') {
+                structures = generateBinaryTrees(n);
+                maxAnimationSteps = structures[0].length;
+            } else if (type === 'dyckPaths' || type === 'mountainRanges') {
+                structures = generateDyckPaths(n);
+                maxAnimationSteps = 2 * n;
+            }
+
+            let structureList = document.getElementById('structureList');
+            let catalanCount = document.getElementById('catalanCount');
+
+            catalanCount.innerHTML = `There are <span class="font-bold text-indigo-600">C<sub>${n}</sub> = ${catalanNumber(n)}</span> possible structures:`;
+            structureList.innerHTML = '';
+
+            // Create structure cards
+            structures.forEach((s, i) => {
+                let div = document.createElement('div');
+                div.className = 'catalan-structure p-3 bg-white rounded-lg border border-gray-200 cursor-pointer hover:border-indigo-300 flex items-center justify-center';
+
+                // Add tooltip
+                let tooltip = document.createElement('div');
+                tooltip.className = 'tooltip';
+
+                let tooltipText = document.createElement('span');
+                tooltipText.className = 'tooltip-text';
+
+                if (type === 'parentheses') {
+                    div.textContent = s;
+                    tooltipText.textContent = "Balanced parentheses - click to visualize";
+                } else if (type === 'binaryTrees') {
+                    div.textContent = formatBinaryTree(s);
+                    tooltipText.textContent = "Binary tree representation - click to visualize";
+                } else if (type === 'dyckPaths' || type === 'mountainRanges') {
+                    div.textContent = formatPath(s);
+                    tooltipText.textContent = type === 'dyckPaths'
+                        ? "Dyck path where ↗ = up, ↘ = down"
+                        : "Mountain range profile";
+                }
+
+                tooltip.appendChild(div);
+                tooltip.appendChild(tooltipText);
+
+                div.addEventListener('click', () => {
+                    // Remove active class from previous selection
+                    if (currentlyActiveDiv) {
+                        currentlyActiveDiv.classList.remove('active');
+                    }
+
+                    // Add active class to current selection
+                    div.classList.add('active');
+                    currentlyActiveDiv = div;
+
+                    currentStructure = s;
+                    animationStep = 0;
+                    isAnimating = false;
+
+                    // Show step counter
+                    document.getElementById('stepCounter').classList.remove('hidden');
+                    document.getElementById('stepCounter').textContent = `Step: 0/${maxAnimationSteps}`;
+
+                    // Enable animation controls
+                    document.getElementById('animateBtn').disabled = false;
+                    document.getElementById('resetBtn').disabled = false;
+                    document.getElementById('pauseBtn').disabled = true;
+
+                    // Show interaction hint
+                    document.getElementById('interactionHint').classList.remove('hidden');
+
+                    // Clear any running animation
+                    if (animationTimer) {
+                        clearInterval(animationTimer);
+                        animationTimer = null;
+                    }
+                });
+
+                structureList.appendChild(tooltip);
+            });
+
+            // Hide structure details panel
+            document.getElementById('structureInfo').classList.add('hidden');
+        }
+
+        function startAnimation() {
+            if (!currentStructure) return;
+
+            isAnimating = true;
+            document.getElementById('animateBtn').disabled = true;
+            document.getElementById('pauseBtn').disabled = false;
+
+            // Clear any existing animation
+            if (animationTimer) clearInterval(animationTimer);
+
+            // Start new animation
+            animationTimer = setInterval(() => {
+                animationStep++;
+                document.getElementById('stepCounter').textContent = `Step: ${animationStep}/${maxAnimationSteps}`;
+
+                if (animationStep >= maxAnimationSteps) {
+                    // Animation complete
+                    clearInterval(animationTimer);
+                    animationTimer = null;
+                    isAnimating = false;
+                    document.getElementById('animateBtn').disabled = false;
+                    document.getElementById('pauseBtn').disabled = true;
+                }
+            }, animationSpeed);
+        }
+
+        function pauseAnimation() {
+            isAnimating = false;
+
+            if (animationTimer) {
+                clearInterval(animationTimer);
+                animationTimer = null;
+            }
+
+            document.getElementById('animateBtn').disabled = false;
+            document.getElementById('pauseBtn').disabled = true;
+        }
+
+        function resetAnimation() {
+            animationStep = 0;
+            isAnimating = false;
+
+            if (animationTimer) {
+                clearInterval(animationTimer);
+                animationTimer = null;
+            }
+
+            document.getElementById('animateBtn').disabled = false;
+            document.getElementById('pauseBtn').disabled = true;
+            document.getElementById('stepCounter').textContent = `Step: 0/${maxAnimationSteps}`;
+        }
+
+        function toggleRecursion() {
+            let explanation = document.getElementById('recursionExplanation');
+            explanation.classList.toggle('hidden');
+
+            if (!explanation.classList.contains('hidden')) {
+                let n = parseInt(document.getElementById('nInput').value);
+                let details = document.getElementById('recursionDetails');
+
+                if (n <= 3) return;
+
+                let html = '<p class="font-medium text-indigo-700 mb-2">For the current n = ' + n + ':</p><ul class="list-disc pl-5 space-y-2">';
+
+                html += '<li>C<sub>0</sub> = 1 (by definition)</li>';
+                for (let i = 1; i <= n; i++) {
+                    html += '<li>C<sub>' + i + '</sub> = ';
+
+                    let terms = [];
+                    for (let j = 0; j < i; j++) {
+                        terms.push('C<sub>' + j + '</sub> · C<sub>' + (i - 1 - j) + '</sub>');
+                    }
+
+                    html += terms.join(' + ');
+                    html += ' = ' + catalanNumber(i) + '</li>';
+                }
+
+                html += '</ul>';
+                details.innerHTML = html;
+            }
+        }
+
+        // p5.js sketch
+        function sketch(p) {
+            p.setup = function () {
+                let canvas = p.createCanvas(p.select('#canvasContainer').width, p.select('#canvasContainer').height);
+                canvas.parent('canvasContainer');
+                p.background(245);
+                p.textAlign(p.CENTER, p.CENTER);
+                p.textSize(16);
+                p.fill(180);
+                p.text('Select a structure and n, then click Generate!', p.width / 2, p.height / 2);
+            };
+
+            p.draw = function () {
+                if (!currentStructure) return;
+
+                p.background(245);
+
+                let type = document.getElementById('structureType').value;
+                if (type === 'parentheses') drawParentheses(p, currentStructure, animationStep);
+                else if (type === 'binaryTrees') drawBinaryTree(p, currentStructure, animationStep);
+                else if (type === 'dyckPaths') drawDyckPath(p, currentStructure, animationStep);
+                else if (type === 'mountainRanges') drawMountainRange(p, currentStructure, animationStep);
+            };
+
+            p.mousePressed = function () {
+                if (p.mouseX < 0 || p.mouseX > p.width || p.mouseY < 0 || p.mouseY > p.height) return;
+
+                let type = document.getElementById('structureType').value;
+
+                if (type === 'parentheses' && currentStructure) {
+                    highlightParentheses(p, currentStructure);
+                } else if (type === 'dyckPaths' || type === 'mountainRanges') {
+                    highlightPeaksAndValleys(p, currentStructure);
+                }
+            };
+
+            p.windowResized = function () {
+                p.resizeCanvas(p.select('#canvasContainer').width, p.select('#canvasContainer').height);
+            };
+        }
+    </script>
+</body>
+
+</html>

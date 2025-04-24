@@ -1,0 +1,1296 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Model Comparison Interface</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Google Fonts -->
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Poppins:wght@400;500;600;700&display=swap"
+        rel="stylesheet">
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"
+        crossorigin="anonymous" referrerpolicy="no-referrer" />
+    <style>
+        :root {
+            --primary: #6366f1;
+            --primary-light: #818cf8;
+            --primary-dark: #4f46e5;
+            --secondary: #10b981;
+            --accent: #f59e0b;
+            --dark: #1e293b;
+            --darker: #0f172a;
+            --light: #f1f5f9;
+            --lighter: #f8fafc;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: linear-gradient(135deg, var(--darker) 0%, var(--dark) 100%);
+            min-height: 100vh;
+            color: var(--light);
+        }
+
+        h1,
+        h2,
+        h3 {
+            font-family: 'Poppins', sans-serif;
+        }
+
+        /* Modern card styling */
+        .card-bg {
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 16px;
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+
+        .card-bg:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 20px 25px rgba(0, 0, 0, 0.25);
+            border-color: rgba(255, 255, 255, 0.2);
+            background: rgba(255, 255, 255, 0.08);
+        }
+
+        /* Glow effect for interactive elements */
+        .glow-effect {
+            position: relative;
+            overflow: hidden;
+        }
+
+        .glow-effect::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(45deg,
+                    rgba(99, 102, 241, 0.3) 0%,
+                    rgba(16, 185, 129, 0.3) 50%,
+                    rgba(245, 158, 11, 0.3) 100%);
+            opacity: 0;
+            transition: opacity 0.4s ease;
+            z-index: -1;
+        }
+
+        .glow-effect:hover::before {
+            opacity: 1;
+        }
+
+        /* Button styling */
+        .custom-button {
+            position: relative;
+            overflow: hidden;
+            transition: all 0.3s ease;
+            z-index: 1;
+            border-radius: 10px;
+            font-weight: 500;
+        }
+
+        .custom-button::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(45deg, var(--primary), var(--secondary));
+            z-index: -1;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        .custom-button:hover::after {
+            opacity: 1;
+        }
+
+        .custom-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.2);
+        }
+
+        /* Custom dropdown styling */
+        .custom-select {
+            position: relative;
+            width: 100%;
+        }
+
+        .select-selected {
+            background-color: rgba(99, 102, 241, 0.2);
+            border-radius: 10px;
+            padding: 12px 16px;
+            cursor: pointer;
+            user-select: none;
+            color: var(--light);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-weight: 500;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            transition: all 0.3s ease;
+        }
+
+        .select-selected:hover {
+            background-color: rgba(99, 102, 241, 0.3);
+            border-color: rgba(255, 255, 255, 0.2);
+        }
+
+        .select-items {
+            position: absolute;
+            background: var(--dark);
+            top: 110%;
+            left: 0;
+            right: 0;
+            z-index: 99;
+            border-radius: 10px;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3);
+            max-height: 0;
+            overflow: hidden;
+            opacity: 0;
+            transition: all 0.3s ease;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .select-hide {
+            display: block;
+            max-height: 300px;
+            opacity: 1;
+            overflow-y: auto;
+        }
+
+        .select-items div {
+            color: var(--light);
+            padding: 12px 16px;
+            cursor: pointer;
+            user-select: none;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .select-items div:hover {
+            background-color: rgba(99, 102, 241, 0.2);
+        }
+
+        .same-as-selected {
+            background-color: rgba(99, 102, 241, 0.3);
+        }
+
+        /* Custom checkbox styling */
+        .custom-checkbox {
+            position: relative;
+            padding-left: 35px;
+            cursor: pointer;
+            user-select: none;
+            display: flex;
+            align-items: center;
+            height: 28px;
+            color: var(--light);
+        }
+
+        .custom-checkbox input {
+            position: absolute;
+            opacity: 0;
+            cursor: pointer;
+            height: 0;
+            width: 0;
+        }
+
+        .checkmark {
+            position: absolute;
+            top: 0;
+            left: 0;
+            height: 24px;
+            width: 24px;
+            background-color: rgba(255, 255, 255, 0.1);
+            border-radius: 6px;
+            transition: all 0.2s ease;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .custom-checkbox:hover input~.checkmark {
+            background-color: rgba(255, 255, 255, 0.2);
+        }
+
+        .custom-checkbox input:checked~.checkmark {
+            background-color: var(--primary);
+            border-color: var(--primary);
+        }
+
+        .checkmark:after {
+            content: "";
+            position: absolute;
+            display: none;
+        }
+
+        .custom-checkbox input:checked~.checkmark:after {
+            display: block;
+        }
+
+        .custom-checkbox .checkmark:after {
+            width: 5px;
+            height: 10px;
+            border: solid white;
+            border-width: 0 2px 2px 0;
+            transform: rotate(45deg);
+            margin-top: -2px;
+        }
+
+        /* Table styling */
+        .modern-table {
+            width: 100%;
+            border-collapse: separate;
+            border-spacing: 0;
+            border-radius: 12px;
+            overflow: hidden;
+        }
+
+        .modern-table th {
+            background-color: rgba(99, 102, 241, 0.3);
+            color: var(--light);
+            font-weight: 600;
+            text-align: center;
+            padding: 14px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .modern-table td {
+            padding: 14px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+            text-align: center;
+            color: var(--light);
+        }
+
+        .modern-table tr:last-child td {
+            border-bottom: none;
+        }
+
+        .modern-table tr:hover {
+            background-color: rgba(99, 102, 241, 0.1);
+        }
+
+        .modern-table tr td:first-child {
+            font-weight: 500;
+            color: var(--primary-light);
+        }
+
+        /* Animation */
+        .fade-in-up {
+            animation: fadeInUp 0.5s ease forwards;
+            opacity: 0;
+        }
+
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .delay-100 {
+            animation-delay: 0.1s;
+        }
+
+        .delay-200 {
+            animation-delay: 0.2s;
+        }
+
+        .delay-300 {
+            animation-delay: 0.3s;
+        }
+
+        /* Search input styling */
+        .search-container {
+            position: relative;
+        }
+
+        .search-container i {
+            position: absolute;
+            left: 14px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--primary-light);
+        }
+
+        .search-input {
+            width: 100%;
+            padding: 12px 12px 12px 42px;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+            transition: all 0.3s ease;
+            color: var(--light);
+        }
+
+        .search-input::placeholder {
+            color: rgba(255, 255, 255, 0.5);
+        }
+
+        .search-input:focus {
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.3);
+            outline: none;
+            background: rgba(255, 255, 255, 0.08);
+        }
+
+        /* Notification styling */
+        .notification {
+            position: fixed;
+            bottom: 24px;
+            right: 24px;
+            padding: 16px 24px;
+            border-radius: 12px;
+            color: white;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            box-shadow: 0 10px 15px rgba(0, 0, 0, 0.2);
+            z-index: 1000;
+            transform: translateY(100px);
+            opacity: 0;
+            transition: all 0.3s ease;
+        }
+
+        .notification.show {
+            transform: translateY(0);
+            opacity: 1;
+        }
+
+        .notification.success {
+            background: linear-gradient(135deg, var(--secondary), #059669);
+        }
+
+        .notification.error {
+            background: linear-gradient(135deg, #ef4444, #dc2626);
+        }
+
+        .notification.info {
+            background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+        }
+
+        /* Scrollbar styling */
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 10px;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: var(--primary);
+            border-radius: 10px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: var(--primary-light);
+        }
+
+        /* Responsive adjustments */
+        @media (max-width: 768px) {
+            .card-bg {
+                padding: 18px;
+            }
+
+            .modern-table th,
+            .modern-table td {
+                padding: 10px;
+            }
+        }
+
+        /* Tooltip styling */
+        .tooltip {
+            position: relative;
+        }
+
+        .tooltip .tooltip-text {
+            visibility: hidden;
+            width: 120px;
+            background-color: var(--dark);
+            color: var(--light);
+            text-align: center;
+            border-radius: 6px;
+            padding: 5px;
+            position: absolute;
+            z-index: 1;
+            bottom: 125%;
+            left: 50%;
+            transform: translateX(-50%);
+            opacity: 0;
+            transition: opacity 0.3s;
+            font-size: 14px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+
+        .tooltip:hover .tooltip-text {
+            visibility: visible;
+            opacity: 1;
+        }
+
+        /* Gradient text */
+        .gradient-text {
+            background: linear-gradient(45deg, var(--primary), var(--accent));
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+        }
+    </style>
+</head>
+
+<body class="p-4 md:p-6 overflow-x-hidden">
+    <!-- Notification container -->
+    <div id="notificationContainer"></div>
+
+
+    <!-- Top Navigation Bar -->
+    <div class="flex justify-between items-center py-4 px-4 md:px-6 mb-6 md:mb-8">
+        <h1 class="text-2xl sm:text-3xl md:text-4xl font-bold gradient-text fade-in-up">
+            <i class="fas fa-robot mr-3"></i>
+            AI Model Comparison
+        </h1>
+
+    </div>
+
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-6 items-start">
+        <div class="md:col-span-1 space-y-6">
+            <!-- Controls Section -->
+            <div class="card-bg p-6 rounded-xl shadow-lg fade-in-up delay-100">
+                <h2 class="text-2xl font-semibold mb-5 gradient-text flex items-center">
+                    <i class="fas fa-sliders-h mr-3"></i>
+                    Controls
+                </h2>
+                <div class="mb-5">
+                    <input type="file" id="modelUpload" multiple accept=".json,.h5" class="hidden">
+                    <button id="uploadBtn"
+                        class="custom-button w-full flex items-center justify-center gap-3 px-4 py-3 bg-gradient-to-r from-primary to-primary-dark text-white font-semibold rounded-lg cursor-pointer shadow-md hover:shadow-lg transition-all duration-300">
+                        <i class="fas fa-cloud-upload-alt text-lg"></i>
+                        <span>Add Model Files</span>
+                    </button>
+                </div>
+
+                <!-- Custom dropdown -->
+                <div class="mb-5">
+                    <label class="block text-slate-300 mb-2 font-medium">Chart Type</label>
+                    <div class="custom-select" id="chartTypeContainer">
+                        <div class="select-selected">
+                            <span id="selectedOption"><i class="fas fa-chart-bar mr-2"></i> Bar Chart</span>
+                            <i class="fas fa-chevron-down text-sm transition-transform duration-200"></i>
+                        </div>
+                        <div class="select-items">
+                            <div data-value="bar" class="same-as-selected"><i class="fas fa-chart-bar mr-2"></i> Bar
+                                Chart</div>
+                            <div data-value="line"><i class="fas fa-chart-line mr-2"></i> Line Chart</div>
+                            <div data-value="scatter"><i class="fas fa-braille mr-2"></i> Scatter Plot</div>
+                            <div data-value="radar"><i class="fas fa-chart-pie mr-2"></i> Radar Chart</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="space-y-4">
+                    <h3 class="text-slate-300 font-medium mb-2 flex items-center">
+                        <i class="fas fa-chart-simple mr-2"></i>
+                        Metrics to Display
+                    </h3>
+
+                    <label class="custom-checkbox flex items-center space-x-2">
+                        <span>Precision</span>
+                        <input type="checkbox" id="precision" checked>
+                        <span class="checkmark"></span>
+                    </label>
+
+                    <label class="custom-checkbox flex items-center space-x-2">
+                        <span>Recall</span>
+                        <input type="checkbox" id="recall" checked>
+                        <span class="checkmark"></span>
+                    </label>
+
+                    <label class="custom-checkbox flex items-center space-x-2">
+                        <span>F1-Score</span>
+                        <input type="checkbox" id="f1" checked>
+                        <span class="checkmark"></span>
+                    </label>
+                </div>
+            </div>
+
+            <!-- Statistics Section -->
+            <div class="card-bg p-6 rounded-xl shadow-lg fade-in-up delay-200">
+                <h2 class="text-2xl font-semibold mb-5 gradient-text flex items-center">
+                    <i class="fas fa-table mr-3"></i>
+                    Statistics
+                </h2>
+
+                <div class="search-container mb-5">
+                    <i class="fas fa-search"></i>
+                    <input type="text" id="search" placeholder="Search models..." class="search-input">
+                </div>
+
+                <div class="overflow-auto rounded-xl border border-slate-700">
+                    <table class="modern-table w-full">
+                        <thead>
+                            <tr>
+                                <th class="py-3 px-4 text-left">
+                                    <div class="flex items-center gap-2">
+                                        <i class="fas fa-microchip"></i>
+                                        <span>Model</span>
+                                    </div>
+                                </th>
+                                <th class="py-3 px-4 text-center">
+                                    <div class="flex items-center justify-center gap-2">
+                                        <i class="fas fa-bullseye"></i>
+                                        <span>Precision</span>
+                                    </div>
+                                </th>
+                                <th class="py-3 px-4 text-center">
+                                    <div class="flex items-center justify-center gap-2">
+                                        <i class="fas fa-magnifying-glass"></i>
+                                        <span>Recall</span>
+                                    </div>
+                                </th>
+                                <th class="py-3 px-4 text-center">
+                                    <div class="flex items-center justify-center gap-2">
+                                        <i class="fas fa-star"></i>
+                                        <span>F1-Score</span>
+                                    </div>
+                                </th>
+                            </tr>
+                        </thead>
+                        <tbody id="statsBody" class="divide-y divide-slate-700">
+                            <!-- Sample data to show styling -->
+                            <tr class="hover:bg-slate-700/50 transition-colors">
+                                <td class="py-3 px-4 font-medium">ResNet-50</td>
+                                <td class="py-3 px-4 text-center">0.94</td>
+                                <td class="py-3 px-4 text-center">0.91</td>
+                                <td class="py-3 px-4 text-center">0.92</td>
+                            </tr>
+                            <tr class="hover:bg-slate-700/50 transition-colors">
+                                <td class="py-3 px-4 font-medium">EfficientNet</td>
+                                <td class="py-3 px-4 text-center">0.92</td>
+                                <td class="py-3 px-4 text-center">0.93</td>
+                                <td class="py-3 px-4 text-center">0.92</td>
+                            </tr>
+                            <tr class="hover:bg-slate-700/50 transition-colors">
+                                <td class="py-3 px-4 font-medium">Vision Transformer</td>
+                                <td class="py-3 px-4 text-center">0.89</td>
+                                <td class="py-3 px-4 text-center">0.95</td>
+                                <td class="py-3 px-4 text-center">0.92</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- Chart Section -->
+        <div class="md:col-span-2">
+            <div class="card-bg p-6 w-full rounded-xl shadow-lg fade-in-up delay-300">
+                <div class="flex justify-between items-center mb-6">
+                    <h2 class="text-2xl font-semibold gradient-text flex items-center">
+                        <i class="fas fa-chart-area mr-3"></i>
+                        Performance Visualization
+                    </h2>
+                    <div class="flex gap-3">
+                        <button
+                            class="custom-button p-3 bg-slate-700/50 hover:bg-slate-600/50 rounded-lg glow-effect tooltip"
+                            title="Download Chart">
+                            <i class="fas fa-download text-primary-light"></i>
+                            <span class="tooltip-text">Download Chart</span>
+                        </button>
+                        <button
+                            class="custom-button p-3 bg-slate-700/50 hover:bg-slate-600/50 rounded-lg glow-effect tooltip"
+                            title="Full Screen">
+                            <i class="fas fa-expand text-primary-light"></i>
+                            <span class="tooltip-text">Full Screen</span>
+                        </button>
+                    </div>
+                </div>
+                <div style="width: 100%; height: 400px;">
+                    <canvas id="comparisonChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.0.0"></script>
+    <script>
+        // Wait for the DOM to be fully loaded
+        document.addEventListener('DOMContentLoaded', function () {
+            // Make sure Chart.js is loaded before attempting to use it
+            if (typeof Chart === 'undefined') {
+                // Load Chart.js dynamically if it's not available
+                const script = document.createElement('script');
+                script.src = "https://cdn.jsdelivr.net/npm/chart.js";
+                script.onload = function () {
+                    // Now load the plugins
+                    const pluginScript = document.createElement('script');
+                    pluginScript.src = "https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.0.0";
+                    pluginScript.onload = function () {
+                        // Initialize everything after both scripts are loaded
+                        setupUI();
+                    };
+                    document.head.appendChild(pluginScript);
+                };
+                document.head.appendChild(script);
+            } else {
+                // Chart.js is already available, just load the plugin
+                if (typeof ChartDataLabels === 'undefined') {
+                    const pluginScript = document.createElement('script');
+                    pluginScript.src = "https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.0.0";
+                    pluginScript.onload = setupUI;
+                    document.head.appendChild(pluginScript);
+                } else {
+                    // Both are already loaded
+                    setupUI();
+                }
+            }
+
+            // Function to initialize all UI components once scripts are loaded
+            function setupUI() {
+                initializeCustomDropdown();
+                initializeFileUpload();
+                initializeCheckboxes();
+                initializeSearch();
+                initializeChart();
+                initializeDemoData();
+                initializeThemeToggle();
+                initializeInstructionModal();
+
+                // Add window resize listener for responsive behavior
+                window.addEventListener('resize', function () {
+                    if (window.comparisonChart) {
+                        window.comparisonChart.resize();
+                    }
+                });
+            }
+        });
+
+        // Initialize the custom dropdown functionality
+        function initializeCustomDropdown() {
+            const selectContainer = document.getElementById("chartTypeContainer");
+            const selectSelected = selectContainer.querySelector(".select-selected");
+            const selectItems = selectContainer.querySelector(".select-items");
+            const chevron = selectSelected.querySelector(".fa-chevron-down");
+
+            // Create hidden native select for compatibility
+            const hiddenSelect = document.createElement("select");
+            hiddenSelect.id = "chartType";
+            hiddenSelect.style.display = "none";
+            selectContainer.appendChild(hiddenSelect);
+
+            // Add options to hidden select
+            const options = selectItems.querySelectorAll("div");
+            options.forEach(function (option) {
+                const value = option.getAttribute("data-value");
+                const opt = document.createElement("option");
+                opt.value = value;
+                opt.text = option.textContent.trim();
+                if (option.classList.contains("same-as-selected")) {
+                    opt.selected = true;
+                }
+                hiddenSelect.appendChild(opt);
+            });
+
+            // Toggle dropdown on click
+            selectSelected.addEventListener("click", function (e) {
+                e.stopPropagation();
+                selectItems.classList.toggle("select-hide");
+                chevron.classList.toggle("rotate-180");
+            });
+
+            // Close dropdown when clicking elsewhere
+            document.addEventListener("click", function () {
+                selectItems.classList.remove("select-hide");
+                chevron.classList.remove("rotate-180");
+            });
+
+            // Select option functionality
+            options.forEach(function (option) {
+                option.addEventListener("click", function (e) {
+                    e.stopPropagation();
+                    const value = this.getAttribute("data-value");
+                    const icon = this.querySelector("i").cloneNode(true);
+                    const text = this.textContent.trim();
+
+                    // Clear previous content
+                    document.getElementById("selectedOption").innerHTML = '';
+
+                    // Add icon and text
+                    document.getElementById("selectedOption").appendChild(icon);
+                    document.getElementById("selectedOption").appendChild(document.createTextNode(' ' + text));
+
+                    hiddenSelect.value = value;
+
+                    // Remove selected class from all options
+                    options.forEach(function (opt) {
+                        opt.classList.remove("same-as-selected");
+                    });
+
+                    this.classList.add("same-as-selected");
+
+                    // Trigger change event on hidden select
+                    const event = new Event('change');
+                    hiddenSelect.dispatchEvent(event);
+
+                    // Update chart type
+                    updateChartType(value);
+
+                    selectItems.classList.remove("select-hide");
+                    chevron.classList.remove("rotate-180");
+                });
+            });
+
+            // Listen for chart type changes
+            hiddenSelect.addEventListener('change', function () {
+                updateChartType(this.value);
+            });
+        }
+
+        // Initialize file upload functionality
+        function initializeFileUpload() {
+            const uploadBtn = document.getElementById("uploadBtn");
+            const modelUpload = document.getElementById("modelUpload");
+
+            uploadBtn.addEventListener("click", function () {
+                modelUpload.click();
+            });
+
+            modelUpload.addEventListener("change", function () {
+                if (this.files.length > 0) {
+                    // Show loading state
+                    uploadBtn.innerHTML = `<i class="fas fa-spinner fa-spin"></i> <span>Processing...</span>`;
+                    uploadBtn.classList.add("opacity-75");
+
+                    // Process the uploaded files
+                    processModelFiles(this.files).then(() => {
+                        // Reset button state after processing
+                        uploadBtn.innerHTML = `<i class="fas fa-cloud-upload-alt"></i> <span>Add Model Files</span>`;
+                        uploadBtn.classList.remove("opacity-75");
+
+                        // Show success notification
+                        showNotification(`${this.files.length} model(s) uploaded successfully`, 'success');
+                    }).catch(error => {
+                        // Reset button state and show error
+                        uploadBtn.innerHTML = `<i class="fas fa-cloud-upload-alt"></i> <span>Add Model Files</span>`;
+                        uploadBtn.classList.remove("opacity-75");
+                        showNotification('Error processing files: ' + error.message, 'error');
+                    });
+                }
+            });
+        }
+
+        // Initialize instruction modal
+        function initializeInstructionModal() {
+            const helpButton = document.getElementById('helpButton');
+            const instructionModal = document.getElementById('instructionModal');
+            const closeInstructions = document.getElementById('closeInstructions');
+            const modalContent = instructionModal.querySelector('div.bg-slate-800');
+
+            // Open modal
+            helpButton.addEventListener('click', function () {
+                instructionModal.classList.remove('opacity-0', 'pointer-events-none');
+                setTimeout(() => {
+                    modalContent.classList.remove('scale-95');
+                    modalContent.classList.add('scale-100');
+                }, 10);
+            });
+
+            // Close modal
+            closeInstructions.addEventListener('click', function () {
+                modalContent.classList.remove('scale-100');
+                modalContent.classList.add('scale-95');
+                setTimeout(() => {
+                    instructionModal.classList.add('opacity-0', 'pointer-events-none');
+                }, 300);
+            });
+
+            // Close on outside click
+            instructionModal.addEventListener('click', function (e) {
+                if (e.target === instructionModal) {
+                    modalContent.classList.remove('scale-100');
+                    modalContent.classList.add('scale-95');
+                    setTimeout(() => {
+                        instructionModal.classList.add('opacity-0', 'pointer-events-none');
+                    }, 300);
+                }
+            });
+
+            // Show instructions on first visit
+            const firstVisit = localStorage.getItem('visited') !== 'true';
+            if (firstVisit) {
+                setTimeout(() => {
+                    helpButton.click();
+                    localStorage.setItem('visited', 'true');
+                }, 1500);
+            }
+        }
+
+        // Process the uploaded model files
+        async function processModelFiles(files) {
+            // Convert FileList to Array
+            const filesArray = Array.from(files);
+
+            // Process each file
+            const models = [];
+
+            for (const file of filesArray) {
+                try {
+                    // Check if file is JSON
+                    if (file.name.endsWith('.json')) {
+                        const modelData = await readJSONFile(file);
+                        models.push(modelData);
+                    }
+                    // Check if file is H5 (might need a specialized library for this in a real app)
+                    else if (file.name.endsWith('.h5')) {
+                        // For demo purposes, we'll create mock data for H5 files
+                        const modelName = file.name.replace('.h5', '');
+                        models.push({
+                            name: modelName,
+                            metrics: {
+                                precision: Math.random() * 0.2 + 0.7, // Random value between 0.7 and 0.9
+                                recall: Math.random() * 0.2 + 0.7,
+                                f1Score: Math.random() * 0.2 + 0.7
+                            }
+                        });
+                    }
+                } catch (error) {
+                    console.error(`Error processing file ${file.name}:`, error);
+                    throw error;
+                }
+            }
+
+            // Update UI with the processed models
+            if (models.length > 0) {
+                updateModelStats(models);
+                updateChart(models);
+            }
+
+            return models;
+        }
+
+        // Read a JSON file
+        function readJSONFile(file) {
+            return new Promise((resolve, reject) => {
+                const reader = new FileReader();
+
+                reader.onload = function (e) {
+                    try {
+                        const data = JSON.parse(e.target.result);
+                        // Ensure the data has the expected structure
+                        if (!data.name || !data.metrics) {
+                            throw new Error('Invalid model file structure');
+                        }
+                        resolve(data);
+                    } catch (error) {
+                        reject(new Error('Invalid JSON file'));
+                    }
+                };
+
+                reader.onerror = function () {
+                    reject(new Error('Error reading file'));
+                };
+
+                reader.readAsText(file);
+            });
+        }
+
+        // Initialize checkboxes functionality
+        function initializeCheckboxes() {
+            const precisionCheckbox = document.getElementById("precision");
+            const recallCheckbox = document.getElementById("recall");
+            const f1Checkbox = document.getElementById("f1");
+
+            // Add event listeners for each checkbox
+            [precisionCheckbox, recallCheckbox, f1Checkbox].forEach(checkbox => {
+                checkbox.addEventListener('change', function () {
+                    updateChartVisibility();
+                });
+            });
+        }
+
+        // Update chart metrics visibility based on checkboxes
+        function updateChartVisibility() {
+            const precisionVisible = document.getElementById("precision").checked;
+            const recallVisible = document.getElementById("recall").checked;
+            const f1Visible = document.getElementById("f1").checked;
+
+            if (window.comparisonChart) {
+                window.comparisonChart.data.datasets.forEach((dataset, index) => {
+                    if (dataset.label === 'Precision') {
+                        dataset.hidden = !precisionVisible;
+                    } else if (dataset.label === 'Recall') {
+                        dataset.hidden = !recallVisible;
+                    } else if (dataset.label === 'F1-Score') {
+                        dataset.hidden = !f1Visible;
+                    }
+                });
+                window.comparisonChart.update();
+            }
+        }
+
+        // Initialize search functionality
+        function initializeSearch() {
+            const searchInput = document.getElementById("search");
+
+            searchInput.addEventListener("input", function () {
+                const searchTerm = this.value.toLowerCase();
+                const statsBody = document.getElementById("statsBody");
+                const rows = statsBody.getElementsByTagName("tr");
+
+                Array.from(rows).forEach(row => {
+                    const modelName = row.cells[0].textContent.toLowerCase();
+                    row.style.display = modelName.includes(searchTerm) ? "" : "none";
+                });
+            });
+        }
+
+        // Initialize demo data
+        function initializeDemoData() {
+            const demoModels = [
+                {
+                    name: "ResNet-50",
+                    metrics: {
+                        precision: 0.94,
+                        recall: 0.91,
+                        f1Score: 0.92
+                    }
+                },
+                {
+                    name: "EfficientNet",
+                    metrics: {
+                        precision: 0.92,
+                        recall: 0.93,
+                        f1Score: 0.92
+                    }
+                },
+                {
+                    name: "Vision Transformer",
+                    metrics: {
+                        precision: 0.89,
+                        recall: 0.95,
+                        f1Score: 0.92
+                    }
+                }
+            ];
+
+            updateModelStats(demoModels);
+            updateChart(demoModels);
+        }
+
+        // Update model statistics table
+        function updateModelStats(models) {
+            const statsBody = document.getElementById("statsBody");
+            statsBody.innerHTML = "";
+
+            models.forEach(model => {
+                const row = document.createElement("tr");
+                row.innerHTML = `
+          <td class="font-medium">${model.name}</td>
+          <td>${model.metrics.precision.toFixed(2)}</td>
+          <td>${model.metrics.recall.toFixed(2)}</td>
+          <td>${model.metrics.f1Score.toFixed(2)}</td>
+        `;
+                statsBody.appendChild(row);
+            });
+        }
+
+        // Initialize Chart.js
+        function initializeChart() {
+            // Register the ChartJS Datalabels plugin properly
+            Chart.register(ChartDataLabels);
+
+            const ctx = document.getElementById("comparisonChart").getContext("2d");
+
+            window.comparisonChart = new Chart(ctx, {
+                type: "bar",
+                data: {
+                    labels: [],
+                    datasets: [
+                        {
+                            label: "Precision",
+                            data: [],
+                            backgroundColor: "rgba(99, 102, 241, 0.6)",
+                            borderColor: "rgba(99, 102, 241, 1)",
+                            borderWidth: 1
+                        },
+                        {
+                            label: "Recall",
+                            data: [],
+                            backgroundColor: "rgba(16, 185, 129, 0.6)",
+                            borderColor: "rgba(16, 185, 129, 1)",
+                            borderWidth: 1
+                        },
+                        {
+                            label: "F1-Score",
+                            data: [],
+                            backgroundColor: "rgba(245, 158, 11, 0.6)",
+                            borderColor: "rgba(245, 158, 11, 1)",
+                            borderWidth: 1
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            max: 1,
+                            ticks: {
+                                color: "rgba(255, 255, 255, 0.8)"
+                            },
+                            grid: {
+                                color: "rgba(255, 255, 255, 0.1)"
+                            }
+                        },
+                        x: {
+                            ticks: {
+                                color: "rgba(255, 255, 255, 0.8)"
+                            },
+                            grid: {
+                                display: false
+                            }
+                        }
+                    },
+                    plugins: {
+                        legend: {
+                            labels: {
+                                color: "rgba(255, 255, 255, 0.8)"
+                            }
+                        },
+                        datalabels: {
+                            color: "white",
+                            anchor: "end",
+                            align: "top",
+                            formatter: value => value.toFixed(2)
+                        }
+                    }
+                }
+            });
+        }
+
+        // Update chart with new data
+        function updateChart(models) {
+            if (!window.comparisonChart) return;
+
+            const labels = models.map(model => model.name);
+            const precisionData = models.map(model => model.metrics.precision);
+            const recallData = models.map(model => model.metrics.recall);
+            const f1Data = models.map(model => model.metrics.f1Score);
+
+            window.comparisonChart.data.labels = labels;
+            window.comparisonChart.data.datasets[0].data = precisionData;
+            window.comparisonChart.data.datasets[1].data = recallData;
+            window.comparisonChart.data.datasets[2].data = f1Data;
+
+            updateChartVisibility();
+            window.comparisonChart.update();
+        }
+
+        // Update chart type
+        function updateChartType(type) {
+            if (!window.comparisonChart) return;
+
+            // Save current data
+            const currentData = {
+                labels: window.comparisonChart.data.labels,
+                datasets: window.comparisonChart.data.datasets.map(dataset => ({
+                    label: dataset.label,
+                    data: dataset.data,
+                    backgroundColor: dataset.backgroundColor,
+                    borderColor: dataset.borderColor,
+                    borderWidth: dataset.borderWidth,
+                    hidden: dataset.hidden
+                }))
+            };
+
+            // Destroy existing chart
+            window.comparisonChart.destroy();
+
+            // Create new chart with updated type
+            const ctx = document.getElementById("comparisonChart").getContext("2d");
+
+            // Base configuration
+            const config = {
+                type: type,
+                data: currentData,
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            max: 1,
+                            ticks: {
+                                color: "rgba(255, 255, 255, 0.8)"
+                            },
+                            grid: {
+                                color: "rgba(255, 255, 255, 0.1)"
+                            }
+                        },
+                        x: {
+                            ticks: {
+                                color: "rgba(255, 255, 255, 0.8)"
+                            },
+                            grid: {
+                                display: false
+                            }
+                        }
+                    },
+                    plugins: {
+                        legend: {
+                            labels: {
+                                color: "rgba(255, 255, 255, 0.8)"
+                            }
+                        },
+                        datalabels: {
+                            color: "white",
+                            anchor: "end",
+                            align: "top",
+                            formatter: value => value.toFixed(2)
+                        }
+                    }
+                }
+            };
+
+            // Type-specific adjustments
+            if (type === "radar") {
+                // Remove standard scales for radar chart
+                delete config.options.scales.x;
+                delete config.options.scales.y;
+
+                // Add radar-specific scale
+                config.options.scales = {
+                    r: {
+                        beginAtZero: true,
+                        max: 1,
+                        ticks: {
+                            color: "rgba(255, 255, 255, 0.8)",
+                            backdropColor: "transparent"
+                        },
+                        grid: {
+                            color: "rgba(255, 255, 255, 0.1)"
+                        },
+                        angleLines: {
+                            color: "rgba(255, 255, 255, 0.1)"
+                        }
+                    }
+                };
+
+                // Custom settings for radar points
+                config.data.datasets.forEach(dataset => {
+                    dataset.pointBackgroundColor = dataset.borderColor;
+                    dataset.pointBorderColor = "#fff";
+                    dataset.pointHoverBackgroundColor = "#fff";
+                    dataset.pointHoverBorderColor = dataset.borderColor;
+                    dataset.pointRadius = 3;
+                });
+            } else if (type === "scatter") {
+                config.data.datasets.forEach(dataset => {
+                    dataset.showLine = false;
+                    dataset.pointRadius = 5;
+                    dataset.pointHoverRadius = 7;
+                });
+            } else if (type === "line") {
+                config.data.datasets.forEach(dataset => {
+                    dataset.tension = 0.4;
+                    dataset.fill = false;
+                    dataset.pointRadius = 4;
+                });
+
+                // Update datalabels position for line charts
+                config.options.plugins.datalabels.align = "bottom";
+                config.options.plugins.datalabels.offset = 8;
+            }
+
+            window.comparisonChart = new Chart(ctx, config);
+        }
+
+
+        // Show notification
+        function showNotification(message, type = "info") {
+            const notificationContainer = document.getElementById("notificationContainer");
+            const notification = document.createElement("div");
+            notification.className = `notification ${type} show`;
+
+            // Add icon based on type
+            let iconClass = "";
+            switch (type) {
+                case "success":
+                    iconClass = "fas fa-check-circle";
+                    break;
+                case "error":
+                    iconClass = "fas fa-exclamation-circle";
+                    break;
+                case "info":
+                    iconClass = "fas fa-info-circle";
+                    break;
+            }
+
+            notification.innerHTML = `
+        <i class="${iconClass}"></i>
+        <span>${message}</span>
+      `;
+
+            notificationContainer.appendChild(notification);
+
+            // Auto-dismiss after 3 seconds
+            setTimeout(() => {
+                notification.classList.remove("show");
+                setTimeout(() => {
+                    notification.remove();
+                }, 300);
+            }, 3000);
+        }
+
+        // Download chart as image
+        document.querySelector('[title="Download Chart"]').addEventListener("click", function () {
+            if (window.comparisonChart) {
+                const link = document.createElement("a");
+                link.href = window.comparisonChart.toBase64Image();
+                link.download = "model_comparison_chart.png";
+                link.click();
+                showNotification("Chart downloaded successfully", "success");
+            } else {
+                showNotification("No chart available to download", "error");
+            }
+        });
+
+        // Toggle fullscreen mode
+        document.querySelector('[title="Full Screen"]').addEventListener("click", function () {
+            const chartContainer = document.getElementById("comparisonChart").parentElement;
+            if (!document.fullscreenElement) {
+                chartContainer.requestFullscreen().then(() => {
+                    showNotification("Entered fullscreen mode", "info");
+                }).catch(err => {
+                    showNotification("Failed to enter fullscreen: " + err.message, "error");
+                });
+            } else {
+                document.exitFullscreen().then(() => {
+                    showNotification("Exited fullscreen mode", "info");
+                }).catch(err => {
+                    showNotification("Failed to exit fullscreen: " + err.message, "error");
+                });
+            }
+        });
+    </script>
+</body>
+
+</html>

@@ -1,0 +1,490 @@
+<!DOCTYPE html>
+<html lang="en" class="dark" data-theme="dark">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Pulse Effect Creator</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                    },
+                    colors: {
+                        primary: {
+                            50: '#fff1f9',
+                            100: '#ffe4f3',
+                            200: '#ffcce9',
+                            300: '#ffadd9',
+                            400: '#ff8ac5',
+                            500: '#ff63b1',
+                            600: '#f53e9a',
+                            700: '#e62383',
+                            800: '#d1126e',
+                            900: '#b0085b',
+                        },
+                        secondary: {
+                            50: '#f5f3ff',
+                            100: '#ede9fe',
+                            200: '#ddd6fe',
+                            300: '#c4b5fd',
+                            400: '#a78bfa',
+                            500: '#8b5cf6',
+                            600: '#7c3aed',
+                            700: '#6d28d9',
+                            800: '#5b21b6',
+                            900: '#4c1d95',
+                        },
+                        neutral: {
+                            50: '#f8fafc',
+                            100: '#f1f5f9',
+                            200: '#e2e8f0',
+                            300: '#cbd5e1',
+                            400: '#94a3b8',
+                            500: '#64748b',
+                            600: '#475569',
+                            700: '#334155',
+                            800: '#1e293b',
+                            900: '#0f172a',
+                        },
+                        danger: {
+                            500: '#ef4444',
+                            600: '#dc2626',
+                        },
+                    },
+                    boxShadow: {
+                        glow: '0 0 12px rgba(255, 255, 255, 0.2)',
+                        card: '0 10px 30px rgba(0, 0, 0, 0.15)',
+                        'card-hover': '0 15px 40px rgba(0, 0, 0, 0.2)',
+                    },
+                    animation: {
+                        'pulse-slow': 'pulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite',
+                        'fade-in': 'fadeIn 0.5s ease-in-out',
+                    },
+                    keyframes: {
+                        fadeIn: {
+                            '0%': { opacity: '0', transform: 'translateY(10px)' },
+                            '100%': { opacity: '1', transform: 'translateY(0)' },
+                        },
+                    },
+                },
+            },
+        };
+    </script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.4.2/p5.min.js"></script>
+    <script src="https://unpkg.com/gif.js.optimized/dist/gif.js"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+        }
+
+        .custom-scrollbar::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        .custom-scrollbar::-webkit-scrollbar-track {
+            background: #f1f5f9;
+            border-radius: 3px;
+        }
+
+        .dark .custom-scrollbar::-webkit-scrollbar-track {
+            background: #1e293b;
+        }
+
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+            background: #94a3b8;
+            border-radius: 3px;
+        }
+
+        .dark .custom-scrollbar::-webkit-scrollbar-thumb {
+            background: #475569;
+        }
+
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+            background: #64748b;
+        }
+
+        .dark .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+            background: #64748b;
+        }
+
+        .form-select,
+        .form-input {
+            transition: all 0.2s ease-in-out;
+        }
+
+        .form-select:focus,
+        .form-input:focus {
+            border-color: #a78bfa;
+            box-shadow: 0 0 0 3px rgba(139, 92, 246, 0.2);
+        }
+
+        .btn {
+            transition: all 0.3s ease-in-out;
+            transform: translateY(0);
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+        }
+
+        .btn:active {
+            transform: translateY(0);
+        }
+
+        #canvas-container {
+            transition: border-color 0.3s ease-in-out;
+        }
+
+        #toast {
+            transition: all 0.5s ease-in-out;
+        }
+
+        .fade-in {
+            animation: fadeIn 0.5s ease-in-out;
+        }
+    </style>
+</head>
+
+<body
+    class="bg-neutral-100 dark:bg-neutral-900 text-neutral-900 dark:text-neutral-100 transition duration-500 min-h-screen">
+    <div class="container mx-auto p-4 sm:p-6 lg:p-8 space-y-8 max-w-7xl">
+        <header class="flex flex-col sm:flex-row justify-between items-center gap-4">
+            <h1
+                class="text-3xl sm:text-4xl font-bold tracking-tight flex items-center gap-3 text-primary-600 dark:text-secondary-300">
+                <i data-lucide="activity-square" class="w-8 h-8 sm:w-9 sm:h-9"></i>
+                Pulse Effect Creator
+            </h1>
+            <button id="theme-toggle"
+                class="flex items-center gap-2 bg-primary-600 hover:bg-primary-700 dark:bg-secondary-600 dark:hover:bg-secondary-700 text-white font-medium py-2 px-4 sm:py-2.5 sm:px-5 rounded-xl shadow-md transition focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-secondary-500">
+                <span class="text-sm sm:text-base">Toggle Theme</span>
+                <i data-lucide="sun" class="w-5 h-5"></i>
+            </button>
+        </header>
+
+        <main class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <section
+                class="bg-white dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-700 rounded-2xl shadow-card p-6 space-y-6 col-span-1 custom-scrollbar max-h-[600px] overflow-y-auto transition-all duration-300 hover:shadow-card-hover">
+                <div>
+                    <label for="platform"
+                        class="block text-sm font-medium mb-2 text-neutral-700 dark:text-neutral-300">Platform</label>
+                    <select id="platform"
+                        class="form-select w-full p-2.5 rounded-lg border border-neutral-300 dark:border-neutral-600 bg-white dark:bg-neutral-700 text-neutral-900 dark:text-neutral-100 focus:outline-none focus:ring-2 focus:ring-secondary-500 transition">
+                        <option value="instagram">Instagram (1080x1080)</option>
+                        <option value="tiktok">TikTok (720x720)</option>
+                        <option value="snapchat">Snapchat (512x512)</option>
+                    </select>
+                </div>
+
+                <div>
+                    <label for="rhythm"
+                        class="block text-sm font-medium mb-2 text-neutral-700 dark:text-neutral-300">Rhythm
+                        Pattern</label>
+                    <select id="rhythm"
+                        class="form-select w-full p-2.5 rounded-lg border border-neutral-300 dark:border-neutral-600 bg-white dark:bg-neutral-700 text-neutral-900 dark:text-neutral-100 focus:outline-none focus:ring-2 focus:ring-secondary-500 transition">
+                        <option value="steady">Steady</option>
+                        <option value="heartbeat">Heartbeat</option>
+                        <option value="wave">Wave</option>
+                    </select>
+                </div>
+
+                <div>
+                    <label for="color"
+                        class="block text-sm font-medium mb-2 text-neutral-700 dark:text-neutral-300">Pulse
+                        Color</label>
+                    <input type="color" id="color"
+                        class="form-input w-full h-12 p-1 rounded-lg border border-neutral-300 dark:border-neutral-600 bg-white dark:bg-neutral-700 cursor-pointer transition" />
+                </div>
+
+                <div>
+                    <label for="intensity"
+                        class="block text-sm font-medium mb-2 text-neutral-700 dark:text-neutral-300">Glow
+                        Intensity</label>
+                    <input type="range" id="intensity" min="0" max="1" step="0.1" value="0.5"
+                        class="w-full h-2 bg-neutral-200 dark:bg-neutral-600 rounded-lg appearance-none cursor-pointer accent-primary-500 dark:accent-secondary-400 transition" />
+                </div>
+
+                <div class="space-y-3">
+                    <button id="trending-btn"
+                        class="btn w-full flex items-center justify-center gap-2 bg-yellow-400 hover:bg-yellow-500 text-neutral-900 font-medium py-3 rounded-lg shadow-md focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-yellow-400 transition">
+                        <i data-lucide="flame" class="w-5 h-5"></i> Try Trending: Neon Wave
+                    </button>
+                    <button id="save-btn"
+                        class="btn w-full flex items-center justify-center gap-2 bg-green-500 hover:bg-green-600 text-white font-medium py-3 rounded-lg shadow-md focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition">
+                        <i data-lucide="save" class="w-5 h-5"></i> Save Effect
+                    </button>
+                    <button id="export-btn"
+                        class="btn w-full flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-700 text-white font-medium py-3 rounded-lg shadow-md focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-600 transition">
+                        <i data-lucide="download" class="w-5 h-5"></i> Export as GIF
+                    </button>
+                </div>
+            </section>
+
+            <section class="col-span-2 flex items-center justify-center">
+                <div id="canvas-container"
+                    class="w-full h-[400px] sm:h-[500px] lg:h-[600px] bg-white dark:bg-neutral-800 border-2 border-primary-600 dark:border-secondary-500 rounded-2xl shadow-inner overflow-hidden transition-all duration-300">
+                </div>
+            </section>
+        </main>
+
+        <footer class="w-full flex justify-center mt-12">
+            <div
+                class="bg-white dark:bg-neutral-800 border border-primary-600 dark:border-secondary-500 shadow-card px-8 py-6 rounded-2xl text-center max-w-md transition-all duration-300 hover:shadow-card-hover">
+                <h2
+                    class="text-lg font-semibold flex items-center justify-center gap-2 text-primary-600 dark:text-secondary-300 mb-3">
+                    <i data-lucide="zap" class="w-5 h-5"></i> Profile Energy Score
+                </h2>
+                <p id="energy-score"
+                    class="text-5xl font-bold drop-shadow-sm text-neutral-800 dark:text-white animate-pulse-slow">50</p>
+                <p class="text-sm text-neutral-500 dark:text-neutral-400 mt-2">Visual Energy Rating</p>
+            </div>
+        </footer>
+
+        <div id="toast"
+            class="fixed bottom-8 left-1/2 transform -translate-x-1/2 px-6 py-3 text-sm rounded-xl shadow-lg opacity-0 pointer-events-none transition-all duration-500 z-50 bg-primary-600 text-white dark:bg-secondary-600">
+        </div>
+    </div>
+
+
+    <script>
+        // Mock JSON dataset for pulse effects
+        const pulseEffects = {
+            rhythms: {
+                steady: t => Math.sin(t * 0.5) * 0.5 + 0.5,
+                heartbeat: t => Math.abs(Math.sin(t * 2)) * (1 - Math.cos(t * 4)),
+                wave: t => (Math.sin(t * 1.5 + Math.sin(t)) * 0.5 + 0.5)
+            },
+            platforms: {
+                instagram: { size: 600, profileSize: 300 },
+                tiktok: { size: 450, profileSize: 225 },
+                snapchat: { size: 300, profileSize: 150 }
+            }
+        };
+
+        // State management
+        let state = {
+            platform: 'instagram',
+            rhythm: 'steady',
+            color: '#ff0000',
+            intensity: 0.5,
+            effects: JSON.parse(localStorage.getItem('pulseEffects')) || []
+        };
+
+        let profileImg;
+        let maskedImg;
+
+        function updateMaskedImage() {
+            if (!profileImg) return;
+            const size = pulseEffects.platforms[state.platform].profileSize;
+            let pg = createGraphics(size, size);
+            pg.ellipse(size / 2, size / 2, size); // create mask
+            let scaledImg = profileImg.get();
+            scaledImg.resize(size, size);
+            scaledImg.mask(pg.get());
+            maskedImg = scaledImg;
+        }
+
+
+        let p5Canvas;
+        // p5.js setup
+        function setup() {
+            const canvasEl = document.getElementById('canvas-container');
+            const rect = canvasEl.getBoundingClientRect();
+            p5Canvas = createCanvas(rect.width, rect.height);
+            p5Canvas.parent('canvas-container');
+            pixelDensity(1);
+
+            loadImage("https://www.gravatar.com/avatar/?d=mp&s=400", img => {
+                profileImg = img;
+                updateMaskedImage();
+            });
+        }
+
+        // Draw function
+        function draw() {
+            clear();
+            const t = millis() / 1000;
+            const platform = pulseEffects.platforms[state.platform];
+            const profileSize = platform.profileSize;
+
+            const rhythmValue = pulseEffects.rhythms[state.rhythm](t);
+            const pulseRadius = profileSize / 2 + rhythmValue * 30 * state.intensity;
+            const alpha = 255 * state.intensity * (1 - rhythmValue * 0.5);
+            const pulseColor = color(state.color);
+            pulseColor.setAlpha(alpha);
+
+            // Pulse glow behind image
+            noStroke();
+            fill(pulseColor);
+            ellipse(width / 2, height / 2, pulseRadius * 2, pulseRadius * 2);
+
+            // Circular mask on image
+            if (maskedImg) {
+                imageMode(CENTER);
+                image(maskedImg, width / 2, height / 2);
+            } else {
+                fill(200);
+                ellipse(width / 2, height / 2, platform.profileSize);
+            }
+
+            updateEnergyScore();
+        }
+
+        // Calculate energy score
+        function updateEnergyScore() {
+            const speed = { steady: 0.5, heartbeat: 0.8, wave: 0.7 }[state.rhythm];
+            const hex = state.color.replace('#', '');
+            const r = parseInt(hex.substr(0, 2), 16);
+            const g = parseInt(hex.substr(2, 2), 16);
+            const b = parseInt(hex.substr(4, 2), 16);
+            const saturation = (Math.max(r, g, b) - Math.min(r, g, b)) / 255;
+            const score = Math.round(speed * 40 + saturation * 30 + state.intensity * 30);
+            document.getElementById('energy-score').textContent = score;
+        }
+
+        // Show toast notification
+        function showToast(message) {
+            const toast = document.getElementById('toast');
+            toast.textContent = message;
+            toast.classList.remove('opacity-0', 'pointer-events-none');
+            toast.classList.add('opacity-100');
+
+            setTimeout(() => {
+                toast.classList.add('opacity-0');
+                toast.classList.remove('opacity-100');
+            }, 2500);
+        }
+
+        // Event listeners
+        document.getElementById('platform').addEventListener('change', e => {
+            state.platform = e.target.value;
+            updateMaskedImage();
+        });
+
+
+        document.getElementById('rhythm').addEventListener('change', e => {
+            state.rhythm = e.target.value;
+        });
+
+        document.getElementById('color').addEventListener('input', e => {
+            state.color = e.target.value;
+        });
+
+        document.getElementById('intensity').addEventListener('input', e => {
+            state.intensity = parseFloat(e.target.value);
+        });
+
+        document.getElementById('save-btn').addEventListener('click', () => {
+            const { effects, ...effectToSave } = state;
+            effectToSave.timestamp = new Date().toISOString();
+
+            state.effects.push(effectToSave);
+            localStorage.setItem('pulseEffects', JSON.stringify(state.effects));
+
+            showToast('✅ Effect saved!');
+        });
+
+        document.getElementById('export-btn').addEventListener('click', () => {
+            showToast("🎬 GIF rendering started...");
+            const gif = new GIF({
+                workers: 2,
+                quality: 10,
+                width: width,
+                height: height
+            });
+
+            for (let i = 0; i < 60; i++) {
+                gif.addFrame(p5Canvas.elt, { delay: 16.67, copy: true });
+            }
+
+            gif.on('finished', blob => {
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = 'pulse-effect.gif';
+                a.click();
+                URL.revokeObjectURL(url);
+
+                showToast("🎬 GIF exported!");
+            });
+            gif.render();
+        });
+
+        const trendingStyles = [
+            {
+                name: "Neon Wave",
+                rhythm: "wave",
+                color: "#00ffcc",
+                intensity: 0.8
+            },
+            {
+                name: "Heartbeat Glow",
+                rhythm: "heartbeat",
+                color: "#ff69b4",
+                intensity: 0.9
+            },
+            {
+                name: "Steady Fire",
+                rhythm: "steady",
+                color: "#ff4500",
+                intensity: 0.7
+            },
+            {
+                name: "Cyber Pulse",
+                rhythm: "wave",
+                color: "#8a2be2",
+                intensity: 1
+            },
+            {
+                name: "Cool Flow",
+                rhythm: "steady",
+                color: "#1e90ff",
+                intensity: 0.6
+            }
+        ];
+
+        const selectedTrending = trendingStyles[Math.floor(Math.random() * trendingStyles.length)];
+
+        document.addEventListener('DOMContentLoaded', () => {
+            const btn = document.getElementById('trending-btn');
+            btn.innerHTML = `<i data-lucide="flame" class="w-5 h-5"></i> Try Trending: ${selectedTrending.name}`;
+            lucide.createIcons();
+        });
+
+        document.getElementById('trending-btn').addEventListener('click', () => {
+            state.rhythm = selectedTrending.rhythm;
+            state.color = selectedTrending.color;
+            state.intensity = selectedTrending.intensity;
+            document.getElementById('rhythm').value = state.rhythm;
+            document.getElementById('color').value = state.color;
+            document.getElementById('intensity').value = state.intensity;
+            showToast(`🔥 ${selectedTrending.name} applied!`);
+        });
+
+        document.getElementById('theme-toggle').addEventListener('click', () => {
+            const isDark = document.documentElement.classList.toggle('dark');
+            document.getElementById('theme-toggle').innerHTML = isDark
+                ? '<span>Light Mode</span><i data-lucide="sun" class="w-5 h-5"></i>'
+                : '<span>Dark Mode</span><i data-lucide="moon" class="w-5 h-5"></i>';
+            lucide.createIcons();
+        });
+
+        window.addEventListener('resize', () => {
+            const canvasEl = document.getElementById('canvas-container');
+            const rect = canvasEl.getBoundingClientRect();
+            resizeCanvas(rect.width, rect.height);
+        });
+        lucide.createIcons();
+    </script>
+</body>
+
+</html>

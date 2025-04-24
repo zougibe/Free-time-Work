@@ -1,0 +1,1179 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Social Media Campaign Board</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/konva@9.3.6/konva.min.js"></script>
+
+    <style>
+        body {
+            font-family: sans-serif;
+            background-color: #f3f4f6;
+            color: #111827;
+            transition: background-color 0.3s ease, color 0.3s ease;
+        }
+
+        .dark body {
+            background-color: #111827;
+            color: #f9fafb;
+        }
+
+        #canvas-container {
+            border: 2px solid #e5e7eb;
+            border-radius: 8px;
+            background-color: #f9fafb;
+            transition: width 0.3s ease, height 0.3s ease, border-color 0.2s ease, background-color 0.2s ease;
+            display: inline-block;
+            box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.1);
+            vertical-align: top;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .dark #canvas-container {
+            border-color: #4b5563;
+            background-color: #374151;
+            box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.3);
+        }
+
+        textarea.konva-editing {
+            position: absolute;
+            border: 1px solid #ccc;
+            padding: 5px;
+            margin: 0;
+            overflow: hidden;
+            background: white;
+            font-size: 16px;
+            line-height: 1.2;
+            font-family: sans-serif;
+            resize: none;
+            z-index: 1000;
+            box-shadow: 0 0 5px rgba(0, 0, 0, 0.2);
+            border-radius: 3px;
+        }
+
+        .dark textarea.konva-editing {
+            background: #374151;
+            color: #E5E7EB;
+            border-color: #555;
+        }
+
+        .draggable-element {
+            cursor: grab;
+            border: 1px solid #d1d5db;
+            background-color: #f3f4f6;
+            color: #1f2937;
+            transition: background-color 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease, color 0.2s ease;
+        }
+
+        .dark .draggable-element {
+            border-color: #4b5563;
+            background-color: #374151;
+            color: #d1d5db;
+        }
+
+
+        .draggable-element:hover {
+            background-color: #e5e7eb;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        .dark .draggable-element:hover {
+            background-color: #4b5563;
+        }
+
+        .draggable-element:active {
+            cursor: grabbing;
+            background-color: #d1d5db;
+        }
+
+        .dark .draggable-element:active {
+            background-color: #525c6b;
+        }
+
+        .konvajs-content text {
+            font-family: sans-serif !important;
+            background: transparent !important;
+        }
+
+        #elements-list::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        #elements-list::-webkit-scrollbar-track {
+            background: #f1f5f9;
+            border-radius: 4px;
+        }
+
+        .dark #elements-list::-webkit-scrollbar-track {
+            background: #334155;
+        }
+
+        #elements-list::-webkit-scrollbar-thumb {
+            background: #cbd5e1;
+            border-radius: 4px;
+        }
+
+        .dark #elements-list::-webkit-scrollbar-thumb {
+            background: #475569;
+        }
+
+        #elements-list::-webkit-scrollbar-thumb:hover {
+            background: #94a3b8;
+        }
+
+        .dark #elements-list::-webkit-scrollbar-thumb:hover {
+            background: #64748b;
+        }
+
+        input[type="file"] {
+            font-size: 0.875rem;
+            color: #6b7280;
+        }
+
+        .dark input[type="file"] {
+            color: #9ca3af;
+        }
+
+        input[type="file"]::file-selector-button {
+            @apply mr-2 px-2 py-1 border rounded text-sm cursor-pointer transition-colors;
+            @apply border-gray-300 text-gray-700 bg-gray-100 hover:bg-gray-200;
+            @apply dark:border-gray-600 dark:text-gray-300 dark:bg-gray-700 dark:hover:bg-gray-600;
+        }
+    </style>
+
+    <script>
+        (function () {
+            const themeKey = 'theme';
+            try {
+                const saved = localStorage.getItem(themeKey);
+                const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+                if (saved === 'dark' || (!saved && prefersDark)) {
+                    document.documentElement.classList.add('dark');
+                } else {
+                    document.documentElement.classList.remove('dark');
+                }
+            } catch (e) {
+                console.error("Theme script error:", e);
+                if (window.matchMedia('(prefers-color-scheme: dark)').matches) {
+                    document.documentElement.classList.add('dark');
+                }
+            }
+        })();
+    </script>
+</head>
+
+<body class="min-h-screen flex flex-col">
+    <header class="bg-purple-600 dark:bg-purple-800 text-white p-4 flex justify-between items-center shadow-md">
+        <h1 class="text-2xl font-bold">Campaign Board Creator</h1>
+        <button id="theme-toggle"
+            class="bg-gray-200 dark:bg-gray-700 text-gray-900 dark:text-gray-100 px-3 py-1 rounded hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors">
+            Toggle Theme
+        </button>
+    </header>
+
+    <div class="flex flex-1 flex-col md:flex-row p-4 gap-4">
+        <aside class="w-full md:w-1/4 bg-white dark:bg-gray-800 p-4 rounded-lg shadow-lg flex flex-col gap-4">
+            <h2 class="text-xl font-semibold border-b border-gray-200 dark:border-gray-700 pb-2">Controls</h2>
+
+            <div>
+                <label for="platform-select"
+                    class="block text-sm font-medium mb-1 text-gray-700 dark:text-gray-300">Platform</label>
+                <select id="platform-select"
+                    class="w-full p-2 border rounded bg-white dark:bg-gray-700 border-gray-300 dark:border-gray-600 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-purple-500 dark:focus:ring-purple-400">
+                    <option value="instagram">Instagram (1:1)</option>
+                    <option value="tiktok">TikTok (9:16)</option>
+                    <option value="pinterest">Pinterest (2:3)</option>
+                </select>
+            </div>
+
+            <div>
+                <h3 class="text-lg font-medium mb-2 text-gray-800 dark:text-gray-200">Upload Images</h3>
+                <div class="space-y-2">
+                    <div>
+                        <label for="header-image-upload"
+                            class="block text-sm font-medium mb-1 text-gray-700 dark:text-gray-300">Header Image</label>
+                        <input type="file" id="header-image-upload" accept="image/*" class="w-full">
+                    </div>
+                    <div>
+                        <label for="product-image-upload"
+                            class="block text-sm font-medium mb-1 text-gray-700 dark:text-gray-300">Product Shot</label>
+                        <input type="file" id="product-image-upload" accept="image/*" class="w-full">
+                    </div>
+                </div>
+            </div>
+
+            <div>
+                <h3 class="text-lg font-medium mb-2 text-gray-800 dark:text-gray-200">Add Elements</h3>
+                <ul id="elements-list" class="space-y-2 mb-4 max-h-60 overflow-y-auto pr-2">
+                </ul>
+            </div>
+
+            <div>
+                <h3 class="text-lg font-medium mb-1 text-gray-800 dark:text-gray-200">Team Synergy Score</h3>
+                <div class="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-4 overflow-hidden">
+                    <div id="synergy-bar"
+                        class="bg-gradient-to-r from-purple-500 to-pink-500 h-4 rounded-full transition-all duration-500 ease-out"
+                        style="width: 0%"></div>
+                </div>
+                <p id="synergy-text" class="text-sm mt-1 text-gray-600 dark:text-gray-400">Score: 0 / 100</p>
+            </div>
+
+            <div
+                class="bg-purple-100 dark:bg-purple-900/50 p-3 rounded border border-purple-200 dark:border-purple-700/50">
+                <h3 class="text-lg font-medium mb-1 text-purple-800 dark:text-purple-200">Trending Suggestion</h3>
+                <p id="trending-suggestion" class="text-sm italic text-purple-700 dark:text-purple-300"></p>
+            </div>
+
+
+            <div
+                class="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-2 mt-auto pt-4 border-t border-gray-200 dark:border-gray-700">
+                <button id="save-btn"
+                    class="flex-1 bg-purple-600 dark:bg-purple-700 text-white px-4 py-2 rounded hover:bg-purple-700 dark:hover:bg-purple-600 transition-colors">
+                    Save Board
+                </button>
+                <button id="export-btn"
+                    class="flex-1 bg-blue-600 dark:bg-blue-700 text-white px-4 py-2 rounded hover:bg-blue-700 dark:hover:bg-blue-600 transition-colors">
+                    Export JSON
+                </button>
+            </div>
+        </aside>
+
+        <main class="flex-1 bg-white dark:bg-gray-800 p-4 rounded-lg shadow-lg flex flex-col">
+            <h2 class="text-xl font-semibold mb-4 border-b border-gray-200 dark:border-gray-700 pb-2">Campaign Board
+            </h2>
+            <div id="canvas-container-wrapper" class="flex-grow flex items-center justify-center overflow-auto">
+                <div id="canvas-container" class="shadow-inner"></div>
+            </div>
+        </main>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+
+            const ELEMENTS_DATA = [
+                { id: 1, type: 'image', content: 'https://via.placeholder.com/100x100/8B5CF6/FFFFFF?text=Header', width: 100, height: 100, name: "Header Image", uploadable: true, listElementId: 'element-li-1' },
+                { id: 2, type: 'text', content: 'Your Catchy Headline Here', width: 180, height: 40, name: "Headline Text", listElementId: 'element-li-2', fontSize: 16 },
+                { id: 3, type: 'link', content: 'www.example.com', width: 120, height: 40, name: "Call to Action Link", listElementId: 'element-li-3' },
+                { id: 4, type: 'image', content: 'https://via.placeholder.com/100x100/EC4899/FFFFFF?text=Product', width: 100, height: 100, name: "Product Shot", uploadable: true, listElementId: 'element-li-4' },
+                { id: 5, type: 'text', content: '#Campaign #SocialMedia', width: 160, height: 30, name: "Hashtags", listElementId: 'element-li-5', fontSize: 14 },
+            ];
+
+            const PLATFORM_SIZES = {
+                instagram: { width: 400, height: 400 },
+                tiktok: { width: 300, height: 533 },
+                pinterest: { width: 300, height: 450 }
+            };
+
+            const TRENDING_SUGGESTIONS = [
+                'Use short, engaging video clips for TikTok and Reels.',
+                'High-quality, vibrant images perform well on Instagram.',
+                'Create visually appealing Pins with text overlays for Pinterest.',
+                'Don\'t forget relevant hashtags to increase reach.',
+                'Include a clear call-to-action (CTA) in your posts.',
+                'Consistency is key! Plan your posting schedule.',
+                'Engage with your audience by responding to comments.'
+            ];
+
+            const LOCAL_STORAGE_KEY = 'campaignBoard';
+            const THEME_STORAGE_KEY = 'theme';
+
+
+            const platformSelect = document.getElementById('platform-select');
+            const elementsList = document.getElementById('elements-list');
+            const canvasContainer = document.getElementById('canvas-container');
+            const canvasContainerWrapper = document.getElementById('canvas-container-wrapper');
+            const synergyBar = document.getElementById('synergy-bar');
+            const synergyText = document.getElementById('synergy-text');
+            const trendingSuggestionEl = document.getElementById('trending-suggestion');
+            const saveBtn = document.getElementById('save-btn');
+            const exportBtn = document.getElementById('export-btn');
+            const themeToggle = document.getElementById('theme-toggle');
+            const headerImageUpload = document.getElementById('header-image-upload');
+            const productImageUpload = document.getElementById('product-image-upload');
+
+
+            let stage;
+            let layer;
+            let boardElements = [];
+            let currentPlatform = 'instagram';
+            let isCurrentlyDark = false;
+            let transformer;
+            let activeTextarea = null;
+            let nodeBeingEdited = null;
+
+
+
+            function initKonva() {
+                isCurrentlyDark = document.documentElement.classList.contains('dark');
+                console.log(`Konva Initializing. Theme isDark: ${isCurrentlyDark}`);
+
+                const initialSize = PLATFORM_SIZES[currentPlatform];
+                stage = new Konva.Stage({
+                    container: 'canvas-container',
+                    width: initialSize.width,
+                    height: initialSize.height
+                });
+                layer = new Konva.Layer();
+                stage.add(layer);
+
+
+                transformer = new Konva.Transformer({
+                    nodes: [],
+                    keepRatio: true,
+                    enabledAnchors: ['top-left', 'top-right', 'bottom-left', 'bottom-right', 'middle-left', 'middle-right'],
+                    ignoreStroke: true,
+
+                    borderStroke: '#007AFF',
+                    anchorStroke: '#007AFF',
+                    anchorFill: '#FFF',
+                    anchorSize: 8,
+                    borderDash: [3, 3],
+                    rotationSnaps: [0, 90, 180, 270],
+
+                    boundBoxFunc: (oldBox, newBox) => {
+                        if (newBox.width < 20 || newBox.height < 20) {
+                            return oldBox;
+                        }
+                        return newBox;
+                    }
+                });
+                layer.add(transformer);
+
+                canvasContainer.style.width = `${initialSize.width}px`;
+                canvasContainer.style.height = `${initialSize.height}px`;
+                applyCanvasContainerStyles();
+
+
+                stage.on('click tap', function (e) {
+
+                    if (e.target === stage) {
+                        transformer.nodes([]);
+                        removeActiveTextarea(nodeBeingEdited);
+                        return;
+                    }
+
+                    else if (nodeBeingEdited && e.target !== nodeBeingEdited && !(e.target.getParent && e.target.getParent() === nodeBeingEdited)) {
+                        console.log("Clicked different shape while editing, finalizing edit first.");
+                        removeActiveTextarea(nodeBeingEdited);
+
+                    }
+                });
+            }
+
+            function populateElementsList() {
+                elementsList.innerHTML = '';
+                ELEMENTS_DATA.forEach(element => {
+                    const li = document.createElement('li');
+                    li.className = 'draggable-element p-2 rounded text-sm';
+                    li.draggable = true;
+                    li.dataset.elementId = element.id;
+                    li.id = element.listElementId;
+                    const displayName = element.name || `${element.type.charAt(0).toUpperCase() + element.type.slice(1)}: ${element.content.slice(0, 15)}...`;
+                    li.textContent = displayName;
+                    if (element.uploadable && element.content && !element.content.startsWith('https://via.placeholder')) {
+                        li.textContent += ' (Uploaded)';
+                    }
+                    elementsList.appendChild(li);
+                });
+            }
+
+            function setupDragDrop() {
+                elementsList.addEventListener('dragstart', (e) => {
+                    if (e.target.classList.contains('draggable-element')) {
+                        e.dataTransfer.setData('elementId', e.target.dataset.elementId);
+                        e.dataTransfer.effectAllowed = 'copy';
+                    }
+                });
+
+                canvasContainer.addEventListener('dragover', (e) => {
+                    e.preventDefault();
+                    e.dataTransfer.dropEffect = 'copy';
+                    canvasContainer.style.borderColor = isCurrentlyDark ? '#a78bfa' : '#c4b5fd';
+                });
+
+                canvasContainer.addEventListener('dragleave', (e) => {
+                    applyCanvasContainerStyles();
+                });
+
+                canvasContainer.addEventListener('drop', (e) => {
+                    e.preventDefault();
+                    applyCanvasContainerStyles();
+                    removeActiveTextarea(nodeBeingEdited);
+
+                    const elementId = parseInt(e.dataTransfer.getData('elementId'), 10);
+                    const elementData = ELEMENTS_DATA.find(el => el.id === elementId);
+
+                    if (!elementData || !stage) return;
+
+                    const containerRect = canvasContainer.getBoundingClientRect();
+
+                    const scrollX = canvasContainerWrapper.scrollLeft ?? 0;
+                    const scrollY = canvasContainerWrapper.scrollTop ?? 0;
+
+
+                    const stageX = e.clientX - containerRect.left + scrollX;
+                    const stageY = e.clientY - containerRect.top + scrollY;
+
+
+                    const dropX = stageX - (elementData.width / 2);
+                    const dropY = stageY - (elementData.height / 2);
+
+
+                    const clampedX = Math.max(0, Math.min(stage.width() - elementData.width, dropX));
+                    const clampedY = Math.max(0, Math.min(stage.height() - elementData.height, dropY));
+
+                    addElementToCanvas(elementData, clampedX, clampedY);
+                    updateSynergyScore();
+                });
+            }
+
+            function applyCanvasContainerStyles() {
+                if (!canvasContainer) return;
+                canvasContainer.style.borderColor = isCurrentlyDark ? '#4b5563' : '#e5e7eb';
+            }
+
+            function addElementToCanvas(elementData, x, y) {
+                let konvaElement;
+                const textColor = isCurrentlyDark ? '#E5E7EB' : '#1F2937';
+
+
+                if (elementData.type === 'text') {
+                    konvaElement = new Konva.Text({
+                        x, y, text: elementData.content,
+                        fontSize: elementData.fontSize || 16,
+                        fill: textColor,
+                        width: elementData.width, height: elementData.height,
+                        draggable: true, name: `element-${elementData.id}`,
+                        padding: 5, wrap: 'word',
+                        verticalAlign: 'middle', fontFamily: 'sans-serif'
+                    });
+                }
+
+                else if (elementData.type === 'image') {
+                    const img = new Image();
+                    img.crossOrigin = 'Anonymous';
+                    img.src = elementData.content;
+                    img.onerror = () => console.error(`Failed to load image: ${elementData.content.substring(0, 100)}...`);
+                    img.onload = () => {
+                        konvaElement = new Konva.Image({
+                            x, y, image: img,
+                            width: elementData.width, height: elementData.height,
+                            draggable: true, name: `element-${elementData.id}`
+                        });
+                        layer.add(konvaElement);
+                        addBoardElementState(elementData, konvaElement);
+                        setupKonvaElementEvents(konvaElement, elementData.id);
+                        layer.batchDraw();
+                    };
+                    return;
+                }
+
+                else if (elementData.type === 'link') {
+                    konvaElement = new Konva.Group({
+                        x, y, draggable: true, width: elementData.width, height: elementData.height,
+                        name: `element-${elementData.id}`
+                    });
+                    const rect = new Konva.Rect({
+                        width: elementData.width, height: elementData.height,
+                        fill: '#60a5fa',
+                        cornerRadius: 5,
+                        shadowColor: 'black', shadowBlur: 3, shadowOpacity: 0.3, shadowOffsetY: 1
+                    });
+                    const text = new Konva.Text({
+                        text: '🔗 Link', fontSize: 14, fill: 'white',
+                        width: elementData.width, height: elementData.height,
+                        align: 'center', verticalAlign: 'middle',
+                        padding: 5, listening: false, fontFamily: 'sans-serif'
+                    });
+                    konvaElement.add(rect, text);
+                }
+
+
+                if (konvaElement) {
+                    layer.add(konvaElement);
+                    addBoardElementState(elementData, konvaElement);
+                    setupKonvaElementEvents(konvaElement, elementData.id);
+                    layer.batchDraw();
+                }
+            }
+
+            function addBoardElementState(elementData, konvaNode) {
+
+                if (!boardElements.some(el => el.konvaElement === konvaNode)) {
+                    boardElements.push({ ...elementData, konvaElement: konvaNode });
+                }
+            }
+
+            function setupKonvaElementEvents(konvaNode, elementId) {
+
+                konvaNode.on('click tap', (e) => {
+
+                    if (activeTextarea || nodeBeingEdited) { return; }
+
+
+                    if (!stage.isDragging() && e.target !== stage) {
+
+                        transformer.nodes([konvaNode]);
+                    }
+
+                    layer.draw();
+                });
+
+
+                konvaNode.on('dblclick dbltap', (e) => {
+                    e.cancelBubble = true;
+                    if (konvaNode instanceof Konva.Text) {
+                        editTextNode(konvaNode);
+                    }
+
+                });
+
+
+                konvaNode.on('mouseenter', () => { if (!activeTextarea && !nodeBeingEdited) stage.container().style.cursor = 'grab'; });
+                konvaNode.on('mouseleave', () => { if (!activeTextarea && !nodeBeingEdited) stage.container().style.cursor = 'default'; });
+                konvaNode.on('dragstart', () => {
+                    if (activeTextarea || nodeBeingEdited) return;
+                    stage.container().style.cursor = 'grabbing';
+                    konvaNode.moveToTop();
+                    transformer.forceUpdate();
+                    layer.draw();
+                });
+                konvaNode.on('dragend', () => {
+                    stage.container().style.cursor = 'grab';
+                    clampNodePosition(konvaNode);
+                    updateSynergyScore();
+                });
+
+
+                konvaNode.on('transformend', () => {
+
+
+                    const scaleX = konvaNode.scaleX();
+                    const scaleY = konvaNode.scaleY();
+                    konvaNode.scaleX(1);
+                    konvaNode.scaleY(1);
+
+
+                    konvaNode.width(Math.max(20, konvaNode.width() * scaleX));
+                    konvaNode.height(Math.max(20, konvaNode.height() * scaleY));
+
+                    clampNodePosition(konvaNode);
+                    layer.batchDraw();
+                });
+            }
+
+
+
+            function removeActiveTextarea(textNodeToShow) {
+                if (activeTextarea) {
+                    try {
+
+
+                        if (textNodeToShow) {
+
+                            textNodeToShow.show();
+                            console.log("Showing Konva Node:", textNodeToShow.name());
+                        } else {
+                            console.warn("removeActiveTextarea called without a node to show.");
+                        }
+
+
+
+
+                        if (activeTextarea.parentNode) {
+                            activeTextarea.parentNode.removeChild(activeTextarea);
+                        } else {
+                            console.warn("Active textarea had no parentNode during removal.");
+                        }
+                        activeTextarea = null;
+                        nodeBeingEdited = null;
+                        transformer?.forceUpdate();
+                        layer?.draw();
+
+                    } catch (error) {
+                        console.error("Error removing textarea:", error);
+
+                        if (activeTextarea && activeTextarea.parentNode) {
+                            try { activeTextarea.parentNode.removeChild(activeTextarea); } catch (e) { }
+                        }
+                        activeTextarea = null;
+                        nodeBeingEdited = null;
+                    }
+                }
+            }
+
+            function editTextNode(textNode) {
+
+
+                removeActiveTextarea(nodeBeingEdited);
+
+
+                textNode.hide();
+                nodeBeingEdited = textNode;
+
+                transformer.nodes([]);
+                layer.draw();
+
+
+                const textPosition = textNode.absolutePosition();
+                const stageBox = stage.container().getBoundingClientRect();
+
+                const areaPosition = {
+                    x: stageBox.left + textPosition.x + window.scrollX,
+                    y: stageBox.top + textPosition.y + window.scrollY,
+                };
+
+                const textarea = document.createElement('textarea');
+                document.body.appendChild(textarea);
+                activeTextarea = textarea;
+
+
+                textarea.value = textNode.text();
+                textarea.className = 'konva-editing';
+                if (isCurrentlyDark) { textarea.classList.add('dark'); }
+                textarea.style.position = 'absolute';
+                textarea.style.top = `${areaPosition.y}px`;
+                textarea.style.left = `${areaPosition.x}px`;
+                textarea.style.width = `${textNode.width()}px`;
+                textarea.style.height = `${textNode.height()}px`;
+                textarea.style.fontSize = `${textNode.fontSize()}px`;
+                textarea.style.lineHeight = textNode.lineHeight() || 1.2;
+                textarea.style.fontFamily = textNode.fontFamily();
+                textarea.style.textAlign = textNode.align();
+                textarea.style.color = isCurrentlyDark ? '#E5E7EB' : '#1F2937';
+                textarea.style.background = isCurrentlyDark ? '#374151' : '#FFF';
+                textarea.style.padding = `${textNode.padding()}px`;
+                textarea.style.border = '1px solid #999';
+
+                textarea.focus();
+                setTimeout(() => { textarea.select(); }, 0);
+
+
+                const finalizeEdit = () => {
+
+
+                    if (activeTextarea === textarea && nodeBeingEdited === textNode) {
+                        console.log("Finalizing edit for:", textNode.name(), " New text:", textarea.value);
+                        textNode.text(textarea.value);
+                        removeActiveTextarea(textNode);
+                        clampNodePosition(textNode);
+                        layer.batchDraw();
+                    } else {
+                        console.warn("finalizeEdit called but state mismatch.", { active: activeTextarea === textarea, node: nodeBeingEdited === textNode });
+
+                        if (activeTextarea === textarea) {
+                            removeActiveTextarea(null);
+                        }
+                    }
+                };
+
+                const cancelEdit = () => {
+
+
+                    if (activeTextarea === textarea && nodeBeingEdited === textNode) {
+                        console.log("Cancelling edit for:", textNode.name());
+
+                        removeActiveTextarea(textNode);
+                        layer.batchDraw();
+                    } else {
+                        console.warn("cancelEdit called but state mismatch.");
+                        if (activeTextarea === textarea) {
+                            removeActiveTextarea(null);
+                        }
+                    }
+                };
+
+                textarea.addEventListener('blur', finalizeEdit);
+
+                textarea.addEventListener('keydown', (e) => {
+                    if (e.key === 'Enter' && !e.shiftKey) {
+                        e.preventDefault();
+                        finalizeEdit();
+                    }
+                    if (e.key === 'Escape') {
+                        e.preventDefault();
+                        cancelEdit();
+                    }
+                });
+            }
+
+
+
+            function clampNodePosition(konvaNode) {
+
+                if (!konvaNode || !konvaNode.getLayer()) return;
+
+                const box = konvaNode.getClientRect({ skipTransform: true });
+                const stageW = stage.width();
+                const stageH = stage.height();
+                let newX = konvaNode.x(), newY = konvaNode.y();
+
+
+                if (box.x < 0) newX = konvaNode.x() - box.x;
+                if (box.y < 0) newY = konvaNode.y() - box.y;
+                if (box.x + box.width > stageW) newX = konvaNode.x() - (box.x + box.width - stageW);
+                if (box.y + box.height > stageH) newY = konvaNode.y() - (box.y + box.height - stageH);
+
+
+                if (Math.abs(newX - konvaNode.x()) > 0.1 || Math.abs(newY - konvaNode.y()) > 0.1) {
+                    konvaNode.position({ x: newX, y: newY });
+
+                }
+            }
+
+
+
+
+            function removeElementFromBoardById(elementId, konvaNodeToRemove) {
+                if (!konvaNodeToRemove || !konvaNodeToRemove.getLayer()) {
+                    console.warn(`Node ID ${elementId} already removed or invalid.`);
+                    return;
+                }
+
+
+                const index = boardElements.findIndex(el => el.konvaElement === konvaNodeToRemove);
+                if (index > -1) {
+                    boardElements.splice(index, 1);
+                } else {
+                    console.warn(`Node ID ${elementId} not found in boardElements state array during removal.`);
+                }
+
+                transformer.nodes([]);
+                konvaNodeToRemove.destroy();
+                layer.batchDraw();
+                updateSynergyScore();
+                console.log(`Removed element instance ID: ${elementId}`);
+            }
+
+
+            function updateSynergyScore() {
+                if (!boardElements) return;
+                const types = new Set(boardElements.map(el => el.type));
+                const maxTypes = new Set(ELEMENTS_DATA.map(el => el.type)).size;
+                const varietyScore = maxTypes > 0 ? (types.size / maxTypes) * 60 : 0;
+                let quantityScore = 0;
+                const count = boardElements.length;
+                if (count === 1) quantityScore = 5;
+                else if (count === 2) quantityScore = 15;
+                else if (count === 3) quantityScore = 30;
+                else if (count === 4) quantityScore = 40;
+                else if (count >= 5) quantityScore = 35;
+                const totalScore = Math.min(100, Math.round(varietyScore + quantityScore));
+                synergyBar.style.width = `${totalScore}%`;
+                synergyText.textContent = `Score: ${totalScore} / 100`;
+            }
+
+            function handlePlatformChange() {
+                currentPlatform = platformSelect.value;
+                const size = PLATFORM_SIZES[currentPlatform];
+                if (stage && size) {
+                    removeActiveTextarea(nodeBeingEdited);
+                    stage.width(size.width);
+                    stage.height(size.height);
+                    canvasContainer.style.width = `${size.width}px`;
+                    canvasContainer.style.height = `${size.height}px`;
+
+                    boardElements.forEach(el => clampNodePosition(el.konvaElement));
+                    layer.draw();
+                }
+            }
+
+            function updateTrendingSuggestion() {
+                const suggestion = TRENDING_SUGGESTIONS[Math.floor(Math.random() * TRENDING_SUGGESTIONS.length)];
+                trendingSuggestionEl.textContent = suggestion;
+            }
+
+            function saveBoard() {
+                try {
+                    removeActiveTextarea(nodeBeingEdited);
+                    const boardData = {
+                        platform: currentPlatform,
+                        elements: boardElements.map(el => {
+                            const konvaNode = el.konvaElement;
+                            let savedContent = el.content;
+
+
+                            if (konvaNode instanceof Konva.Text) {
+                                savedContent = konvaNode.text();
+                            }
+
+                            else if (konvaNode instanceof Konva.Image) {
+                                savedContent = konvaNode.image()?.src;
+                            }
+
+                            return {
+                                id: el.id,
+                                x: konvaNode.x(),
+                                y: konvaNode.y(),
+                                width: konvaNode.width(),
+                                height: konvaNode.height(),
+                                scaleX: konvaNode.scaleX(),
+                                scaleY: konvaNode.scaleY(),
+                                rotation: konvaNode.rotation(),
+                                content: savedContent
+                            };
+                        }),
+                    };
+                    localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(boardData));
+                    alert('Board layout saved.');
+                } catch (error) {
+                    console.error("Save error:", error);
+                    alert('Error saving board.');
+                }
+            }
+
+            function exportBoard() {
+                try {
+                    removeActiveTextarea(nodeBeingEdited);
+                    const boardData = {
+                        boardTitle: `Campaign Board - ${currentPlatform.toUpperCase()}`,
+                        platform: currentPlatform, createdAt: new Date().toISOString(),
+                        elements: boardElements.map(el => {
+                            const konvaNode = el.konvaElement;
+                            const baseData = ELEMENTS_DATA.find(d => d.id === el.id);
+                            let exportContent = baseData?.content || el.content;
+
+
+                            if (konvaNode instanceof Konva.Text) {
+                                exportContent = konvaNode.text();
+                            }
+
+                            else if (konvaNode instanceof Konva.Image) {
+                                exportContent = konvaNode.image()?.src;
+
+                            }
+
+                            return {
+                                id: el.id, type: el.type,
+                                name: el.name,
+                                content: exportContent,
+                                x: konvaNode.x(), y: konvaNode.y(),
+                                width: konvaNode.width(), height: konvaNode.height(),
+                                scaleX: konvaNode.scaleX(), scaleY: konvaNode.scaleY(),
+                                rotation: konvaNode.rotation()
+                            };
+                        })
+                    };
+                    const blob = new Blob([JSON.stringify(boardData, null, 2)], { type: 'application/json' });
+                    const url = URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = `campaign_board_${currentPlatform}_${Date.now()}.json`;
+                    document.body.appendChild(a); a.click(); document.body.removeChild(a);
+                    URL.revokeObjectURL(url);
+                } catch (error) {
+                    console.error("Export error:", error);
+                    alert('Error exporting board.');
+                }
+            }
+
+            function loadBoard() {
+                try {
+                    const savedBoard = localStorage.getItem(LOCAL_STORAGE_KEY);
+                    if (savedBoard) {
+                        const boardData = JSON.parse(savedBoard);
+                        currentPlatform = boardData.platform || 'instagram';
+                        platformSelect.value = currentPlatform;
+                        handlePlatformChange();
+
+                        layer.destroyChildren();
+
+                        transformer = new Konva.Transformer({ nodes: [], keepRatio: true, enabledAnchors: ['top-left', 'top-right', 'bottom-left', 'bottom-right', 'middle-left', 'middle-right'], ignoreStroke: true, borderStroke: '#007AFF', anchorStroke: '#007AFF', anchorFill: '#FFF', anchorSize: 8, borderDash: [3, 3], rotationSnaps: [0, 90, 180, 270], boundBoxFunc: (oldBox, newBox) => newBox.width < 20 || newBox.height < 20 ? oldBox : newBox });
+                        layer.add(transformer);
+                        boardElements = [];
+
+                        const loadPromises = boardData.elements.map(savedElData => {
+                            return new Promise((resolve, reject) => {
+                                const baseElementData = ELEMENTS_DATA.find(e => e.id === savedElData.id);
+                                if (!baseElementData) {
+                                    console.warn(`Base data not found for saved element ID: ${savedElData.id}`);
+                                    resolve();
+                                    return;
+                                }
+
+                                const elementToAdd = {
+                                    ...baseElementData,
+                                    width: savedElData.width,
+                                    height: savedElData.height,
+                                    ...(savedElData.content && { content: savedElData.content })
+                                };
+
+
+                                addElementForLoad(elementToAdd, savedElData, resolve, reject);
+                            });
+                        });
+
+
+                        Promise.all(loadPromises).then(() => {
+                            layer.batchDraw();
+                            updateSynergyScore();
+                            console.log('Board loaded.');
+                        }).catch(error => {
+                            console.error("Error loading one or more elements:", error);
+
+                            layer.batchDraw();
+                            updateSynergyScore();
+                            alert('Error loading some elements.');
+                        });
+
+                    } else {
+
+                        updateSynergyScore();
+                    }
+                } catch (error) {
+                    console.error("Load error:", error);
+                    alert('Error loading board. Resetting.');
+                    localStorage.removeItem(LOCAL_STORAGE_KEY);
+
+                    boardElements = [];
+                    if (layer) layer.destroyChildren();
+                    transformer = new Konva.Transformer({ nodes: [], keepRatio: true, enabledAnchors: ['top-left', 'top-right', 'bottom-left', 'bottom-right', 'middle-left', 'middle-right'], ignoreStroke: true, borderStroke: '#007AFF', anchorStroke: '#007AFF', anchorFill: '#FFF', anchorSize: 8, borderDash: [3, 3], rotationSnaps: [0, 90, 180, 270], boundBoxFunc: (oldBox, newBox) => newBox.width < 20 || newBox.height < 20 ? oldBox : newBox });
+                    if (layer) layer.add(transformer);
+                    if (layer) layer.draw();
+                    updateSynergyScore();
+                }
+            }
+
+
+
+            function addElementForLoad(elementData, savedTransformData, resolve, reject) {
+                let konvaElement;
+                const textColor = isCurrentlyDark ? '#E5E7EB' : '#1F2937';
+
+                const applyTransforms = (node) => {
+                    if (node) {
+                        node.x(savedTransformData.x ?? 0);
+                        node.y(savedTransformData.y ?? 0);
+                        node.scaleX(savedTransformData.scaleX || 1);
+                        node.scaleY(savedTransformData.scaleY || 1);
+                        node.rotation(savedTransformData.rotation || 0);
+
+
+
+
+                        node.width(savedTransformData.width || elementData.width);
+                        node.height(savedTransformData.height || elementData.height);
+
+                        addBoardElementState(elementData, node);
+                        setupKonvaElementEvents(node, elementData.id);
+                    }
+                };
+
+                if (elementData.type === 'text') {
+                    konvaElement = new Konva.Text({
+
+                        text: elementData.content, fontSize: elementData.fontSize || 16, fill: textColor,
+
+                        width: elementData.width, height: elementData.height, draggable: true,
+                        name: `element-${elementData.id}`, padding: 5, wrap: 'word',
+                        verticalAlign: 'middle', fontFamily: 'sans-serif'
+                    });
+                    layer.add(konvaElement);
+                    applyTransforms(konvaElement);
+                    resolve();
+                } else if (elementData.type === 'image') {
+                    const img = new Image();
+                    img.crossOrigin = 'Anonymous';
+                    img.onload = () => {
+                        konvaElement = new Konva.Image({
+
+                            image: img, width: elementData.width, height: elementData.height,
+                            draggable: true, name: `element-${elementData.id}`
+                        });
+                        layer.add(konvaElement);
+                        applyTransforms(konvaElement);
+                        resolve();
+                    };
+                    img.onerror = (err) => {
+                        console.error(`Failed to load saved image: ${elementData.content?.substring(0, 100)}...`);
+
+                        resolve();
+
+                    };
+
+                    if (elementData.content) {
+                        img.src = elementData.content;
+                    } else {
+                        console.warn(`Image element ID ${elementData.id} has no content to load.`);
+                        resolve();
+                    }
+                } else if (elementData.type === 'link') {
+                    konvaElement = new Konva.Group({
+                        draggable: true,
+
+                        width: elementData.width, height: elementData.height,
+                        name: `element-${elementData.id}`
+                    });
+                    const rect = new Konva.Rect({ width: elementData.width, height: elementData.height, fill: '#60a5fa', cornerRadius: 5, shadowColor: 'black', shadowBlur: 3, shadowOpacity: 0.3, shadowOffsetY: 1 });
+                    const text = new Konva.Text({ text: '🔗 Link', fontSize: 14, fill: 'white', width: elementData.width, height: elementData.height, align: 'center', verticalAlign: 'middle', padding: 5, listening: false, fontFamily: 'sans-serif' });
+                    konvaElement.add(rect, text);
+                    layer.add(konvaElement);
+                    applyTransforms(konvaElement);
+                    resolve();
+                } else {
+                    resolve();
+                }
+            }
+
+
+
+
+            function applyTheme() {
+                console.log(`Applying theme. isCurrentlyDark: ${isCurrentlyDark}`);
+                updateKonvaTheme();
+                applyCanvasContainerStyles();
+
+                if (activeTextarea) {
+                    activeTextarea.style.background = isCurrentlyDark ? '#374151' : '#FFF';
+                    activeTextarea.style.color = isCurrentlyDark ? '#E5E7EB' : '#1F2937';
+                    activeTextarea.style.borderColor = isCurrentlyDark ? '#555' : '#999';
+                }
+            }
+
+            function toggleThemeAndUpdate() {
+                document.documentElement.classList.toggle('dark');
+                isCurrentlyDark = document.documentElement.classList.contains('dark');
+                console.log(`Theme toggled. isCurrentlyDark: ${isCurrentlyDark}`);
+                try {
+                    localStorage.setItem(THEME_STORAGE_KEY, isCurrentlyDark ? 'dark' : 'light');
+                } catch (error) {
+                    console.error("Failed to save theme preference:", error);
+                }
+                applyTheme();
+            }
+
+            function updateKonvaTheme() {
+                if (!layer) return;
+                const textColor = isCurrentlyDark ? '#E5E7EB' : '#1F2937';
+
+                layer.find('Text').forEach(textNode => {
+                    const parentGroup = textNode.getParent();
+                    let isLinkText = false;
+
+                    if (parentGroup instanceof Konva.Group && parentGroup.findOne('Rect')?.fill() === '#60a5fa') {
+                        isLinkText = true;
+                    }
+
+                    if (!isLinkText) { textNode.fill(textColor); }
+                });
+
+                layer.batchDraw();
+            }
+
+
+
+            function handleImageUpload(file, elementId) {
+                if (!file || !file.type.startsWith('image/')) return;
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    const dataURL = e.target.result;
+                    const elementData = ELEMENTS_DATA.find(el => el.id === elementId);
+                    if (elementData) {
+                        elementData.content = dataURL;
+                        const listItem = document.getElementById(elementData.listElementId);
+                        if (listItem) listItem.textContent = elementData.name + ' (Uploaded)';
+
+
+                        boardElements.forEach(boardEl => {
+                            if (boardEl.id === elementId && boardEl.konvaElement instanceof Konva.Image) {
+                                const konvaImage = boardEl.konvaElement;
+                                const img = new Image();
+                                img.onload = () => {
+                                    konvaImage.image(img);
+
+                                    layer.batchDraw();
+                                };
+                                img.onerror = () => console.error(`Failed reload image ID ${elementId} from data URL`);
+                                img.src = dataURL;
+                            }
+                        });
+                    }
+                };
+                reader.onerror = (error) => { console.error("Read error:", error); alert("Error reading file."); };
+                reader.readAsDataURL(file);
+            }
+
+
+
+            function setupEventListeners() {
+                platformSelect.addEventListener('change', handlePlatformChange);
+                saveBtn.addEventListener('click', saveBoard);
+                exportBtn.addEventListener('click', exportBoard);
+                themeToggle.addEventListener('click', toggleThemeAndUpdate);
+
+                headerImageUpload.addEventListener('change', (event) => {
+                    if (event.target.files?.length) handleImageUpload(event.target.files[0], 1);
+                    event.target.value = null;
+                });
+                productImageUpload.addEventListener('change', (event) => {
+                    if (event.target.files?.length) handleImageUpload(event.target.files[0], 4);
+                    event.target.value = null;
+                });
+
+
+                window.addEventListener('keydown', (e) => {
+
+                    const activeElement = document.activeElement;
+                    const isInputFocused = activeElement.tagName === 'INPUT' || activeElement.tagName === 'TEXTAREA' || activeElement.isContentEditable;
+
+                    if ((e.key === 'Delete' || e.key === 'Backspace') && !isInputFocused) {
+                        const selectedNodes = transformer.nodes();
+
+                        if (selectedNodes.length > 0 && !activeTextarea && !nodeBeingEdited) {
+                            e.preventDefault();
+
+
+                            [...selectedNodes].forEach(node => {
+
+                                const nameParts = node.name().split('-');
+                                const elementIdStr = nameParts.length > 1 ? nameParts[1] : null;
+
+                                if (elementIdStr) {
+                                    removeElementFromBoardById(parseInt(elementIdStr, 10), node);
+                                } else {
+                                    console.warn("Could not determine element ID from node name:", node.name());
+
+                                    const boardEl = boardElements.find(el => el.konvaElement === node);
+                                    if (boardEl) {
+                                        removeElementFromBoardById(boardEl.id, node);
+                                    } else {
+
+                                        console.warn("Removing node directly as state link lost:", node);
+                                        node.destroy();
+
+
+
+                                        const idx = boardElements.findIndex(el => el.konvaElement === node);
+                                        if (idx > -1) boardElements.splice(idx, 1);
+                                        updateSynergyScore();
+                                    }
+                                }
+                            });
+
+                            transformer.nodes([]);
+
+                        }
+                    }
+                });
+
+            }
+
+
+            initKonva();
+            populateElementsList();
+            setupDragDrop();
+            setupEventListeners();
+            loadBoard();
+            updateTrendingSuggestion();
+
+
+        });
+    </script>
+
+</body>
+
+</html>

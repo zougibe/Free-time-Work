@@ -1,0 +1,767 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Inclusion-Exclusion Principle Visualizer</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.4.2/p5.min.js"></script>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700&family=Roboto:wght@400;500&display=swap"
+        rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        * {
+            font-family: 'Roboto', sans-serif;
+        }
+
+        h1,
+        h2,
+        h3 {
+            font-family: 'Montserrat', sans-serif;
+            font-weight: 700;
+        }
+
+        @keyframes gentlePulse {
+
+            0%,
+            100% {
+                transform: scale(1);
+            }
+
+            50% {
+                transform: scale(1.02);
+            }
+        }
+
+        @keyframes shake {
+
+            0%,
+            100% {
+                transform: translateX(0);
+            }
+
+            25% {
+                transform: translateX(-4px);
+            }
+
+            50% {
+                transform: translateX(4px);
+            }
+
+            75% {
+                transform: translateX(-4px);
+            }
+        }
+
+        .animate-shake {
+            animation: shake 0.25s ease-in-out;
+        }
+
+        .animate-pulse {
+            animation: gentlePulse 1.5s ease-in-out infinite;
+        }
+
+        input {
+            border: 2px solid #d1d5db;
+            transition: all 0.2s ease;
+            box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+        }
+
+        input:focus {
+            border-color: #3b82f6 !important;
+            outline: none !important;
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.2);
+        }
+
+        button {
+            transition: all 0.2s ease;
+            box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+        }
+
+        button:active {
+            transform: scale(0.97);
+        }
+
+        button:focus {
+            outline: none;
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.3);
+        }
+
+        body {
+            background: linear-gradient(135deg, #f8fafc, #e2e8f0);
+            min-height: 100vh;
+        }
+
+        .card {
+            background: white;
+            border-radius: 0.75rem;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+
+        .card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+        }
+
+        .highlight {
+            background-color: #f0f9ff;
+            border-left: 4px solid #3b82f6;
+        }
+
+        .tooltip {
+            position: relative;
+            display: inline-block;
+        }
+
+        .tooltip .tooltiptext {
+            visibility: hidden;
+            width: 200px;
+            background-color: #1e293b;
+            color: #fff;
+            text-align: center;
+            border-radius: 6px;
+            padding: 8px;
+            position: absolute;
+            z-index: 1;
+            bottom: 125%;
+            left: 50%;
+            transform: translateX(-50%);
+            opacity: 0;
+            transition: opacity 0.3s;
+            font-size: 0.875rem;
+        }
+
+        .tooltip:hover .tooltiptext {
+            visibility: visible;
+            opacity: 1;
+        }
+
+        .modal-overlay {
+            background-color: rgba(0, 0, 0, 0.5);
+            backdrop-filter: blur(4px);
+        }
+
+        .modal-content {
+            animation: modalFadeIn 0.3s ease-out;
+        }
+
+        @keyframes modalFadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(-20px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .formula-step {
+            transition: all 0.3s ease;
+        }
+
+        .formula-step.active {
+            font-weight: bold;
+            color: #1e40af;
+        }
+
+        .region-label {
+            font-weight: 500;
+            text-shadow: 1px 1px 2px white;
+        }
+    </style>
+</head>
+
+<body class="bg-gray-50 font-sans">
+    <div class="container mx-auto px-4 py-8 max-w-6xl">
+        <header class="text-center mb-8">
+            <h1 class="text-4xl font-bold text-gray-800 mb-2">
+                <i class="fas fa-project-diagram text-blue-600 mr-2"></i> Inclusion-Exclusion Principle Visualizer
+            </h1>
+            <p class="text-gray-600 max-w-2xl mx-auto">
+                Visualize how the inclusion-exclusion principle calculates the union of sets by stepping through each
+                component.
+            </p>
+        </header>
+
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+            <!-- Input Section -->
+            <div class="card p-6">
+                <div class="flex justify-between items-center mb-4">
+                    <h2 class="text-xl font-semibold text-gray-800">
+                        <i class="fas fa-sliders-h text-blue-500 mr-2"></i> Set Parameters
+                    </h2>
+                    <button id="openSetModal"
+                        class="px-4 py-2 bg-indigo-500 text-white rounded-lg hover:bg-indigo-600 flex items-center">
+                        <i class="fas fa-edit mr-2"></i> Enter Sets
+                    </button>
+                </div>
+
+                <div class="grid grid-cols-3 gap-4">
+                    <div class="col-span-3 mb-2 text-sm text-gray-500 font-medium">Cardinalities</div>
+
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">|A|</label>
+                        <input id="sizeA" type="number" min="0" value="20"
+                            class="cardinality w-full p-2 rounded-lg border focus:ring-2 focus:ring-blue-200">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">|B|</label>
+                        <input id="sizeB" type="number" min="0" value="20"
+                            class="cardinality w-full p-2 rounded-lg border focus:ring-2 focus:ring-blue-200">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">|C|</label>
+                        <input id="sizeC" type="number" min="0" value="20"
+                            class="cardinality w-full p-2 rounded-lg border focus:ring-2 focus:ring-blue-200">
+                    </div>
+
+                    <div class="col-span-3 mt-4 mb-2 text-sm text-gray-500 font-medium">Intersections</div>
+
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">|A∩B|</label>
+                        <input id="sizeAB" type="number" min="0" value="5"
+                            class="cardinality w-full p-2 rounded-lg border focus:ring-2 focus:ring-blue-200">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">|A∩C|</label>
+                        <input id="sizeAC" type="number" min="0" value="5"
+                            class="cardinality w-full p-2 rounded-lg border focus:ring-2 focus:ring-blue-200">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">|B∩C|</label>
+                        <input id="sizeBC" type="number" min="0" value="5"
+                            class="cardinality w-full p-2 rounded-lg border focus:ring-2 focus:ring-blue-200">
+                    </div>
+
+                    <div class="col-span-3 mt-4">
+                        <label class="block text-sm font-medium text-gray-700 mb-1">|A∩B∩C|</label>
+                        <input id="sizeABC" type="number" min="0" value="2"
+                            class="cardinality w-full p-2 rounded-lg border focus:ring-2 focus:ring-blue-200">
+                    </div>
+                </div>
+            </div>
+
+            <!-- Formula and Controls -->
+            <div class="card p-6 flex flex-col">
+                <div class="flex justify-between items-center mb-4">
+                    <h2 class="text-xl font-semibold text-gray-800">
+                        <i class="fas fa-calculator text-blue-500 mr-2"></i> Formula Steps
+                    </h2>
+                    <button id="reset"
+                        class="p-3 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 flex items-center">
+                        <i class="fas fa-redo mr-2"></i> Reset
+                    </button>
+                </div>
+
+                <!-- Formula Text -->
+                <div id="formula" class="text-lg mb-4 p-4 bg-gray-50 rounded-lg font-mono">
+                    <span class="text-gray-800">|A∪B∪C| = </span>
+                </div>
+
+                <div class="flex-grow mb-4 p-4 bg-gray-50 rounded-lg">
+                    <div id="explanation" class="text-gray-700 leading-relaxed"></div>
+                </div>
+
+                <div class="w-full flex justify-between mt-auto">
+                    <button id="prevStep"
+                        class="p-3 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 flex items-center">
+                        <i class="fas fa-arrow-left mr-2"></i> Previous
+                    </button>
+
+                    <button id="nextStep"
+                        class="p-3 bg-blue-500 text-white rounded-lg hover:bg-blue-600 flex items-center">
+                        Next <i class="fas fa-arrow-right ml-2"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Venn Diagram Canvas -->
+        <div class="card p-6 relative">
+            <h2 class="text-xl font-semibold text-gray-800 mb-4">
+                <i class="fas fa-diagram-project text-blue-500 mr-2"></i> Venn Diagram Visualization
+            </h2>
+            <div id="canvas" class="flex justify-center"></div>
+        </div>
+
+        <!-- Set Input Modal -->
+        <div id="setModal" class="fixed inset-0 modal-overlay hidden items-center justify-center z-50 p-4">
+            <div class="modal-content bg-white p-6 rounded-lg w-full max-w-md shadow-xl">
+                <div class="flex justify-between items-center mb-4">
+                    <h3 class="text-lg font-semibold text-gray-800">
+                        <i class="fas fa-edit text-indigo-500 mr-2"></i> Enter Set Elements
+                    </h3>
+                    <button id="closeSetModal" class="text-gray-500 hover:text-gray-700">
+                        <i class="fas fa-times text-xl"></i>
+                    </button>
+                </div>
+
+                <p class="text-sm text-gray-600 mb-4">Enter elements for each set as comma-separated values (e.g.,
+                    1,2,3,4,5)</p>
+
+                <div id="warningMessage" class="hidden rounded bg-yellow-100 text-yellow-800 p-3 mb-4 flex items-start">
+                    <i class="fas fa-exclamation-circle mt-1 mr-3 text-yellow-500"></i>
+                    <span class="text-sm">All sets are empty! Please enter elements for at least one set.</span>
+                </div>
+
+                <div class="space-y-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">
+                            <i class="fas fa-circle text-red-500 mr-1"></i> Set A
+                        </label>
+                        <input type="text" id="inputSetA"
+                            class="w-full p-3 rounded-lg border focus:ring-2 focus:ring-blue-200"
+                            placeholder="e.g., 1,2,3,4,5">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">
+                            <i class="fas fa-circle text-green-500 mr-1"></i> Set B
+                        </label>
+                        <input type="text" id="inputSetB"
+                            class="w-full p-3 rounded-lg border focus:ring-2 focus:ring-blue-200"
+                            placeholder="e.g., 3,4,5,6,7">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">
+                            <i class="fas fa-circle text-blue-500 mr-1"></i> Set C
+                        </label>
+                        <input type="text" id="inputSetC"
+                            class="w-full p-3 rounded-lg border focus:ring-2 focus:ring-blue-200"
+                            placeholder="e.g., 5,6,7,8,9">
+                    </div>
+                </div>
+
+                <div class="flex justify-end gap-3 mt-6">
+                    <button id="closeSetModalBtn"
+                        class="px-4 py-2 bg-gray-300 text-gray-700 rounded-lg hover:bg-gray-400">
+                        Cancel
+                    </button>
+                    <button id="applySets"
+                        class="px-4 py-2 bg-indigo-500 text-white rounded-lg hover:bg-indigo-600 flex items-center">
+                        <i class="fas fa-check mr-2"></i> Apply Sets
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let sets = {
+            A: 20, B: 20, C: 20,
+            AB: 5, AC: 5, BC: 5, ABC: 2
+        };
+        let step = 0;
+        const steps = [
+            {
+                term: "|A|",
+                value: () => sets.A,
+                region: "A",
+                explanation: "Start with the size of set A. This counts all elements in A, including those shared with B and C."
+            },
+            {
+                term: "+ |B|",
+                value: () => sets.B,
+                region: "B",
+                explanation: "Add the size of set B. This includes elements in B, but we've double-counted elements in A∩B."
+            },
+            {
+                term: "+ |C|",
+                value: () => sets.C,
+                region: "C",
+                explanation: "Add the size of set C. Now we've double-counted elements in A∩C and B∩C, and triple-counted A∩B∩C."
+            },
+            {
+                term: "- |A∩B|",
+                value: () => -sets.AB,
+                region: "AB",
+                explanation: "Subtract |A∩B| to correct for double-counting elements in both A and B."
+            },
+            {
+                term: "- |A∩C|",
+                value: () => -sets.AC,
+                region: "AC",
+                explanation: "Subtract |A∩C| to correct for double-counting elements in both A and C."
+            },
+            {
+                term: "- |B∩C|",
+                value: () => -sets.BC,
+                region: "BC",
+                explanation: "Subtract |B∩C| to correct for double-counting elements in both B and C."
+            },
+            {
+                term: "+ |A∩B∩C|",
+                value: () => sets.ABC,
+                region: "ABC",
+                explanation: "Add |A∩B∩C| because we subtracted it three times (once in each pairwise intersection) but it should only be subtracted twice. This correction ensures it's counted exactly once in the final union."
+            }
+        ];
+
+        function setup() {
+            let canvas = createCanvas(600, 450);
+            canvas.parent('canvas');
+            updateFormula();
+        }
+
+        function draw() {
+            background(255);
+            let cx1 = 220, cx2 = 380, cx3 = 300, cy = 225, r = 120;
+
+            // Draw all regions with semi-transparent fills
+            noStroke();
+
+            // A - Red
+            fill(239, 68, 68, step === 0 ? 120 : 60);
+            ellipse(cx1, cy, r * 2);
+
+            // B - Green
+            fill(16, 185, 129, step === 1 ? 120 : 60);
+            ellipse(cx2, cy, r * 2);
+
+            // C - Blue
+            fill(59, 130, 246, step === 2 ? 120 : 60);
+            ellipse(cx3, cy + 60, r * 2);
+
+            // Highlight current region with stronger color
+            if (step > 0 && step < steps.length) {
+                let region = steps[step].region;
+
+                if (region === "AB") {
+                    blendMode(DIFFERENCE);
+                    fill(255);
+                    circle(cx1, cy, r * 2);
+                    circle(cx2, cy, r * 2);
+                    blendMode(NORMAL);
+                    fill(234, 179, 8, 120); // Yellow for AB
+                }
+                else if (region === "AC") {
+                    blendMode(DIFFERENCE);
+                    fill(255);
+                    circle(cx1, cy, r * 2);
+                    circle(cx3, cy + 60, r * 2);
+                    blendMode(NORMAL);
+                    fill(168, 85, 247, 120); // Purple for AC
+                }
+                else if (region === "BC") {
+                    blendMode(DIFFERENCE);
+                    fill(255);
+                    circle(cx2, cy, r * 2);
+                    circle(cx3, cy + 60, r * 2);
+                    blendMode(NORMAL);
+                    fill(6, 182, 212, 120); // Cyan for BC
+                }
+                else if (region === "ABC") {
+                    // For ABC, we want to highlight the very center
+                    fill(239, 68, 68, 120); // Red
+                    ellipse(cx1, cy, r * 2);
+                    fill(16, 185, 129, 120); // Green
+                    ellipse(cx2, cy, r * 2);
+                    fill(59, 130, 246, 120); // Blue
+                    ellipse(cx3, cy + 60, r * 2);
+                }
+            }
+
+            // Labels with better positioning
+            fill(0);
+            textAlign(CENTER, CENTER);
+            textSize(16);
+            textStyle(BOLD);
+
+            // Main set labels
+            addText(`A: ${sets.A}`, cx1 - r / 2, cy - r / 1.5, step, 0);
+            addText(`B: ${sets.B}`, cx2 + r / 2, cy - r / 1.5, step, 1);
+            addText(`C: ${sets.C}`, cx3, cy + r * 1.3, step, 2);
+
+            // Intersection labels
+            textStyle(NORMAL);
+            addText(`A∩B: ${sets.AB}`, (cx1 + cx2) / 2, cy - r * 0.4, step, 3);
+            addText(`A∩C: ${sets.AC}`, cx1 - r * 0.3, cy + r * 0.4, step, 4);
+            addText(`B∩C: ${sets.BC}`, cx2 + r * 0.3, cy + r * 0.4, step, 5);
+            addText(`A∩B∩C: ${sets.ABC}`, (cx1 + cx2 + cx3) / 3, cy + 20, step, 6);
+        }
+
+        function addText(t, x, y, currentStep, targetStep) {
+            push();
+            if (currentStep === targetStep) {
+                fill(30, 58, 138); // Dark blue for highlighted text
+                textStyle(BOLD);
+                textSize(18);
+            } else {
+                fill(75, 85, 99); // Gray for non-highlighted
+                textStyle(NORMAL);
+            }
+            text(t, x, y);
+            pop();
+        }
+
+        function updateFormula() {
+            let formulaHTML = '<span class="text-gray-800">|A∪B∪C| = </span>';
+            let result = 0;
+
+            for (let i = 0; i <= step && i < steps.length; i++) {
+                const isCurrent = i === step;
+                const termClass = isCurrent ? 'text-blue-600 font-bold animate-pulse' : '';
+
+                formulaHTML += `<span class="${termClass}">${steps[i].term} </span>`;
+                result += steps[i].value();
+            }
+
+            formulaHTML += `<span class="ml-2 font-bold">= ${result}</span>`;
+            document.getElementById('formula').innerHTML = formulaHTML;
+
+            // Enhanced explanation with step indicator
+            document.getElementById('explanation').innerHTML = `
+        <div class="flex items-start mb-2">
+          <span class="bg-blue-500 text-white rounded-full w-6 h-6 flex items-center justify-center mr-3 flex-shrink-0">${step + 1}</span>
+          <span>${steps[step].explanation}</span>
+        </div>
+        <div class="text-sm text-gray-500 mt-2">
+          Step ${step + 1} of ${steps.length}
+        </div>
+      `;
+        }
+
+        // Enhanced input validation
+        function validateInput(input) {
+            if (input.value < 0) {
+                input.value = 0;
+                input.classList.add("border-red-500", "animate-shake");
+                setTimeout(() => input.classList.remove("animate-shake"), 500);
+            } else {
+                input.classList.remove("border-red-500");
+            }
+
+            if (input.value.startsWith("0") && input.value.length > 1) {
+                input.value = input.value.substring(1);
+            }
+
+            if (input.value === "") {
+                input.value = 0;
+            }
+        }
+
+        // Event Listeners with better feedback
+        document.querySelectorAll('.cardinality').forEach(input => {
+            input.addEventListener('input', () => {
+                validateInput(input);
+                updateSetCardinalities();
+            });
+
+            input.addEventListener('focus', () => {
+                input.classList.add('ring-2', 'ring-blue-200');
+            });
+
+            input.addEventListener('blur', () => {
+                input.classList.remove('ring-2', 'ring-blue-200');
+            });
+        });
+
+        function updateSetCardinalities() {
+            sets.A = parseInt(document.getElementById('sizeA').value) || 0;
+            sets.B = parseInt(document.getElementById('sizeB').value) || 0;
+            sets.C = parseInt(document.getElementById('sizeC').value) || 0;
+            sets.AB = parseInt(document.getElementById('sizeAB').value) || 0;
+            sets.AC = parseInt(document.getElementById('sizeAC').value) || 0;
+            sets.BC = parseInt(document.getElementById('sizeBC').value) || 0;
+            sets.ABC = parseInt(document.getElementById('sizeABC').value) || 0;
+            updateFormula();
+        }
+
+        // Navigation buttons with better feedback
+        document.getElementById('nextStep').addEventListener('click', () => {
+            if (step < steps.length - 1) {
+                step++;
+                updateFormula();
+                document.getElementById('nextStep').classList.add('bg-blue-600');
+                setTimeout(() => {
+                    document.getElementById('nextStep').classList.remove('bg-blue-600');
+                }, 200);
+            } else {
+                document.getElementById('nextStep').classList.add('bg-gray-400');
+                setTimeout(() => {
+                    document.getElementById('nextStep').classList.remove('bg-gray-400');
+                }, 200);
+            }
+        });
+
+        document.getElementById('prevStep').addEventListener('click', () => {
+            if (step > 0) {
+                step--;
+                updateFormula();
+                document.getElementById('prevStep').classList.add('bg-gray-400');
+                setTimeout(() => {
+                    document.getElementById('prevStep').classList.remove('bg-gray-400');
+                }, 200);
+            } else {
+                document.getElementById('prevStep').classList.add('bg-gray-400');
+                setTimeout(() => {
+                    document.getElementById('prevStep').classList.remove('bg-gray-400');
+                }, 200);
+            }
+        });
+
+        document.getElementById('reset').addEventListener('click', () => {
+            step = 0;
+            updateFormula();
+            document.getElementById('reset').classList.add('bg-gray-300');
+            setTimeout(() => {
+                document.getElementById('reset').classList.remove('bg-gray-300');
+            }, 200);
+        });
+
+        // Set parsing functions
+        function parseSet(input) {
+            const values = input
+                .split(',')
+                .map(v => v.trim())
+                .filter(v => v !== '');
+
+            for (const val of values) {
+                if (!/^[-+]?\d+$/.test(val)) {
+                    throw new Error(`Non-integer value: ${val}`);
+                }
+            }
+
+            return new Set(values.map(Number));
+        }
+
+        function intersection(set1, set2) {
+            return new Set([...set1].filter(x => set2.has(x)));
+        }
+
+        function intersection3(set1, set2, set3) {
+            return new Set([...set1].filter(x => set2.has(x) && set3.has(x)));
+        }
+
+        // Modal handling
+        document.getElementById('openSetModal').addEventListener('click', () => {
+            document.getElementById('setModal').classList.remove('hidden');
+            document.getElementById('setModal').classList.add('flex');
+            checkInputs();
+        });
+
+        document.getElementById('closeSetModal').addEventListener('click', closeModal);
+        document.getElementById('closeSetModalBtn').addEventListener('click', closeModal);
+
+        function closeModal() {
+            document.getElementById('setModal').classList.remove('flex');
+            document.getElementById('setModal').classList.add('hidden');
+        }
+
+        function markInvalid(input) {
+            input.classList.add('border-red-500', 'animate-shake');
+            input.focus();
+
+            setTimeout(() => {
+                input.classList.remove('animate-shake');
+            }, 500);
+        }
+
+        document.getElementById('applySets').addEventListener('click', (e) => {
+            let hasError = false;
+            let A, B, C;
+
+            try {
+                A = parseSet(document.getElementById('inputSetA').value);
+                document.getElementById('inputSetA').classList.remove('border-red-500');
+            } catch {
+                markInvalid(document.getElementById('inputSetA'));
+                hasError = true;
+            }
+
+            try {
+                B = parseSet(document.getElementById('inputSetB').value);
+                document.getElementById('inputSetB').classList.remove('border-red-500');
+            } catch {
+                markInvalid(document.getElementById('inputSetB'));
+                hasError = true;
+            }
+
+            try {
+                C = parseSet(document.getElementById('inputSetC').value);
+                document.getElementById('inputSetC').classList.remove('border-red-500');
+            } catch {
+                markInvalid(document.getElementById('inputSetC'));
+                hasError = true;
+            }
+
+            if (hasError) return;
+
+            // Check if all sets are empty
+            if (A.size === 0 && B.size === 0 && C.size === 0) {
+                document.getElementById('warningMessage').classList.remove('hidden');
+                return;
+            }
+
+            // Update all cardinality inputs
+            document.getElementById('sizeA').value = A.size;
+            document.getElementById('sizeB').value = B.size;
+            document.getElementById('sizeC').value = C.size;
+            document.getElementById('sizeAB').value = intersection(A, B).size;
+            document.getElementById('sizeAC').value = intersection(A, C).size;
+            document.getElementById('sizeBC').value = intersection(B, C).size;
+            document.getElementById('sizeABC').value = intersection3(A, B, C).size;
+
+            closeModal();
+            updateSetCardinalities();
+
+            // Reset to first step to show the updated values
+            step = 0;
+            updateFormula();
+        });
+
+        function checkInputs() {
+            const inputA = document.getElementById('inputSetA').value.trim();
+            const inputB = document.getElementById('inputSetB').value.trim();
+            const inputC = document.getElementById('inputSetC').value.trim();
+
+            if (inputA === "" && inputB === "" && inputC === "") {
+                document.getElementById('warningMessage').classList.remove('hidden');
+            } else {
+                document.getElementById('warningMessage').classList.add('hidden');
+            }
+        }
+
+        document.getElementById('inputSetA').addEventListener('input', checkInputs);
+        document.getElementById('inputSetB').addEventListener('input', checkInputs);
+        document.getElementById('inputSetC').addEventListener('input', checkInputs);
+
+        // Keyboard navigation
+        document.addEventListener('keydown', (e) => {
+            // Escape closes modal
+            if (e.key === 'Escape') {
+                closeModal();
+            }
+
+            // Left/right arrows navigate steps
+            if (!document.getElementById('setModal').classList.contains('flex')) {
+                if (e.key === 'ArrowRight') {
+                    if (step < steps.length - 1) {
+                        step++;
+                        updateFormula();
+                    }
+                } else if (e.key === 'ArrowLeft') {
+                    if (step > 0) {
+                        step--;
+                        updateFormula();
+                    }
+                }
+            }
+        });
+
+        // Help tooltip for the first-time users
+        document.addEventListener('DOMContentLoaded', () => {
+            setTimeout(() => {
+                const firstInput = document.getElementById('sizeA');
+                firstInput.focus();
+                firstInput.select();
+            }, 500);
+        });
+    </script>
+</body>
+
+</html>
