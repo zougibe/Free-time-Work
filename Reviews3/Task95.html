@@ -1,0 +1,654 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Fan Spotlight Gallery</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/masonry-layout@4/dist/masonry.pkgd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <style>
+        .draggable {
+            cursor: grab;
+            transition: transform 0.1s ease, box-shadow 0.2s ease;
+        }
+
+        .draggable:active {
+            cursor: grabbing;
+        }
+
+        .draggable:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+        }
+
+        .dragging {
+            opacity: 0.7;
+            transform: scale(0.98);
+            box-shadow: 0 0 8px rgba(0, 0, 0, 0.2);
+        }
+
+        .gallery-item {
+            transition: all 0.3s ease-out;
+            will-change: transform;
+        }
+
+        .gallery-item:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+        }
+
+        .dark .gallery-item {
+            border-color: #4b5563;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.2), 0 2px 4px -1px rgba(0, 0, 0, 0.1);
+        }
+
+        .platform-instagram .gallery-grid {
+            background: #fafafa;
+        }
+
+        .platform-instagram .gallery-item {
+            aspect-ratio: 1/1;
+            background: white;
+        }
+
+        .platform-twitter .gallery-grid {
+            background: #e8f5fe;
+        }
+
+        .platform-twitter .gallery-item {
+            aspect-ratio: 16/9;
+            background: white;
+        }
+
+        .platform-tiktok .gallery-grid {
+            background: #010101;
+        }
+
+        .platform-tiktok .gallery-item {
+            aspect-ratio: 9/16;
+            background: #222;
+            color: white;
+        }
+
+        .platform-tiktok .content-pool {
+            background: #111;
+            border-color: #333;
+        }
+
+        .badge {
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0% {
+                transform: scale(1);
+            }
+
+            50% {
+                transform: scale(1.05);
+            }
+
+            100% {
+                transform: scale(1);
+            }
+        }
+
+        .score-meter {
+            height: 10px;
+            background: linear-gradient(90deg, #ef4444, #f59e0b, #84cc16, #10b981, #3b82f6);
+            border-radius: 5px;
+        }
+
+        .empty-state {
+            background: rgba(255, 255, 255, 0.1);
+            border: 2px dashed rgba(255, 255, 255, 0.3);
+            border-radius: 0.5rem;
+        }
+    </style>
+</head>
+
+<body
+    class="bg-gray-100 dark:bg-gray-900 text-gray-900 dark:text-gray-100 min-h-screen flex flex-col transition-colors duration-200">
+    <header class="bg-white dark:bg-gray-800 shadow p-4 sticky top-0 z-10 align-center justify-center">
+        <div class="container mx-auto flex flex-col md:flex-row justify-between items-center gap-4">
+            <h1 class="text-2xl font-bold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent">
+                Fan Spotlight Gallery</h1>
+            <div class="flex flex-col sm:flex-row items-center gap-4 w-full md:w-auto">
+                <div class="w-full sm:w-auto">
+                    <select id="platform"
+                        class="w-full p-2 border rounded-lg dark:bg-gray-700 dark:text-gray-100 dark:border-gray-600 focus:ring-2 focus:ring-purple-500 focus:border-transparent transition">
+                        <option value="instagram">Instagram</option>
+                        <option value="twitter">Twitter</option>
+                        <option value="tiktok">TikTok</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+    </header>
+    <main class="container mx-auto flex-1 p-4 flex flex-col lg:flex-row gap-6">
+        <div class="flex-1 flex flex-col gap-6">
+            <div class="bg-white dark:bg-gray-800 p-6 rounded-xl shadow-lg">
+                <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-4">
+                    <h2 class="text-xl font-semibold">Content Pool</h2>
+                    <div
+                        class="bg-gradient-to-r from-purple-500 to-pink-500 text-white px-3 py-1 rounded-full text-sm font-medium">
+                        Trending Theme: <span id="trending-theme" class="font-bold"></span>
+                    </div>
+                </div>
+                <div id="content-pool" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4 min-h-[200px]"></div>
+            </div>
+            <div class="bg-white dark:bg-gray-800 p-6 rounded-xl shadow-lg">
+                <h2 class="text-xl font-semibold mb-4">Gallery Preview</h2>
+                <div id="gallery" class="gallery-grid rounded-lg p-4 min-h-[300px]">
+                    <div class="empty-state w-full h-full flex items-center justify-center p-8 text-center">
+                        <p class="text-gray-500 dark:text-gray-400">Drag items from the Content Pool to build your
+                            gallery</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <aside class="w-full lg:w-80 bg-white dark:bg-gray-800 p-6 rounded-xl shadow-lg h-fit sticky top-24">
+            <h2 class="text-xl font-semibold mb-4">Engagement Metrics</h2>
+
+            <div class="mb-6">
+                <div class="flex justify-between items-center mb-2">
+                    <span class="font-medium">Content Score</span>
+                    <span id="score"
+                        class="text-2xl font-bold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent">0</span>
+                </div>
+                <div class="score-meter">
+                    <div id="score-bar" class="h-full rounded-full"
+                        style="width: 0%; background: linear-gradient(90deg, #3b82f6, #8b5cf6);"></div>
+                </div>
+            </div>
+
+            <div class="space-y-4">
+                <button id="save-gallery"
+                    class="w-full p-3 bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-lg hover:from-purple-700 hover:to-pink-700 transition flex items-center justify-center gap-2 font-medium">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                        <path fill-rule="evenodd"
+                            d="M3 17a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm3.293-7.707a1 1 0 011.414 0L9 10.586V3a1 1 0 112 0v7.586l1.293-1.293a1 1 0 111.414 1.414l-3 3a1 1 0 01-1.414 0l-3-3a1 1 0 010-1.414z"
+                            clip-rule="evenodd" />
+                    </svg>
+                    Save Gallery
+                </button>
+                <button id="export-png"
+                    class="w-full p-3 bg-gradient-to-r from-blue-600 to-cyan-500 text-white rounded-lg hover:from-blue-700 hover:to-cyan-600 transition flex items-center justify-center gap-2 font-medium">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                        <path fill-rule="evenodd"
+                            d="M4 3a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V5a2 2 0 00-2-2H4zm12 12H4l4-8 3 6 2-4 3 6z"
+                            clip-rule="evenodd" />
+                    </svg>
+                    Export as PNG
+                </button>
+                <button id="clear-gallery"
+                    class="w-full p-3 bg-gradient-to-r from-gray-600 to-gray-500 text-white rounded-lg hover:from-gray-700 hover:to-gray-600 transition flex items-center justify-center gap-2 font-medium">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                        <path fill-rule="evenodd"
+                            d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z"
+                            clip-rule="evenodd" />
+                    </svg>
+                    Clear Gallery
+                </button>
+            </div>
+
+            <div class="mt-6 pt-6 border-t border-gray-200 dark:border-gray-700">
+                <h3 class="font-medium mb-2">Gallery Stats</h3>
+                <div class="grid grid-cols-2 gap-4 text-sm">
+                    <div class="bg-gray-100 dark:bg-gray-700 p-2 rounded-lg">
+                        <div class="text-gray-500 dark:text-gray-400">Items</div>
+                        <div id="stat-items" class="font-bold">0</div>
+                    </div>
+                    <div class="bg-gray-100 dark:bg-gray-700 p-2 rounded-lg">
+                        <div class="text-gray-500 dark:text-gray-400">Types</div>
+                        <div id="stat-types" class="font-bold">0</div>
+                    </div>
+                    <div class="bg-gray-100 dark:bg-gray-700 p-2 rounded-lg">
+                        <div class="text-gray-500 dark:text-gray-400">Badges</div>
+                        <div id="stat-badges" class="font-bold">0</div>
+                    </div>
+                    <div class="bg-gray-100 dark:bg-gray-700 p-2 rounded-lg">
+                        <div class="text-gray-500 dark:text-gray-400">Platform</div>
+                        <div id="stat-platform" class="font-bold">-</div>
+                    </div>
+                </div>
+            </div>
+        </aside>
+    </main>
+
+    <div id="toast"
+        class="fixed bottom-4 right-4 bg-green-500 text-white px-4 py-2 rounded-lg shadow-lg transform translate-y-10 opacity-0 transition-all duration-300 flex items-center gap-2">
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+            <path fill-rule="evenodd"
+                d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
+                clip-rule="evenodd" />
+        </svg>
+        <span id="toast-message"></span>
+    </div>
+
+    <script>
+        // Enhanced mock dataset with more variety
+        const fanContent = [
+            { id: 1, type: 'photo', url: 'https://images.unsplash.com/photo-1506748686214-e9df14d4d9d0', caption: 'Amazing fan art! #fanlove', likes: 1243, badge: 'Top Fan' },
+            { id: 2, type: 'photo', url: 'https://images.unsplash.com/photo-1519681393784-d120267933ba', caption: 'Love this vibe! ✨', likes: 876, badge: 'Creative' },
+            { id: 3, type: 'photo', url: 'https://images.unsplash.com/photo-1496449903678-68ddcb189a24', caption: 'Epic moment from the show!', likes: 2310, badge: 'Ultimate Fan' },
+            { id: 4, type: 'photo', url: 'https://images.unsplash.com/photo-1517841905240-472988babdf9', caption: 'Fan meetup was incredible!', likes: 1542, badge: 'Community Builder' },
+            { id: 5, type: 'photo', url: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330', caption: 'My fan cosplay!', likes: 2987, badge: 'Creative' },
+            { id: 6, type: 'photo', url: 'https://images.unsplash.com/photo-1524504388940-b1c1722653e1', caption: 'Fan art tribute', likes: 4321, badge: 'Artist' }
+        ];
+
+        // Trending themes with emojis
+        const themes = [
+            { name: 'Vibrant Colors', emoji: '🎨' },
+            { name: 'Minimalist', emoji: '⬜' },
+            { name: 'Retro Vibes', emoji: '📼' },
+            { name: 'Bold Patterns', emoji: '🔶' },
+            { name: 'Nature Inspired', emoji: '🌿' },
+            { name: 'Fan Art Showcase', emoji: '✏️' },
+            { name: 'Community Love', emoji: '❤️' }
+        ];
+
+        // Set random trending theme
+        const randomTheme = themes[Math.floor(Math.random() * themes.length)];
+        document.getElementById('trending-theme').textContent = `${randomTheme.name} ${randomTheme.emoji}`;
+
+        // Initialize Masonry
+        const gallery = document.getElementById('gallery');
+        let masonry = new Masonry(gallery, {
+            itemSelector: '.gallery-item',
+            columnWidth: '.gallery-item',
+            percentPosition: true,
+            gutter: 12,
+            transitionDuration: '0.3s'
+        });
+
+        // Render content pool
+        const contentPool = document.getElementById('content-pool');
+        fanContent.forEach(item => {
+            const div = createContentItem(item, true);
+            contentPool.appendChild(div);
+        });
+
+        // Create content item element
+        function createContentItem(item, isPool = false) {
+            const div = document.createElement('div');
+            div.className = `draggable ${isPool ? 'content-pool-item' : 'gallery-item'} bg-white dark:bg-gray-700 rounded-lg overflow-hidden shadow transition-all`;
+            div.draggable = true;
+            div.dataset.id = item.id;
+
+            if (item.type === 'photo') {
+                div.innerHTML = `
+          <div class="relative">
+            <img src="${item.url}" class="w-full ${isPool ? 'h-32' : 'h-auto'} object-cover" alt="${item.caption}" loading="lazy">
+            <div class="p-3">
+              <p class="text-sm ${isPool ? 'line-clamp-2' : ''}">${item.caption}</p>
+              ${item.badge ? `<span class="badge absolute top-2 right-2 text-xs bg-yellow-500 text-white px-2 py-1 rounded-full">${item.badge}</span>` : ''}
+              ${!isPool ? `<div class="flex items-center mt-2 text-xs text-gray-500 dark:text-gray-400">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
+                </svg>
+                ${item.likes.toLocaleString()}
+              </div>` : ''}
+            </div>
+          </div>
+        `;
+            } else {
+                div.innerHTML = `
+          <div class="p-4">
+            <p class="${isPool ? 'text-sm line-clamp-3' : 'text-base'}">${item.text}</p>
+            ${item.badge ? `<span class="badge inline-block mt-2 text-xs bg-yellow-500 text-white px-2 py-1 rounded-full">${item.badge}</span>` : ''}
+            ${!isPool ? `<div class="flex items-center mt-3 text-xs text-gray-500 dark:text-gray-400">
+              <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
+              </svg>
+              ${item.likes.toLocaleString()}
+            </div>` : ''}
+          </div>
+        `;
+            }
+
+            // Add drag events
+            div.addEventListener('dragstart', handleDragStart);
+            div.addEventListener('dragend', handleDragEnd);
+
+            return div;
+        }
+
+        // Drag start handler
+        function handleDragStart(e) {
+            e.dataTransfer.setData('text/plain', e.target.dataset.id);
+            e.target.classList.add('dragging');
+            e.target.style.zIndex = 1000;
+
+            // Create drag image preview
+            const rect = e.target.getBoundingClientRect();
+            const dragImage = e.target.cloneNode(true);
+            dragImage.style.width = `${rect.width}px`;
+            dragImage.style.position = 'fixed';
+            dragImage.style.top = '-9999px';
+            dragImage.style.left = '-9999px';
+            dragImage.style.pointerEvents = 'none';
+            document.body.appendChild(dragImage);
+            e.dataTransfer.setDragImage(dragImage, rect.width / 2, rect.height / 2);
+
+            // Remove after a short delay
+            setTimeout(() => document.body.removeChild(dragImage), 100);
+        }
+
+        // Drag end handler
+        function handleDragEnd(e) {
+            e.target.classList.remove('dragging');
+            e.target.style.zIndex = '';
+        }
+
+        // Gallery drop handler
+        function handleGalleryDrop(e) {
+            e.preventDefault();
+            const id = e.dataTransfer.getData('text/plain');
+            const item = fanContent.find(i => i.id == id);
+
+            if (item) {
+                // Remove empty state if present
+                const emptyState = gallery.querySelector('.empty-state');
+                if (emptyState) emptyState.remove();
+
+                // Check if item already exists in gallery
+                if (!gallery.querySelector(`.gallery-item[data-id="${id}"]`)) {
+                    const div = createContentItem(item, false);
+
+                    // Position new item near drop location
+                    const dropX = e.clientX;
+                    const dropY = e.clientY;
+                    const galleryRect = gallery.getBoundingClientRect();
+                    const relativeX = dropX - galleryRect.left;
+                    const relativeY = dropY - galleryRect.top;
+
+                    div.style.position = 'absolute';
+                    div.style.left = `${relativeX}px`;
+                    div.style.top = `${relativeY}px`;
+                    gallery.appendChild(div);
+
+                    // Animate to final position
+                    setTimeout(() => {
+                        div.style.position = '';
+                        div.style.left = '';
+                        div.style.top = '';
+                        masonry.appended(div);
+                        masonry.layout();
+                        updateEngagementScore();
+                        showToast('Item added to gallery');
+                    }, 10);
+                } else {
+                    showToast('Item already in gallery', 'yellow');
+                }
+            }
+        }
+
+        // Content pool drop handler
+        function handleContentPoolDrop(e) {
+            e.preventDefault();
+            const id = e.dataTransfer.getData('text/plain');
+            const galleryItem = gallery.querySelector(`.gallery-item[data-id="${id}"]`);
+
+            if (galleryItem) {
+                // Animate removal
+                galleryItem.style.transform = 'scale(0.9)';
+                galleryItem.style.opacity = '0';
+
+                setTimeout(() => {
+                    galleryItem.remove();
+                    masonry.reloadItems();
+                    masonry.layout();
+                    updateEngagementScore();
+                    showToast('Item removed from gallery');
+
+                    // Show empty state if gallery is empty
+                    if (gallery.children.length === 0) {
+                        const emptyDiv = document.createElement('div');
+                        emptyDiv.className = 'empty-state w-full h-full flex items-center justify-center p-8 text-center';
+                        emptyDiv.innerHTML = '<p class="text-gray-500 dark:text-gray-400">Drag items from the Content Pool to build your gallery</p>';
+                        gallery.appendChild(emptyDiv);
+                    }
+                }, 200);
+            }
+        }
+
+        // Set up drop zones
+        gallery.addEventListener('dragover', e => {
+            e.preventDefault();
+            e.dataTransfer.dropEffect = 'copy';
+            gallery.classList.add('bg-gray-100', 'dark:bg-gray-700');
+        });
+
+        gallery.addEventListener('dragleave', () => {
+            gallery.classList.remove('bg-gray-100', 'dark:bg-gray-700');
+        });
+
+        gallery.addEventListener('drop', handleGalleryDrop);
+        gallery.addEventListener('dragend', () => {
+            gallery.classList.remove('bg-gray-100', 'dark:bg-gray-700');
+        });
+
+        contentPool.addEventListener('dragover', e => {
+            e.preventDefault();
+            e.dataTransfer.dropEffect = 'move';
+            contentPool.classList.add('bg-gray-200', 'dark:bg-gray-600');
+        });
+
+        contentPool.addEventListener('dragleave', () => {
+            contentPool.classList.remove('bg-gray-200', 'dark:bg-gray-600');
+        });
+
+        contentPool.addEventListener('drop', handleContentPoolDrop);
+        contentPool.addEventListener('dragend', () => {
+            contentPool.classList.remove('bg-gray-200', 'dark:bg-gray-600');
+        });
+
+        // Platform-specific styling
+        document.getElementById('platform').addEventListener('change', e => {
+            document.body.className = document.body.className.replace(/platform-\w+/, '');
+            document.body.classList.add(`platform-${e.target.value}`);
+            document.getElementById('stat-platform').textContent = e.target.value.charAt(0).toUpperCase() + e.target.value.slice(1);
+
+            // Re-layout masonry
+            setTimeout(() => {
+                masonry.reloadItems();
+                masonry.layout();
+            }, 10);
+        });
+
+        // Engagement score calculation
+        function updateEngagementScore() {
+            const items = gallery.querySelectorAll('.gallery-item');
+            const itemCount = items.length;
+
+            // Calculate diversity bonus
+            const types = new Set();
+            let badgeCount = 0;
+            let totalLikes = 0;
+
+            items.forEach(item => {
+                const id = item.dataset.id;
+                const contentItem = fanContent.find(i => i.id == id);
+                types.add(contentItem.type);
+                if (contentItem.badge) badgeCount++;
+                if (contentItem.likes) totalLikes += contentItem.likes;
+            });
+
+            const typeCount = types.size;
+
+            // Base score for number of items (max 50)
+            let score = Math.min(itemCount * 5, 50);
+
+            // Bonus for content diversity (max 30)
+            score += Math.min(typeCount * 10, 30);
+
+            // Bonus for badges (max 20)
+            score += Math.min(badgeCount * 5, 20);
+
+            // Likes bonus (max 50, scaled)
+            const likesBonus = Math.min(Math.floor(totalLikes / 100), 50);
+            score += likesBonus;
+
+            // Cap at 150
+            score = Math.min(score, 150);
+
+            // Update display
+            document.getElementById('score').textContent = score;
+            document.getElementById('score-bar').style.width = `${(score / 150) * 100}%`;
+
+            // Update stats
+            document.getElementById('stat-items').textContent = itemCount;
+            document.getElementById('stat-types').textContent = typeCount;
+            document.getElementById('stat-badges').textContent = badgeCount;
+
+            // Color the score based on value
+            const scoreElement = document.getElementById('score');
+            scoreElement.className = 'text-2xl font-bold';
+
+            if (score < 50) {
+                scoreElement.classList.add('text-red-500');
+            } else if (score < 100) {
+                scoreElement.classList.add('text-yellow-500');
+            } else {
+                scoreElement.classList.add('text-green-500');
+            }
+        }
+
+        // Toast notification
+        function showToast(message, color = 'green') {
+            const toast = document.getElementById('toast');
+            const toastMessage = document.getElementById('toast-message');
+
+            toastMessage.textContent = message;
+            toast.className = `fixed bottom-4 right-4 bg-${color}-500 text-white px-4 py-2 rounded-lg shadow-lg flex items-center gap-2 transition-all duration-300`;
+
+            setTimeout(() => {
+                toast.classList.add('translate-y-0', 'opacity-100');
+            }, 10);
+
+            setTimeout(() => {
+                toast.classList.remove('translate-y-0', 'opacity-100');
+            }, 3000);
+        }
+
+        // Save gallery to localStorage
+        document.getElementById('save-gallery').addEventListener('click', () => {
+            const items = [...gallery.querySelectorAll('.gallery-item')].map(item => item.dataset.id);
+            localStorage.setItem('fan-gallery', JSON.stringify(items));
+            localStorage.setItem('fan-gallery-platform', document.getElementById('platform').value);
+            showToast('Gallery saved successfully!');
+        });
+
+        // Clear gallery
+        document.getElementById('clear-gallery').addEventListener('click', () => {
+            if (gallery.children.length > 0 && !gallery.querySelector('.empty-state')) {
+                if (confirm('Are you sure you want to clear the gallery?')) {
+                    gallery.innerHTML = '';
+                    const emptyDiv = document.createElement('div');
+                    emptyDiv.className = 'empty-state w-full h-full flex items-center justify-center p-8 text-center';
+                    emptyDiv.innerHTML = '<p class="text-gray-500 dark:text-gray-400">Drag items from the Content Pool to build your gallery</p>';
+                    gallery.appendChild(emptyDiv);
+                    masonry.reloadItems();
+                    masonry.layout();
+                    updateEngagementScore();
+                    showToast('Gallery cleared');
+                }
+            }
+        });
+
+        // Export as PNG
+        document.getElementById('export-png').addEventListener('click', () => {
+            if (gallery.children.length === 0 || gallery.querySelector('.empty-state')) {
+                showToast('Gallery is empty!', 'red');
+                return;
+            }
+
+            showToast('Exporting gallery...');
+
+            // Temporarily hide the empty state if present
+            const emptyState = gallery.querySelector('.empty-state');
+            if (emptyState) emptyState.style.visibility = 'hidden';
+
+            // Set gallery background for export
+            const originalBg = gallery.style.background;
+            if (document.getElementById('platform').value === 'tiktok') {
+                gallery.style.background = '#000';
+            } else {
+                gallery.style.background = '#fff';
+            }
+
+            html2canvas(gallery, {
+                backgroundColor: null,
+                scale: 2,
+                logging: false,
+                useCORS: true
+            }).then(canvas => {
+                const link = document.createElement('a');
+                link.download = `fan-gallery-${new Date().toISOString().slice(0, 10)}.png`;
+                link.href = canvas.toDataURL('image/png');
+                link.click();
+
+                // Restore original state
+                gallery.style.background = originalBg;
+                if (emptyState) emptyState.style.visibility = '';
+                showToast('Gallery exported!');
+            }).catch(err => {
+                console.error('Export error:', err);
+                gallery.style.background = originalBg;
+                if (emptyState) emptyState.style.visibility = '';
+                showToast('Export failed', 'red');
+            });
+        });
+
+        // Load gallery from localStorage
+        function loadSavedGallery() {
+            const savedGallery = localStorage.getItem('fan-gallery');
+            const savedPlatform = localStorage.getItem('fan-gallery-platform');
+
+            if (savedPlatform) {
+                document.getElementById('platform').value = savedPlatform;
+                document.body.classList.add(`platform-${savedPlatform}`);
+                document.getElementById('stat-platform').textContent = savedPlatform.charAt(0).toUpperCase() + savedPlatform.slice(1);
+            }
+
+            if (savedGallery) {
+                const itemIds = JSON.parse(savedGallery);
+
+                if (itemIds.length > 0) {
+                    // Remove empty state if present
+                    const emptyState = gallery.querySelector('.empty-state');
+                    if (emptyState) emptyState.remove();
+
+                    itemIds.forEach(id => {
+                        const item = fanContent.find(i => i.id == id);
+                        if (item) {
+                            const div = createContentItem(item, false);
+                            gallery.appendChild(div);
+                            document.querySelector(`.draggable[data-id="${id}"]`).remove();
+                        }
+                    });
+
+                    masonry.appended(gallery.children);
+                    masonry.layout();
+                    updateEngagementScore();
+                }
+            }
+        }
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', () => {
+            initTheme();
+            loadSavedGallery();
+
+            // Set initial platform stats
+            document.getElementById('stat-platform').textContent =
+                document.getElementById('platform').value.charAt(0).toUpperCase() +
+                document.getElementById('platform').value.slice(1);
+        });
+    </script>
+</body>
+
+</html>

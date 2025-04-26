@@ -1,0 +1,809 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pipe Insulation Evaluator</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script>
+        // Configure Tailwind for class-based dark mode
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        primary: {
+                            600: '#2563eb',
+                            700: '#1d4ed8',
+                        },
+                        secondary: {
+                            600: '#059669',
+                            700: '#047857',
+                        },
+                        accent: {
+                            600: '#7c3aed',
+                            700: '#6d28d9',
+                        }
+                    },
+                    animation: {
+                        'pulse-slow': 'pulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite',
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        body {
+            margin: 0;
+            overflow: hidden;
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+        }
+
+        #three-canvas {
+            width: 100%;
+            height: 100%;
+        }
+
+        .transition-all {
+            transition: all 0.3s ease;
+        }
+
+        .tooltip {
+            position: relative;
+            display: inline-block;
+        }
+
+        .tooltip .tooltiptext {
+            visibility: hidden;
+            width: 200px;
+            background-color: #333;
+            color: #fff;
+            text-align: center;
+            border-radius: 6px;
+            padding: 8px;
+            position: absolute;
+            z-index: 1;
+            bottom: 125%;
+            left: 50%;
+            transform: translateX(-50%);
+            opacity: 0;
+            transition: opacity 0.3s;
+            font-size: 0.875rem;
+        }
+
+        .tooltip:hover .tooltiptext {
+            visibility: visible;
+            opacity: 1;
+        }
+
+        .slider-thumb::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background: #2563eb;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .slider-thumb::-webkit-slider-thumb:hover {
+            transform: scale(1.1);
+            box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.2);
+        }
+
+        .slider-thumb::-moz-range-thumb {
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background: #2563eb;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .slider-thumb::-moz-range-thumb:hover {
+            transform: scale(1.1);
+            box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.2);
+        }
+
+        @media (max-width: 640px) {
+            #three-canvas {
+                height: 50vh;
+            }
+        }
+
+        /* Custom scrollbar */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: #f1f1f1;
+            border-radius: 10px;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: #c1c1c1;
+            border-radius: 10px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: #a1a1a1;
+        }
+
+        .dark ::-webkit-scrollbar-track {
+            background: #374151;
+        }
+
+        .dark ::-webkit-scrollbar-thumb {
+            background: #6b7280;
+        }
+
+        .dark ::-webkit-scrollbar-thumb:hover {
+            background: #9ca3af;
+        }
+    </style>
+</head>
+
+<body class="bg-gray-50 dark:bg-gray-900 text-gray-800 dark:text-gray-200 transition-colors duration-300">
+    <div class="flex flex-col md:flex-row h-screen">
+        <!-- Side Panel -->
+        <div class="w-full md:w-1/3 p-6 bg-white dark:bg-gray-800 shadow-xl overflow-y-auto">
+            <div class="flex justify-between items-center mb-6">
+                <h1 class="text-3xl font-bold text-primary-600 dark:text-primary-400">
+                    <i class="fas fa-fire-alt mr-2"></i>Pipe Insulation Evaluator
+                </h1>
+
+                <!-- Theme Toggle -->
+                <button id="theme-toggle" aria-label="Toggle dark mode"
+                    class="p-2 rounded-full bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-yellow-300 hover:bg-gray-300 dark:hover:bg-gray-600 transition-all">
+                    <i class="fas fa-sun"></i>
+                </button>
+            </div>
+
+            <!-- Industry Selection -->
+            <div class="mb-6">
+                <label for="industry" class="block text-sm font-medium mb-2 flex items-center">
+                    Industry
+                    <span class="tooltip ml-2">
+                        <i class="fas fa-info-circle text-gray-400"></i>
+                        <span class="tooltiptext dark:bg-gray-700">Select the industry where the pipe will be
+                            used</span>
+                    </span>
+                </label>
+                <select id="industry"
+                    class="w-full p-3 border rounded-lg dark:bg-gray-700 dark:border-gray-600 focus:ring-2 focus:ring-primary-500 transition-all hover:border-gray-400 dark:hover:border-gray-500">
+                    <option value="oil">Oil Refining</option>
+                    <option value="hvac">HVAC</option>
+                    <option value="chemical">Chemical Plants</option>
+                </select>
+            </div>
+
+            <!-- Material Selection -->
+            <div class="mb-6">
+                <label for="material" class="block text-sm font-medium mb-2 flex items-center">
+                    Insulation Material
+                    <span class="tooltip ml-2">
+                        <i class="fas fa-info-circle text-gray-400"></i>
+                        <span class="tooltiptext dark:bg-gray-700">Choose the insulation material for the pipe</span>
+                    </span>
+                </label>
+                <select id="material"
+                    class="w-full p-3 border rounded-lg dark:bg-gray-700 dark:border-gray-600 focus:ring-2 focus:ring-primary-500 transition-all hover:border-gray-400 dark:hover:border-gray-500">
+                    <option value="fiberglass">Fiberglass</option>
+                    <option value="foam">Foam</option>
+                    <option value="mineral_wool">Mineral Wool</option>
+                </select>
+            </div>
+
+            <!-- Thickness Slider -->
+            <div class="mb-6">
+                <label for="thickness" class="block text-sm font-medium mb-2 flex items-center">
+                    Insulation Thickness
+                    <span class="tooltip ml-2">
+                        <i class="fas fa-info-circle text-gray-400"></i>
+                        <span class="tooltiptext dark:bg-gray-700">Adjust the thickness of the insulation layer</span>
+                    </span>
+                </label>
+                <div class="flex items-center space-x-4">
+                    <input id="thickness" type="range" min="1" max="10" value="5" step="0.1"
+                        class="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer slider-thumb dark:bg-gray-600">
+                    <span id="thickness-value"
+                        class="text-sm font-medium w-16 text-center bg-gray-100 dark:bg-gray-700 px-2 py-1 rounded">5
+                        cm</span>
+                </div>
+            </div>
+
+            <!-- Temperature Indicators -->
+            <div class="grid grid-cols-2 gap-4 mb-6">
+                <div class="p-3 bg-blue-50 dark:bg-blue-900/30 rounded-lg">
+                    <div class="text-sm font-medium text-blue-600 dark:text-blue-300">Pipe Temperature</div>
+                    <div id="pipe-temp" class="text-xl font-bold">150°C</div>
+                </div>
+                <div class="p-3 bg-green-50 dark:bg-green-900/30 rounded-lg">
+                    <div class="text-sm font-medium text-green-600 dark:text-green-300">Ambient Temperature</div>
+                    <div id="ambient-temp" class="text-xl font-bold">25°C</div>
+                </div>
+            </div>
+
+            <!-- Results Panel -->
+            <div id="results"
+                class="mb-6 p-4 bg-gray-50 dark:bg-gray-700 rounded-lg border border-gray-200 dark:border-gray-600 transition-all">
+                <h2 class="text-xl font-semibold mb-3 flex items-center">
+                    <i class="fas fa-chart-line mr-2 text-primary-600 dark:text-primary-400"></i>
+                    Evaluation Results
+                </h2>
+
+                <div class="space-y-3">
+                    <div class="flex justify-between items-center">
+                        <span class="font-medium">Effectiveness Score:</span>
+                        <div class="flex items-center">
+                            <span id="score" class="font-bold text-lg mr-2">0</span>
+                            <span>/100</span>
+                        </div>
+                    </div>
+
+                    <div class="w-full bg-gray-200 dark:bg-gray-600 rounded-full h-2.5">
+                        <div id="score-bar"
+                            class="bg-gradient-to-r from-red-500 via-yellow-500 to-green-500 h-2.5 rounded-full"
+                            style="width: 0%"></div>
+                    </div>
+
+                    <div class="flex justify-between items-center">
+                        <span class="font-medium">Heat Loss:</span>
+                        <span id="heat-loss" class="font-bold">0 W/m</span>
+                    </div>
+
+                    <div id="feedback"
+                        class="mt-4 p-3 rounded-lg text-sm font-medium bg-blue-50 dark:bg-blue-900/30 border border-blue-100 dark:border-blue-800/50">
+                        <i class="fas fa-info-circle mr-2 text-blue-600 dark:text-blue-300"></i>
+                        <span>Adjust parameters to evaluate.</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Action Buttons -->
+            <div class="flex space-x-4">
+                <button id="save"
+                    class="flex-1 px-4 py-3 bg-secondary-600 text-white rounded-lg hover:bg-secondary-700 transition-all flex items-center justify-center">
+                    <i class="fas fa-save mr-2"></i>
+                    Save Evaluation
+                </button>
+                <button id="export"
+                    class="flex-1 px-4 py-3 bg-accent-600 text-white rounded-lg hover:bg-accent-700 transition-all flex items-center justify-center">
+                    <i class="fas fa-file-export mr-2"></i>
+                    Export Report
+                </button>
+            </div>
+
+            <!-- Recent Evaluations -->
+            <div class="mt-8">
+                <h3 class="text-lg font-medium mb-3 flex items-center">
+                    <i class="fas fa-history mr-2 text-gray-500"></i>
+                    Recent Evaluations
+                </h3>
+                <div id="recent-evaluations" class="space-y-2 max-h-40 overflow-y-auto">
+                    <!-- Will be populated by JS -->
+                </div>
+            </div>
+        </div>
+
+        <!-- 3D Canvas -->
+        <div class="w-full md:w-2/3 h-full relative">
+            <div id="three-canvas"></div>
+            <div id="canvas-controls"
+                class="absolute bottom-4 left-1/2 transform -translate-x-1/2 flex space-x-2 bg-white dark:bg-gray-800 p-2 rounded-lg shadow-lg">
+                <button id="rotate-toggle"
+                    class="p-2 bg-gray-100 dark:bg-gray-700 rounded-full hover:bg-gray-200 dark:hover:bg-gray-600 transition-all">
+                    <i class="fas fa-sync-alt"></i>
+                </button>
+                <button id="reset-view"
+                    class="p-2 bg-gray-100 dark:bg-gray-700 rounded-full hover:bg-gray-200 dark:hover:bg-gray-600 transition-all">
+                    <i class="fas fa-home"></i>
+                </button>
+                <button id="zoom-in"
+                    class="p-2 bg-gray-100 dark:bg-gray-700 rounded-full hover:bg-gray-200 dark:hover:bg-gray-600 transition-all">
+                    <i class="fas fa-search-plus"></i>
+                </button>
+                <button id="zoom-out"
+                    class="p-2 bg-gray-100 dark:bg-gray-700 rounded-full hover:bg-gray-200 dark:hover:bg-gray-600 transition-all">
+                    <i class="fas fa-search-minus"></i>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast Notification -->
+    <div id="toast"
+        class="fixed bottom-4 right-4 p-4 bg-green-600 text-white rounded-lg shadow-lg transform translate-y-16 transition-transform duration-300 opacity-0">
+        <div class="flex items-center">
+            <i class="fas fa-check-circle mr-2"></i>
+            <span id="toast-message">Operation successful</span>
+        </div>
+    </div>
+
+    <script>
+        // Enhanced Mock Data
+        const materials = {
+            fiberglass: {
+                conductivity: 0.04,
+                color: 0xffff99,
+                texture: 0xcccccc,
+                description: "Fiberglass is cost-effective and widely used, with good thermal performance."
+            },
+            foam: {
+                conductivity: 0.03,
+                color: 0x99ccff,
+                texture: 0xaaaaaa,
+                description: "Foam insulation provides excellent thermal resistance and moisture barrier."
+            },
+            mineral_wool: {
+                conductivity: 0.035,
+                color: 0xcc9966,
+                texture: 0xbbbbbb,
+                description: "Mineral wool offers good fire resistance and sound absorption."
+            }
+        };
+
+        const industries = {
+            oil: {
+                ambientTemp: 25,
+                pipeTemp: 150,
+                description: "Oil refining processes require high-temperature pipe insulation."
+            },
+            hvac: {
+                ambientTemp: 20,
+                pipeTemp: 10,
+                description: "HVAC systems need insulation to maintain temperature efficiency."
+            },
+            chemical: {
+                ambientTemp: 30,
+                pipeTemp: 100,
+                description: "Chemical plants require durable insulation for various process temperatures."
+            }
+        };
+
+        // Three.js Setup
+        const scene = new THREE.Scene();
+        scene.background = new THREE.Color(0xf0f0f0);
+        const camera = new THREE.PerspectiveCamera(75, window.innerWidth * 0.67 / window.innerHeight, 0.1, 1000);
+        const renderer = new THREE.WebGLRenderer({ antialias: true });
+        renderer.setPixelRatio(window.devicePixelRatio);
+        renderer.setSize(window.innerWidth * 0.67, window.innerHeight);
+        document.getElementById('three-canvas').appendChild(renderer.domElement);
+        camera.position.set(0, 2, 5);
+        camera.lookAt(0, 0, 0);
+
+        // Add subtle grid helper
+        const gridHelper = new THREE.GridHelper(10, 10, 0x888888, 0xcccccc);
+        scene.add(gridHelper);
+
+        // Pipe Geometry
+        const pipeRadius = 0.5;
+        const pipeLength = 5;
+        const pipeGeometry = new THREE.CylinderGeometry(pipeRadius, pipeRadius, pipeLength, 32);
+        const pipeMaterial = new THREE.MeshStandardMaterial({
+            color: 0x333333,
+            metalness: 0.8,
+            roughness: 0.4,
+            envMapIntensity: 0.2
+        });
+        const pipe = new THREE.Mesh(pipeGeometry, pipeMaterial);
+        pipe.rotation.x = Math.PI / 2; // Rotate to horizontal position
+        scene.add(pipe);
+
+        let insulation, frost;
+        const insulationMaterial = new THREE.MeshStandardMaterial({
+            color: materials.fiberglass.color,
+            metalness: 0.2,
+            roughness: 0.7,
+            envMapIntensity: 0.1
+        });
+
+        const frostGeometry = new THREE.CylinderGeometry(pipeRadius + 0.02, pipeRadius + 0.02, pipeLength, 32);
+        const frostMaterial = new THREE.MeshStandardMaterial({
+            color: 0xe6f3ff,
+            transparent: true,
+            opacity: 0,
+            roughness: 0.9,
+            metalness: 0.1
+        });
+
+        // Enhanced Lighting
+        const ambientLight = new THREE.AmbientLight(0xffffff, 0.5);
+        scene.add(ambientLight);
+
+        const pointLight1 = new THREE.PointLight(0xffffff, 0.8, 100);
+        pointLight1.position.set(10, 10, 10);
+        scene.add(pointLight1);
+
+        const pointLight2 = new THREE.PointLight(0xffffff, 0.5, 100);
+        pointLight2.position.set(-10, -10, -10);
+        scene.add(pointLight2);
+
+        const directionalLight = new THREE.DirectionalLight(0xffffff, 0.3);
+        directionalLight.position.set(0, 10, 0);
+        scene.add(directionalLight);
+
+        // Animation control
+        let isRotating = true;
+        let animationId = null;
+
+        function animate() {
+            animationId = requestAnimationFrame(animate);
+
+            if (isRotating) {
+                pipe.rotation.z += 0.005;
+                if (insulation) insulation.rotation.z += 0.005;
+                if (frost) frost.rotation.z += 0.005;
+            }
+
+            renderer.render(scene, camera);
+        }
+        animate();
+
+        // Resize Handler
+        function handleResize() {
+            const width = window.innerWidth > 640 ? window.innerWidth * 0.67 : window.innerWidth;
+            const height = window.innerWidth > 640 ? window.innerHeight : window.innerHeight * 0.5;
+            camera.aspect = width / height;
+            camera.updateProjectionMatrix();
+            renderer.setSize(width, height);
+        }
+        window.addEventListener('resize', handleResize);
+
+        // Calculate Heat Loss and Score
+        function calculateHeatLoss() {
+            const industry = document.getElementById('industry').value;
+            const material = document.getElementById('material').value;
+            const thickness = parseFloat(document.getElementById('thickness').value) / 100;
+            const { ambientTemp, pipeTemp } = industries[industry];
+            const k = materials[material].conductivity;
+            const rInner = pipeRadius;
+            const rOuter = rInner + thickness;
+
+            // Update temperature displays
+            document.getElementById('pipe-temp').textContent = `${pipeTemp}°C`;
+            document.getElementById('ambient-temp').textContent = `${ambientTemp}°C`;
+
+            // Heat loss per meter
+            const heatLoss = (2 * Math.PI * k * (pipeTemp - ambientTemp)) / Math.log(rOuter / rInner);
+            const maxHeatLoss = (2 * Math.PI * k * (pipeTemp - ambientTemp)) / Math.log(1.01);
+            const score = Math.max(0, 100 - (heatLoss / maxHeatLoss) * 100);
+
+            // Update Frost Effect
+            if (frost) {
+                frost.material.opacity = pipeTemp < ambientTemp && score < 60 ? Math.min(0.7, (60 - score) / 60) : 0;
+            }
+
+            // Update UI
+            document.getElementById('score').textContent = score.toFixed(1);
+            document.getElementById('score-bar').style.width = `${score}%`;
+            document.getElementById('heat-loss').textContent = `${heatLoss.toFixed(2)} W/m`;
+
+            let feedbackText, feedbackClass;
+            if (score > 80) {
+                feedbackText = 'Excellent insulation! This configuration provides optimal thermal performance.';
+                feedbackClass = 'bg-green-50 dark:bg-green-900/30 border-green-100 dark:border-green-800/50 text-green-800 dark:text-green-200';
+            } else if (score > 50) {
+                feedbackText = 'Moderate insulation. Consider increasing thickness for better performance.';
+                feedbackClass = 'bg-yellow-50 dark:bg-yellow-900/30 border-yellow-100 dark:border-yellow-800/50 text-yellow-800 dark:text-yellow-200';
+            } else {
+                feedbackText = pipeTemp < ambientTemp
+                    ? 'Poor insulation, risk of frost. Increase thickness significantly.'
+                    : 'Poor insulation, high heat loss. Consider better materials or greater thickness.';
+                feedbackClass = 'bg-red-50 dark:bg-red-900/30 border-red-100 dark:border-red-800/50 text-red-800 dark:text-red-200';
+            }
+
+            const feedbackElement = document.getElementById('feedback');
+            feedbackElement.className = `mt-4 p-3 rounded-lg text-sm font-medium border transition-all ${feedbackClass}`;
+            feedbackElement.innerHTML = `<i class="fas ${score > 80 ? 'fa-check-circle' : score > 50 ? 'fa-exclamation-circle' : 'fa-exclamation-triangle'} mr-2"></i><span>${feedbackText}</span>`;
+
+            return { heatLoss, score, industry, material, thickness };
+        }
+
+        // Update Insulation Model
+        function updateInsulation() {
+            const material = document.getElementById('material').value;
+            const thickness = parseFloat(document.getElementById('thickness').value) / 100;
+
+            // Remove existing insulation
+            if (insulation) scene.remove(insulation);
+            if (frost) scene.remove(frost);
+
+            // Create new insulation layer
+            const insulationGeometry = new THREE.CylinderGeometry(pipeRadius + thickness, pipeRadius + thickness, pipeLength, 32);
+            insulationMaterial.color.setHex(materials[material].color);
+            insulation = new THREE.Mesh(insulationGeometry, insulationMaterial);
+            insulation.rotation.x = Math.PI / 2;
+            scene.add(insulation);
+
+            // Add frost layer
+            frost = new THREE.Mesh(frostGeometry, frostMaterial);
+            frost.rotation.x = Math.PI / 2;
+            scene.add(frost);
+
+            // Update calculations
+            const results = calculateHeatLoss();
+
+            // Add to recent evaluations
+            addRecentEvaluation(results);
+
+            return results;
+        }
+
+        // Show toast notification
+        function showToast(message, isSuccess = true) {
+            const toast = document.getElementById('toast');
+            const toastMessage = document.getElementById('toast-message');
+
+            toastMessage.textContent = message;
+            toast.className = `fixed bottom-4 right-4 p-4 ${isSuccess ? 'bg-green-600' : 'bg-red-600'} text-white rounded-lg shadow-lg transform transition-transform duration-300 flex items-center`;
+
+            setTimeout(() => {
+                toast.style.transform = 'translateY(0)';
+                toast.style.opacity = '1';
+            }, 10);
+
+            setTimeout(() => {
+                toast.style.transform = 'translateY(16px)';
+                toast.style.opacity = '0';
+            }, 3000);
+        }
+
+        // Add evaluation to recent list
+        function addRecentEvaluation(evaluation) {
+            const recentEvaluations = document.getElementById('recent-evaluations');
+            const evaluationElement = document.createElement('div');
+
+            evaluationElement.className = 'p-2 bg-gray-100 dark:bg-gray-700 rounded-lg cursor-pointer hover:bg-gray-200 dark:hover:bg-gray-600 transition-all';
+            evaluationElement.innerHTML = `
+                <div class="flex justify-between items-center">
+                    <span class="font-medium">${evaluation.material.replace('_', ' ')}</span>
+                    <span class="text-sm">${evaluation.thickness * 100}cm</span>
+                </div>
+                <div class="flex justify-between items-center text-sm">
+                    <span class="text-gray-500 dark:text-gray-400">${evaluation.industry}</span>
+                    <span class="font-bold ${evaluation.score > 80 ? 'text-green-600 dark:text-green-400' : evaluation.score > 50 ? 'text-yellow-600 dark:text-yellow-400' : 'text-red-600 dark:text-red-400'}">
+                        ${evaluation.score.toFixed(1)}
+                    </span>
+                </div>
+            `;
+
+            evaluationElement.addEventListener('click', () => {
+                document.getElementById('industry').value = evaluation.industry;
+                document.getElementById('material').value = evaluation.material;
+                document.getElementById('thickness').value = evaluation.thickness * 100;
+                document.getElementById('thickness-value').textContent = `${evaluation.thickness * 100} cm`;
+                updateInsulation();
+            });
+
+            // Add to top of the list
+            if (recentEvaluations.firstChild) {
+                recentEvaluations.insertBefore(evaluationElement, recentEvaluations.firstChild);
+            } else {
+                recentEvaluations.appendChild(evaluationElement);
+            }
+
+            // Limit to 5 recent evaluations
+            if (recentEvaluations.children.length > 5) {
+                recentEvaluations.removeChild(recentEvaluations.lastChild);
+            }
+        }
+
+        // Load recent evaluations from localStorage
+        function loadRecentEvaluations() {
+            try {
+                const saved = localStorage.getItem('pipeInsulationEvaluations');
+                if (saved) {
+                    const evaluations = JSON.parse(saved);
+                    evaluations.forEach(evaluation => {
+                        addRecentEvaluation(evaluation);
+                    });
+                }
+            } catch (error) {
+                console.error('Error loading recent evaluations:', error);
+            }
+        }
+
+        // Event Listeners
+        document.getElementById('industry').addEventListener('change', updateInsulation);
+        document.getElementById('material').addEventListener('change', updateInsulation);
+        document.getElementById('thickness').addEventListener('input', () => {
+            document.getElementById('thickness-value').textContent = `${document.getElementById('thickness').value} cm`;
+            updateInsulation();
+        });
+
+        // Save to localStorage
+        document.getElementById('save').addEventListener('click', () => {
+            try {
+                const evaluation = {
+                    industry: document.getElementById('industry').value,
+                    material: document.getElementById('material').value,
+                    thickness: parseFloat(document.getElementById('thickness').value) / 100,
+                    ...calculateHeatLoss(),
+                    timestamp: new Date().toISOString()
+                };
+
+                // Get existing evaluations or create new array
+                let evaluations = [];
+                const saved = localStorage.getItem('pipeInsulationEvaluations');
+                if (saved) {
+                    evaluations = JSON.parse(saved);
+                }
+
+                // Add new evaluation
+                evaluations.unshift(evaluation);
+
+                // Keep only the 5 most recent
+                if (evaluations.length > 5) {
+                    evaluations = evaluations.slice(0, 5);
+                }
+
+                localStorage.setItem('pipeInsulationEvaluations', JSON.stringify(evaluations));
+                showToast('Evaluation saved successfully!');
+            } catch (error) {
+                showToast('Error saving evaluation', false);
+                console.error('Error saving evaluation:', error);
+            }
+        });
+
+        // Export Report
+        document.getElementById('export').addEventListener('click', () => {
+            const evaluation = {
+                industry: document.getElementById('industry').value,
+                material: document.getElementById('material').value,
+                thickness: document.getElementById('thickness').value,
+                ...calculateHeatLoss()
+            };
+
+            const industryName = {
+                oil: 'Oil Refining',
+                hvac: 'HVAC',
+                chemical: 'Chemical Plants'
+            }[evaluation.industry];
+
+            const materialName = {
+                fiberglass: 'Fiberglass',
+                foam: 'Foam',
+                mineral_wool: 'Mineral Wool'
+            }[evaluation.material];
+
+            const report = `
+==================================================
+        PIPE INSULATION EVALUATION REPORT
+==================================================
+Date: ${new Date().toLocaleString()}
+Industry: ${industryName}
+Material: ${materialName}
+Thickness: ${evaluation.thickness} cm
+
+TEMPERATURE DATA:
+- Pipe Temperature: ${industries[evaluation.industry].pipeTemp}°C
+- Ambient Temperature: ${industries[evaluation.industry].ambientTemp}°C
+
+PERFORMANCE METRICS:
+- Heat Loss: ${evaluation.heatLoss.toFixed(2)} W/m
+- Effectiveness Score: ${evaluation.score.toFixed(1)}/100
+
+MATERIAL PROPERTIES:
+- Thermal Conductivity: ${materials[evaluation.material].conductivity} W/m·K
+- ${materials[evaluation.material].description}
+
+RECOMMENDATIONS:
+${evaluation.score > 80 ?
+                    '✔ This configuration provides excellent thermal performance.\n✔ No changes recommended.' :
+                    evaluation.score > 50 ?
+                        '✔ This configuration provides adequate performance.\n✔ Consider increasing thickness for better results.' :
+                        '✖ This configuration shows poor performance.\n✔ Strongly recommend increasing insulation thickness.\n✔ Consider switching to a material with lower thermal conductivity.'}
+
+==================================================
+Generated by Pipe Insulation Evaluator
+            `;
+
+            const blob = new Blob([report], { type: 'text/plain' });
+            const link = document.createElement('a');
+            link.href = URL.createObjectURL(blob);
+            link.download = `insulation_report_${new Date().toISOString().split('T')[0]}.txt`;
+            link.click();
+
+            showToast('Report exported successfully!');
+        });
+
+        // Theme Toggle
+        document.getElementById('theme-toggle').addEventListener('click', () => {
+            const isDarkMode = document.documentElement.classList.toggle('dark');
+            localStorage.setItem('theme', isDarkMode ? 'dark' : 'light');
+
+            // Update scene background
+            scene.background = new THREE.Color(isDarkMode ? 0x111111 : 0xf0f0f0);
+
+            // Update icon
+            const themeIcon = document.getElementById('theme-toggle').querySelector('i');
+            themeIcon.className = isDarkMode ? 'fas fa-sun' : 'fas fa-moon';
+
+            showToast(`Switched to ${isDarkMode ? 'dark' : 'light'} mode`);
+        });
+
+        // Canvas Controls
+        document.getElementById('rotate-toggle').addEventListener('click', () => {
+            isRotating = !isRotating;
+            const rotateIcon = document.getElementById('rotate-toggle').querySelector('i');
+            rotateIcon.className = isRotating ? 'fas fa-sync-alt' : 'fas fa-pause';
+            showToast(`Auto-rotation ${isRotating ? 'enabled' : 'paused'}`);
+        });
+
+        document.getElementById('reset-view').addEventListener('click', () => {
+            camera.position.set(0, 2, 5);
+            camera.lookAt(0, 0, 0);
+            showToast('View reset to default');
+        });
+
+        document.getElementById('zoom-in').addEventListener('click', () => {
+            camera.position.z *= 0.9;
+            showToast('Zoomed in');
+        });
+
+        document.getElementById('zoom-out').addEventListener('click', () => {
+            camera.position.z *= 1.1;
+            showToast('Zoomed out');
+        });
+
+        // Initialize theme based on saved preference
+        window.addEventListener('DOMContentLoaded', () => {
+            const savedTheme = localStorage.getItem('theme') || 'light';
+            if (savedTheme === 'dark') {
+                document.documentElement.classList.add('dark');
+                document.getElementById('theme-toggle').innerHTML = '<i class="fas fa-sun"></i>';
+                scene.background = new THREE.Color(0x111111);
+            } else {
+                document.documentElement.classList.remove('dark');
+                document.getElementById('theme-toggle').innerHTML = '<i class="fas fa-moon"></i>';
+                scene.background = new THREE.Color(0xf0f0f0);
+            }
+
+            // Load recent evaluations
+            loadRecentEvaluations();
+
+            // Initial Update
+            updateInsulation();
+        });
+
+        // Handle mobile touch events for rotation
+        let isDragging = false;
+        let previousTouchPosition = { x: 0, y: 0 };
+
+        document.getElementById('three-canvas').addEventListener('touchstart', (e) => {
+            isDragging = true;
+            previousTouchPosition = {
+                x: e.touches[0].clientX,
+                y: e.touches[0].clientY
+            };
+        });
+
+        document.getElementById('three-canvas').addEventListener('touchmove', (e) => {
+            if (!isDragging) return;
+
+            const touch = e.touches[0];
+            const deltaX = touch.clientX - previousTouchPosition.x;
+
+            pipe.rotation.z += deltaX * 0.01;
+            if (insulation) insulation.rotation.z += deltaX * 0.01;
+            if (frost) frost.rotation.z += deltaX * 0.01;
+
+            previousTouchPosition = {
+                x: touch.clientX,
+                y: touch.clientY
+            };
+        });
+
+        document.getElementById('three-canvas').addEventListener('touchend', () => {
+            isDragging = false;
+        });
+    </script>
+</body>
+
+</html>

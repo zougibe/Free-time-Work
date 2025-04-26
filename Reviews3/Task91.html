@@ -1,0 +1,2157 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Math Symbol Drag Board</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.4.2/p5.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/mathjs/10.6.4/math.min.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Font Awesome for icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+        href="https://fonts.googleapis.com/css2?family=Lato:ital,wght@0,100;0,300;0,400;0,700;0,900;1,100;1,300;1,400;1,700;1,900&family=Orbitron:wght@400..900&display=swap"
+        rel="stylesheet" />
+    <style>
+        body {
+            margin: 0;
+            font-family: Arial, sans-serif;
+            overflow-x: hidden;
+        }
+
+        canvas {
+            display: block;
+        }
+
+        #defaultCanvas0 {
+            margin: 0 auto !important;
+        }
+
+        #canvas-container {
+            display: flex !important;
+            justify-content: center !important;
+            align-items: center !important;
+        }
+
+        .symbol {
+            user-select: none;
+            touch-action: none;
+        }
+
+        #result {
+            min-width: 300px;
+            padding: 12px 20px;
+            border-radius: 12px;
+            background: linear-gradient(145deg, #f8fafc, #e8eef3);
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+            font-family: "Orbitron", sans-serif;
+            font-weight: 500;
+            letter-spacing: 0.5px;
+            border-left: 4px solid #000;
+            transition: all 0.4s cubic-bezier(0.25, 0.8, 0.25, 1);
+            transform-origin: left center;
+        }
+
+        #result.text-red-600 {
+            background: linear-gradient(145deg, #fee2e2, #fecaca);
+            border-left: 4px solid #dc2626;
+            animation: shake 0.5s cubic-bezier(0.36, 0.07, 0.19, 0.97) both;
+        }
+
+        @keyframes shake {
+
+            10%,
+            90% {
+                transform: translateX(-1px);
+            }
+
+            20%,
+            80% {
+                transform: translateX(2px);
+            }
+
+            30%,
+            50%,
+            70% {
+                transform: translateX(-3px);
+            }
+
+            40%,
+            60% {
+                transform: translateX(3px);
+            }
+        }
+
+        #result.updated {
+            animation: pulse 0.5s cubic-bezier(0.25, 0.8, 0.25, 1);
+        }
+
+        @keyframes pulse {
+            0% {
+                transform: scale(1);
+            }
+
+            50% {
+                transform: scale(1.05);
+            }
+
+            100% {
+                transform: scale(1);
+            }
+        }
+
+        .title-icon {
+            display: inline-block;
+            margin-right: 12px;
+            animation: float 3s ease-in-out infinite;
+        }
+
+        @keyframes float {
+            0% {
+                transform: translateY(0px);
+            }
+
+            50% {
+                transform: translateY(-10px);
+            }
+
+            100% {
+                transform: translateY(0px);
+            }
+        }
+
+        #clear-btn i {
+            margin-right: 8px;
+            transition: transform 0.3s ease;
+        }
+
+        #clear-btn:hover i {
+            transform: rotate(-15deg);
+        }
+
+        .symbol {
+            transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12), 0 1px 2px rgba(0, 0, 0, 0.24);
+        }
+
+        .symbol:hover {
+            transform: translateY(-5px) scale(1.05);
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.19),
+                0 6px 6px rgba(0, 0, 0, 0.23);
+        }
+
+        .symbol[data-type="number"]:hover {
+            background: linear-gradient(145deg, #333, #000);
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3),
+                0 6px 8px rgba(0, 0, 0, 0.22);
+            text-shadow: 0 0 5px rgba(255, 255, 255, 0.8);
+        }
+
+        .symbol-clone {
+            position: absolute;
+            z-index: 1000;
+            pointer-events: none;
+            transition: none;
+            opacity: 0.8;
+        }
+
+        #clear-btn {
+            position: relative;
+            overflow: hidden;
+            transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+            box-shadow: 0 3px 6px rgba(0, 0, 0, 0.16), 0 3px 6px rgba(0, 0, 0, 0.23);
+        }
+
+        #clear-btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 14px 28px rgba(0, 0, 0, 0.25),
+                0 10px 10px rgba(0, 0, 0, 0.22);
+            background: linear-gradient(135deg, #333, #000);
+        }
+
+        #clear-btn:before {
+            content: "";
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg,
+                    transparent,
+                    rgba(255, 255, 255, 0.2),
+                    transparent);
+            transition: 0.5s;
+        }
+
+        #clear-btn:hover:before {
+            left: 100%;
+        }
+
+        .grouped-container {
+            stroke: #0050ff;
+            stroke-width: 2;
+            fill: rgba(220, 240, 255, 0.3);
+            cursor: pointer;
+        }
+
+        .group-label {
+            font-size: 10px;
+            fill: #0050ff;
+        }
+
+        .highlighted {
+            stroke: #ff3300 !important;
+            stroke-width: 3 !important;
+            fill: rgba(255, 240, 220, 0.3) !important;
+        }
+
+        #instructions-modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.7);
+        }
+
+        .modal-content {
+            background-color: #f7fafc;
+            margin: 10% auto;
+            padding: 20px;
+            border-radius: 12px;
+            width: 80%;
+            max-width: 600px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+            animation: modalFadeIn 0.4s;
+        }
+
+        @keyframes modalFadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(-50px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .close-modal {
+            color: #aaa;
+            float: right;
+            font-size: 28px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+
+        .close-modal:hover {
+            color: black;
+        }
+
+        /* New styles for enhanced version */
+        .tooltip {
+            position: absolute;
+            background: rgba(0, 0, 0, 0.8);
+            color: white;
+            padding: 5px 10px;
+            border-radius: 4px;
+            font-size: 14px;
+            pointer-events: none;
+            z-index: 1000;
+            opacity: 0;
+            transition: opacity 0.2s;
+        }
+
+        .symbol:hover .tooltip {
+            opacity: 1;
+        }
+
+        .history-item {
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .history-item:hover {
+            background-color: #e2e8f0;
+            transform: translateX(5px);
+        }
+
+        .auto-group-highlight {
+            animation: highlight 1.5s ease-out;
+        }
+
+        @keyframes highlight {
+            0% {
+                background-color: rgba(255, 255, 0, 0.3);
+            }
+
+            100% {
+                background-color: transparent;
+            }
+        }
+
+        .keyboard-shortcut {
+            background-color: #e2e8f0;
+            border-radius: 3px;
+            padding: 2px 5px;
+            font-family: monospace;
+            font-size: 0.9em;
+        }
+
+        /* Accessibility improvements */
+        .sr-only {
+            position: absolute;
+            width: 1px;
+            height: 1px;
+            padding: 0;
+            margin: -1px;
+            overflow: hidden;
+            clip: rect(0, 0, 0, 0);
+            white-space: nowrap;
+            border-width: 0;
+        }
+
+        [aria-hidden="true"] {
+            display: none;
+        }
+
+        /* Tutorial highlight */
+        .tutorial-highlight {
+            position: fixed;
+            background-color: rgba(0, 0, 0, 0.7);
+            z-index: 999;
+            transition: all 0.3s ease;
+            pointer-events: none;
+        }
+
+        .tutorial-message {
+            position: fixed;
+            background-color: white;
+            padding: 15px;
+            border-radius: 8px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+            z-index: 1001;
+            max-width: 300px;
+            font-size: 14px;
+        }
+
+        @media (max-width: 1024px) {
+            #toolbox {
+                grid-template-columns: repeat(8, minmax(0, 1fr)) !important;
+            }
+        }
+
+        @media (max-width: 768px) {
+            #toolbox {
+                grid-template-columns: repeat(5, minmax(0, 1fr)) !important;
+            }
+
+            #canvas-container {
+                display: block !important;
+                grid-template-columns: none !important;
+            }
+
+            #canvas-container canvas {
+                width: 100% !important;
+                height: 200px !important;
+                margin: 0 auto !important;
+            }
+
+            h1 {
+                font-size: 2rem !important;
+            }
+
+            h2 {
+                font-size: 1.25rem !important;
+            }
+
+            #result {
+                min-width: 200px;
+                font-size: 1rem !important;
+            }
+
+            /* Mobile-specific adjustments */
+            .symbol {
+                font-size: 1.5rem !important;
+                padding: 0.5rem !important;
+            }
+
+            .modal-content {
+                margin: 20% auto;
+                width: 90%;
+            }
+        }
+
+        @media (max-width: 480px) {
+            #toolbox {
+                grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
+                gap: 0.5rem !important;
+            }
+
+            .mt-8.flex {
+                flex-direction: column;
+                align-items: stretch;
+                gap: 0.5rem;
+            }
+
+            #clear-btn {
+                width: 100%;
+                text-align: center;
+                font-size: 16px !important;
+                padding: 0.5rem !important;
+            }
+
+            /* Even smaller screens */
+            #toolbox {
+                grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+            }
+        }
+    </style>
+</head>
+
+<body class="bg-gray-200 flex flex-col items-center min-h-screen mt-20">
+    <div class="w-full max-w-4xl p-4">
+        <h1 class="text-5xl font-bold text-center text-black mb-[25px]" style="
+          font-family: 'Orbitron', sans-serif;
+          text-shadow: 0 0 3px #ffffff, 0 0 6px #ffffff;
+        ">
+            <i class="fa-solid fa-square-root-variable title-icon"></i>Math Symbol
+            Drag Board
+        </h1>
+        <h2 class="text-3xl font-bold text-center text-black mb-[25px]" style="
+          font-family: 'Orbitron', sans-serif;
+          text-shadow: 0 0 3px #ffffff, 0 0 6px #ffffff;
+        ">
+            Drop and group for complex equations!
+        </h2>
+        <div style="font-family: 'Lato', sans-serif">
+            <div id="toolbox"
+                class="grid grid-cols-10 gap-4 bg-gray-100 rounded-2xl shadow-2xl drop-shadow-lg border border-black p-4 mb-[10px]">
+                <!-- Toolbox items populated by JS -->
+            </div>
+            <div class="flex justify-between mb-2">
+                <button id="help-btn" class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition">
+                    <i class="fa-solid fa-circle-question mr-2"></i>How to Use
+                </button>
+                <button id="tutorial-btn"
+                    class="bg-purple-600 text-white px-4 py-2 rounded-lg hover:bg-purple-700 transition">
+                    <i class="fa-solid fa-graduation-cap mr-2"></i>Start Tutorial
+                </button>
+            </div>
+            <div id="canvas-container"
+                class="bg-gray-100 rounded-2xl shadow-2xl drop-shadow-lg border border-black p-4 mt-[20px] mb-[10px] sm:grid sm:grid-cols-10 sm:gap-4">
+                <!-- p5.js canvas rendered here -->
+            </div>
+            <div class="mt-8 flex items-center justify-between w-full gap-4">
+                <div id="result" class="text-2xl font-semibold text-gray-800"></div>
+
+                <div class="flex gap-2">
+                    <button id="group-btn"
+                        class="bg-blue-600 text-white px-4 py-3 rounded-xl hover:bg-blue-700 transition text-[18px]">
+                        <i class="fa-solid fa-object-group mr-2"></i>Group Selection
+                        <span class="keyboard-shortcut ml-2">G</span>
+                    </button>
+                    <button id="undo-btn"
+                        class="bg-gray-600 text-white px-4 py-3 rounded-xl hover:bg-gray-700 transition text-[18px]">
+                        <i class="fa-solid fa-rotate-left mr-2"></i>Undo
+                        <span class="keyboard-shortcut ml-2">Z</span>
+                    </button>
+                    <button id="clear-btn"
+                        class="bg-black text-white px-6 py-3 rounded-xl hover:bg-gray-800 transition text-[18px]">
+                        <i class="fa-solid fa-eraser"></i> Clear
+                        <span class="keyboard-shortcut ml-2">C</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- History panel -->
+            <div id="history-panel" class="mt-6 bg-white rounded-lg shadow-md p-4 hidden">
+                <h3 class="text-xl font-bold mb-3 flex items-center">
+                    <i class="fas fa-history mr-2"></i>Equation History
+                </h3>
+                <div id="history-list" class="space-y-2 max-h-60 overflow-y-auto">
+                    <!-- History items will be added here -->
+                </div>
+            </div>
+        </div>
+
+        <div id="instructions-modal">
+            <div class="modal-content">
+                <span class="close-modal">&times;</span>
+                <h2 class="text-2xl font-bold mb-4">
+                    How to Use the Math Symbol Drag Board
+                </h2>
+                <ul class="list-disc pl-5 space-y-2">
+                    <li>
+                        <strong>Drag symbols</strong> from the toolbox to the canvas.
+                    </li>
+                    <li>
+                        <strong>Group symbols</strong> by selecting multiple symbols and
+                        clicking "Group Selection" (or press <span class="keyboard-shortcut">G</span>).
+                    </li>
+                    <li>
+                        <strong>Undo actions</strong> with the Undo button or <span class="keyboard-shortcut">Z</span>
+                        key.
+                    </li>
+                    <li>
+                        <strong>Example for square root:</strong> Drag the '√' symbol,
+                        then the number(s) to be inside the root, select them all, and
+                        press "Group Selection".
+                    </li>
+                    <li>
+                        <strong>Example for fractions:</strong> Drag the fraction symbol,
+                        then numerator and denominator values, select all, and group them.
+                    </li>
+                    <li>
+                        <strong>Reposition symbols</strong> by dragging them around the
+                        canvas.
+                    </li>
+                    <li>
+                        <strong>Remove symbols</strong> by dragging them outside the
+                        canvas or using the Clear button.
+                    </li>
+                    <li>
+                        <strong>Mobile users:</strong> Tap to select/deselect, tap and
+                        hold to drag.
+                    </li>
+                </ul>
+                <div class="mt-4 p-3 bg-blue-100 rounded-lg">
+                    <p class="font-semibold">
+                        💡 Tip: Use grouping to create complex expressions like √25 or
+                        (3+4)/2
+                    </p>
+                    <p class="mt-2">
+                        <strong>Keyboard Shortcuts:</strong><br>
+                        <span class="keyboard-shortcut">G</span> - Group selected symbols<br>
+                        <span class="keyboard-shortcut">Z</span> - Undo last action<br>
+                        <span class="keyboard-shortcut">C</span> - Clear canvas<br>
+                        <span class="keyboard-shortcut">Shift+Click</span> - Select multiple symbols
+                    </p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Tooltip element -->
+        <div id="symbol-tooltip" class="tooltip"></div>
+
+        <!-- Tutorial elements -->
+        <div id="tutorial-highlight" class="tutorial-highlight"></div>
+        <div id="tutorial-message" class="tutorial-message"></div>
+
+        <script>
+            // Main application state
+            let symbols = [];
+            let toolboxSymbols = [];
+            let draggedSymbol = null;
+            let canvasBounds;
+            const gridSize = 40;
+            let isTouchDragging = false;
+            let touchStartPos = { x: 0, y: 0 };
+            let selectedSymbols = [];
+            let groups = [];
+            let nextGroupId = 1;
+            let isGrouping = false;
+            let isSelecting = false;
+            let selectStartX = 0;
+            let selectStartY = 0;
+            let isDraggingGroup = false;
+            let draggedGroup = null;
+            let dragOffset = { x: 0, y: 0 };
+            let clonedElement = null;
+            let lastTouchTime = 0;
+            let debugMode = false;
+            let validationMessages = [];
+            let lastEvaluation = "";
+            let resultDiv;
+            let history = [];
+            let actionHistory = [];
+            let currentHistoryIndex = -1;
+            let isAutoGroupingEnabled = true;
+            let tutorialStep = 0;
+            let isTutorialActive = false;
+
+            // Constants
+            const SYMBOL_TYPES = [
+                ...Array.from({ length: 10 }, (_, n) => ({
+                    type: "number",
+                    value: String(n),
+                    tooltip: `Number ${n}`
+                })),
+                { type: "operator", value: "+", tooltip: "Addition" },
+                { type: "operator", value: "-", tooltip: "Subtraction" },
+                { type: "operator", value: "*", tooltip: "Multiplication" },
+                { type: "operator", value: "/", tooltip: "Division" },
+                { type: "operator", value: "=", tooltip: "Equals" },
+                { type: "variable", value: "x", tooltip: "Variable x" },
+                { type: "variable", value: "y", tooltip: "Variable y" },
+                { type: "fraction", value: "frac", tooltip: "Fraction (a/b)" },
+                { type: "exponent", value: "^", tooltip: "Exponent" },
+                { type: "root", value: "sqrt", tooltip: "Square root" },
+                { type: "paren", value: "(", tooltip: "Left parenthesis" },
+                { type: "paren", value: ")", tooltip: "Right parenthesis" },
+                { type: "function", value: "sin", tooltip: "Sine function" },
+                { type: "function", value: "cos", tooltip: "Cosine function" },
+                { type: "function", value: "tan", tooltip: "Tangent function" },
+                { type: "constant", value: "π", tooltip: "Pi (3.14159...)" },
+                { type: "constant", value: "e", tooltip: "Euler's number" }
+            ];
+
+            // Initialize the application
+            function setup() {
+                const canvas = createCanvas(800, 200);
+                canvas.parent("canvas-container");
+                canvasBounds = canvas.canvas.getBoundingClientRect();
+                resultDiv = select("#result");
+
+                canvas.elt.style.display = "block";
+                canvas.elt.style.margin = "0 auto";
+                canvas.elt.setAttribute('aria-label', 'Equation canvas where you can drag and drop math symbols');
+
+                // Set up drag and drop events
+                setupDragAndDrop(canvas);
+
+                // Build the toolbox
+                buildToolbox();
+
+                // Set up event listeners
+                setupEventListeners();
+
+                // Initialize tutorial
+                initTutorial();
+
+                // Call windowResized once on startup and add event listener
+                windowResized();
+                window.addEventListener("resize", debounce(windowResized, 250));
+
+                // Add initial state to history
+                saveState();
+            }
+
+            function setupDragAndDrop(canvas) {
+                canvas.elt.addEventListener("dragover", (e) => e.preventDefault());
+                canvas.elt.addEventListener("drop", (e) => {
+                    e.preventDefault();
+
+                    const data = JSON.parse(
+                        e.dataTransfer.getData("text/plain") || "{}"
+                    );
+                    if (!data.type) return;
+
+                    const rect = canvas.canvas.getBoundingClientRect();
+                    const x = e.clientX - rect.left;
+                    const y = e.clientY - rect.top;
+
+                    addSymbol({ ...data, x, y });
+                });
+            }
+
+            function buildToolbox() {
+                const toolbox = select("#toolbox");
+
+                SYMBOL_TYPES.forEach((sym) => {
+                    const display =
+                        sym.type === "operator" && sym.value === "*"
+                            ? "×"
+                            : getSymbolDisplay(sym);
+
+                    const div = createDiv(`
+                        <span>${display}</span>
+                        <span class="tooltip">${sym.tooltip}</span>
+                    `).addClass(
+                        "symbol bg-black text-white font-bold text-center py-2 px-4 rounded cursor-pointer hover:bg-gray-800 transition relative"
+                    );
+
+                    div.attribute("data-type", sym.type);
+                    div.attribute("data-value", sym.value);
+                    div.attribute("aria-label", sym.tooltip);
+                    div.parent(toolbox);
+
+                    // Set up drag events
+                    setupSymbolDragEvents(div, sym);
+
+                    toolboxSymbols.push({ ...sym, element: div });
+                });
+            }
+
+            function setupSymbolDragEvents(div, sym) {
+                div.elt.draggable = true;
+
+                div.elt.addEventListener("dragstart", (ev) => {
+                    ev.dataTransfer.setData(
+                        "text/plain",
+                        JSON.stringify({ type: sym.type, value: sym.value })
+                    );
+                    div.addClass("dragging");
+                });
+
+                div.elt.addEventListener("dragend", (ev) => {
+                    div.removeClass("dragging");
+                });
+
+                // Enhanced touch handling for mobile
+                div.elt.addEventListener("touchstart", handleTouchStart);
+                div.elt.addEventListener("touchmove", handleTouchMove);
+                div.elt.addEventListener("touchend", handleTouchEnd);
+            }
+
+            function setupEventListeners() {
+                // Button event listeners
+                select("#clear-btn").mousePressed(clearCanvas);
+                select("#clear-btn").touchEnded(clearCanvas);
+                select("#group-btn").mousePressed(groupSelectedSymbols);
+                select("#group-btn").touchEnded(groupSelectedSymbols);
+                select("#help-btn").mousePressed(showInstructions);
+                select("#help-btn").touchEnded(showInstructions);
+                select("#undo-btn").mousePressed(undoLastAction);
+                select("#undo-btn").touchEnded(undoLastAction);
+                select("#tutorial-btn").mousePressed(startTutorial);
+                select("#tutorial-btn").touchEnded(startTutorial);
+
+                // Modal event listeners
+                document.querySelector(".close-modal").addEventListener("click", hideInstructions);
+                document.querySelector(".close-modal").addEventListener("touchend", function (e) {
+                    e.preventDefault();
+                    hideInstructions();
+                });
+
+                // Window event listeners
+                window.addEventListener("click", function (event) {
+                    const modal = document.getElementById("instructions-modal");
+                    if (event.target === modal) {
+                        hideInstructions();
+                    }
+                });
+
+                window.addEventListener("touchend", function (event) {
+                    const modal = document.getElementById("instructions-modal");
+                    if (event.target === modal) {
+                        event.preventDefault();
+                        hideInstructions();
+                    }
+                });
+
+                // Keyboard shortcuts
+                window.addEventListener("keydown", function (event) {
+                    if (event.key === "g" || event.key === "G") {
+                        groupSelectedSymbols();
+                    }
+                    if ((event.key === "z" || event.key === "Z") && event.ctrlKey) {
+                        undoLastAction();
+                    }
+                    if (event.key === "c" || event.key === "C") {
+                        clearCanvas();
+                    }
+                    // Toggle debug mode with 'D' key
+                    if (event.key === "d" || event.key === "D") {
+                        debugMode = !debugMode;
+                    }
+                    // Toggle auto-grouping with 'A' key
+                    if (event.key === "a" || event.key === "A") {
+                        isAutoGroupingEnabled = !isAutoGroupingEnabled;
+                        showTemporaryMessage(`Auto-grouping ${isAutoGroupingEnabled ? 'enabled' : 'disabled'}`);
+                    }
+                });
+
+                // Show instructions on first load
+                setTimeout(showInstructions, 500);
+            }
+
+            function initTutorial() {
+                const tutorialSteps = [
+                    {
+                        message: "Welcome to the Math Symbol Drag Board! Let's learn how to use it.",
+                        highlight: null,
+                        action: null
+                    },
+                    {
+                        message: "Drag numbers or operators from the toolbox onto the canvas to build equations.",
+                        highlight: "#toolbox",
+                        action: () => {
+                            // Simulate dragging a number
+                            const numberBtn = document.querySelector('.symbol[data-value="5"]');
+                            highlightElement(numberBtn);
+                        }
+                    },
+                    {
+                        message: "Try dragging the '5' onto the canvas. Release to place it.",
+                        highlight: "#defaultCanvas0",
+                        action: null
+                    },
+                    {
+                        message: "Now try dragging a '+' operator next to your number.",
+                        highlight: ".symbol[data-value='+']",
+                        action: null
+                    },
+                    {
+                        message: "Add another number to complete a simple equation like 5+3.",
+                        highlight: "#defaultCanvas0",
+                        action: null
+                    },
+                    {
+                        message: "Select multiple symbols by holding Shift and clicking, or by dragging a selection box.",
+                        highlight: "#defaultCanvas0",
+                        action: null
+                    },
+                    {
+                        message: "Press the Group button or 'G' key to group selected symbols together.",
+                        highlight: "#group-btn",
+                        action: null
+                    },
+                    {
+                        message: "Try creating more complex expressions using fractions, roots, and exponents!",
+                        highlight: null,
+                        action: null
+                    },
+                    {
+                        message: "You can undo actions with the Undo button or Ctrl+Z.",
+                        highlight: "#undo-btn",
+                        action: null
+                    },
+                    {
+                        message: "That's it! You're ready to explore mathematical expressions. Have fun!",
+                        highlight: null,
+                        action: null
+                    }
+                ];
+
+                // Store tutorial steps
+                window.tutorialSteps = tutorialSteps;
+            }
+
+            function startTutorial() {
+                isTutorialActive = true;
+                tutorialStep = 0;
+                clearCanvas();
+                showTutorialStep();
+                document.getElementById('help-btn').disabled = true;
+                document.getElementById('tutorial-btn').disabled = true;
+            }
+
+            function showTutorialStep() {
+                if (!isTutorialActive || tutorialStep >= window.tutorialSteps.length) {
+                    endTutorial();
+                    return;
+                }
+
+                const step = window.tutorialSteps[tutorialStep];
+                const tutorialMessage = document.getElementById('tutorial-message');
+                const tutorialHighlight = document.getElementById('tutorial-highlight');
+
+                tutorialMessage.innerHTML = `
+                    <div class="mb-2">${step.message}</div>
+                    <div class="flex justify-between mt-4">
+                        <button id="tutorial-prev" class="px-3 py-1 bg-gray-300 rounded ${tutorialStep === 0 ? 'opacity-50 cursor-not-allowed' : ''}">
+                            Previous
+                        </button>
+                        <span>${tutorialStep + 1}/${window.tutorialSteps.length}</span>
+                        <button id="tutorial-next" class="px-3 py-1 bg-blue-500 text-white rounded">
+                            ${tutorialStep === window.tutorialSteps.length - 1 ? 'Finish' : 'Next'}
+                        </button>
+                    </div>
+                `;
+
+                // Position the message
+                if (step.highlight) {
+                    const element = document.querySelector(step.highlight);
+                    if (element) {
+                        const rect = element.getBoundingClientRect();
+                        tutorialMessage.style.left = `${rect.left + window.scrollX}px`;
+                        tutorialMessage.style.top = `${rect.bottom + window.scrollY + 10}px`;
+
+                        // Set up highlight
+                        tutorialHighlight.style.left = `${rect.left + window.scrollX}px`;
+                        tutorialHighlight.style.top = `${rect.top + window.scrollY}px`;
+                        tutorialHighlight.style.width = `${rect.width}px`;
+                        tutorialHighlight.style.height = `${rect.height}px`;
+                        tutorialHighlight.style.display = 'block';
+
+                        // Call action if exists
+                        if (step.action) step.action();
+                    } else {
+                        tutorialHighlight.style.display = 'none';
+                    }
+                } else {
+                    // Center the message if no highlight
+                    tutorialMessage.style.left = '50%';
+                    tutorialMessage.style.top = '50%';
+                    tutorialMessage.style.transform = 'translate(-50%, -50%)';
+                    tutorialHighlight.style.display = 'none';
+                }
+
+                // Add event listeners for navigation
+                document.getElementById('tutorial-next').addEventListener('click', () => {
+                    tutorialStep++;
+                    showTutorialStep();
+                });
+
+                document.getElementById('tutorial-prev').addEventListener('click', () => {
+                    if (tutorialStep > 0) {
+                        tutorialStep--;
+                        showTutorialStep();
+                    }
+                });
+
+                tutorialMessage.style.display = 'block';
+            }
+
+            function endTutorial() {
+                isTutorialActive = false;
+                document.getElementById('tutorial-message').style.display = 'none';
+                document.getElementById('tutorial-highlight').style.display = 'none';
+                document.getElementById('help-btn').disabled = false;
+                document.getElementById('tutorial-btn').disabled = false;
+                showTemporaryMessage("Tutorial completed! Try building your own equations now.");
+            }
+
+            function highlightElement(element) {
+                element.classList.add('animate-pulse');
+                setTimeout(() => {
+                    element.classList.remove('animate-pulse');
+                }, 2000);
+            }
+
+            function showTemporaryMessage(message, duration = 3000) {
+                const msg = document.createElement('div');
+                msg.className = 'fixed bottom-4 left-1/2 transform -translate-x-1/2 bg-gray-800 text-white px-4 py-2 rounded-lg shadow-lg z-50';
+                msg.textContent = message;
+                document.body.appendChild(msg);
+
+                setTimeout(() => {
+                    msg.classList.add('opacity-0', 'transition-opacity', 'duration-500');
+                    setTimeout(() => {
+                        document.body.removeChild(msg);
+                    }, 500);
+                }, duration);
+            }
+
+            function handleTouchStart(ev) {
+                ev.preventDefault();
+                const touch = ev.touches[0];
+                const symbolType = this.getAttribute('data-type');
+                const symbolValue = this.getAttribute('data-value');
+
+                // Create clone for dragging visuals
+                clonedElement = this.cloneNode(true);
+                clonedElement.classList.add("symbol-clone");
+                document.body.appendChild(clonedElement);
+
+                // Position clone at touch point
+                clonedElement.style.left = `${touch.clientX - 25}px`;
+                clonedElement.style.top = `${touch.clientY - 25}px`;
+
+                // Store data for drop
+                clonedElement.dataset.type = symbolType;
+                clonedElement.dataset.value = symbolValue;
+
+                // Add haptic feedback if available
+                if (navigator.vibrate) {
+                    navigator.vibrate(20);
+                }
+            }
+
+            function handleTouchMove(ev) {
+                ev.preventDefault();
+                const touch = ev.touches[0];
+
+                if (clonedElement) {
+                    clonedElement.style.left = `${touch.clientX - 25}px`;
+                    clonedElement.style.top = `${touch.clientY - 25}px`;
+                }
+            }
+
+            function handleTouchEnd(ev) {
+                ev.preventDefault();
+                if (!clonedElement) return;
+
+                const touch = ev.changedTouches[0];
+                const rect = canvas.canvas.getBoundingClientRect();
+
+                // Check if touch ended over canvas
+                if (
+                    touch.clientX >= rect.left &&
+                    touch.clientX <= rect.right &&
+                    touch.clientY >= rect.top &&
+                    touch.clientY <= rect.bottom
+                ) {
+                    // Calculate position on canvas
+                    const x = touch.clientX - rect.left;
+                    const y = touch.clientY - rect.top;
+
+                    // Create new symbol
+                    addSymbol({
+                        type: clonedElement.dataset.type,
+                        value: clonedElement.dataset.value,
+                        x,
+                        y
+                    });
+                }
+
+                // Clean up
+                document.body.removeChild(clonedElement);
+                clonedElement = null;
+            }
+
+            function addSymbol(symbolData) {
+                const newSym = {
+                    ...symbolData,
+                    isDragging: false,
+                    id: Date.now() + Math.random().toString(36).substr(2, 9) // Unique ID
+                };
+
+                snapSymbol(newSym);
+                symbols.push(newSym);
+
+                // Auto-group if appropriate
+                if (isAutoGroupingEnabled) {
+                    checkForAutoGrouping(newSym);
+                }
+
+                saveState();
+                evaluateEquation();
+            }
+
+            function checkForAutoGrouping(newSymbol) {
+                // Don't auto-group if the new symbol is a number or variable
+                if (newSymbol.type === 'number' || newSymbol.type === 'variable') return;
+
+                // Find nearby symbols that could form a meaningful group
+                const nearbySymbols = symbols.filter(sym => {
+                    if (sym === newSymbol) return false;
+
+                    const distance = dist(newSymbol.x, newSymbol.y, sym.x, sym.y);
+                    return distance < 60; // Within 60 pixels
+                });
+
+                if (nearbySymbols.length === 0) return;
+
+                // Check for specific grouping patterns
+                if (newSymbol.type === 'root') {
+                    // Auto-group root with the next symbol(s) to the right
+                    const rightSymbols = symbols.filter(sym => {
+                        return sym !== newSymbol && sym.x > newSymbol.x &&
+                            abs(sym.y - newSymbol.y) < 30 &&
+                            dist(newSymbol.x, newSymbol.y, sym.x, sym.y) < 100;
+                    }).sort((a, b) => a.x - b.x);
+
+                    if (rightSymbols.length > 0) {
+                        selectedSymbols = [newSymbol, ...rightSymbols.slice(0, 3)]; // Limit to 3 symbols
+                        groupSelectedSymbols();
+                        highlightGroup(findSymbolGroup(newSymbol));
+                        return;
+                    }
+                }
+
+                if (newSymbol.type === 'fraction') {
+                    // Auto-group fraction with symbols above and below
+                    const aboveSymbols = symbols.filter(sym => {
+                        return sym !== newSymbol && abs(sym.x - newSymbol.x) < 20 &&
+                            sym.y < newSymbol.y - 10 && sym.y > newSymbol.y - 50;
+                    });
+
+                    const belowSymbols = symbols.filter(sym => {
+                        return sym !== newSymbol && abs(sym.x - newSymbol.x) < 20 &&
+                            sym.y > newSymbol.y + 10 && sym.y < newSymbol.y + 50;
+                    });
+
+                    if (aboveSymbols.length > 0 && belowSymbols.length > 0) {
+                        selectedSymbols = [...aboveSymbols.slice(0, 1), newSymbol, ...belowSymbols.slice(0, 1)];
+                        groupSelectedSymbols();
+                        highlightGroup(findSymbolGroup(newSymbol));
+                        return;
+                    }
+                }
+
+                if (newSymbol.value === '(') {
+                    // Auto-group parentheses with content between them
+                    const nextParen = symbols.find(sym => {
+                        return sym.value === ')' && sym.x > newSymbol.x &&
+                            abs(sym.y - newSymbol.y) < 30 &&
+                            !findSymbolGroup(sym);
+                    });
+
+                    if (nextParen) {
+                        const betweenSymbols = symbols.filter(sym => {
+                            return sym.x > newSymbol.x && sym.x < nextParen.x &&
+                                abs(sym.y - newSymbol.y) < 30 &&
+                                !findSymbolGroup(sym);
+                        });
+
+                        if (betweenSymbols.length > 0) {
+                            selectedSymbols = [newSymbol, ...betweenSymbols, nextParen];
+                            groupSelectedSymbols();
+                            highlightGroup(findSymbolGroup(newSymbol));
+                            return;
+                        }
+                    }
+                }
+            }
+
+            function highlightGroup(group) {
+                if (!group) return;
+
+                // Add temporary highlight class
+                group.highlighted = true;
+
+                // Remove highlight after animation
+                setTimeout(() => {
+                    group.highlighted = false;
+                }, 1500);
+            }
+
+            function isOutsideCanvas(x, y) {
+                return x < 0 || x > width || y < 0 || y > height;
+            }
+
+            function snapSymbol(sym) {
+                sym.x = Math.round(sym.x / (gridSize / 2)) * (gridSize / 2);
+                sym.x = constrain(sym.x, 20, width - 20);
+                const yCenter = Math.round(height / 2 / gridSize) * gridSize;
+                sym.y = constrain(sym.y, 20, height - 20);
+            }
+
+            function layoutSymbolsGrid() {
+                if (symbols.length === 0) return;
+
+                symbols.forEach((sym) => {
+                    if (!sym.x || !sym.y) {
+                        snapSymbol(sym);
+                    }
+                });
+            }
+
+            function getSymbolDisplay(sym) {
+                if (sym.type === "fraction") return "a/b";
+                if (sym.type === "root") return "√";
+                if (sym.type === "exponent") return "a²";
+                return sym.value;
+            }
+
+            function findSymbolGroup(symbol) {
+                return groups.find((group) => group.symbols.includes(symbol));
+            }
+
+            function findGroupById(id) {
+                return groups.find((group) => group.id === id);
+            }
+
+            function drawSymbol(sym) {
+                textAlign(CENTER, CENTER);
+                textSize(36);
+
+                if (sym.type === "variable") textStyle(ITALIC);
+                else if (sym.type === "operator") textStyle(BOLD);
+                else textStyle(NORMAL);
+
+                // Check if symbol is selected
+                const isSelected = selectedSymbols.includes(sym);
+
+                if (isSelected) {
+                    fill(230, 240, 255);
+                    stroke(0, 100, 255);
+                    strokeWeight(2);
+                    ellipse(sym.x, sym.y, 45, 45);
+                    fill(0, 0, 0);
+                    noStroke();
+                }
+
+                if (sym.type === "fraction") {
+                    stroke(0);
+                    strokeWeight(1);
+                    line(sym.x - 15, sym.y, sym.x + 15, sym.y);
+                    noStroke();
+                    text("a", sym.x, sym.y - 15);
+                    text("b", sym.x, sym.y + 15);
+                } else if (sym.type === "root") {
+                    text("√", sym.x - 10, sym.y);
+                    stroke(0);
+                    strokeWeight(2);
+                    line(sym.x, sym.y - 10, sym.x + 20, sym.y - 10);
+                    noStroke();
+                } else {
+                    const show =
+                        sym.type === "operator" && sym.value === "*" ? "×" :
+                            sym.type === "operator" && sym.value === "/" ? "÷" :
+                                sym.value;
+                    text(show, sym.x, sym.y);
+                }
+            }
+
+            function drawGroups() {
+                groups.forEach((group) => {
+                    if (group.symbols.length < 2) return;
+
+                    // Calculate bounding box
+                    let minX = Infinity,
+                        minY = Infinity,
+                        maxX = -Infinity,
+                        maxY = -Infinity;
+                    group.symbols.forEach((sym) => {
+                        minX = Math.min(minX, sym.x - 25);
+                        minY = Math.min(minY, sym.y - 25);
+                        maxX = Math.max(maxX, sym.x + 25);
+                        maxY = Math.max(maxY, sym.y + 25);
+                    });
+
+                    // Draw group container
+                    noFill();
+
+                    // Highlight if this group is being highlighted
+                    if (group.highlighted) {
+                        stroke(255, 204, 0);
+                        strokeWeight(3);
+                        fill(255, 255, 200, 50);
+                    } else {
+                        stroke(0, 80, 255);
+                        strokeWeight(2);
+                        fill(220, 240, 255, 80);
+                    }
+
+                    const isHighlighted = draggedGroup && draggedGroup.id === group.id;
+                    if (isHighlighted) {
+                        stroke(255, 50, 0);
+                        strokeWeight(3);
+                    }
+
+                    const padding = 10;
+                    const cornerRadius = 8;
+
+                    // Store these for hit detection
+                    group.bounds = {
+                        x: minX - padding,
+                        y: minY - padding,
+                        width: maxX - minX + padding * 2,
+                        height: maxY - minY + padding * 2,
+                    };
+
+                    rect(
+                        group.bounds.x,
+                        group.bounds.y,
+                        group.bounds.width,
+                        group.bounds.height,
+                        cornerRadius
+                    );
+
+                    // Add small group label
+                    fill(0, 80, 255);
+                    noStroke();
+                    textSize(12);
+                    textAlign(LEFT, TOP);
+                    text(group.type, minX - padding + 5, minY - padding + 5);
+                });
+            }
+
+            function draw() {
+                background("#f7fafc");
+
+                // Draw selection box
+                if (isSelecting) {
+                    noFill();
+                    stroke(0, 100, 255);
+                    strokeWeight(1);
+                    rect(
+                        selectStartX,
+                        selectStartY,
+                        mouseX - selectStartX,
+                        mouseY - selectStartY
+                    );
+                }
+
+                // Draw groups first (background)
+                drawGroups();
+
+                // Draw all symbols
+                symbols.forEach(drawSymbol);
+
+                // Draw validation messages if in debug mode
+                if (debugMode && validationMessages.length > 0) {
+                    fill(255, 0, 0);
+                    noStroke();
+                    textSize(14);
+                    textAlign(LEFT, TOP);
+                    let yPos = 10;
+                    validationMessages.forEach((msg) => {
+                        text(msg, 10, yPos);
+                        yPos += 20;
+                    });
+                }
+
+                evaluateEquation();
+            }
+
+            function mousePressed() {
+                if (isTutorialActive) return;
+
+                // Check if a group was clicked
+                for (let i = 0; i < groups.length; i++) {
+                    const group = groups[i];
+                    if (
+                        group.bounds &&
+                        mouseX > group.bounds.x &&
+                        mouseX < group.bounds.x + group.bounds.width &&
+                        mouseY > group.bounds.y &&
+                        mouseY < group.bounds.y + group.bounds.height
+                    ) {
+                        isDraggingGroup = true;
+                        draggedGroup = group;
+                        dragOffset.x = mouseX - group.bounds.x;
+                        dragOffset.y = mouseY - group.bounds.y;
+                        return;
+                    }
+                }
+
+                if (!keyIsDown(SHIFT)) {
+                    // Start selection box
+                    selectStartX = mouseX;
+                    selectStartY = mouseY;
+                    isSelecting = true;
+
+                    // If not adding to selection, clear previous selection
+                    if (!keyIsDown(CONTROL)) {
+                        selectedSymbols = [];
+                    }
+                } else {
+                    // Try to select individual symbol
+                    handleDragStart(mouseX, mouseY);
+                }
+            }
+
+            function touchStarted() {
+                if (isTutorialActive) return false;
+
+                const now = Date.now();
+                touchStartPos = { x: mouseX, y: mouseY };
+
+                // Add haptic feedback if available
+                if (navigator.vibrate && !isTouchDragging) {
+                    navigator.vibrate(20);
+                }
+
+                // Enhanced tap detection with time and distance thresholds
+                if (now - lastTouchTime < 300) {
+                    // Double tap - try to select individual symbol or group
+                    let handled = false;
+
+                    // Check for symbols first (more precise targets)
+                    for (let i = symbols.length - 1; i >= 0; i--) {
+                        const sym = symbols[i];
+                        if (dist(mouseX, mouseY, sym.x, sym.y) < 30) {
+                            // Slightly larger touch target
+                            // Toggle selection
+                            const index = selectedSymbols.indexOf(sym);
+                            if (index > -1) {
+                                selectedSymbols.splice(index, 1);
+                            } else {
+                                selectedSymbols.push(sym);
+                            }
+                            handled = true;
+                            break;
+                        }
+                    }
+
+                    // If no symbol was tapped, check for groups
+                    if (!handled) {
+                        for (let i = groups.length - 1; i >= 0; i--) {
+                            const group = groups[i];
+                            if (
+                                group.bounds &&
+                                mouseX > group.bounds.x &&
+                                mouseX < group.bounds.x + group.bounds.width &&
+                                mouseY > group.bounds.y &&
+                                mouseY < group.bounds.y + group.bounds.height
+                            ) {
+                                // Select all symbols in this group
+                                const groupSymbols = [...group.symbols];
+
+                                // Check if all symbols are already selected
+                                const allSelected = groupSymbols.every((sym) =>
+                                    selectedSymbols.includes(sym)
+                                );
+
+                                if (allSelected) {
+                                    // If all already selected, deselect them
+                                    selectedSymbols = selectedSymbols.filter(
+                                        (sym) => !groupSymbols.includes(sym)
+                                    );
+                                } else {
+                                    // Otherwise, add any that aren't already selected
+                                    groupSymbols.forEach((sym) => {
+                                        if (!selectedSymbols.includes(sym)) {
+                                            selectedSymbols.push(sym);
+                                        }
+                                    });
+                                }
+
+                                handled = true;
+                                break;
+                            }
+                        }
+                    }
+
+                    if (!handled) {
+                        // Double tap on empty space - clear selection
+                        selectedSymbols = [];
+                    }
+                } else {
+                    // Single tap - start dragging on hold
+                    isTouchDragging = false;
+                    setTimeout(() => {
+                        if (dist(touchStartPos.x, touchStartPos.y, mouseX, mouseY) < 10) {
+                            handleDragStart(mouseX, mouseY);
+                            isTouchDragging = true;
+                        }
+                    }, 200); // Hold for 200ms to start dragging
+                }
+
+                lastTouchTime = now;
+                return false; // Prevent default
+            }
+
+            function mouseDragged() {
+                if (isTutorialActive) return;
+
+                if (isDraggingGroup && draggedGroup) {
+                    // Move all symbols in the group
+                    const dx = mouseX - dragOffset.x - draggedGroup.bounds.x;
+                    const dy = mouseY - dragOffset.y - draggedGroup.bounds.y;
+
+                    draggedGroup.symbols.forEach((sym) => {
+                        sym.x += dx;
+                        sym.y += dy;
+                    });
+
+                    return;
+                }
+
+                if (isSelecting) {
+                    // Update selection box - nothing else to do here
+                    return;
+                }
+
+                if (draggedSymbol) {
+                    draggedSymbol.x = mouseX;
+                    draggedSymbol.y = mouseY;
+
+                    // Remove if dragged outside canvas
+                    if (isOutsideCanvas(mouseX, mouseY)) {
+                        removeSymbol(draggedSymbol);
+                        draggedSymbol = null;
+                    }
+                }
+            }
+
+            function touchMoved() {
+                if (isTutorialActive) return false;
+
+                if (isTouchDragging && draggedSymbol) {
+                    draggedSymbol.x = mouseX;
+                    draggedSymbol.y = mouseY;
+
+                    // Remove if dragged outside canvas
+                    if (isOutsideCanvas(mouseX, mouseY)) {
+                        removeSymbol(draggedSymbol);
+                        draggedSymbol = null;
+                    }
+                }
+                return false;
+            }
+
+            function mouseReleased() {
+                if (isTutorialActive) return;
+
+                if (isDraggingGroup) {
+                    isDraggingGroup = false;
+                    draggedGroup = null;
+                    saveState();
+                    evaluateEquation();
+                    return;
+                }
+
+                if (isSelecting) {
+                    // Finish selection box
+                    isSelecting = false;
+
+                    // Get min/max coordinates for selection box
+                    const x1 = min(selectStartX, mouseX);
+                    const y1 = min(selectStartY, mouseY);
+                    const x2 = max(selectStartX, mouseX);
+                    const y2 = max(selectStartY, mouseY);
+
+                    // Find symbols in selection box
+                    symbols.forEach((sym) => {
+                        if (sym.x >= x1 && sym.x <= x2 && sym.y >= y1 && sym.y <= y2) {
+                            if (!selectedSymbols.includes(sym)) {
+                                selectedSymbols.push(sym);
+                            }
+                        }
+                    });
+                }
+
+                if (draggedSymbol) {
+                    // Snap to grid when released
+                    snapSymbol(draggedSymbol);
+                    draggedSymbol = null;
+                    saveState();
+                }
+
+                evaluateEquation();
+            }
+
+            function touchEnded() {
+                if (isTutorialActive) return false;
+
+                isTouchDragging = false;
+
+                if (draggedSymbol) {
+                    snapSymbol(draggedSymbol);
+                    draggedSymbol = null;
+                    saveState();
+                    evaluateEquation();
+                }
+
+                return false;
+            }
+
+            function handleDragStart(x, y) {
+                // Find clicked symbol
+                let found = false;
+
+                for (let i = symbols.length - 1; i >= 0; i--) {
+                    const sym = symbols[i];
+                    if (dist(x, y, sym.x, sym.y) < 25) {
+                        // Toggle selection if CTRL key is down
+                        if (keyIsDown(CONTROL)) {
+                            const index = selectedSymbols.indexOf(sym);
+                            if (index > -1) {
+                                selectedSymbols.splice(index, 1);
+                            } else {
+                                selectedSymbols.push(sym);
+                            }
+                            found = true;
+                        } else {
+                            // Start dragging
+                            if (!selectedSymbols.includes(sym)) {
+                                selectedSymbols = [sym];
+                            }
+                            draggedSymbol = sym;
+                            found = true;
+                        }
+                        break;
+                    }
+                }
+
+                if (!found && !keyIsDown(CONTROL)) {
+                    selectedSymbols = [];
+                }
+            }
+
+            function groupSelectedSymbols() {
+                if (isTutorialActive) return;
+
+                if (selectedSymbols.length < 2) {
+                    showTemporaryMessage("Select at least 2 symbols to group");
+                    return;
+                }
+
+                // Check if all selected symbols are already in the same group
+                const groupsInvolved = new Set();
+                selectedSymbols.forEach((sym) => {
+                    const group = findSymbolGroup(sym);
+                    if (group) groupsInvolved.add(group);
+                });
+
+                // If already all in one group, do nothing
+                if (
+                    groupsInvolved.size === 1 &&
+                    [...groupsInvolved][0].symbols.length === selectedSymbols.length
+                ) {
+                    showTemporaryMessage("Symbols are already grouped together");
+                    return;
+                }
+
+                // Determine group type based on selected symbols
+                let groupType = determineGroupType(selectedSymbols);
+
+                // Create new group
+                const newGroup = {
+                    id: nextGroupId++,
+                    symbols: [...selectedSymbols],
+                    type: groupType,
+                    bounds: null, // Will be calculated during draw
+                    highlighted: true
+                };
+
+                // Remove symbols from previous groups
+                for (let i = 0; i < groups.length; i++) {
+                    const group = groups[i];
+                    const originalLength = group.symbols.length;
+
+                    group.symbols = group.symbols.filter(
+                        (sym) => !selectedSymbols.includes(sym)
+                    );
+
+                    if (
+                        group.symbols.length < 2 &&
+                        group.symbols.length < originalLength
+                    ) {
+                        groups.splice(i, 1);
+                        i--;
+                    }
+                }
+
+                groups.push(newGroup);
+                saveState();
+                evaluateEquation();
+
+                // Highlight the new group temporarily
+                setTimeout(() => {
+                    newGroup.highlighted = false;
+                }, 1500);
+            }
+
+            function determineGroupType(symbols) {
+                // Default group type
+                let groupType = "expression";
+
+                // Check for special group types
+                const types = symbols.map((sym) => sym.type);
+                const values = symbols.map((sym) => sym.value);
+
+                // Check for square root
+                if (types.includes("root")) {
+                    groupType = "sqrt";
+                }
+                // Check for fraction
+                else if (types.includes("fraction")) {
+                    groupType = "fraction";
+                }
+                // Check for exponent
+                else if (types.includes("exponent") || values.includes("^")) {
+                    groupType = "power";
+                }
+                // Check for parentheses
+                else if (values.includes("(") && values.includes(")")) {
+                    groupType = "parentheses";
+                }
+                // Check for function
+                else if (types.includes("function")) {
+                    groupType = "function";
+                }
+
+                return groupType;
+            }
+
+            function removeSymbol(symbol) {
+                const index = symbols.indexOf(symbol);
+                if (index > -1) {
+                    // Remove from any group it belongs to
+                    for (let i = 0; i < groups.length; i++) {
+                        const group = groups[i];
+                        const symIndex = group.symbols.indexOf(symbol);
+                        if (symIndex > -1) {
+                            group.symbols.splice(symIndex, 1);
+
+                            // Remove group if it has less than 2 symbols
+                            if (group.symbols.length < 2) {
+                                groups.splice(i, 1);
+                                i--;
+                            }
+                        }
+                    }
+
+                    // Remove from symbols array
+                    symbols.splice(index, 1);
+
+                    // Remove from selection
+                    const selIndex = selectedSymbols.indexOf(symbol);
+                    if (selIndex > -1) {
+                        selectedSymbols.splice(selIndex, 1);
+                    }
+                }
+            }
+
+            function clearCanvas() {
+                if (isTutorialActive) return;
+
+                if (symbols.length === 0) {
+                    showTemporaryMessage("Canvas is already empty");
+                    return;
+                }
+
+                // Save current state to history before clearing
+                saveState();
+
+                // Create an action for undo
+                actionHistory.push({
+                    type: 'clear',
+                    symbols: [...symbols],
+                    groups: [...groups],
+                    selectedSymbols: [...selectedSymbols]
+                });
+
+                symbols = [];
+                groups = [];
+                selectedSymbols = [];
+                resultDiv.html("");
+
+                // Update history panel
+                updateHistoryPanel();
+            }
+
+            function saveState() {
+                // Don't save if we're in the middle of an undo/redo
+                if (currentHistoryIndex !== -1 && currentHistoryIndex !== actionHistory.length - 1) return;
+
+                // Save the current state
+                const state = {
+                    symbols: JSON.parse(JSON.stringify(symbols)),
+                    groups: JSON.parse(JSON.stringify(groups)),
+                    selectedSymbols: JSON.parse(JSON.stringify(selectedSymbols)),
+                    result: resultDiv.elt.innerHTML
+                };
+
+                // Only save if different from last state
+                if (history.length === 0 || JSON.stringify(state) !== JSON.stringify(history[history.length - 1])) {
+                    history.push(state);
+
+                    // Limit history size
+                    if (history.length > 50) {
+                        history.shift();
+                    }
+
+                    // Update history panel
+                    updateHistoryPanel();
+                }
+            }
+
+            function undoLastAction() {
+                if (isTutorialActive) return;
+
+                if (history.length < 2) {
+                    showTemporaryMessage("Nothing to undo");
+                    return;
+                }
+
+                // Remove current state
+                history.pop();
+
+                // Get previous state
+                const prevState = history[history.length - 1];
+
+                // Restore state
+                symbols = JSON.parse(JSON.stringify(prevState.symbols));
+                groups = JSON.parse(JSON.stringify(prevState.groups));
+                selectedSymbols = JSON.parse(JSON.stringify(prevState.selectedSymbols));
+                resultDiv.html(prevState.result);
+
+                showTemporaryMessage("Undo successful");
+
+                // Update history panel
+                updateHistoryPanel();
+            }
+
+            function updateHistoryPanel() {
+                const historyPanel = document.getElementById('history-panel');
+                const historyList = document.getElementById('history-list');
+
+                if (history.length === 0) {
+                    historyPanel.classList.add('hidden');
+                    return;
+                }
+
+                historyPanel.classList.remove('hidden');
+                historyList.innerHTML = '';
+
+                // Show last 5 history items (most recent first)
+                const itemsToShow = history.slice().reverse().slice(0, 5);
+
+                itemsToShow.forEach((state, index) => {
+                    const expr = buildExpressionFromState(state);
+                    if (!expr) return;
+
+                    const item = document.createElement('div');
+                    item.className = 'history-item p-2 border-b border-gray-200';
+                    item.innerHTML = `
+                        <div class="font-medium">${expr}</div>
+                        <div class="text-sm text-gray-500">${state.result || 'Not evaluated'}</div>
+                    `;
+
+                    item.addEventListener('click', () => {
+                        restoreFromHistory(history.length - 1 - index);
+                    });
+
+                    historyList.appendChild(item);
+                });
+            }
+
+            function buildExpressionFromState(state) {
+                // Simplified version just for display in history
+                try {
+                    const symbols = state.symbols;
+                    if (symbols.length === 0) return null;
+
+                    // Sort left to right
+                    const sorted = [...symbols].sort((a, b) => a.x - b.x);
+                    return sorted.map(s => s.value).join('');
+                } catch (e) {
+                    return "Expression";
+                }
+            }
+
+            function restoreFromHistory(index) {
+                if (index < 0 || index >= history.length) return;
+
+                const state = history[index];
+                symbols = JSON.parse(JSON.stringify(state.symbols));
+                groups = JSON.parse(JSON.stringify(state.groups));
+                selectedSymbols = JSON.parse(JSON.stringify(state.selectedSymbols));
+                resultDiv.html(state.result);
+
+                // Truncate history to this point
+                history = history.slice(0, index + 1);
+
+                // Update history panel
+                updateHistoryPanel();
+            }
+
+            function windowResized() {
+                canvasBounds = select("#defaultCanvas0").elt.getBoundingClientRect();
+
+                // Adjust canvas size based on container
+                const container = document.getElementById("canvas-container");
+                let newWidth = min(container.clientWidth - 30, 800);
+
+                // Keep original height
+                resizeCanvas(newWidth, 200);
+
+                // Make sure symbols stay within bounds after resize
+                symbols.forEach((sym) => {
+                    sym.x = constrain(sym.x, 20, width - 20);
+                    sym.y = constrain(sym.y, 20, height - 20);
+                });
+            }
+
+            function evaluateEquation() {
+                if (symbols.length === 0) {
+                    resultDiv.html("");
+                    validationMessages = [];
+                    return;
+                }
+
+                try {
+                    const expression = buildExpression();
+                    if (!expression) {
+                        resultDiv.html("");
+                        return;
+                    }
+
+                    // Skip evaluation if nothing has changed
+                    if (expression === lastEvaluation) return;
+                    lastEvaluation = expression;
+
+                    // Add to history if it's a complete expression
+                    if (expression.length > 1) {
+                        addToEquationHistory(expression);
+                    }
+
+                    // Check if expression is an equation
+                    if (expression.includes("=")) {
+                        const sides = expression.split("=");
+                        if (sides.length !== 2) {
+                            showError("Invalid equation - must have exactly one equals sign");
+                            return;
+                        }
+
+                        let leftResult, rightResult;
+                        try {
+                            leftResult = math.evaluate(sides[0]);
+                            rightResult = math.evaluate(sides[1]);
+
+                            resultDiv.html(
+                                `${sides[0]} = ${sides[1]} <span class="text-sm opacity-70">${leftResult === rightResult ? "(True)" : "(False)"
+                                }</span>`
+                            );
+
+                            if (leftResult === rightResult) {
+                                resultDiv.removeClass("text-red-600");
+                            } else {
+                                showError("Equation is not balanced");
+                            }
+                        } catch (err) {
+                            resultDiv.html(`${sides[0]} = ${sides[1]}`);
+                            resultDiv.removeClass("text-red-600");
+                        }
+                    } else {
+                        // Evaluate as expression
+                        try {
+                            const result = math.evaluate(expression);
+                            resultDiv.html(`${expression} = ${result}`);
+                            resultDiv.removeClass("text-red-600");
+                            resultDiv.addClass("updated");
+                            setTimeout(() => {
+                                resultDiv.removeClass("updated");
+                            }, 500);
+                        } catch (err) {
+                            // Just show the expression without evaluation
+                            resultDiv.html(expression);
+                            resultDiv.removeClass("text-red-600");
+
+                            // Show specific error if we can determine it
+                            if (err.message.includes("undefined")) {
+                                showError("Incomplete expression - missing operands?");
+                            } else if (err.message.includes("parenthesis")) {
+                                showError("Mismatched parentheses - check your opening and closing brackets");
+                            } else {
+                                showError("Expression cannot be evaluated - check your syntax");
+                            }
+                        }
+                    }
+                } catch (err) {
+                    validationMessages = [`Error: ${err.message}`];
+                    if (debugMode) console.error(err);
+                }
+            }
+
+            function showError(message) {
+                resultDiv.addClass("text-red-600");
+                validationMessages = [message];
+
+                // Show temporary error message
+                showTemporaryMessage(message, 3000);
+            }
+
+            function addToEquationHistory(expression) {
+                // Check if this expression is already in history
+                const existingIndex = history.findIndex(item =>
+                    buildExpressionFromState(item) === expression
+                );
+
+                if (existingIndex === -1) {
+                    // Add to history
+                    history.push({
+                        expression,
+                        timestamp: new Date().toLocaleTimeString(),
+                        symbols: JSON.parse(JSON.stringify(symbols)),
+                        groups: JSON.parse(JSON.stringify(groups))
+                    });
+
+                    // Limit history size
+                    if (history.length > 10) {
+                        history.shift();
+                    }
+                }
+            }
+
+            function buildExpression() {
+                if (symbols.length === 0) return null;
+
+                // First handle groups to build sub-expressions
+                const groupedExpressions = {};
+
+                groups.forEach((group) => {
+                    if (group.symbols.length < 2) return;
+
+                    // Sort symbols within the group (left to right)
+                    const sortedSymbols = [...group.symbols].sort((a, b) => a.x - b.x);
+
+                    let expr = "";
+
+                    switch (group.type) {
+                        case "sqrt":
+                            const rootSymbol = group.symbols.find((s) => s.type === "root");
+                            if (!rootSymbol) return;
+
+                            // Get symbols except the root symbol
+                            const innerSymbols = group.symbols.filter(
+                                (s) => s !== rootSymbol
+                            );
+
+                            // Sort by x position
+                            innerSymbols.sort((a, b) => a.x - b.x);
+
+                            // Build inner expression
+                            const innerExpr = innerSymbols.map((s) => s.value).join("");
+                            expr = `sqrt(${innerExpr})`;
+                            break;
+
+                        case "fraction":
+                            // Find fraction symbol
+                            const fracSymbol = group.symbols.find(
+                                (s) => s.type === "fraction"
+                            );
+                            if (!fracSymbol) return;
+
+                            // Split symbols into top and bottom based on y position
+                            const yPos = fracSymbol.y;
+                            const top = group.symbols
+                                .filter((s) => s !== fracSymbol && s.y < yPos)
+                                .sort((a, b) => a.x - b.x)
+                                .map((s) => s.value)
+                                .join("");
+
+                            const bottom = group.symbols
+                                .filter((s) => s !== fracSymbol && s.y > yPos)
+                                .sort((a, b) => a.x - b.x)
+                                .map((s) => s.value)
+                                .join("");
+
+                            expr = `(${top})/(${bottom})`;
+                            break;
+
+                        case "parentheses":
+                            expr =
+                                "(" +
+                                sortedSymbols
+                                    .filter((s) => s.value !== "(" && s.value !== ")")
+                                    .map((s) => s.value)
+                                    .join("") +
+                                ")";
+                            break;
+
+                        case "power":
+                            const baseSymbols = [];
+                            const exponentSymbols = [];
+
+                            // Find the exponent symbol
+                            const expSymbol = group.symbols.find(
+                                (s) => s.type === "exponent" || s.value === "^"
+                            );
+
+                            if (expSymbol) {
+                                // Separate into base and exponent
+                                group.symbols.forEach((s) => {
+                                    if (s === expSymbol) return;
+
+                                    if (
+                                        s.x < expSymbol.x ||
+                                        (s.x === expSymbol.x && s.y > expSymbol.y)
+                                    ) {
+                                        baseSymbols.push(s);
+                                    } else {
+                                        exponentSymbols.push(s);
+                                    }
+                                });
+
+                                const base = baseSymbols
+                                    .sort((a, b) => a.x - b.x)
+                                    .map((s) => s.value)
+                                    .join("");
+                                const exp = exponentSymbols
+                                    .sort((a, b) => a.x - b.x)
+                                    .map((s) => s.value)
+                                    .join("");
+
+                                expr = `pow(${base}, ${exp})`;
+                            }
+                            break;
+
+                        case "function":
+                            // Handle function calls like sin(x)
+                            const funcSymbol = group.symbols.find(s => s.type === "function");
+                            if (funcSymbol) {
+                                const args = group.symbols
+                                    .filter(s => s !== funcSymbol)
+                                    .sort((a, b) => a.x - b.x)
+                                    .map(s => s.value)
+                                    .join("");
+                                expr = `${funcSymbol.value}(${args})`;
+                            }
+                            break;
+
+                        default:
+                            // Generic expression - just concatenate left to right
+                            expr = sortedSymbols.map((s) => s.value).join("");
+                    }
+
+                    groupedExpressions[group.id] = expr;
+                });
+
+                // Find ungrouped symbols
+                const ungroupedSymbols = symbols.filter(
+                    (sym) => !groups.some((g) => g.symbols.includes(sym))
+                );
+
+                // Sort them left to right
+                ungroupedSymbols.sort((a, b) => a.x - b.x);
+
+                // Build final expression by substituting group expressions
+                let expressionParts = [];
+
+                for (let i = 0; i < ungroupedSymbols.length; i++) {
+                    const sym = ungroupedSymbols[i];
+                    expressionParts.push(sym.value);
+                }
+
+                // Basic expression is just the joined symbols
+                let expression = expressionParts.join("");
+
+                // Replace group placeholders with their expressions
+                for (const groupId in groupedExpressions) {
+                    const groupExpr = groupedExpressions[groupId];
+                    if (groupExpr) {
+                        // Find where to insert this group expression based on position
+                        const group = findGroupById(parseInt(groupId));
+                        if (group) {
+                            // Calculate group center x
+                            const groupCenterX =
+                                group.symbols.reduce((sum, s) => sum + s.x, 0) /
+                                group.symbols.length;
+
+                            // Find insertion index
+                            let insertIndex = 0;
+                            while (
+                                insertIndex < ungroupedSymbols.length &&
+                                ungroupedSymbols[insertIndex].x < groupCenterX
+                            ) {
+                                insertIndex++;
+                            }
+
+                            // Insert at appropriate position
+                            expression =
+                                expression.slice(0, insertIndex) +
+                                groupExpr +
+                                expression.slice(insertIndex);
+                        }
+                    }
+                }
+
+                // Clean up the expression
+                expression = expression.replace(/\s+/g, ""); // Remove any whitespace
+
+                // Replace multiplication signs for better evaluation
+                expression = expression.replace(/×/g, "*").replace(/÷/g, "/");
+
+                return expression;
+            }
+
+            function showInstructions() {
+                document.getElementById("instructions-modal").style.display = "block";
+                document.querySelector(".modal-content").setAttribute('aria-modal', 'true');
+                document.querySelector(".modal-content").setAttribute('role', 'dialog');
+                document.querySelector(".modal-content").setAttribute('aria-labelledby', 'modal-title');
+            }
+
+            function hideInstructions() {
+                document.getElementById("instructions-modal").style.display = "none";
+            }
+
+            // Debounce helper function
+            function debounce(func, wait) {
+                let timeout;
+                return function () {
+                    const context = this;
+                    const args = arguments;
+                    clearTimeout(timeout);
+                    timeout = setTimeout(() => func.apply(context, args), wait);
+                };
+            }
+        </script>
+    </div>
+</body>
+
+</html>

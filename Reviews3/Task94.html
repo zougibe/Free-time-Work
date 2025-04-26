@@ -1,0 +1,1054 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Social Pulse | Fan Feedback Board Designer</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    fontFamily: {
+                        inter: ['Inter', 'sans-serif'],
+                        poppins: ['Poppins', 'sans-serif']
+                    }
+                }
+            }
+        };
+    </script>
+    <!-- Konva.js CDN -->
+    <script src="https://unpkg.com/konva@9/konva.min.js"></script>
+    <!-- Google Fonts -->
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Poppins:wght@400;500;600;700&display=swap"
+        rel="stylesheet">
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root {
+            --bg-primary: #F8FAFC;
+            --bg-secondary: #F1F5F9;
+            --accent-purple: #8B5CF6;
+            --accent-teal: #14B8A6;
+            --accent-amber: #F59E0B;
+            --text-primary: #0F172A;
+            --text-secondary: #334155;
+            --canvas-bg: #E2E8F0;
+            --instagram: #E1306C;
+            --twitter: #1DA1F2;
+            --tiktok: #69C9D0;
+            --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .dark {
+            --bg-primary: #0F172A;
+            --bg-secondary: #1E293B;
+            --accent-purple: #7C3AED;
+            --accent-teal: #2DD4BF;
+            --accent-amber: #F59E0B;
+            --text-primary: #F1F5F9;
+            --text-secondary: #CBD5E1;
+            --canvas-bg: #1E293B;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--bg-primary);
+            color: var(--text-primary);
+            transition: var(--transition);
+        }
+
+        h1,
+        h2,
+        h3,
+        h4,
+        h5,
+        h6 {
+            font-family: 'Poppins', sans-serif;
+        }
+
+        #canvas-container {
+            background-color: var(--canvas-bg);
+            border-radius: 12px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+            transition: var(--transition);
+        }
+
+        .card {
+            background-color: var(--bg-secondary);
+            border-radius: 12px;
+            transition: var(--transition);
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+            border: 1px solid rgba(0, 0, 0, 0.05);
+        }
+
+        .dark .card {
+            border: 1px solid rgba(255, 255, 255, 0.05);
+        }
+
+        .btn {
+            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+            border-radius: 8px;
+            font-weight: 500;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        }
+
+        .btn:active {
+            transform: translateY(0);
+        }
+
+        .btn-purple {
+            background-color: var(--accent-purple);
+            color: white;
+        }
+
+        .btn-teal {
+            background-color: var(--accent-teal);
+            color: white;
+        }
+
+        .btn-amber {
+            background-color: var(--accent-amber);
+            color: white;
+        }
+
+        .asset-button {
+            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+            border-radius: 8px;
+            position: relative;
+            overflow: hidden;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+        }
+
+        .asset-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        .vibe-meter {
+            height: 12px;
+            border-radius: 6px;
+            background: linear-gradient(to right, #EF4444, #F59E0B, #10B981);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .vibe-indicator {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 12px;
+            height: 12px;
+            background-color: white;
+            border-radius: 50%;
+            box-shadow: 0 0 8px rgba(0, 0, 0, 0.2);
+            transform: translateX(0);
+            transition: transform 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .platform-icon {
+            width: 24px;
+            height: 24px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 50%;
+            margin-right: 8px;
+        }
+
+        .instagram-icon {
+            background: linear-gradient(45deg, #F58529, #DD2A7B, #8134AF);
+            color: white;
+        }
+
+        .twitter-icon {
+            background-color: #1DA1F2;
+            color: white;
+        }
+
+        .tiktok-icon {
+            background-color: black;
+            color: white;
+        }
+
+        /* Custom tooltip */
+        .tooltip {
+            position: relative;
+        }
+
+        .tooltip:hover::before {
+            content: attr(data-tooltip);
+            position: absolute;
+            bottom: 100%;
+            left: 50%;
+            transform: translateX(-50%);
+            padding: 6px 10px;
+            background-color: var(--bg-secondary);
+            color: var(--text-primary);
+            border-radius: 6px;
+            font-size: 12px;
+            white-space: nowrap;
+            z-index: 10;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+            border: 1px solid rgba(0, 0, 0, 0.1);
+        }
+
+        .dark .tooltip:hover::before {
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        /* Animation keyframes */
+        @keyframes pulse {
+            0% {
+                transform: scale(1);
+            }
+
+            50% {
+                transform: scale(1.05);
+            }
+
+            100% {
+                transform: scale(1);
+            }
+        }
+
+        .pulse {
+            animation: pulse 1.5s infinite;
+        }
+
+        @keyframes slide-up {
+            0% {
+                transform: translateY(20px);
+                opacity: 0;
+            }
+
+            100% {
+                transform: translateY(0);
+                opacity: 1;
+            }
+        }
+
+        .slide-up {
+            animation: slide-up 0.3s forwards;
+        }
+
+        /* Custom scrollbar */
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: var(--bg-secondary);
+            border-radius: 4px;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: var(--accent-purple);
+            border-radius: 4px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: var(--accent-purple);
+        }
+    </style>
+</head>
+
+<body class="min-h-screen flex flex-col">
+    <!-- Header -->
+    <header
+        class="bg-gradient-to-r from-purple-300 to-blue-400 dark:from-purple-600/10 dark:to-blue-500/10 py-4 px-6 flex justify-between items-center shadow-sm">
+        <div class="flex items-center text-gray-800 dark:text-white">
+            <i class="fas fa-comment-dots text-2xl mr-3 text-purple-600 dark:text-purple-400"></i>
+            <h1 class="text-2xl font-bold">Social Pulse</h1>
+        </div>
+        <div class="flex items-center gap-4">
+            <span id="toggle-text" class="text-sm font-medium hidden sm:inline-flex items-center">
+                <i class="fas fa-moon mr-2"></i>
+                <span>Toggle Theme</span>
+            </span>
+            <label class="relative inline-flex items-center cursor-pointer">
+                <input type="checkbox" id="mode-toggle" class="sr-only peer">
+                <div class="w-11 h-6 bg-gray-600 rounded-full peer peer-checked:bg-gray-200/50 transition-all"></div>
+                <div
+                    class="absolute left-1 top-1 w-4 h-4 bg-gray-800/80 dark:bg-gray-200/80 rounded-full transition-all peer-checked:translate-x-5">
+                </div>
+            </label>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="flex-1 p-4 md:p-6 flex flex-col lg:flex-row gap-6">
+        <!-- Left Panel (Tools) -->
+        <div class="lg:w-1/4 space-y-6">
+            <!-- Platform Selection Card -->
+            <div class="card p-5">
+                <h2 class="text-xl font-semibold mb-4 flex items-center">
+                    <i class="fas fa-globe-americas mr-2 text-purple-500"></i>
+                    Platform
+                </h2>
+                <div class="flex flex-col gap-2">
+                    <label
+                        class="inline-flex items-center p-3 rounded-lg cursor-pointer hover:bg-purple-500/10 transition-all has-[:checked]:bg-purple-500/10">
+                        <input type="radio" name="platform" value="instagram" class="sr-only peer" checked>
+                        <div class="platform-icon instagram-icon">
+                            <i class="fab fa-instagram"></i>
+                        </div>
+                        <span>Instagram</span>
+                        <!-- <span class="ml-auto text-purple-500"><i class="fas fa-check"></i></span> -->
+                    </label>
+                    <label
+                        class="inline-flex items-center p-3 rounded-lg cursor-pointer hover:bg-blue-500/10 transition-all has-[:checked]:bg-blue-500/10">
+                        <input type="radio" name="platform" value="twitter" class="sr-only peer">
+                        <div class="platform-icon twitter-icon">
+                            <i class="fab fa-twitter"></i>
+                        </div>
+                        <span>Twitter</span>
+                        <span class="ml-auto text-purple-500"></span>
+                    </label>
+                    <label
+                        class="inline-flex items-center p-3 rounded-lg cursor-pointer hover:bg-cyan-500/10 transition-all has-[:checked]:bg-cyan-500/10">
+                        <input type="radio" name="platform" value="tiktok" class="sr-only peer">
+                        <div class="platform-icon tiktok-icon">
+                            <i class="fab fa-tiktok"></i>
+                        </div>
+                        <span>TikTok</span>
+                        <span class="ml-auto text-purple-500"></span>
+                    </label>
+                </div>
+            </div>
+
+            <!-- Feedback Assets Card -->
+            <div class="card p-5">
+                <h2 class="text-xl font-semibold mb-4 flex items-center">
+                    <i class="fas fa-thumbs-up mr-2 text-teal-500"></i>
+                    Feedback Elements
+                </h2>
+                <div id="assets" class="grid grid-cols-2 gap-3 max-h-[300px] overflow-y-auto pr-2">
+                    <!-- Will be populated by JavaScript -->
+                </div>
+            </div>
+
+            <!-- Actions Card -->
+            <div class="card p-5">
+                <h2 class="text-xl font-semibold mb-4 flex items-center">
+                    <i class="fas fa-sliders-h mr-2 text-amber-500"></i>
+                    Actions
+                </h2>
+                <div class="flex flex-col gap-3">
+                    <button id="suggest-theme" class="btn btn-teal py-3 px-4">
+                        <i class="fas fa-paint-brush"></i>
+                        <span>Trending Theme</span>
+                    </button>
+                    <button id="save-board" class="btn btn-purple py-3 px-4">
+                        <i class="fas fa-save"></i>
+                        <span>Save Board</span>
+                    </button>
+                    <button id="export-png" class="btn btn-amber py-3 px-4">
+                        <i class="fas fa-file-export"></i>
+                        <span>Export as PNG</span>
+                    </button>
+                    <button id="clear-board" class="btn py-3 px-4 bg-gray-700 text-white hover:bg-gray-600">
+                        <i class="fas fa-trash-alt"></i>
+                        <span>Clear Board</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Middle Panel (Canvas) -->
+        <div class="lg:w-2/4 flex-1 flex flex-col">
+            <div class="flex items-center justify-between mb-4">
+                <h2 class="text-xl font-semibold flex items-center">
+                    <i class="fas fa-palette mr-2 text-blue-500"></i>
+                    Feedback Board
+                </h2>
+                <div class="tooltip" data-tooltip="Drag elements onto the board">
+                    <i class="fas fa-question-circle text-gray-400 hover:text-gray-600 dark:hover:text-gray-200"></i>
+                </div>
+            </div>
+            <div id="canvas-container" class="flex-1 min-h-[500px]"></div>
+        </div>
+
+        <!-- Right Panel (Community Vibe) -->
+        <div class="lg:w-1/4 flex flex-col gap-6">
+            <!-- Vibe Score Card -->
+            <div class="card p-5">
+                <h2 class="text-xl font-semibold mb-4 flex items-center">
+                    <i class="fas fa-chart-line mr-2 text-green-500"></i>
+                    Community Vibe
+                </h2>
+
+                <div class="mb-4">
+                    <div class="flex justify-between mb-2 text-sm text-gray-500 dark:text-gray-400">
+                        <span>Negative</span>
+                        <span>Positive</span>
+                    </div>
+                    <div class="vibe-meter">
+                        <div id="vibe-indicator" class="vibe-indicator"></div>
+                    </div>
+                </div>
+
+                <div class="flex items-center justify-between">
+                    <span class="text-lg font-semibold">Score:</span>
+                    <div id="vibe-score"
+                        class="text-3xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-purple-500 to-teal-400">
+                        0
+                    </div>
+                </div>
+
+                <p id="vibe-message" class="mt-3 text-sm text-gray-500 dark:text-gray-400">Add feedback elements to see
+                    the community vibe!</p>
+            </div>
+
+            <!-- Board Stats Card -->
+            <div class="card p-5">
+                <h2 class="text-xl font-semibold mb-4 flex items-center">
+                    <i class="fas fa-clipboard-list mr-2 text-blue-500"></i>
+                    Board Stats
+                </h2>
+
+                <div class="space-y-3 text-sm">
+                    <div class="flex justify-between items-center">
+                        <span class="text-gray-600 dark:text-gray-300">Comments:</span>
+                        <span id="comment-count" class="font-semibold">0</span>
+                    </div>
+                    <div class="flex justify-between items-center">
+                        <span class="text-gray-600 dark:text-gray-300">Emojis:</span>
+                        <span id="emoji-count" class="font-semibold">0</span>
+                    </div>
+                    <div class="flex justify-between items-center">
+                        <span class="text-gray-600 dark:text-gray-300">Ratings:</span>
+                        <span id="rating-count" class="font-semibold">0</span>
+                    </div>
+                    <div class="border-t border-gray-200 dark:border-gray-700 my-2 pt-2"></div>
+                    <div class="flex justify-between items-center">
+                        <span class="text-gray-600 dark:text-gray-300">Total Elements:</span>
+                        <span id="total-count" class="font-semibold">0</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Tips Card -->
+            <div class="card p-5">
+                <h2 class="text-xl font-semibold mb-3 flex items-center">
+                    <i class="fas fa-lightbulb mr-2 text-yellow-400"></i>
+                    Tips
+                </h2>
+
+                <ul class="space-y-2 text-sm">
+                    <li class="flex items-start">
+                        <i class="fas fa-check-circle text-green-400 mt-1 mr-2"></i>
+                        <span class="text-gray-600 dark:text-gray-300">Drag elements from the left panel to the
+                            board</span>
+                    </li>
+                    <li class="flex items-start">
+                        <i class="fas fa-check-circle text-green-400 mt-1 mr-2"></i>
+                        <span class="text-gray-600 dark:text-gray-300">Click elements on the board to customize
+                            them</span>
+                    </li>
+                    <li class="flex items-start">
+                        <i class="fas fa-check-circle text-green-400 mt-1 mr-2"></i>
+                        <span class="text-gray-600 dark:text-gray-300">Try different platforms to see styling
+                            variations</span>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </main>
+
+    <script>
+        // Feedback Assets
+        const feedbackAssets = [
+            { id: 1, type: 'comment', content: 'Love this! 😍', username: '@fan1', scoreValue: 10, category: 'positive' },
+            { id: 2, type: 'comment', content: 'Amazing content!', username: '@superfan', scoreValue: 10, category: 'positive' },
+            { id: 3, type: 'comment', content: 'Keep it up! 👏', username: '@supporter', scoreValue: 8, category: 'positive' },
+            { id: 4, type: 'emoji', content: '❤️', scoreValue: 5, category: 'positive' },
+            { id: 5, type: 'emoji', content: '🔥', scoreValue: 5, category: 'positive' },
+            { id: 6, type: 'emoji', content: '👍', scoreValue: 4, category: 'positive' },
+            { id: 7, type: 'star', rating: 5, content: '★★★★★', scoreValue: 25, category: 'positive' },
+            { id: 8, type: 'star', rating: 4, content: '★★★★☆', scoreValue: 20, category: 'positive' },
+            { id: 9, type: 'star', rating: 3, content: '★★★☆☆', scoreValue: 15, category: 'neutral' },
+            { id: 10, type: 'comment', content: 'Could be better...', username: '@critic', scoreValue: -5, category: 'negative' },
+            { id: 11, type: 'emoji', content: '😕', scoreValue: -3, category: 'negative' },
+            { id: 12, type: 'star', rating: 2, content: '★★☆☆☆', scoreValue: 5, category: 'negative' },
+        ];
+
+        // Trending Themes
+        const themes = [
+            {
+                name: 'Neon Nights',
+                bgColor: 'linear-gradient(135deg, #000428, #004e92)',
+                font: 'Poppins',
+                accentColor: '#FF00FF'
+            },
+            {
+                name: 'Pastel Dreams',
+                bgColor: 'linear-gradient(135deg, #a8edea, #fed6e3)',
+                font: 'Inter',
+                accentColor: '#9D50BB'
+            },
+            {
+                name: 'Cyber Tech',
+                bgColor: 'linear-gradient(135deg, #0F2027, #203A43, #2C5364)',
+                font: 'Poppins',
+                accentColor: '#00F260'
+            },
+            {
+                name: 'Sunset Vibes',
+                bgColor: 'linear-gradient(135deg, #FF416C, #FF4B2B)',
+                font: 'Inter',
+                accentColor: '#FFCC70'
+            },
+        ];
+
+        // DOM Elements
+        const modeToggle = document.getElementById('mode-toggle');
+        const textToggle = document.getElementById('toggle-text');
+        const assetsDiv = document.getElementById('assets');
+        const canvasContainer = document.getElementById('canvas-container');
+        const vibeScore = document.getElementById('vibe-score');
+        const vibeIndicator = document.getElementById('vibe-indicator');
+        const vibeMessage = document.getElementById('vibe-message');
+        const commentCount = document.getElementById('comment-count');
+        const emojiCount = document.getElementById('emoji-count');
+        const ratingCount = document.getElementById('rating-count');
+        const totalCount = document.getElementById('total-count');
+        const platformRadios = document.querySelectorAll('input[name="platform"]');
+        const suggestThemeBtn = document.getElementById('suggest-theme');
+        const saveBoardBtn = document.getElementById('save-board');
+        const exportPngBtn = document.getElementById('export-png');
+        const clearBoardBtn = document.getElementById('clear-board');
+
+        // State
+        let currentVibe = 0;
+        let currentPlatform = 'instagram';
+        let canvasObjects = [];
+        let counts = {
+            comment: 0,
+            emoji: 0,
+            star: 0,
+            total: 0
+        };
+
+        // Initialize Konva
+        const stage = new Konva.Stage({
+            container: 'canvas-container',
+            width: canvasContainer.offsetWidth,
+            height: canvasContainer.offsetHeight,
+        });
+
+        const layer = new Konva.Layer();
+        stage.add(layer);
+
+        // Helper function to draw rounded rectangle path
+        function drawRoundedRectPath(ctx, x, y, width, height, radius) {
+            ctx.beginPath();
+            ctx.moveTo(x + radius, y);
+            ctx.lineTo(x + width - radius, y);
+            ctx.quadraticCurveTo(x + width, y, x + width, y + radius);
+            ctx.lineTo(x + width, y + height - radius);
+            ctx.quadraticCurveTo(x + width, y + height, x + width - radius, y + height);
+            ctx.lineTo(x + radius, y + height);
+            ctx.quadraticCurveTo(x, y + height, x, y + height - radius);
+            ctx.lineTo(x, y + radius);
+            ctx.quadraticCurveTo(x, y, x + radius, y);
+            ctx.closePath();
+        }
+
+        // Populate Assets
+        function populateAssets() {
+            feedbackAssets.forEach(asset => {
+                const button = document.createElement('button');
+                button.className = `asset-button w-full p-3 mb-2 ${asset.category === 'positive'
+                    ? 'bg-gradient-to-r from-green-500 to-emerald-600'
+                    : asset.category === 'negative'
+                        ? 'bg-gradient-to-r from-red-500 to-rose-600'
+                        : 'bg-gradient-to-r from-yellow-500 to-amber-600'
+                    } text-white rounded-lg text-center`;
+
+                if (asset.type === 'comment') {
+                    button.innerHTML = `<div class="text-sm font-semibold">${asset.username}</div>
+                                <div class="text-xs">${asset.content}</div>`;
+                } else if (asset.type === 'emoji') {
+                    button.innerHTML = `<div class="text-2xl">${asset.content}</div>`;
+                } else if (asset.type === 'star') {
+                    button.innerHTML = `<div class="text-sm">${asset.content}</div>`;
+                }
+
+                button.setAttribute('draggable', 'true');
+                button.addEventListener('dragstart', (e) => {
+                    e.dataTransfer.setData('text/plain', asset.id);
+
+                    const previewCanvas = document.createElement('canvas');
+                    const ctx = previewCanvas.getContext('2d');
+
+                    // Set canvas size based on asset type
+                    if (asset.type === 'comment') {
+                        previewCanvas.width = 200;
+                        previewCanvas.height = 80;
+                    } else if (asset.type === 'emoji') {
+                        previewCanvas.width = 60;
+                        previewCanvas.height = 60;
+                    } else if (asset.type === 'star') {
+                        previewCanvas.width = 110;
+                        previewCanvas.height = 40;
+                    }
+
+                    // Draw the preview
+                    ctx.beginPath();
+                    drawRoundedRectPath(ctx, 0, 0, previewCanvas.width, previewCanvas.height, 12);
+                    ctx.fillStyle = '#fff';
+                    ctx.fill();
+                    ctx.lineWidth = 2;
+                    ctx.strokeStyle = currentPlatform === 'instagram' ? '#E1306C' : currentPlatform === 'twitter' ? '#1DA1F2' : '#69C9D0';
+                    ctx.stroke();
+
+                    if (asset.type === 'comment') {
+                        ctx.fillStyle = currentPlatform === 'instagram' ? '#E1306C' : currentPlatform === 'twitter' ? '#1DA1F2' : '#69C9D0';
+                        ctx.font = 'bold 14px Inter, Arial, sans-serif';
+                        ctx.fillText(asset.username, 10, 20);
+
+                        ctx.fillStyle = '#333';
+                        ctx.font = '14px Inter, Arial, sans-serif';
+                        ctx.fillText(asset.content, 10, 45);
+                    } else if (asset.type === 'emoji') {
+                        ctx.font = '40px serif';
+                        ctx.textAlign = 'center';
+                        ctx.textBaseline = 'middle';
+                        ctx.fillText(asset.content, previewCanvas.width / 2, previewCanvas.height / 2);
+                    } else if (asset.type === 'star') {
+                        ctx.fillStyle = '#F59E0B';
+                        ctx.font = '20px Arial';
+                        ctx.textAlign = 'left';
+                        ctx.textBaseline = 'middle';
+                        ctx.fillText(asset.content, 10, 20);
+                    }
+
+                    // Set the drag image
+                    e.dataTransfer.setDragImage(previewCanvas, previewCanvas.width / 2, previewCanvas.height / 2);
+                });
+
+                button.dataset.assetId = asset.id;
+                assetsDiv.appendChild(button);
+            });
+        }
+
+        // Add asset to canvas when clicked
+        assetsDiv.addEventListener('click', (e) => {
+            const button = e.target.closest('.asset-button');
+            if (button && button.dataset.assetId) {
+                const asset = feedbackAssets.find(a => a.id == button.dataset.assetId);
+                if (asset) {
+                    addAssetToCanvas(asset);
+                }
+            }
+        });
+
+        // Platform Selection
+        platformRadios.forEach(radio => {
+            radio.addEventListener('change', (e) => {
+                currentPlatform = e.target.value;
+                updatePlatformStyling();
+
+                // Update UI to show selected platform
+                document.querySelectorAll('label').forEach(label => {
+                    label.querySelector('span:last-child').innerHTML = '';
+                });
+                e.target.closest('label').querySelector('span:last-child').innerHTML = '<i class="fas fa-check"></i>';
+            });
+        });
+
+        // Update platform styling for all objects
+        function updatePlatformStyling() {
+            canvasObjects.forEach(obj => {
+                if (obj.asset.type === 'comment') {
+                    const platformColor = currentPlatform === 'instagram'
+                        ? '#E1306C'
+                        : currentPlatform === 'twitter'
+                            ? '#1DA1F2'
+                            : '#69C9D0';
+
+                    const platformFont = currentPlatform === 'instagram'
+                        ? 'Poppins'
+                        : currentPlatform === 'twitter'
+                            ? 'Inter'
+                            : 'Poppins';
+
+                    obj.shape.findOne('.username').fill(platformColor);
+                    obj.shape.findOne('.comment-box').stroke(platformColor);
+                    obj.shape.findOne('.comment-text').fontFamily(platformFont);
+                }
+            });
+            layer.draw();
+        }
+
+        // Add asset to canvas
+        function addAssetToCanvas(asset, xDrop = null, yDrop = null) {
+            let shape;
+
+            if (asset.type === 'comment') {
+                const container = new Konva.Group({
+                    x: xDrop !== null ? xDrop : Math.random() * (stage.width() - 200) + 50,
+                    y: yDrop !== null ? yDrop : Math.random() * (stage.height() - 100) + 50,
+                    draggable: true,
+                });
+
+                // Comment box
+                const commentBox = new Konva.Rect({
+                    width: 200,
+                    height: 80,
+                    fill: document.body.classList.contains('dark') ? '#1E293B' : '#fff',
+                    cornerRadius: 10,
+                    shadowColor: 'rgba(0,0,0,0.2)',
+                    shadowBlur: 8,
+                    shadowOffset: { x: 0, y: 2 },
+                    shadowOpacity: 0.3,
+                    name: 'comment-box',
+                    stroke: currentPlatform === 'instagram' ? '#E1306C' : currentPlatform === 'twitter' ? '#1DA1F2' : '#69C9D0',
+                    strokeWidth: 2,
+                });
+
+                // Username
+                const username = new Konva.Text({
+                    x: 10,
+                    y: 10,
+                    text: asset.username,
+                    fontSize: 14,
+                    fontFamily: 'Inter',
+                    fontStyle: 'bold',
+                    fill: currentPlatform === 'instagram' ? '#E1306C' : currentPlatform === 'twitter' ? '#1DA1F2' : '#69C9D0',
+                    name: 'username',
+                });
+
+                // Comment text
+                const commentText = new Konva.Text({
+                    x: 10,
+                    y: 30,
+                    text: asset.content,
+                    fontSize: 14,
+                    fontFamily: currentPlatform === 'instagram' ? 'Poppins' : 'Inter',
+                    fill: document.body.classList.contains('dark') ? '#CBD5E1' : '#333',
+                    width: 180,
+                    name: 'comment-text',
+                });
+
+                // Adjust the box height based on text height
+                commentBox.height(commentText.height() + 40);
+
+                container.add(commentBox);
+                container.add(username);
+                container.add(commentText);
+
+                shape = container;
+
+            } else if (asset.type === 'emoji') {
+                shape = new Konva.Text({
+                    x: xDrop !== null ? xDrop : Math.random() * (stage.width() - 50) + 25,
+                    y: yDrop !== null ? yDrop : Math.random() * (stage.height() - 50) + 25,
+                    text: asset.content,
+                    fontSize: 40,
+                    draggable: true,
+                });
+
+            } else if (asset.type === 'star') {
+                const container = new Konva.Group({
+                    x: xDrop !== null ? xDrop : Math.random() * (stage.width() - 150) + 75,
+                    y: yDrop !== null ? yDrop : Math.random() * (stage.height() - 50) + 25,
+                    draggable: true,
+                });
+
+                // Star rating background
+                const starBg = new Konva.Rect({
+                    width: 120,
+                    height: 40,
+                    fill: document.body.classList.contains('dark') ? '#1E293B' : '#fff',
+                    cornerRadius: 20,
+                    shadowColor: 'rgba(0,0,0,0.1)',
+                    shadowBlur: 5,
+                    shadowOffset: { x: 0, y: 2 },
+                    shadowOpacity: 0.3,
+                });
+
+                // Star rating text
+                const starText = new Konva.Text({
+                    x: 20,
+                    y: 10,
+                    text: asset.content,
+                    fontSize: 20,
+                    fontFamily: 'Arial',
+                    fill: '#F59E0B',
+                });
+
+                container.add(starBg);
+                container.add(starText);
+
+                shape = container;
+            }
+
+            // Add event listeners
+            shape.on('dragstart', () => {
+                shape.moveToTop();
+            });
+
+            shape.on('dragend', () => {
+                layer.draw();
+            });
+
+            shape.on('mouseover', () => {
+                document.body.style.cursor = 'pointer';
+                if (asset.type === 'comment') {
+                    shape.findOne('.comment-box').shadowBlur(12);
+                }
+                layer.draw();
+            });
+
+            shape.on('mouseout', () => {
+                document.body.style.cursor = 'default';
+                if (asset.type === 'comment') {
+                    shape.findOne('.comment-box').shadowBlur(8);
+                }
+                layer.draw();
+            });
+
+            shape.on('dblclick', () => {
+                removeAsset(shape);
+            });
+
+            // Add to layer and objects array
+            layer.add(shape);
+            canvasObjects.push({ asset, shape });
+            layer.draw();
+
+            // Update stats
+            counts[asset.type]++;
+            counts.total++;
+            updateStats();
+            updateVibeScore();
+        }
+
+        // Remove asset from canvas
+        function removeAsset(shape) {
+            const index = canvasObjects.findIndex(obj => obj.shape === shape);
+            if (index !== -1) {
+                const { asset } = canvasObjects[index];
+                counts[asset.type]--;
+                counts.total--;
+
+                shape.destroy();
+                canvasObjects.splice(index, 1);
+                layer.draw();
+
+                updateStats();
+                updateVibeScore();
+            }
+        }
+
+        // Update stats display
+        function updateStats() {
+            commentCount.textContent = counts.comment;
+            emojiCount.textContent = counts.emoji;
+            ratingCount.textContent = counts.star;
+            totalCount.textContent = counts.total;
+        }
+
+        // Update vibe score
+        function updateVibeScore() {
+            currentVibe = canvasObjects.reduce((sum, obj) => sum + obj.asset.scoreValue, 0);
+            vibeScore.textContent = currentVibe;
+
+            // Normalize vibe score for the indicator (0-100%)
+            const maxScore = 100;
+            const minScore = -50;
+            const normalizedScore = Math.max(0, Math.min(100, ((currentVibe - minScore) / (maxScore - minScore)) * 100));
+
+            // Update indicator position
+            vibeIndicator.style.transform = `translateX(calc(${normalizedScore}% - 12px))`;
+
+            // Update vibe message
+            if (currentVibe === 0) {
+                vibeMessage.textContent = 'Add feedback elements to see the community vibe!';
+            } else if (currentVibe < 20) {
+                vibeMessage.textContent = 'Needs more engagement...';
+            } else if (currentVibe < 50) {
+                vibeMessage.textContent = 'Good engagement! Keep going!';
+            } else if (currentVibe < 80) {
+                vibeMessage.textContent = 'Great vibe! Your fans love you!';
+            } else {
+                vibeMessage.textContent = 'Amazing! You have super fans!';
+            }
+
+            // Add pulse animation if score changes
+            vibeScore.classList.add('pulse');
+            setTimeout(() => {
+                vibeScore.classList.remove('pulse');
+            }, 1000);
+        }
+
+        // Suggest Theme
+        suggestThemeBtn.addEventListener('click', () => {
+            const theme = themes[Math.floor(Math.random() * themes.length)];
+
+            // Apply theme to canvas
+            canvasContainer.style.background = theme.bgColor;
+
+            // Apply theme to canvas objects
+            canvasObjects.forEach(obj => {
+                if (obj.asset.type === 'comment') {
+                    obj.shape.findOne('.comment-box').fill(theme.bgColor.includes('dark') ? '#1E293B' : '#fff');
+                    obj.shape.findOne('.username').fill(theme.accentColor);
+                    obj.shape.findOne('.comment-text').fontFamily(theme.font);
+                    obj.shape.findOne('.comment-box').stroke(theme.accentColor);
+                } else if (obj.asset.type === 'star') {
+                    obj.shape.findOne('Rect').fill(theme.bgColor.includes('dark') ? '#1E293B' : '#fff');
+                    obj.shape.findOne('Text').fill(theme.accentColor);
+                }
+            });
+
+            layer.draw();
+
+            // Notify user of the new theme
+            vibeMessage.textContent = `Applied "${theme.name}" theme!`;
+            vibeMessage.classList.add('pulse');
+            setTimeout(() => {
+                vibeMessage.classList.remove('pulse');
+            }, 1500);
+        });
+
+        // Save Board
+        saveBoardBtn.addEventListener('click', () => {
+            const boardData = {
+                platform: currentPlatform,
+                objects: canvasObjects.map(obj => ({
+                    asset: obj.asset,
+                    x: obj.shape.x(),
+                    y: obj.shape.y(),
+                })),
+                theme: canvasContainer.style.background,
+                vibeScore: currentVibe,
+            };
+
+            const dataStr = JSON.stringify(boardData);
+            const blob = new Blob([dataStr], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = 'social-pulse-board.json';
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            URL.revokeObjectURL(url);
+
+            vibeMessage.textContent = 'Board saved successfully!';
+            vibeMessage.classList.add('pulse');
+            setTimeout(() => {
+                vibeMessage.classList.remove('pulse');
+            }, 1500);
+        });
+
+        // Export as PNG
+        exportPngBtn.addEventListener('click', () => {
+            const dataURL = stage.toDataURL({ pixelRatio: 2 });
+            const link = document.createElement('a');
+            link.href = dataURL;
+            link.download = 'social-pulse-board.png';
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+
+            vibeMessage.textContent = 'Board exported as PNG!';
+            vibeMessage.classList.add('pulse');
+            setTimeout(() => {
+                vibeMessage.classList.remove('pulse');
+            }, 1500);
+        });
+
+        // Clear Board
+        clearBoardBtn.addEventListener('click', () => {
+            canvasObjects.forEach(obj => obj.shape.destroy());
+            canvasObjects = [];
+            counts = { comment: 0, emoji: 0, star: 0, total: 0 };
+            layer.draw();
+            updateStats();
+            updateVibeScore();
+
+            canvasContainer.style.background = document.body.classList.contains('dark') ? '#1E293B' : '#E2E8F0';
+
+            vibeMessage.textContent = 'Board cleared!';
+            vibeMessage.classList.add('pulse');
+            setTimeout(() => {
+                vibeMessage.classList.remove('pulse');
+            }, 1500);
+        });
+
+        // Theme Toggle
+        modeToggle.addEventListener('change', () => {
+            document.body.classList.toggle('dark');
+            const isDark = document.body.classList.contains('dark');
+            textToggle.innerHTML = isDark
+                ? `<i class="fas fa-sun mr-2"></i><span>Toggle Theme</span>`
+                : `<i class="fas fa-moon mr-2"></i><span>Toggle Theme</span>`;
+
+            // Update canvas background
+            canvasContainer.style.background = isDark ? '#1E293B' : '#E2E8F0';
+
+            // Update canvas objects for theme
+            canvasObjects.forEach(obj => {
+                if (obj.asset.type === 'comment') {
+                    obj.shape.findOne('.comment-box').fill(isDark ? '#1E293B' : '#fff');
+                    obj.shape.findOne('.comment-text').fill(isDark ? '#CBD5E1' : '#333');
+                } else if (obj.asset.type === 'star') {
+                    obj.shape.findOne('Rect').fill(isDark ? '#1E293B' : '#fff');
+                }
+            });
+            layer.draw();
+        });
+
+        // Handle Canvas Drag and Drop
+        canvasContainer.addEventListener('dragover', (e) => {
+            e.preventDefault();
+        });
+
+        canvasContainer.addEventListener('drop', (e) => {
+            e.preventDefault();
+            const assetId = e.dataTransfer.getData('text/plain');
+            const asset = feedbackAssets.find(a => a.id == assetId);
+            if (asset) {
+                // Get drop position relative to canvas
+                const rect = canvasContainer.getBoundingClientRect();
+                const scaleX = stage.width() / rect.width;
+                const scaleY = stage.height() / rect.height;
+                const x = (e.clientX - rect.left) * scaleX;
+                const y = (e.clientY - rect.top) * scaleY;
+                addAssetToCanvas(asset, x, y);
+            }
+        });
+
+        // Resize Canvas on Window Resize
+        window.addEventListener('resize', () => {
+            stage.width(canvasContainer.offsetWidth);
+            stage.height(canvasContainer.offsetHeight);
+            layer.draw();
+        });
+
+        // Initialize
+        populateAssets();
+        updateStats();
+        updateVibeScore();
+    </script>
+</body>
+
+</html>

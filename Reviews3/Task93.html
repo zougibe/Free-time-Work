@@ -1,0 +1,1340 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Animated Profile Frame Designer</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.4.2/p5.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/gif.js@0.2.0/dist/gif.min.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap">
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                    },
+                    colors: {
+                        primary: {
+                            50: '#f0f9ff',
+                            100: '#e0f2fe',
+                            200: '#bae6fd',
+                            300: '#7dd3fc',
+                            400: '#38bdf8',
+                            500: '#0ea5e9',
+                            600: '#0284c7',
+                            700: '#0369a1',
+                            800: '#075985',
+                            900: '#0c4a6e',
+                        },
+                        secondary: {
+                            50: '#fdf4ff',
+                            100: '#fae8ff',
+                            200: '#f5d0fe',
+                            300: '#f0abfc',
+                            400: '#e879f9',
+                            500: '#d946ef',
+                            600: '#c026d3',
+                            700: '#a21caf',
+                            800: '#86198f',
+                            900: '#701a75',
+                        },
+                        accent: {
+                            50: '#fffbeb',
+                            100: '#fef3c7',
+                            200: '#fde68a',
+                            300: '#fcd34d',
+                            400: '#fbbf24',
+                            500: '#f59e0b',
+                            600: '#d97706',
+                            700: '#b45309',
+                            800: '#92400e',
+                            900: '#78350f',
+                        },
+                    },
+                    animation: {
+                        'pulse-slow': 'pulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite',
+                        'bounce-slow': 'bounce 3s infinite',
+                        'spin-slow': 'spin 8s linear infinite',
+                    },
+                    boxShadow: {
+                        'glow': '0 0 15px rgba(59, 130, 246, 0.5)',
+                        'glow-lg': '0 0 25px rgba(59, 130, 246, 0.6)',
+                        'glow-purple': '0 0 15px rgba(147, 51, 234, 0.5)',
+                        'glow-amber': '0 0 15px rgba(245, 158, 11, 0.5)',
+                    },
+                },
+            },
+        };
+    </script>
+    <style>
+        /* Transitions for dark mode and animations */
+        body {
+            transition: background-color 0.5s ease, color 0.5s ease;
+        }
+
+        .transition-all {
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        /* Sparkle animation for trending styles */
+        @keyframes sparkle {
+
+            0%,
+            100% {
+                opacity: 1;
+                transform: scale(1);
+            }
+
+            50% {
+                opacity: 0.6;
+                transform: scale(0.8);
+            }
+        }
+
+        .sparkle {
+            animation: sparkle 2s ease-in-out infinite;
+            animation-delay: calc(var(--delay) * 200ms);
+        }
+
+        /* Canvas container */
+        .canvas-container {
+            position: relative;
+            max-width: 100%;
+            overflow: hidden;
+            border-radius: 1rem;
+            background-image:
+                radial-gradient(circle at 10% 20%, rgba(59, 130, 246, 0.1) 0%, transparent 70%),
+                radial-gradient(circle at 90% 80%, rgba(192, 38, 211, 0.1) 0%, transparent 70%);
+        }
+
+        /* Platform preview animations */
+        #platform-preview {
+            transform-origin: center;
+            transition: transform 0.7s cubic-bezier(0.34, 1.56, 0.64, 1),
+                opacity 0.5s ease;
+        }
+
+        .preview-zoom-in {
+            animation: previewZoom 1s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+        }
+
+        .preview-panel {
+            transform: scale(0.8);
+            opacity: 0;
+            transition: transform 0.5s ease, opacity 0.5s ease;
+        }
+
+        .preview-panel.zoom-in {
+            transform: scale(1);
+            opacity: 1;
+        }
+
+        @keyframes previewZoom {
+            0% {
+                transform: scale(0.8);
+                opacity: 0;
+            }
+
+            100% {
+                transform: scale(1);
+                opacity: 1;
+            }
+        }
+
+        /* Custom scrollbar */
+        ::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: rgba(156, 163, 175, 0.1);
+            border-radius: 3px;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: rgba(156, 163, 175, 0.5);
+            border-radius: 3px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: rgba(156, 163, 175, 0.7);
+        }
+
+        /* Media queries */
+        @media (max-width: 640px) {
+            .canvas-container {
+                width: 100%;
+                margin: 0 auto;
+            }
+        }
+    </style>
+</head>
+
+<body
+    class="font-sans bg-gradient-to-br from-gray-50 to-gray-100 text-gray-900 dark:from-gray-900 dark:to-gray-800 dark:text-gray-100">
+    <div class="container mx-auto px-4 py-8 max-w-6xl">
+        <header class="flex flex-col md:flex-row justify-between items-center mb-8 gap-4">
+            <div class="flex items-center">
+                <div
+                    class="bg-primary-500 dark:bg-primary-600 w-10 h-10 rounded-lg flex items-center justify-center shadow-md mr-3">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-white" fill="none" viewBox="0 0 24 24"
+                        stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                    </svg>
+                </div>
+                <h1
+                    class="text-3xl md:text-4xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-primary-600 to-secondary-500 dark:from-primary-400 dark:to-secondary-400">
+                    FrameCraft</h1>
+            </div>
+            <div class="flex gap-2 items-center">
+                <span id="theme-label" class="text-sm text-gray-600 dark:text-gray-400">Light</span>
+                <button id="theme-toggle"
+                    class="relative inline-flex items-center h-6 rounded-full w-12 transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 bg-gray-200 dark:bg-primary-600"
+                    role="switch" aria-checked="false" aria-label="Toggle dark mode">
+                    <span aria-hidden="true"
+                        class="pointer-events-none inline-block h-5 w-5 rounded-full bg-white shadow transform ring-0 transition ease-in-out duration-300 translate-x-0.5 dark:translate-x-6">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3 text-gray-400 dark:hidden" fill="none"
+                            viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z" />
+                        </svg>
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3 text-primary-300 hidden dark:block"
+                            fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" />
+                        </svg>
+                    </span>
+                </button>
+                <span id="theme-label-dark" class="text-sm text-gray-400 dark:text-gray-300">Dark</span>
+            </div>
+        </header>
+
+        <div class="flex flex-col lg:flex-row gap-6">
+            <!-- Main Content -->
+            <div class="w-full lg:w-2/3 order-2 lg:order-1">
+                <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-xl overflow-hidden mb-6">
+                    <!-- Tabs -->
+                    <div class="px-4 py-3 bg-gray-50 dark:bg-gray-700 flex items-center justify-between">
+                        <div class="flex space-x-4">
+                            <button id="editor-tab"
+                                class="px-4 py-2 text-sm font-medium rounded-md bg-white shadow-sm dark:bg-gray-800 text-primary-600 dark:text-primary-400 focus:outline-none focus:ring-2 focus:ring-primary-500">
+                                Editor
+                            </button>
+                            <button id="preview-tab" aria-controls="preview-view" aria-expanded="false"
+                                class="px-4 py-2 text-sm font-medium rounded-md text-gray-600 dark:text-gray-400 hover:text-primary-600 dark:hover:text-primary-400 focus:outline-none focus:ring-2 focus:ring-primary-500">
+                                Platform Preview
+                            </button>
+                        </div>
+                        <span class="text-xs text-gray-500 dark:text-gray-400 animate-pulse-slow">
+                            <span class="inline-block mr-1">✨</span> Creating memories
+                        </span>
+                    </div>
+
+                    <!-- Canvas Container -->
+                    <div id="editor-view" class="canvas-container p-6 flex items-center justify-center min-h-[450px]">
+                        <div id="canvas-holder" role="region" aria-label="Frame preview canvas" class="relative"></div>
+                    </div>
+
+                    <!-- Platform Preview Container -->
+                    <div id="preview-view" class="hidden preview-panel min-h-[450px]" aria-hidden="true">
+                        <div class="p-6">
+                            <div class="flex mb-4 space-x-4">
+                                <button data-platform="instagram"
+                                    class="platform-btn px-4 py-2 text-sm font-medium rounded-md bg-gradient-to-r from-purple-500 to-pink-500 text-white opacity-90 hover:opacity-100 transition focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-purple-500">
+                                    Instagram
+                                </button>
+                                <button data-platform="tiktok"
+                                    class="platform-btn px-4 py-2 text-sm font-medium rounded-md bg-gradient-to-r from-gray-700 to-gray-900 text-white opacity-70 hover:opacity-100 transition focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-700">
+                                    TikTok
+                                </button>
+                            </div>
+
+                            <div id="platform-preview"
+                                class="bg-white dark:bg-gray-900 rounded-xl shadow-lg overflow-hidden">
+
+                                <!-- Instagram Mock UI -->
+                                <div id="instagram-ui" class="instagram">
+                                    <div
+                                        class="bg-gray-50 dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 p-3 flex items-center">
+                                        <svg class="w-8 h-8 mr-2" viewBox="0 0 24 24" fill="none"
+                                            xmlns="http://www.w3.org/2000/svg">
+                                            <path
+                                                d="M12 2C14.717 2 15.056 2.01 16.122 2.06C17.187 2.11 17.912 2.277 18.55 2.525C19.21 2.779 19.766 3.123 20.322 3.678C20.8305 4.1779 21.224 4.78259 21.475 5.45C21.722 6.087 21.89 6.813 21.94 7.878C21.987 8.944 22 9.283 22 12C22 14.717 21.99 15.056 21.94 16.122C21.89 17.187 21.722 17.912 21.475 18.55C21.2247 19.2178 20.8311 19.8226 20.322 20.322C19.822 20.8303 19.2173 21.2238 18.55 21.475C17.913 21.722 17.187 21.89 16.122 21.94C15.056 21.987 14.717 22 12 22C9.283 22 8.944 21.99 7.878 21.94C6.813 21.89 6.088 21.722 5.45 21.475C4.78233 21.2245 4.17753 20.8309 3.678 20.322C3.16941 19.8222 2.77593 19.2175 2.525 18.55C2.277 17.913 2.11 17.187 2.06 16.122C2.013 15.056 2 14.717 2 12C2 9.283 2.01 8.944 2.06 7.878C2.11 6.812 2.277 6.088 2.525 5.45C2.77524 4.78218 3.1688 4.17732 3.678 3.678C4.17767 3.16923 4.78243 2.77573 5.45 2.525C6.088 2.277 6.812 2.11 7.878 2.06C8.944 2.013 9.283 2 12 2Z"
+                                                stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                                                stroke-linejoin="round" />
+                                            <path d="M17.5 6.5L17.51 6.5" stroke="currentColor" stroke-width="2"
+                                                stroke-linecap="round" stroke-linejoin="round" />
+                                            <path
+                                                d="M12 16C14.2091 16 16 14.2091 16 12C16 9.79086 14.2091 8 12 8C9.79086 8 8 9.79086 8 12C8 14.2091 9.79086 16 12 16Z"
+                                                stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                                                stroke-linejoin="round" />
+                                        </svg>
+                                        <span class="font-medium dark:text-gray-200">Instagram</span>
+                                    </div>
+
+                                    <div class="p-3 flex items-center">
+                                        <div class="relative">
+                                            <!-- avatar placeholder only -->
+                                            <div
+                                                class="w-12 h-12 bg-gradient-to-tr from-yellow-400 to-pink-500 rounded-full flex items-center justify-center">
+                                                <div class="w-[46px] h-[46px] bg-white dark:bg-gray-800 rounded-full">
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="ml-3">
+                                            <div class="font-semibold text-sm dark:text-gray-200">username</div>
+                                            <div class="text-xs text-gray-500 dark:text-gray-400">Your Location</div>
+                                        </div>
+                                    </div>
+
+                                    <div
+                                        class="relative bg-gray-200 dark:bg-gray-700 aspect-square flex items-center justify-center">
+                                        <div id="instagram-post" class="w-full h-full flex items-center justify-center">
+                                            <div class="absolute">
+                                                <div id="preview-canvas-holder-post"
+                                                    class="absolute top-0 left-0 z-10 scale-[2]"></div>
+                                                <div class="w-32 h-32 rounded-full bg-gray-300 dark:bg-gray-600"></div>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div class="p-3 border-t border-gray-200 dark:border-gray-700">
+                                        <div class="flex space-x-4">
+                                            <svg class="w-6 h-6" viewBox="0 0 24 24" fill="none"
+                                                xmlns="http://www.w3.org/2000/svg">
+                                                <path
+                                                    d="M4.31802 6.31802C2.56066 8.07538 2.56066 10.9246 4.31802 12.682L12.0001 20.364L19.682 12.682C21.4393 10.9246 21.4393 8.07538 19.682 6.31802C17.9246 4.56066 15.0754 4.56066 13.318 6.31802L12.0001 7.63609L10.682 6.31802C8.92462 4.56066 6.07538 4.56066 4.31802 6.31802Z"
+                                                    stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                                                    stroke-linejoin="round" />
+                                            </svg>
+                                            <svg class="w-6 h-6" viewBox="0 0 24 24" fill="none"
+                                                xmlns="http://www.w3.org/2000/svg">
+                                                <path
+                                                    d="M21 11.5C21.0034 12.8199 20.6951 14.1219 20.1 15.3C19.3944 16.7118 18.3098 17.8992 16.9674 18.7293C15.6251 19.5594 14.0782 19.9994 12.5 20C11.1801 20.0035 9.87812 19.6951 8.7 19.1L3 21L4.9 15.3C4.30493 14.1219 3.99656 12.8199 4 11.5C4.00061 9.92179 4.44061 8.37488 5.27072 7.03258C6.10083 5.69028 7.28825 4.6056 8.7 3.90003C9.87812 3.30496 11.1801 2.99659 12.5 3.00003H13C15.0843 3.11502 17.053 3.99479 18.5291 5.47089C20.0052 6.94699 20.885 8.91568 21 11V11.5Z"
+                                                    stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                                                    stroke-linejoin="round" />
+                                            </svg>
+                                            <svg class="w-6 h-6" viewBox="0 0 24 24" fill="none"
+                                                xmlns="http://www.w3.org/2000/svg">
+                                                <path d="M22 3L9.21802 10.083" stroke="currentColor" stroke-width="2"
+                                                    stroke-linecap="round" stroke-linejoin="round" />
+                                                <path d="M11.698 20.334L22 3.001H2L9.218 10.084L11.698 20.334Z"
+                                                    stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                                                    stroke-linejoin="round" />
+                                            </svg>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- TikTok Mock UI -->
+                                <div id="tiktok-ui" class="hidden tiktok">
+                                    <div class="bg-black p-3 flex items-center justify-between">
+                                        <span class="font-bold text-white">TikTok</span>
+                                        <svg class="w-6 h-6 text-white" viewBox="0 0 24 24" fill="none"
+                                            xmlns="http://www.w3.org/2000/svg">
+                                            <path
+                                                d="M21 21L15 15M17 10C17 13.866 13.866 17 10 17C6.13401 17 3 13.866 3 10C3 6.13401 6.13401 3 10 3C13.866 3 17 6.13401 17 10Z"
+                                                stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                                                stroke-linejoin="round" />
+                                        </svg>
+                                    </div>
+
+                                    <div class="relative bg-black aspect-[9/16] flex items-center justify-center">
+                                        <div id="preview-canvas-holder-tiktok"
+                                            class="absolute inset-0 flex items-center justify-center z-10 scale-125 pointer-events-none">
+                                        </div>
+
+                                        <div class="absolute right-4 bottom-24 flex flex-col items-center space-y-4">
+                                            <div class="w-12 h-12 rounded-full bg-gray-300"></div>
+
+                                            <div class="flex flex-col items-center space-y-2">
+                                                <svg class="w-8 h-8 text-white" viewBox="0 0 24 24" fill="none"
+                                                    xmlns="http://www.w3.org/2000/svg">
+                                                    <path
+                                                        d="M4.31802 6.31802C2.56066 8.07538 2.56066 10.9246 4.31802 12.682L12.0001 20.364L19.682 12.682C21.4393 10.9246 21.4393 8.07538 19.682 6.31802C17.9246 4.56066 15.0754 4.56066 13.318 6.31802L12.0001 7.63609L10.682 6.31802C8.92462 4.56066 6.07538 4.56066 4.31802 6.31802Z"
+                                                        fill="white" stroke="white" stroke-width="2"
+                                                        stroke-linecap="round" stroke-linejoin="round" />
+                                                </svg>
+                                                <span class="text-xs text-white">100k</span>
+                                            </div>
+
+                                            <div class="flex flex-col items-center space-y-2">
+                                                <svg class="w-8 h-8 text-white" viewBox="0 0 24 24" fill="none"
+                                                    xmlns="http://www.w3.org/2000/svg">
+                                                    <path
+                                                        d="M21 11.5C21.0034 12.8199 20.6951 14.1219 20.1 15.3C19.3944 16.7118 18.3098 17.8992 16.9674 18.7293C15.6251 19.5594 14.0782 19.9994 12.5 20C11.1801 20.0035 9.87812 19.6951 8.7 19.1L3 21L4.9 15.3C4.30493 14.1219 3.99656 12.8199 4 11.5C4.00061 9.92179 4.44061 8.37488 5.27072 7.03258C6.10083 5.69028 7.28825 4.6056 8.7 3.90003C9.87812 3.30496 11.1801 2.99659 12.5 3.00003H13C15.0843 3.11502 17.053 3.99479 18.5291 5.47089C20.0052 6.94699 20.885 8.91568 21 11V11.5Z"
+                                                        fill="white" stroke="white" stroke-width="2"
+                                                        stroke-linecap="round" stroke-linejoin="round" />
+                                                </svg>
+                                                <span class="text-xs text-white">2455</span>
+                                            </div>
+
+                                            <div class="flex flex-col items-center space-y-2">
+                                                <svg class="w-8 h-8 text-white" viewBox="0 0 24 24" fill="none"
+                                                    xmlns="http://www.w3.org/2000/svg">
+                                                    <path d="M5 12H19M12 5L19 12L12 19" stroke="white" stroke-width="2"
+                                                        stroke-linecap="round" stroke-linejoin="round" />
+                                                </svg>
+                                                <span class="text-xs text-white">Share</span>
+                                            </div>
+                                        </div>
+
+                                        <div class="absolute left-4 bottom-24 flex flex-col items-start">
+                                            <span class="font-bold text-white">@username</span>
+                                            <p class="text-sm text-white max-w-[200px]">Check out my new profile frame!
+                                                #trending #frame #creative</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Action Buttons -->
+                <div class="flex flex-wrap gap-4 mb-6">
+                    <button id="save-frame"
+                        class="flex-1 min-w-[120px] flex items-center justify-center gap-2 bg-primary-600 hover:bg-primary-700 text-white px-6 py-3 rounded-lg shadow-md hover:shadow-lg transition-all focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                            <path
+                                d="M7.707 10.293a1 1 0 10-1.414 1.414l3 3a1 1 0 001.414 0l3-3a1 1 0 00-1.414-1.414L11 11.586V6h5a2 2 0 012 2v7a2 2 0 01-2 2H4a2 2 0 01-2-2V8a2 2 0 012-2h5v5.586l-1.293-1.293zM9 4a1 1 0 012 0v2H9V4z" />
+                        </svg>
+                        Save Frame
+                    </button>
+                    <button id="export-gif"
+                        class="flex-1 min-w-[120px] flex items-center justify-center gap-2 bg-accent-500 hover:bg-accent-600 text-white px-6 py-3 rounded-lg shadow-md hover:shadow-lg transition-all focus:outline-none focus:ring-2 focus:ring-accent-500 focus:ring-offset-2">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                            <path fill-rule="evenodd"
+                                d="M4 3a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V5a2 2 0 00-2-2H4zm12 12H4l4-8 3 6 2-4 3 6z"
+                                clip-rule="evenodd" />
+                        </svg>
+                        Export GIF
+                    </button>
+                    <button id="random-frame"
+                        class="flex-1 min-w-[120px] flex items-center justify-center gap-2 bg-secondary-600 hover:bg-secondary-700 text-white px-6 py-3 rounded-lg shadow-md hover:shadow-lg transition-all focus:outline-none focus:ring-2 focus:ring-secondary-500 focus:ring-offset-2">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                            <path fill-rule="evenodd"
+                                d="M12.395 2.553a1 1 0 00-1.45-.385c-.345.23-.614.558-.822.88-.214.33-.403.713-.57 1.116-.334.804-.614 1.768-.84 2.734a31.365 31.365 0 00-.613 3.58 2.64 2.64 0 01-.945-1.067c-.328-.68-.398-1.534-.398-2.654A1 1 0 005.05 6.05 6.981 6.981 0 003 11a7 7 0 1011.95-4.95c-.592-.591-.98-.985-1.348-1.467-.363-.476-.724-1.063-1.207-2.03zM12.12 15.12A3 3 0 017 13s.879.5 2.5.5c0-1 .5-4 1.25-4.5.5 1 .786 1.293 1.371 1.879A2.99 2.99 0 0113 13a2.99 2.99 0 01-.879 2.121z"
+                                clip-rule="evenodd" />
+                        </svg>
+                        Random Frame
+                    </button>
+                </div>
+
+                <!-- Saved Frames -->
+                <div id="saved-frames-container"
+                    class="hidden bg-white dark:bg-gray-800 rounded-2xl shadow-lg p-6 mb-6">
+                    <h3 class="text-lg font-semibold mb-4 flex items-center">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2 text-primary-500"
+                            viewBox="0 0 20 20" fill="currentColor">
+                            <path d="M7 9a2 2 0 012-2h6a2 2 0 012 2v6a2 2 0 01-2 2H9a2 2 0 01-2-2V9z" />
+                            <path d="M5 3a2 2 0 00-2 2v6a2 2 0 002 2V5h8a2 2 0 00-2-2H5z" />
+                        </svg>
+                        Your Saved Frames
+                    </h3>
+                    <div id="saved-frames-list" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
+                        <!-- Saved frames will be added here dynamically -->
+                        <div class="text-center text-gray-400 dark:text-gray-500 col-span-full py-8">
+                            No saved frames yet. Create and save your first frame!
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Sidebar -->
+            <div class="w-full lg:w-1/3 order-1 lg:order-2">
+                <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-lg overflow-hidden mb-6">
+                    <div class="bg-primary-500 dark:bg-primary-600 p-4 text-white">
+                        <h2 class="text-xl font-semibold flex items-center">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" viewBox="0 0 20 20"
+                                fill="currentColor">
+                                <path
+                                    d="M17.414 2.586a2 2 0 00-2.828 0L7 10.172V13h2.828l7.586-7.586a2 2 0 000-2.828z" />
+                                <path fill-rule="evenodd"
+                                    d="M2 6a2 2 0 012-2h4a1 1 0 010 2H4v10h10v-4a1 1 0 112 0v4a2 2 0 01-2 2H4a2 2 0 01-2-2V6z"
+                                    clip-rule="evenodd" />
+                            </svg>
+                            Frame Designer
+                        </h2>
+                    </div>
+
+                    <div class="p-6">
+                        <!-- Theme Selection -->
+                        <div class="mb-6">
+                            <label for="theme-select"
+                                class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Select
+                                Theme</label>
+                            <div class="relative">
+                                <select id="theme-select"
+                                    class="block w-full pl-3 pr-10 py-2.5 text-base border border-gray-300 focus:outline-none focus:ring-primary-500 focus:border-primary-500 rounded-lg shadow-sm bg-white dark:bg-gray-700 dark:border-gray-600 dark:text-white transition-colors">
+                                    <option value="seasons">Seasons</option>
+                                    <option value="holidays">Holidays</option>
+                                    <option value="causes">Causes</option>
+                                </select>
+                                <div
+                                    class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-gray-700 dark:text-gray-300">
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20"
+                                        fill="currentColor">
+                                        <path fill-rule="evenodd"
+                                            d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z"
+                                            clip-rule="evenodd" />
+                                    </svg>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Frame Options -->
+                        <div class="mb-6">
+                            <h3 class="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Frame Options</h3>
+                            <div class="space-y-4">
+                                <!-- Border Width -->
+                                <div>
+                                    <div class="flex justify-between mb-1">
+                                        <label for="border-width"
+                                            class="text-xs text-gray-600 dark:text-gray-400">Border Width</label>
+                                        <span id="border-width-value"
+                                            class="text-xs font-medium text-primary-600 dark:text-primary-400">8px</span>
+                                    </div>
+                                    <input type="range" id="border-width" min="2" max="20" value="8"
+                                        class="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer dark:bg-gray-700">
+                                </div>
+
+                                <!-- Border Animation -->
+                                <div class="flex items-center justify-between">
+                                    <label for="animation-toggle"
+                                        class="text-sm text-gray-600 dark:text-gray-400">Pulsing Border</label>
+                                    <button id="animation-toggle"
+                                        class="relative inline-flex items-center h-6 rounded-full w-11 transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 bg-gray-200 dark:bg-gray-700"
+                                        role="switch" aria-checked="true">
+                                        <span aria-hidden="true"
+                                            class="pointer-events-none inline-block h-5 w-5 rounded-full bg-white shadow transform ring-0 transition ease-in-out duration-300 translate-x-0.5 animate-toggle-on"></span>
+                                    </button>
+                                </div>
+
+                                <!-- Sparkle Density -->
+                                <div>
+                                    <div class="flex justify-between mb-1">
+                                        <label for="sparkle-count"
+                                            class="text-xs text-gray-600 dark:text-gray-400">Sparkle Density</label>
+                                        <span id="sparkle-count-value"
+                                            class="text-xs font-medium text-primary-600 dark:text-primary-400">15</span>
+                                    </div>
+                                    <input type="range" id="sparkle-count" min="0" max="50" value="15"
+                                        class="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer dark:bg-gray-700">
+                                </div>
+
+                                <!-- Pattern Selection -->
+                                <div>
+                                    <label class="text-xs text-gray-600 dark:text-gray-400 block mb-2">Pattern
+                                        Style</label>
+                                    <div class="grid grid-cols-3 gap-2">
+                                        <button data-pattern="leaves"
+                                            class="pattern-btn flex flex-col items-center justify-center p-3 border border-gray-200 dark:border-gray-700 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition bg-gray-50 dark:bg-gray-700 ring-2 ring-primary-500">
+                                            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-accent-500"
+                                                fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                                    d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z" />
+                                            </svg>
+                                            <span class="text-xs mt-1 text-gray-600 dark:text-gray-400">Leaves</span>
+                                        </button>
+                                        <button data-pattern="snowflakes"
+                                            class="pattern-btn flex flex-col items-center justify-center p-3 border border-gray-200 dark:border-gray-700 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition">
+                                            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-primary-500"
+                                                fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                                    d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
+                                            </svg>
+                                            <span class="text-xs mt-1 text-gray-600 dark:text-gray-400">Snow</span>
+                                        </button>
+                                        <button data-pattern="ribbons"
+                                            class="pattern-btn flex flex-col items-center justify-center p-3 border border-gray-200 dark:border-gray-700 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition">
+                                            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-secondary-500"
+                                                fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                                    d="M13 10V3L4 14h7v7l9-11h-7z" />
+                                            </svg>
+                                            <span class="text-xs mt-1 text-gray-600 dark:text-gray-400">Ribbons</span>
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Frame Charm Score -->
+                        <div class="mb-6">
+                            <h3 class="text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Frame Charm Score</h3>
+                            <div class="flex items-center">
+                                <div class="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-4 mr-2">
+                                    <div id="charm-score-bar"
+                                        class="bg-gradient-to-r from-primary-500 to-secondary-500 h-4 rounded-full transition-all duration-500"
+                                        style="width: 45%"></div>
+                                </div>
+                                <div id="charm-score"
+                                    class="text-xl font-bold text-primary-600 dark:text-primary-400 min-w-[50px] text-right">
+                                    45</div>
+                            </div>
+                            <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">Based on visual flair and
+                                engagement potential</p>
+                        </div>
+
+                        <!-- Trending Style -->
+                        <div class="mb-6">
+                            <h3 class="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Trending Style</h3>
+                            <div
+                                class="bg-gradient-to-r from-gray-50 to-gray-100 dark:from-gray-700 dark:to-gray-800 rounded-lg p-3 relative overflow-hidden">
+                                <div class="flex items-center">
+                                    <div class="flex-shrink-0">
+                                        <div id="trending-icon"
+                                            class="w-10 h-10 bg-primary-100 dark:bg-primary-900 flex items-center justify-center rounded-full">
+                                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-primary-500"
+                                                viewBox="0 0 20 20" fill="currentColor">
+                                                <path fill-rule="evenodd"
+                                                    d="M12 7a1 1 0 110-2h5a1 1 0 011 1v5a1 1 0 11-2 0V8.414l-4.293 4.293a1 1 0 01-1.414 0L8 10.414l-4.293 4.293a1 1 0 01-1.414-1.414l5-5a1 1 0 011.414 0L11 10.586 14.586 7H12z"
+                                                    clip-rule="evenodd" />
+                                            </svg>
+                                        </div>
+                                    </div>
+                                    <div class="ml-3">
+                                        <h4 id="trending-style"
+                                            class="text-sm font-medium text-gray-900 dark:text-white">Sparkle Burst</h4>
+                                        <p class="text-xs text-gray-500 dark:text-gray-400">Popular this week</p>
+                                    </div>
+                                </div>
+                                <div class="absolute top-0 right-0 -mt-1 -mr-1">
+                                    <span class="flex h-3 w-3">
+                                        <span class="relative inline-flex rounded-full h-3 w-3 bg-secondary-500"></span>
+                                        <span
+                                            class="animate-ping absolute inline-flex h-full w-full rounded-full bg-secondary-400 opacity-75"></span>
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Help Info -->
+                        <div
+                            class="text-xs text-gray-500 dark:text-gray-400 bg-gray-50 dark:bg-gray-700 rounded-lg p-3">
+                            <p class="flex items-start">
+                                <svg xmlns="http://www.w3.org/2000/svg"
+                                    class="h-4 w-4 mr-1 text-primary-500 flex-shrink-0 mt-0.5" viewBox="0 0 20 20"
+                                    fill="currentColor">
+                                    <path fill-rule="evenodd"
+                                        d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z"
+                                        clip-rule="evenodd" />
+                                </svg>
+                                Customize your frame, preview it on different platforms, and export as a GIF to share on
+                                social media.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Frame assets and configurations
+        const frameAssets = {
+            seasons: {
+                border: { color: '#f97316', thickness: 8, pulse: true },
+                pattern: 'leaves',
+                sparkles: { count: 15, color: '#eab308' }
+            },
+            holidays: {
+                border: { color: '#dc2626', thickness: 12, pulse: true },
+                pattern: 'snowflakes',
+                sparkles: { count: 30, color: '#60a5fa' }
+            },
+            causes: {
+                border: { color: '#16a34a', thickness: 8, pulse: false },
+                pattern: 'ribbons',
+                sparkles: { count: 15, color: '#ec4899' }
+            }
+        };
+
+        // Application state
+        const state = {
+            currentTheme: 'seasons',
+            isPlatformPreview: false,
+            savedFrames: JSON.parse(localStorage.getItem('savedFrames') || '[]'),
+            gifExporter: null,
+            frameCharmScore: 45,
+            currentPlatform: 'instagram',
+            customOptions: {
+                borderWidth: 8,
+                pulseBorder: true,
+                sparkleCount: 15,
+                pattern: 'leaves'
+            }
+        };
+
+        // DOM Elements
+        const elements = {
+            themeToggle: document.getElementById('theme-toggle'),
+            themeSelect: document.getElementById('theme-select'),
+            saveFrameBtn: document.getElementById('save-frame'),
+            exportGifBtn: document.getElementById('export-gif'),
+            randomFrameBtn: document.getElementById('random-frame'),
+            platformPreviewBtn: document.getElementById('preview-tab'),
+            editorTab: document.getElementById('editor-tab'),
+            editorView: document.getElementById('editor-view'),
+            previewView: document.getElementById('preview-view'),
+            platformBtns: document.querySelectorAll('.platform-btn'),
+            instagramUI: document.getElementById('instagram-ui'),
+            tiktokUI: document.getElementById('tiktok-ui'),
+            charmScore: document.getElementById('charm-score'),
+            charmScoreBar: document.getElementById('charm-score-bar'),
+            trendingStyle: document.getElementById('trending-style'),
+            trendingIcon: document.getElementById('trending-icon'),
+            borderWidth: document.getElementById('border-width'),
+            borderWidthValue: document.getElementById('border-width-value'),
+            sparkleCount: document.getElementById('sparkle-count'),
+            sparkleCountValue: document.getElementById('sparkle-count-value'),
+            animationToggle: document.getElementById('animation-toggle'),
+            patternBtns: document.querySelectorAll('.pattern-btn'),
+            savedFramesContainer: document.getElementById('saved-frames-container'),
+            savedFramesList: document.getElementById('saved-frames-list')
+        };
+
+        // Initialize elements based on state
+        function initializeUI() {
+            // Set initial theme selection
+            elements.themeSelect.value = state.currentTheme;
+
+            // Set initial slider values
+            elements.borderWidth.value = state.customOptions.borderWidth;
+            elements.sparkleCount.value = state.customOptions.sparkleCount;
+            elements.borderWidthValue.textContent = `${state.customOptions.borderWidth}px`;
+            elements.sparkleCountValue.textContent = state.customOptions.sparkleCount;
+
+            // Set animation toggle initial state
+            if (state.customOptions.pulseBorder) {
+                elements.animationToggle.classList.add('bg-primary-600');
+                elements.animationToggle.classList.remove('bg-gray-200', 'dark:bg-gray-700');
+                elements.animationToggle.querySelector('span').classList.add('translate-x-5');
+                elements.animationToggle.querySelector('span').classList.remove('translate-x-0.5');
+                elements.animationToggle.setAttribute('aria-checked', 'true');
+            }
+
+            // Set pattern button initial active state
+            elements.patternBtns.forEach(btn => {
+                if (btn.dataset.pattern === state.customOptions.pattern) {
+                    activatePatternBtn(btn);
+                }
+            });
+
+            // Show saved frames if they exist
+            if (state.savedFrames.length > 0) {
+                elements.savedFramesContainer.classList.remove('hidden');
+                updateSavedFramesList();
+            }
+
+            // Set initial charm score
+            updateCharmScore();
+
+            // Initialize trending style
+            updateTrendingStyle();
+        }
+
+        // Update the frame charm score
+        function updateCharmScore() {
+            // Calculate charm score based on different factors
+            const baseScore = 30;
+            const borderScore = state.customOptions.borderWidth * 2;
+            const sparkleScore = state.customOptions.sparkleCount * 0.8;
+            const pulseScore = state.customOptions.pulseBorder ? 20 : 0;
+            const patternScore = {
+                'leaves': 5,
+                'snowflakes': 10,
+                'ribbons': 15
+            }[state.customOptions.pattern];
+
+            const themeMultiplier = {
+                'seasons': 1,
+                'holidays': 1.1,
+                'causes': 1.05
+            }[state.currentTheme];
+
+            let score = Math.round((baseScore + borderScore + sparkleScore + pulseScore + patternScore) * themeMultiplier);
+
+            // Cap the score at 100
+            score = Math.min(score, 100);
+
+            // Update the UI
+            state.frameCharmScore = score;
+            elements.charmScore.textContent = score;
+            elements.charmScoreBar.style.width = `${score}%`;
+
+            // Update color based on score
+            if (score < 40) {
+                elements.charmScoreBar.classList.remove('from-primary-500', 'to-secondary-500', 'from-green-500', 'to-teal-500');
+                elements.charmScoreBar.classList.add('from-orange-500', 'to-red-500');
+            } else if (score < 70) {
+                elements.charmScoreBar.classList.remove('from-orange-500', 'to-red-500', 'from-green-500', 'to-teal-500');
+                elements.charmScoreBar.classList.add('from-primary-500', 'to-secondary-500');
+            } else {
+                elements.charmScoreBar.classList.remove('from-orange-500', 'to-red-500', 'from-primary-500', 'to-secondary-500');
+                elements.charmScoreBar.classList.add('from-green-500', 'to-teal-500');
+            }
+        }
+
+        // Update trending style
+        function updateTrendingStyle() {
+            const styles = [
+                { name: 'Sparkle Burst', icon: '<path fill-rule="evenodd" d="M12 7a1 1 0 110-2h5a1 1 0 011 1v5a1 1 0 11-2 0V8.414l-4.293 4.293a1 1 0 01-1.414 0L8 10.414l-4.293 4.293a1 1 0 01-1.414-1.414l5-5a1 1 0 011.414 0L11 10.586 14.586 7H12z" clip-rule="evenodd" />', color: 'primary' },
+                { name: 'Pulsing Glow', icon: '<path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM9.555 7.168A1 1 0 008 8v4a1 1 0 001.555.832l3-2a1 1 0 000-1.664l-3-2z" clip-rule="evenodd" />', color: 'secondary' },
+                { name: 'Dynamic Swirl', icon: '<path fill-rule="evenodd" d="M11.49 3.17c-.38-1.56-2.6-1.56-2.98 0a1.532 1.532 0 01-2.286.948c-1.372-.836-2.942.734-2.106 2.106.54.886.061 2.042-.947 2.287-1.561.379-1.561 2.6 0 2.978a1.532 1.532 0 01.947 2.287c-.836 1.372.734 2.942 2.106 2.106a1.532 1.532 0 012.287.947c.379 1.561 2.6 1.561 2.978 0a1.533 1.533 0 012.287-.947c1.372.836 2.942-.734 2.106-2.106a1.533 1.533 0 01.947-2.287c1.561-.379 1.561-2.6 0-2.978a1.532 1.532 0 01-.947-2.287c.836-1.372-.734-2.942-2.106-2.106a1.532 1.532 0 01-2.287-.947z" clip-rule="evenodd" />', color: 'accent' }
+            ];
+
+            // Pick a trend based on theme or randomly
+            let trendIndex;
+            if (state.currentTheme === 'seasons') {
+                trendIndex = 0;
+            } else if (state.currentTheme === 'holidays') {
+                trendIndex = 1;
+            } else if (state.currentTheme === 'causes') {
+                trendIndex = 2;
+            } else {
+                trendIndex = Math.floor(Math.random() * styles.length);
+            }
+
+            const trend = styles[trendIndex];
+            elements.trendingStyle.textContent = trend.name;
+            elements.trendingIcon.innerHTML = `
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-${trend.color}-500" viewBox="0 0 20 20" fill="currentColor">
+          ${trend.icon}
+        </svg>
+      `;
+
+            // Update icon background based on trend color
+            elements.trendingIcon.className = `w-10 h-10 bg-${trend.color}-100 dark:bg-${trend.color}-900 flex items-center justify-center rounded-full`;
+        }
+
+        // Activate a pattern button and deactivate others
+        function activatePatternBtn(activeBtn) {
+            elements.patternBtns.forEach(btn => {
+                btn.classList.remove('ring-2', 'ring-primary-500', 'bg-gray-50', 'dark:bg-gray-700');
+            });
+            activeBtn.classList.add('ring-2', 'ring-primary-500', 'bg-gray-50', 'dark:bg-gray-700');
+            state.customOptions.pattern = activeBtn.dataset.pattern;
+
+            // Update frame assets
+            frameAssets[state.currentTheme].pattern = state.customOptions.pattern;
+            updateCharmScore();
+        }
+
+        // Update saved frames list
+        function updateSavedFramesList() {
+            elements.savedFramesList.innerHTML = '';
+
+            if (state.savedFrames.length === 0) {
+                elements.savedFramesList.innerHTML = `
+          <div class="text-center text-gray-400 dark:text-gray-500 col-span-full py-8">
+            No saved frames yet. Create and save your first frame!
+          </div>
+        `;
+                return;
+            }
+
+            state.savedFrames.forEach((frame, index) => {
+                const frameEl = document.createElement('div');
+                frameEl.className = 'bg-gray-50 dark:bg-gray-700 rounded-lg overflow-hidden border border-gray-200 dark:border-gray-600 hover:shadow-md transition';
+
+                // Generate a color based on the theme
+                let themeColor;
+                if (frame.theme === 'seasons') {
+                    themeColor = '#f97316';
+                } else if (frame.theme === 'holidays') {
+                    themeColor = '#dc2626';
+                } else {
+                    themeColor = '#16a34a';
+                }
+
+                // Format date
+                const date = new Date(frame.timestamp);
+                const formattedDate = date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+
+                frameEl.innerHTML = `
+          <div class="p-2 flex flex-col items-center">
+            <div class="w-full aspect-square bg-white dark:bg-gray-800 rounded-md flex items-center justify-center mb-2">
+              <div class="w-16 h-16 rounded-full border-4" style="border-color: ${themeColor};"></div>
+            </div>
+            <div class="text-xs text-gray-600 dark:text-gray-400">${formattedDate}</div>
+          </div>
+          <div class="flex justify-between bg-white dark:bg-gray-800 p-2 border-t border-gray-200 dark:border-gray-700">
+            <button data-index="${index}" class="load-frame text-xs text-primary-600 dark:text-primary-400 hover:text-primary-800 dark:hover:text-primary-300">Load</button>
+            <button data-index="${index}" class="delete-frame text-xs text-red-600 dark:text-red-400 hover:text-red-800 dark:hover:text-red-300">Delete</button>
+          </div>
+        `;
+
+                // Add event listeners
+                frameEl.querySelector('.load-frame').addEventListener('click', (e) => {
+                    const index = parseInt(e.target.dataset.index);
+                    const frame = state.savedFrames[index];
+                    state.currentTheme = frame.theme;
+                    elements.themeSelect.value = frame.theme;
+                    // Update UI and refresh
+                    initializeUI();
+                });
+
+                frameEl.querySelector('.delete-frame').addEventListener('click', (e) => {
+                    const index = parseInt(e.target.dataset.index);
+                    state.savedFrames.splice(index, 1);
+                    localStorage.setItem('savedFrames', JSON.stringify(state.savedFrames));
+
+                    if (state.savedFrames.length === 0) {
+                        elements.savedFramesContainer.classList.add('hidden');
+                    }
+
+                    updateSavedFramesList();
+                });
+
+                elements.savedFramesList.appendChild(frameEl);
+            });
+        }
+
+        // p5.js main sketch
+        function setupSketch(p, container, isPreview = false) {
+            let canvasSize = isPreview ? 150 : 400;
+
+            if (isPreview && container.includes('tiktok')) {
+                canvasSize = 100;
+            }
+
+            // Create the canvas with the appropriate size
+            const canvas = p.createCanvas(canvasSize, canvasSize);
+            canvas.parent(container);
+
+            // Set up animation modes
+            p.angleMode(p.DEGREES);
+            p.colorMode(p.RGB);
+        }
+
+        function drawSketch(p, isPreview = false, platform = null) {
+            // Clear the canvas with transparent background
+            p.clear();
+
+            // Get current theme assets with custom options applied
+            let assets = JSON.parse(JSON.stringify(frameAssets[state.currentTheme]));
+            assets.border.thickness = state.customOptions.borderWidth;
+            assets.border.pulse = state.customOptions.pulseBorder;
+            assets.sparkles.count = state.customOptions.sparkleCount;
+
+            // Scale factor for preview mode
+            let scale = isPreview ? 0.375 : 1;
+
+            if (platform === 'tiktok') {
+                scale = 0.25;
+            }
+
+            // Profile image placeholder
+            p.fill(200);
+            p.noStroke();
+            p.ellipse(p.width / 2, p.height / 2, 300 * scale, 300 * scale);
+
+            // Draw animated border
+            let borderThickness = assets.border.thickness * scale;
+            p.stroke(assets.border.color);
+            p.strokeWeight(borderThickness);
+            p.noFill();
+
+            // Apply pulse animation if enabled
+            let pulse = assets.border.pulse ? Math.sin(p.frameCount * 0.05) * 5 * scale : 0;
+            p.ellipse(p.width / 2, p.height / 2, (320 + pulse) * scale, (320 + pulse) * scale);
+
+            // Draw pattern based on selection
+            if (assets.pattern === 'leaves') {
+                p.fill(assets.border.color);
+                p.noStroke();
+                for (let i = 0; i < 12; i++) {
+                    p.push();
+                    p.translate(p.width / 2, p.height / 2);
+                    p.rotate(i * 30 + p.frameCount * 0.3);
+                    // Draw leaf shape
+                    p.ellipse(160 * scale, 0, 12 * scale, 24 * scale);
+                    p.pop();
+                }
+            } else if (assets.pattern === 'snowflakes') {
+                p.stroke(assets.sparkles.color);
+                p.strokeWeight(2 * scale);
+                for (let i = 0; i < 8; i++) {
+                    p.push();
+                    p.translate(p.width / 2, p.height / 2);
+                    p.rotate(i * 45 + p.frameCount * 0.2);
+                    // Draw snowflake line
+                    p.line(140 * scale, 0, 180 * scale, 0);
+                    // Draw snowflake details
+                    p.line(160 * scale, -10 * scale, 160 * scale, 10 * scale);
+                    p.pop();
+                }
+            } else if (assets.pattern === 'ribbons') {
+                p.noFill();
+                p.stroke(assets.sparkles.color);
+                p.strokeWeight(3 * scale);
+                for (let i = 0; i < 4; i++) {
+                    p.push();
+                    p.translate(p.width / 2, p.height / 2);
+                    p.rotate(i * 90 + p.frameCount * 0.15);
+                    // Draw ribbon curve
+                    p.bezier(
+                        120 * scale, 0,
+                        170 * scale, 40 * scale,
+                        170 * scale, -40 * scale,
+                        120 * scale, 0
+                    );
+                    p.pop();
+                }
+            }
+
+            // Draw sparkles
+            p.fill(assets.sparkles.color);
+            p.noStroke();
+            for (let i = 0; i < assets.sparkles.count; i++) {
+                p.push();
+                p.translate(p.width / 2, p.height / 2);
+                // Calculate sparkle position along circle with animation
+                let angle = i * (360 / assets.sparkles.count) + p.frameCount * 0.5;
+                let radius = 165 * scale + Math.sin(p.frameCount * 0.1 + i * 0.5) * 10 * scale;
+                let x = radius * Math.cos(angle);
+                let y = radius * Math.sin(angle);
+
+                // Draw sparkle with slight animation
+                let sparkleSize = (4 + Math.sin(p.frameCount * 0.2 + i) * 2) * scale;
+
+                // Star shape instead of circle for sparkles
+                p.push();
+                p.translate(x, y);
+                p.rotate(p.frameCount + i * 10);
+                p.beginShape();
+                for (let j = 0; j < 5; j++) {
+                    let starX = Math.cos(j * 72) * sparkleSize * 2;
+                    let starY = Math.sin(j * 72) * sparkleSize * 2;
+                    p.vertex(starX, starY);
+
+                    // Inner points of the star
+                    let innerX = Math.cos(j * 72 + 36) * sparkleSize;
+                    let innerY = Math.sin(j * 72 + 36) * sparkleSize;
+                    p.vertex(innerX, innerY);
+                }
+                p.endShape(p.CLOSE);
+                p.pop();
+
+                p.pop();
+            }
+
+            // Update charm score (only in main view)
+            if (!isPreview) {
+                updateCharmScore();
+            }
+        }
+
+        // Create the p5.js instances for the main view and previews
+        let mainSketch = new p5((p) => {
+            p.setup = () => setupSketch(p, 'canvas-holder');
+            p.draw = () => drawSketch(p);
+        });
+
+        let instagramSketch = new p5((p) => {
+            p.setup = () => setupSketch(p, 'preview-canvas-holder-instagram', true);
+            p.draw = () => drawSketch(p, true, 'instagram');
+        });
+
+        let tiktokSketch = new p5((p) => {
+            p.setup = () => setupSketch(p, 'preview-canvas-holder-tiktok', true);
+            p.draw = () => drawSketch(p, true, 'tiktok');
+        });
+
+        let postSketch = new p5((p) => {
+            p.setup = () => setupSketch(p, 'preview-canvas-holder-post', true);
+            p.draw = () => drawSketch(p, true, 'post');
+        });
+
+        // Event Listeners
+        function setupEventListeners() {
+            // Theme Selection
+            elements.themeSelect.addEventListener('change', (e) => {
+                state.currentTheme = e.target.value;
+                updateTrendingStyle();
+            });
+
+            // Toggle light/dark mode
+            elements.themeToggle.addEventListener('click', () => {
+                document.documentElement.classList.toggle('dark');
+                const isDark = document.documentElement.classList.contains('dark');
+                elements.themeToggle.setAttribute('aria-checked', isDark);
+            });
+
+            // Save frame
+            elements.saveFrameBtn.addEventListener('click', () => {
+                const newFrame = {
+                    theme: state.currentTheme,
+                    options: { ...state.customOptions },
+                    timestamp: new Date().toISOString(),
+                    charmScore: state.frameCharmScore
+                };
+
+                state.savedFrames.push(newFrame);
+                localStorage.setItem('savedFrames', JSON.stringify(state.savedFrames));
+
+                // Show toast notification
+                const toast = document.createElement('div');
+                toast.className = 'fixed bottom-4 right-4 bg-primary-600 text-white px-4 py-2 rounded-lg shadow-lg transition-opacity duration-500 flex items-center';
+                toast.innerHTML = `
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" viewBox="0 0 20 20" fill="currentColor">
+            <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd" />
+          </svg>
+          Frame saved successfully!
+        `;
+                document.body.appendChild(toast);
+
+                // Remove toast after 3 seconds
+                setTimeout(() => {
+                    toast.style.opacity = '0';
+                    setTimeout(() => {
+                        document.body.removeChild(toast);
+                    }, 500);
+                }, 3000);
+
+                // Show saved frames container and update list
+                elements.savedFramesContainer.classList.remove('hidden');
+                updateSavedFramesList();
+            });
+
+            // Export GIF
+            elements.exportGifBtn.addEventListener('click', () => {
+                const canvasEl = document.querySelector('#canvas-holder canvas');
+
+                const workerBlob = new Blob(
+                    ["importScripts('https://cdn.jsdelivr.net/npm/gif.js@0.2.0/dist/gif.worker.js');"],
+                    { type: 'application/javascript' }
+                );
+                const workerURL = URL.createObjectURL(workerBlob);
+
+                const gif = new GIF({
+                    workers: 2,
+                    quality: 10,
+                    width: canvasEl.width,
+                    height: canvasEl.height,
+                    workerScript: workerURL
+                });
+
+                let frames = 0, totalFrames = 30;
+                const addFrame = () => {
+                    if (frames < totalFrames) {
+                        gif.addFrame(canvasEl, { copy: true, delay: 50 });
+                        frames++;
+                        requestAnimationFrame(addFrame);
+                    } else {
+                        gif.on('finished', blob => {
+                            const url = URL.createObjectURL(blob);
+                            const a = document.createElement('a');
+                            a.href = url;
+                            a.download = `frame-${state.currentTheme}-${Date.now()}.gif`;
+                            a.click();
+                            URL.revokeObjectURL(url);
+                        });
+                        gif.render();
+                    }
+                };
+                addFrame();
+            });
+
+
+            // Random Frame Generator
+            elements.randomFrameBtn.addEventListener('click', () => {
+                // Pick a random theme
+                const themes = ['seasons', 'holidays', 'causes'];
+                state.currentTheme = themes[Math.floor(Math.random() * themes.length)];
+                elements.themeSelect.value = state.currentTheme;
+
+                // Randomize options
+                state.customOptions.borderWidth = Math.floor(Math.random() * 15) + 5;
+                state.customOptions.pulseBorder = Math.random() > 0.3;
+                state.customOptions.sparkleCount = Math.floor(Math.random() * 40) + 10;
+
+                const patterns = ['leaves', 'snowflakes', 'ribbons'];
+                state.customOptions.pattern = patterns[Math.floor(Math.random() * patterns.length)];
+
+                // Update UI
+                elements.borderWidth.value = state.customOptions.borderWidth;
+                elements.borderWidthValue.textContent = `${state.customOptions.borderWidth}px`;
+
+                elements.sparkleCount.value = state.customOptions.sparkleCount;
+                elements.sparkleCountValue.textContent = state.customOptions.sparkleCount;
+
+                // Update animation toggle
+                if (state.customOptions.pulseBorder) {
+                    elements.animationToggle.classList.add('bg-primary-600');
+                    elements.animationToggle.classList.remove('bg-gray-200', 'dark:bg-gray-700');
+                    elements.animationToggle.querySelector('span').classList.add('translate-x-5');
+                    elements.animationToggle.querySelector('span').classList.remove('translate-x-0.5');
+                    elements.animationToggle.setAttribute('aria-checked', 'true');
+                } else {
+                    elements.animationToggle.classList.remove('bg-primary-600');
+                    elements.animationToggle.classList.add('bg-gray-200', 'dark:bg-gray-700');
+                    elements.animationToggle.querySelector('span').classList.remove('translate-x-5');
+                    elements.animationToggle.querySelector('span').classList.add('translate-x-0.5');
+                    elements.animationToggle.setAttribute('aria-checked', 'false');
+                }
+
+                // Update pattern button state
+                elements.patternBtns.forEach(btn => {
+                    if (btn.dataset.pattern === state.customOptions.pattern) {
+                        activatePatternBtn(btn);
+                    }
+                });
+
+                // Apply to frame assets
+                frameAssets[state.currentTheme].border.thickness = state.customOptions.borderWidth;
+                frameAssets[state.currentTheme].border.pulse = state.customOptions.pulseBorder;
+                frameAssets[state.currentTheme].sparkles.count = state.customOptions.sparkleCount;
+                frameAssets[state.currentTheme].pattern = state.customOptions.pattern;
+
+                // Update trending style
+                updateTrendingStyle();
+
+                // Button animation
+                elements.randomFrameBtn.classList.add('animate-pulse');
+                setTimeout(() => {
+                    elements.randomFrameBtn.classList.remove('animate-pulse');
+                }, 1000);
+            });
+
+            // Platform preview toggle
+            elements.platformPreviewBtn.addEventListener('click', () => {
+                elements.editorView.classList.add('hidden');
+                elements.previewView.classList.remove('hidden');
+
+                // Update tab styling
+                elements.editorTab.classList.remove('bg-white', 'dark:bg-gray-800', 'text-primary-600', 'dark:text-primary-400', 'shadow-sm');
+                elements.editorTab.classList.add('text-gray-600', 'dark:text-gray-400', 'hover:text-primary-600', 'dark:hover:text-primary-400');
+
+                elements.platformPreviewBtn.classList.add('bg-white', 'dark:bg-gray-800', 'text-primary-600', 'dark:text-primary-400', 'shadow-sm');
+                elements.platformPreviewBtn.classList.remove('text-gray-600', 'dark:text-gray-400', 'hover:text-primary-600', 'dark:hover:text-primary-400');
+
+                // Trigger animation
+                const previewDiv = document.getElementById('preview-view');  // toggle visibility
+                elements.editorView.classList.add('hidden');
+                previewDiv.classList.remove('hidden');
+                // update ARIA
+                elements.platformPreviewBtn.setAttribute('aria-expanded', 'true');
+                previewDiv.setAttribute('aria-hidden', 'false');
+                // trigger zoom
+                toggleZoomAnimation(previewDiv);
+            });
+
+            // Editor tab toggle
+            elements.editorTab.addEventListener('click', () => {
+                elements.previewView.classList.add('hidden');
+                elements.editorView.classList.remove('hidden');
+
+                // Update tab styling
+                elements.platformPreviewBtn.classList.remove('bg-white', 'dark:bg-gray-800', 'text-primary-600', 'dark:text-primary-400', 'shadow-sm');
+                elements.platformPreviewBtn.classList.add('text-gray-600', 'dark:text-gray-400', 'hover:text-primary-600', 'dark:hover:text-primary-400');
+
+                elements.editorTab.classList.add('bg-white', 'dark:bg-gray-800', 'text-primary-600', 'dark:text-primary-400', 'shadow-sm');
+                elements.editorTab.classList.remove('text-gray-600', 'dark:text-gray-400', 'hover:text-primary-600', 'dark:hover:text-primary-400');
+            });
+
+            // Platform buttons
+            elements.platformBtns.forEach(btn => {
+                btn.addEventListener('click', () => {
+                    // Update active state
+                    elements.platformBtns.forEach(b => {
+                        b.classList.remove('from-purple-500', 'to-pink-500', 'opacity-90');
+                        b.classList.add('from-gray-700', 'to-gray-900', 'opacity-70');
+                    });
+
+                    btn.classList.remove('from-gray-700', 'to-gray-900', 'opacity-70');
+                    btn.classList.add('from-purple-500', 'to-pink-500', 'opacity-90');
+
+                    // Switch platforms
+                    state.currentPlatform = btn.dataset.platform;
+
+                    if (state.currentPlatform === 'instagram') {
+                        elements.instagramUI.classList.remove('hidden');
+                        elements.tiktokUI.classList.add('hidden');
+                    } else {
+                        elements.instagramUI.classList.add('hidden');
+                        elements.tiktokUI.classList.remove('hidden');
+                    }
+                });
+            });
+
+            // Border width slider
+            elements.borderWidth.addEventListener('input', (e) => {
+                const value = parseInt(e.target.value);
+                state.customOptions.borderWidth = value;
+                elements.borderWidthValue.textContent = `${value}px`;
+
+                // Update frame assets
+                frameAssets[state.currentTheme].border.thickness = value;
+            });
+
+            // Sparkle count slider
+            elements.sparkleCount.addEventListener('input', (e) => {
+                const value = parseInt(e.target.value);
+                state.customOptions.sparkleCount = value;
+                elements.sparkleCountValue.textContent = value;
+
+                // Update frame assets
+                frameAssets[state.currentTheme].sparkles.count = value;
+            });
+
+            // Animation toggle
+            elements.animationToggle.addEventListener('click', () => {
+                state.customOptions.pulseBorder = !state.customOptions.pulseBorder;
+
+                if (state.customOptions.pulseBorder) {
+                    elements.animationToggle.classList.add('bg-primary-600');
+                    elements.animationToggle.classList.remove('bg-gray-200', 'dark:bg-gray-700');
+                    elements.animationToggle.querySelector('span').classList.add('translate-x-5');
+                    elements.animationToggle.querySelector('span').classList.remove('translate-x-0.5');
+                    elements.animationToggle.setAttribute('aria-checked', 'true');
+                } else {
+                    elements.animationToggle.classList.remove('bg-primary-600');
+                    elements.animationToggle.classList.add('bg-gray-200', 'dark:bg-gray-700');
+                    elements.animationToggle.querySelector('span').classList.remove('translate-x-5');
+                    elements.animationToggle.querySelector('span').classList.add('translate-x-0.5');
+                    elements.animationToggle.setAttribute('aria-checked', 'false');
+                }
+
+                // Update frame assets
+                frameAssets[state.currentTheme].border.pulse = state.customOptions.pulseBorder;
+                updateCharmScore();
+            });
+
+            // Pattern buttons
+            elements.patternBtns.forEach(btn => {
+                btn.addEventListener('click', () => {
+                    activatePatternBtn(btn);
+                });
+            });
+        }
+        function toggleZoomAnimation(panel) {
+            panel.classList.remove('zoom-in');
+            requestAnimationFrame(() => {
+                panel.classList.add('zoom-in');
+            });
+        }
+
+
+        // Initialize the application
+        function init() {
+            initializeUI();
+            setupEventListeners();
+        }
+
+        // Start the application
+        init();
+    </script>
+</body>
+
+</html>
