@@ -1,2 +1,0 @@
-You haven't read the instructions and didn't test the code the code and you didn't change the style you only used tailwind and this wasn't the required for next project be aware of the instruction as first you need to run the original code and check for minor and major issues then update the code for any functional error then make it visually appealing and copy the code in the Revised Code and a screenshot for it
-then write the whole code with the features required  
