@@ -1,0 +1,1674 @@
+<!DOCTYPE html>
+<html lang="en" class="light">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Custom Emoji Reaction Designer</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700&display=swap"
+        rel="stylesheet" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+    <script>
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ["Plus Jakarta Sans", "sans-serif"],
+                    },
+                    colors: {
+                        primary: {
+                            50: "#f0f9ff",
+                            100: "#e0f2fe",
+                            200: "#bae6fd",
+                            300: "#7dd3fc",
+                            400: "#38bdf8",
+                            500: "#0ea5e9",
+                            600: "#0284c7",
+                            700: "#0369a1",
+                            800: "#075985",
+                            900: "#0c4a6e",
+                        },
+                        accent: {
+                            50: "#fff1f2",
+                            100: "#ffe4e6",
+                            200: "#fecdd3",
+                            300: "#fda4af",
+                            400: "#fb7185",
+                            500: "#f43f5e",
+                            600: "#e11d48",
+                            700: "#be123c",
+                            800: "#9f1239",
+                            900: "#881337",
+                        },
+                        surface: {
+                            50: "#f8fafc",
+                            100: "#f1f5f9",
+                            200: "#e2e8f0",
+                            300: "#cbd5e1",
+                            400: "#94a3b8",
+                            500: "#64748b",
+                            600: "#475569",
+                            700: "#334155",
+                            800: "#1e293b",
+                            900: "#0f172a",
+                        },
+                    },
+                },
+            },
+        };
+    </script>
+    <script src="https://unpkg.com/konva@8.4.3/konva.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/lodash.js/4.17.21/lodash.min.js"></script>
+    <style>
+        :root {
+            --color-primary-500: #0ea5e9;
+            --color-accent-500: #f43f5e;
+        }
+
+        body {
+            font-family: "Plus Jakarta Sans", sans-serif;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+        }
+
+        /* Beautiful subtle background */
+        .bg-pattern {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -1;
+            background-color: #f8fafc;
+            background-image: radial-gradient(#0ea5e9 0.75px, transparent 0.75px),
+                radial-gradient(#0ea5e9 0.75px, #f8fafc 0.75px);
+            background-size: 30px 30px;
+            background-position: 0 0, 15px 15px;
+            opacity: 0.05;
+        }
+
+        .dark .bg-pattern {
+            background-color: #0f172a;
+            background-image: radial-gradient(#38bdf8 0.75px, transparent 0.75px),
+                radial-gradient(#38bdf8 0.75px, #0f172a 0.75px);
+            opacity: 0.03;
+        }
+
+        .emoji-canvas {
+            border-radius: 16px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.03),
+                0 1px 8px rgba(0, 0, 0, 0.06), 0 0 1px rgba(0, 0, 0, 0.08);
+            overflow: hidden;
+            transition: all 0.3s ease;
+        }
+
+        .dark .emoji-canvas {
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15),
+                0 1px 8px rgba(0, 0, 0, 0.12), 0 0 1px rgba(0, 0, 0, 0.2);
+        }
+
+        .card {
+            transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+            border-radius: 16px;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            background: rgba(255, 255, 255, 0.75);
+        }
+
+        .dark .card {
+            background: rgba(15, 23, 42, 0.75);
+            border-color: rgba(255, 255, 255, 0.05);
+        }
+
+        .card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.06);
+        }
+
+        .dark .card:hover {
+            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.18);
+        }
+
+        .gradient-header {
+            position: relative;
+            background: linear-gradient(135deg, #0ea5e9, #f43f5e);
+            overflow: hidden;
+        }
+
+        .gradient-header::before {
+            content: "";
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: url("data:image/svg+xml,%3Csvg width='100' height='100' viewBox='0 0 100 100' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M11 18c3.866 0 7-3.134 7-7s-3.134-7-7-7-7 3.134-7 7 3.134 7 7 7zm48 25c3.866 0 7-3.134 7-7s-3.134-7-7-7-7 3.134-7 7 3.134 7 7 7zm-43-7c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zm63 31c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zM34 90c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zm56-76c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zM12 86c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm28-65c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm23-11c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zm-6 60c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm29 22c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zM32 63c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zm57-13c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zm-9-21c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2zM60 91c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2zM35 41c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2zM12 60c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2z' fill='%23ffffff' fill-opacity='0.1' fill-rule='evenodd'/%3E%3C/svg%3E");
+            opacity: 0.5;
+        }
+
+        /* Button styles */
+        .btn {
+            position: relative;
+            overflow: hidden;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            z-index: 1;
+            transform: translateZ(0);
+            will-change: transform;
+            font-weight: 500;
+            letter-spacing: 0.025em;
+        }
+
+        .btn:after {
+            content: "";
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(255, 255, 255, 0.15);
+            transform: scaleX(0);
+            transform-origin: right;
+            transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            z-index: -1;
+        }
+
+        .btn:hover:after {
+            transform: scaleX(1);
+            transform-origin: left;
+        }
+
+        .btn:active {
+            transform: translateY(1px) scale(0.98);
+        }
+
+        /* Form controls */
+        .form-select,
+        .form-input {
+            transition: all 0.2s ease;
+            box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+            border: 1px solid;
+            border-color: var(--border-color, #e2e8f0);
+        }
+
+        .form-select:focus,
+        .form-input:focus {
+            outline: none;
+            box-shadow: 0 0 0 3px rgba(14, 165, 233, 0.3);
+            border-color: var(--focus-border-color, #0ea5e9);
+        }
+
+        .dark .form-select,
+        .dark .form-input {
+            --border-color: #334155;
+            --focus-border-color: #38bdf8;
+        }
+
+        /* Color picker */
+        .color-picker {
+            position: relative;
+            border-radius: 0.75rem;
+            overflow: hidden;
+        }
+
+        .color-picker-input {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            opacity: 0;
+            cursor: pointer;
+            z-index: 2;
+        }
+
+        .color-picker-preview {
+            display: flex;
+            align-items: center;
+            padding: 0.75rem;
+            border-radius: 0.75rem;
+            border: 1px solid;
+            border-color: var(--border-color, #e2e8f0);
+            background-color: var(--bg-color, #ffffff);
+            transition: all 0.2s ease;
+        }
+
+        .color-picker:hover .color-picker-preview {
+            border-color: var(--hover-border-color, #cbd5e1);
+        }
+
+        .dark .color-picker-preview {
+            --bg-color: #1e293b;
+            --border-color: #334155;
+            --hover-border-color: #475569;
+        }
+
+        /* Custom toggle switch */
+        .toggle-switch {
+            position: relative;
+            display: inline-block;
+            width: 3.5rem;
+            height: 2rem;
+        }
+
+        .toggle-switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+
+        .toggle-slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: rgba(255, 255, 255, 0.2);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            backdrop-filter: blur(10px);
+            transition: .4s;
+            border-radius: 9999px;
+        }
+
+        .toggle-slider:before {
+            position: absolute;
+            content: "";
+            height: 1.5rem;
+            width: 1.5rem;
+            left: 0.25rem;
+            bottom: 0.25rem;
+            background-color: white;
+            transition: .4s;
+            border-radius: 50%;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+        }
+
+        input:checked+.toggle-slider {
+            background-color: rgba(14, 165, 233, 0.3);
+        }
+
+        input:checked+.toggle-slider:before {
+            transform: translateX(1.5rem);
+        }
+
+        .toggle-icons {
+            position: absolute;
+            top: 50%;
+            transform: translateY(-50%);
+            pointer-events: none;
+            display: flex;
+            justify-content: space-between;
+            width: 100%;
+            padding: 0 0.5rem;
+        }
+
+        .toggle-icons i {
+            font-size: 0.75rem;
+            color: white;
+        }
+
+        /* Sliding animations */
+        @keyframes slideUp {
+            from {
+                transform: translateY(20px);
+                opacity: 0;
+            }
+
+            to {
+                transform: translateY(0);
+                opacity: 1;
+            }
+        }
+
+        .animate-slideUp {
+            animation: slideUp 0.5s ease forwards;
+        }
+
+        /* Emoji Preview glow effect */
+        .emoji-glow {
+            animation: glow 3s ease-in-out infinite alternate;
+        }
+
+        @keyframes glow {
+            from {
+                box-shadow: 0 0 10px -10px rgba(14, 165, 233, 0.5);
+            }
+
+            to {
+                box-shadow: 0 0 20px 5px rgba(14, 165, 233, 0.3);
+            }
+        }
+
+        .dark .emoji-glow {
+            animation: darkGlow 3s ease-in-out infinite alternate;
+        }
+
+        @keyframes darkGlow {
+            from {
+                box-shadow: 0 0 10px -10px rgba(56, 189, 248, 0.3);
+            }
+
+            to {
+                box-shadow: 0 0 20px 5px rgba(56, 189, 248, 0.2);
+            }
+        }
+
+        /* Saved emoji grid */
+        .saved-emoji-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(80px, 1fr));
+            gap: 1rem;
+        }
+
+        .saved-emoji-item {
+            position: relative;
+            border-radius: 12px;
+            overflow: hidden;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            aspect-ratio: 1;
+            background: white;
+            border: 1px solid #e2e8f0;
+        }
+
+        .dark .saved-emoji-item {
+            background: #1e293b;
+            border-color: #334155;
+        }
+
+        .saved-emoji-item:hover {
+            transform: scale(1.05);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+        }
+
+        .saved-emoji-item .delete-btn {
+            position: absolute;
+            top: -6px;
+            right: -6px;
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            background: #f43f5e;
+            color: white;
+            font-size: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            opacity: 0;
+            transform: scale(0.7);
+            transition: all 0.2s ease;
+            z-index: 10;
+            border: 2px solid white;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+        }
+
+        .dark .saved-emoji-item .delete-btn {
+            border-color: #1e293b;
+        }
+
+        .saved-emoji-item:hover .delete-btn {
+            opacity: 1;
+            transform: scale(1);
+        }
+
+        /* Section headers */
+        .section-header {
+            display: flex;
+            align-items: center;
+            margin-bottom: 1.5rem;
+        }
+
+        .section-icon {
+            width: 2.5rem;
+            height: 2.5rem;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-right: 0.75rem;
+            flex-shrink: 0;
+        }
+
+        /* Stats cards */
+        .stat-card {
+            border-radius: 0.75rem;
+            padding: 1.25rem;
+            border: 1px solid;
+            border-color: var(--border-color, #e2e8f0);
+            background: var(--bg-color, #ffffff);
+            transition: all 0.3s ease;
+        }
+
+        .dark .stat-card {
+            --border-color: #334155;
+            --bg-color: #1e293b;
+        }
+
+        /* Progress ring */
+        .progress-ring {
+            transition: stroke-dashoffset 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        /* Tooltip */
+        .tooltip {
+            position: relative;
+        }
+
+        .tooltip .tooltip-text {
+            visibility: hidden;
+            width: 120px;
+            background-color: #334155;
+            color: #fff;
+            text-align: center;
+            border-radius: 6px;
+            padding: 5px;
+            position: absolute;
+            z-index: 1;
+            bottom: 125%;
+            left: 50%;
+            transform: translateX(-50%);
+            opacity: 0;
+            transition: opacity 0.3s;
+            font-size: 0.75rem;
+            font-weight: normal;
+        }
+
+        .tooltip:hover .tooltip-text {
+            visibility: visible;
+            opacity: 1;
+        }
+
+        /* Focus styles for accessibility */
+        button:focus,
+        input:focus,
+        select:focus,
+        a:focus {
+            outline: 2px solid var(--color-primary-500);
+            outline-offset: 2px;
+        }
+
+        /* Responsive adjustments */
+        @media (max-width: 768px) {
+            .saved-emoji-grid {
+                grid-template-columns: repeat(auto-fill, minmax(70px, 1fr));
+            }
+
+            .section-header {
+                margin-bottom: 1rem;
+            }
+
+            .section-icon {
+                width: 2rem;
+                height: 2rem;
+                font-size: 0.875rem;
+            }
+        }
+
+        /* Loading spinner */
+        @keyframes spin {
+            0% {
+                transform: rotate(0deg);
+            }
+
+            100% {
+                transform: rotate(360deg);
+            }
+        }
+
+        .spinner {
+            animation: spin 1s linear infinite;
+        }
+    </style>
+</head>
+
+<body
+    class="bg-surface-50 dark:bg-surface-900 text-surface-800 dark:text-surface-200 min-h-screen flex flex-col theme-transition">
+    <div class="bg-pattern"></div>
+
+    <header class="gradient-header text-white py-6 px-4 sm:px-6 lg:px-8 shadow-lg">
+        <div class="max-w-7xl mx-auto flex justify-between items-center">
+            <div class="flex items-center space-x-3">
+                <div class="w-10 h-10 bg-white/20 rounded-full flex items-center justify-center backdrop-blur-sm">
+                    <i class="fas fa-laugh-beam text-2xl"></i>
+                </div>
+                <h1 class="text-2xl font-bold tracking-tight">
+                    Emoji Reaction Designer
+                </h1>
+            </div>
+
+            <div class="flex items-center space-x-4">
+                <div class="flex items-center gap-2">
+                    <span class="text-sm text-white font-medium">Theme</span>
+                    <label class="toggle-switch">
+                        <input type="checkbox" id="toggleTheme" aria-label="Toggle dark mode" />
+                        <span class="toggle-slider"></span>
+                        <div class="toggle-icons">
+                            <i class="fas fa-sun text-yellow-300"></i>
+                            <i class="fas fa-moon text-blue-200"></i>
+                        </div>
+                    </label>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <div class="flex-1 container mx-auto px-4 py-8 max-w-6xl">
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            <!-- Left Panel -->
+            <div class="lg:col-span-1 space-y-6">
+                <!-- Design Panel -->
+                <section class="card p-6 shadow-lg animate-slideUp" style="animation-delay: 0.1s">
+                    <div class="section-header">
+                        <div
+                            class="section-icon bg-primary-100/50 dark:bg-primary-900/20 text-primary-600 dark:text-primary-400">
+                            <i class="fas fa-sliders-h"></i>
+                        </div>
+                        <h2 class="text-xl font-semibold">Design Your Emoji</h2>
+                    </div>
+
+                    <form id="emojiForm" class="space-y-5">
+                        <!-- Platform Selector -->
+                        <div class="space-y-2">
+                            <label for="platform"
+                                class="block text-sm font-medium text-surface-700 dark:text-surface-300">
+                                <i class="fas fa-globe-americas mr-2 text-primary-500"></i>Platform
+                            </label>
+                            <select id="platform"
+                                class="form-select w-full p-3 rounded-lg bg-white dark:bg-surface-800 text-surface-900 dark:text-surface-100">
+                                <option value="facebook">Facebook (100×100)</option>
+                                <option value="instagram">Instagram (100×100)</option>
+                                <option value="slack">Slack (64×64)</option>
+                            </select>
+                        </div>
+
+                        <!-- Shape Selector -->
+                        <div class="space-y-2">
+                            <label for="shape" class="block text-sm font-medium text-surface-700 dark:text-surface-300">
+                                <i class="fas fa-shapes mr-2 text-primary-500"></i>Shape
+                            </label>
+                            <select id="shape"
+                                class="form-select w-full p-3 rounded-lg bg-white dark:bg-surface-800 text-surface-900 dark:text-surface-100">
+                                <option value="circle">Circle</option>
+                                <option value="star">Star</option>
+                                <option value="heart">Heart</option>
+                            </select>
+                        </div>
+
+                        <!-- Color Picker -->
+                        <div class="space-y-2">
+                            <label for="color" class="block text-sm font-medium text-surface-700 dark:text-surface-300">
+                                <i class="fas fa-palette mr-2 text-primary-500"></i>Color
+                            </label>
+                            <div class="color-picker">
+                                <input type="color" id="color" value="#ff0000" class="color-picker-input"
+                                    aria-label="Choose emoji color" />
+                                <div class="color-picker-preview">
+                                    <div id="colorPreview" class="w-6 h-6 mr-3 rounded-full shadow-inner"
+                                        style="background-color: #ff0000"></div>
+                                    <span id="colorCode"
+                                        class="text-sm font-medium text-surface-600 dark:text-surface-400">#ff0000</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Animation Selector -->
+                        <div class="space-y-2">
+                            <label for="animation"
+                                class="block text-sm font-medium text-surface-700 dark:text-surface-300">
+                                <i class="fas fa-play-circle mr-2 text-primary-500"></i>Animation
+                            </label>
+                            <select id="animation"
+                                class="form-select w-full p-3 rounded-lg bg-white dark:bg-surface-800 text-surface-900 dark:text-surface-100">
+                                <option value="bounce">Bounce</option>
+                                <option value="spin">Spin</option>
+                                <option value="pulse">Pulse</option>
+                            </select>
+                        </div>
+
+                        <!-- Action Buttons -->
+                        <div class="pt-4 flex gap-4">
+                            <button type="button" id="saveBtn"
+                                class="btn bg-primary-600 hover:bg-primary-700 text-white px-6 py-3 rounded-lg font-medium flex items-center justify-center w-full">
+                                <i class="fas fa-save mr-2"></i>
+                                <span>Save Emoji</span>
+                            </button>
+                            <button type="button" id="exportBtn"
+                                class="btn bg-accent-500 hover:bg-accent-600 text-white px-6 py-3 rounded-lg font-medium flex items-center justify-center w-full">
+                                <i class="fas fa-download mr-2"></i>
+                                <span>Export PNG</span>
+                            </button>
+                        </div>
+                    </form>
+                </section>
+
+                <!-- Saved Emojis Section -->
+                <section class="card p-6 shadow-lg animate-slideUp" style="animation-delay: 0.2s">
+                    <div class="flex items-center justify-between mb-6">
+                        <div class="section-header">
+                            <div
+                                class="section-icon bg-accent-100/50 dark:bg-accent-900/20 text-accent-600 dark:text-accent-400">
+                                <i class="fas fa-bookmark"></i>
+                            </div>
+                            <h2 class="text-xl font-semibold">Saved Emojis</h2>
+                        </div>
+                        <button id="clearAllBtn"
+                            class="text-xs px-3 py-1 rounded bg-surface-200 dark:bg-surface-700 hover:bg-surface-300 dark:hover:bg-surface-600 transition-colors text-surface-700 dark:text-surface-300">
+                            Clear All
+                        </button>
+                    </div>
+
+                    <div id="savedEmojisContainer" class="saved-emoji-grid">
+                        <div class="text-center text-surface-500 dark:text-surface-400 py-4 col-span-full">
+                            No saved emojis yet. Create and save one!
+                        </div>
+                    </div>
+                </section>
+            </div>
+
+            <!-- Right Panel -->
+            <div class="lg:col-span-2 space-y-6">
+                <!-- Preview Section -->
+                <section class="card p-6 shadow-lg animate-slideUp" style="animation-delay: 0.3s">
+                    <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6">
+                        <div class="section-header">
+                            <div
+                                class="section-icon bg-primary-100/50 dark:bg-primary-900/20 text-primary-600 dark:text-primary-400">
+                                <i class="fas fa-eye"></i>
+                            </div>
+                            <h2 class="text-xl font-semibold">Live Preview</h2>
+                        </div>
+                        <div class="text-sm text-surface-500 dark:text-surface-400 mt-2 sm:mt-0">
+                            <i class="fas fa-info-circle mr-1"></i> Click on saved emojis to load them
+                        </div>
+                    </div>
+
+                    <div class="flex flex-col items-center justify-center">
+                        <div class="emoji-glow relative mb-8">
+                            <div id="stage"
+                                class="emoji-canvas bg-white dark:bg-surface-800 p-6 flex items-center justify-center"
+                                aria-live="polite">
+                                <!-- Canvas will be inserted here -->
+                            </div>
+                        </div>
+
+                        <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 w-full">
+                            <div class="stat-card flex items-center">
+                                <div
+                                    class="w-10 h-10 rounded-full bg-primary-100/50 dark:bg-primary-900/20 text-primary-500 dark:text-primary-400 flex items-center justify-center mr-3">
+                                    <i class="fas fa-mobile-alt"></i>
+                                </div>
+                                <div>
+                                    <div class="text-xs text-surface-500 dark:text-surface-500 font-medium">
+                                        Platform
+                                    </div>
+                                    <div id="platformDisplay" class="text-sm font-semibold mt-0.5">
+                                        Facebook
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="stat-card flex items-center">
+                                <div
+                                    class="w-10 h-10 rounded-full bg-primary-100/50 dark:bg-primary-900/20 text-primary-500 dark:text-primary-400 flex items-center justify-center mr-3">
+                                    <i class="fas fa-shapes"></i>
+                                </div>
+                                <div>
+                                    <div class="text-xs text-surface-500 dark:text-surface-500 font-medium">
+                                        Shape
+                                    </div>
+                                    <div id="shapeDisplay" class="text-sm font-semibold mt-0.5">
+                                        Circle
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="stat-card flex items-center">
+                                <div
+                                    class="w-10 h-10 rounded-full bg-primary-100/50 dark:bg-primary-900/20 text-primary-500 dark:text-primary-400 flex items-center justify-center mr-3">
+                                    <i class="fas fa-play-circle"></i>
+                                </div>
+                                <div>
+                                    <div class="text-xs text-surface-500 dark:text-surface-500 font-medium">
+                                        Animation
+                                    </div>
+                                    <div id="animationDisplay" class="text-sm font-semibold mt-0.5">
+                                        Bounce
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Stats Section -->
+                <section class="card p-6 shadow-lg animate-slideUp" style="animation-delay: 0.4s">
+                    <div class="section-header">
+                        <div
+                            class="section-icon bg-accent-100/50 dark:bg-accent-900/20 text-accent-600 dark:text-accent-400">
+                            <i class="fas fa-chart-line"></i>
+                        </div>
+                        <h2 class="text-xl font-semibold">Reaction Stats</h2>
+                    </div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <!-- Popularity Score -->
+                        <div class="stat-card flex items-center">
+                            <div class="relative w-20 h-20 mr-4">
+                                <svg class="w-20 h-20 transform -rotate-90" viewBox="0 0 100 100"
+                                    aria-labelledby="popularityTitle popularityDesc">
+                                    <title id="popularityTitle">Popularity Score</title>
+                                    <desc id="popularityDesc">Visual representation of your emoji's popularity score
+                                    </desc>
+                                    <circle class="text-surface-200 dark:text-surface-700" stroke-width="10"
+                                        stroke="currentColor" fill="transparent" r="40" cx="50" cy="50" />
+                                    <circle id="popularityIndicator"
+                                        class="progress-ring text-primary-500 dark:text-primary-400" stroke-width="10"
+                                        stroke="currentColor" fill="transparent" r="40" cx="50" cy="50"
+                                        stroke-dasharray="251.2" stroke-dashoffset="251.2" />
+                                </svg>
+                                <div class="absolute top-0 left-0 w-full h-full flex items-center justify-center">
+                                    <span id="popularityScore"
+                                        class="text-2xl font-bold text-primary-700 dark:text-primary-300">0</span>
+                                </div>
+                            </div>
+
+                            <div>
+                                <h3 class="text-lg font-medium">Popularity Score</h3>
+                                <div class="flex mt-1">
+                                    <div class="flex space-x-1 mr-2">
+                                        <i class="fas fa-star text-yellow-400"></i>
+                                        <i class="fas fa-star text-yellow-400"></i>
+                                        <i class="fas fa-star text-yellow-400"></i>
+                                        <i class="fas fa-star text-surface-300 dark:text-surface-600"></i>
+                                        <i class="fas fa-star text-surface-300 dark:text-surface-600"></i>
+                                    </div>
+                                    <span class="text-sm text-surface-600 dark:text-surface-400">Good design</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Trending Animation -->
+                        <div class="stat-card">
+                            <div class="flex items-center justify-between mb-3">
+                                <h3 class="text-lg font-medium flex items-center">
+                                    <i class="fas fa-fire text-accent-500 mr-2"></i>
+                                    Trending Animation
+                                </h3>
+                                <span
+                                    class="px-2 py-1 bg-accent-500/10 text-accent-600 dark:text-accent-400 rounded-full text-xs font-medium">Hot</span>
+                            </div>
+
+                            <div class="flex items-center">
+                                <i id="trendingIcon" class="fas fa-bounce text-accent-500 text-xl mr-4"></i>
+                                <div>
+                                    <span id="trendingAnimation" class="text-xl font-semibold">Bounce</span>
+                                    <div class="flex items-center mt-1">
+                                        <div
+                                            class="h-1.5 w-24 bg-surface-200 dark:bg-surface-700 rounded-full overflow-hidden mr-2">
+                                            <div class="h-full bg-accent-500 rounded-full" style="width: 75%"></div>
+                                        </div>
+                                        <span class="text-xs text-surface-600 dark:text-surface-400">75% popular</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+            </div>
+        </div>
+    </div>
+
+    <footer
+        class="bg-surface-100 dark:bg-surface-800/60 border-t border-surface-200 dark:border-surface-700/50 py-6 mt-8">
+        <div class="max-w-7xl mx-auto px-4 text-center text-surface-600 dark:text-surface-400 text-sm">
+            <p>
+                Created with <i class="fas fa-heart text-accent-500 mx-1"></i> for
+                emoji lovers everywhere
+            </p>
+            <div class="flex justify-center space-x-4 mt-3">
+                <a href="#"
+                    class="text-surface-500 hover:text-primary-500 dark:hover:text-primary-400 transition-colors"
+                    aria-label="Twitter">
+                    <i class="fab fa-twitter"></i>
+                </a>
+                <a href="#"
+                    class="text-surface-500 hover:text-primary-500 dark:hover:text-primary-400 transition-colors"
+                    aria-label="GitHub">
+                    <i class="fab fa-github"></i>
+                </a>
+                <a href="#"
+                    class="text-surface-500 hover:text-primary-500 dark:hover:text-primary-400 transition-colors"
+                    aria-label="Instagram">
+                    <i class="fab fa-instagram"></i>
+                </a>
+            </div>
+        </div>
+    </footer>
+
+    <script>
+        const emojiAssets = {
+            faces: [
+                { id: "smiley", eyes: "circle", mouth: "smile" },
+                { id: "sad", eyes: "circle", mouth: "frown" },
+                { id: "neutral", eyes: "line", mouth: "neutral" },
+                { id: "angry", eyes: "angry", mouth: "angry" },
+                { id: "surprised", eyes: "big-circle", mouth: "oval" },
+            ],
+            shapes: [
+                { id: "circle", name: "Circle", vibrancy: 0.7, uniqueness: 0.5 },
+                { id: "star", name: "Star", vibrancy: 0.9, uniqueness: 0.8 },
+                { id: "heart", name: "Heart", vibrancy: 0.85, uniqueness: 0.7 },
+            ],
+            animations: [
+                { id: "bounce", name: "Bounce", uniqueness: 0.6, icon: "fa-bounce" },
+                { id: "spin", name: "Spin", uniqueness: 0.8, icon: "fa-spin" },
+                { id: "pulse", name: "Pulse", uniqueness: 0.7, icon: "fa-fade" },
+            ],
+        };
+
+        let stage, layer, emojiShape;
+        let currentTween = null;
+        let isUpdating = false;
+        let currentConfig = {
+            platform: "facebook",
+            shape: "circle",
+            face: "smiley",
+            color: "#ff0000",
+            animation: "bounce",
+        };
+
+        let savedEmojis = [];
+
+        function initCanvas(size) {
+            if (stage) {
+                stage.destroyChildren();
+                stage.destroy();
+            }
+
+            stage = new Konva.Stage({
+                container: "stage",
+                width: size,
+                height: size,
+            });
+
+            layer = new Konva.Layer();
+            stage.add(layer);
+
+            stage.container().style.backgroundColor =
+                document.documentElement.classList.contains("dark")
+                    ? "#1e293b"
+                    : "#ffffff";
+        }
+
+        function updateEmoji() {
+            if (isUpdating) return;
+            isUpdating = true;
+
+            if (currentTween && typeof currentTween.stop === "function") {
+                currentTween.stop();
+            }
+
+            if (emojiShape) {
+                layer.removeChildren();
+            }
+
+            const size = currentConfig.platform === "slack" ? 64 : 100;
+
+            updateInfoDisplays();
+
+            switch (currentConfig.shape) {
+                case "circle":
+                    emojiShape = new Konva.Circle({
+                        x: size / 2,
+                        y: size / 2,
+                        radius: size / 3,
+                        fill: currentConfig.color,
+                        shadowColor: "rgba(0,0,0,0.3)",
+                        shadowBlur: 10,
+                        shadowOffset: { x: 0, y: 5 },
+                        shadowOpacity: 0.2,
+                    });
+                    break;
+                case "star":
+                    emojiShape = new Konva.Star({
+                        x: size / 2,
+                        y: size / 2,
+                        numPoints: 5,
+                        innerRadius: size / 6,
+                        outerRadius: size / 3,
+                        fill: currentConfig.color,
+                        shadowColor: "rgba(0,0,0,0.3)",
+                        shadowBlur: 10,
+                        shadowOffset: { x: 0, y: 5 },
+                        shadowOpacity: 0.2,
+                    });
+                    break;
+                case "heart":
+                    emojiShape = new Konva.Path({
+                        x: size / 2,
+                        y: size / 2,
+                        data: "M 0 -10 C -10 -20 -20 -15 -20 -5 C -20 5 -10 10 0 20 C 10 10 20 5 20 -5 C 20 -15 10 -20 0 -10 Z",
+                        fill: currentConfig.color,
+                        scale: { x: size / 80, y: size / 80 },
+                        shadowColor: "rgba(0,0,0,0.3)",
+                        shadowBlur: 10,
+                        shadowOffset: { x: 0, y: 5 },
+                        shadowOpacity: 0.2,
+                    });
+                    break;
+            }
+
+            layer.add(emojiShape);
+            layer.draw();
+
+            updateColorDisplay(currentConfig.color);
+
+            setTimeout(() => {
+                applyAnimation();
+                updatePopularityScore();
+                isUpdating = false;
+            }, 50);
+        }
+
+        function updateInfoDisplays() {
+            const platformDisplay = document.getElementById("platformDisplay");
+            const shapeDisplay = document.getElementById("shapeDisplay");
+            const animationDisplay = document.getElementById("animationDisplay");
+
+            if (platformDisplay) {
+                platformDisplay.textContent = capitalizeFirstLetter(
+                    currentConfig.platform
+                );
+            }
+
+            if (shapeDisplay) {
+                const shapeName =
+                    emojiAssets.shapes.find((s) => s.id === currentConfig.shape)
+                        ?.name || "Circle";
+                shapeDisplay.textContent = shapeName;
+            }
+
+            if (animationDisplay) {
+                const animationName =
+                    emojiAssets.animations.find((a) => a.id === currentConfig.animation)
+                        ?.name || "Bounce";
+                animationDisplay.textContent = animationName;
+            }
+
+            const animationAsset = emojiAssets.animations.find(
+                (a) => a.id === currentConfig.animation
+            );
+            const trendingIcon = document.getElementById("trendingIcon");
+            if (trendingIcon && animationAsset && animationAsset.icon) {
+                trendingIcon.className = `fas ${animationAsset.icon} text-accent-500 text-xl mr-4`;
+            }
+        }
+
+        function updateColorDisplay(color) {
+            const colorPreview = document.getElementById("colorPreview");
+            const colorCode = document.getElementById("colorCode");
+
+            if (colorPreview) {
+                colorPreview.style.backgroundColor = color;
+            }
+
+            if (colorCode) {
+                colorCode.textContent = color;
+            }
+        }
+
+        function capitalizeFirstLetter(string) {
+            return string.charAt(0).toUpperCase() + string.slice(1);
+        }
+
+        function applyAnimation() {
+            if (currentTween && typeof currentTween.stop === "function") {
+                currentTween.stop();
+            }
+
+            if (!emojiShape || !emojiShape.getLayer()) {
+                console.warn("Cannot apply animation: shape not in layer");
+                return;
+            }
+
+            switch (currentConfig.animation) {
+                case "bounce":
+                    applyBounceAnimation();
+                    break;
+                case "spin":
+                    applySpinAnimation();
+                    break;
+                case "pulse":
+                    applyPulseAnimation();
+                    break;
+            }
+        }
+
+        function applyBounceAnimation() {
+            try {
+                if (!emojiShape || !layer) return;
+
+                const size = currentConfig.platform === "slack" ? 64 : 100;
+                const originalY = emojiShape.y();
+
+                const originalScaleX = emojiShape.scaleX() || 1;
+                const originalScaleY = emojiShape.scaleY() || 1;
+
+                let moveDistance, scaleAmount;
+
+                switch (currentConfig.shape) {
+                    case "star":
+                        moveDistance = Math.floor(size * 0.04);
+                        scaleAmount = 1.03;
+                        break;
+                    case "heart":
+                        moveDistance = Math.floor(size * 0.045);
+                        scaleAmount = 1.03;
+                        break;
+                    case "circle":
+                    default:
+                        moveDistance = Math.floor(size * 0.05);
+                        scaleAmount = 1.04;
+                        break;
+                }
+
+                if (size === 64) {
+                    moveDistance = Math.min(moveDistance, 3);
+                }
+
+                emojiShape.cache();
+
+                const bounceUp = new Konva.Tween({
+                    node: emojiShape,
+                    duration: 0.5,
+                    y: originalY - moveDistance,
+                    scaleX: originalScaleX * scaleAmount,
+                    scaleY: originalScaleY * scaleAmount,
+                    easing: Konva.Easings.EaseOutQuad,
+                    onFinish: function () {
+                        if (
+                            !emojiShape ||
+                            !emojiShape.getLayer() ||
+                            currentConfig.animation !== "bounce"
+                        ) return;
+
+                        const bounceDown = new Konva.Tween({
+                            node: emojiShape,
+                            duration: 0.5,
+                            y: originalY,
+                            scaleX: originalScaleX,
+                            scaleY: originalScaleY,
+                            easing: Konva.Easings.EaseInQuad,
+                            onFinish: function () {
+                                if (currentConfig.animation === "bounce") {
+                                    window.requestAnimationFrame(() => {
+                                        setTimeout(() => {
+                                            if (
+                                                emojiShape &&
+                                                emojiShape.getLayer() &&
+                                                currentConfig.animation === "bounce"
+                                            ) {
+                                                applyBounceAnimation();
+                                            }
+                                        }, 800);
+                                    });
+                                }
+                            },
+                        });
+                        bounceDown.play();
+                    },
+                });
+
+                currentTween = bounceUp;
+                bounceUp.play();
+            } catch (error) {
+                console.error("Error in bounce animation:", error);
+            }
+        }
+
+        function applySpinAnimation() {
+            try {
+                if (!emojiShape || !layer) return;
+
+                if (currentTween && typeof currentTween.stop === "function") {
+                    currentTween.stop();
+                }
+
+                if (!emojiShape._cachedSprite) {
+                    emojiShape.cache();
+                }
+
+                emojiShape.rotation(0);
+
+                const spin = new Konva.Animation((frame) => {
+                    if (!frame || !frame.time) return;
+
+                    const angularSpeed = 90;
+                    const rotationAmount = frame.timeDiff * (angularSpeed / 1000);
+
+                    emojiShape.rotate(rotationAmount);
+                }, layer);
+
+                currentTween = {
+                    stop: () => {
+                        spin.stop();
+                    },
+                };
+
+                spin.start();
+            } catch (error) {
+                console.error("Error in spin animation:", error);
+            }
+        }
+
+        function applyPulseAnimation() {
+            try {
+                if (!emojiShape || !layer) return;
+
+                if (!emojiShape._cachedSprite) {
+                    emojiShape.cache();
+                }
+
+                const minScale = currentConfig.platform === "slack" ? 0.87 : 0.85;
+                const minOpacity = currentConfig.platform === "slack" ? 0.75 : 0.7;
+
+                const pulseDown = new Konva.Tween({
+                    node: emojiShape,
+                    duration: 1,
+                    scaleX: minScale,
+                    scaleY: minScale,
+                    opacity: minOpacity,
+                    easing: Konva.Easings.SineInOut,
+                    onFinish: function () {
+                        if (
+                            !emojiShape ||
+                            !emojiShape.getLayer() ||
+                            currentConfig.animation !== "pulse"
+                        ) return;
+
+                        const pulseUp = new Konva.Tween({
+                            node: emojiShape,
+                            duration: 1,
+                            scaleX: 1,
+                            scaleY: 1,
+                            opacity: 1,
+                            easing: Konva.Easings.SineInOut,
+                            onFinish: function () {
+                                if (currentConfig.animation === "pulse") {
+                                    window.requestAnimationFrame(() => {
+                                        if (
+                                            emojiShape &&
+                                            emojiShape.getLayer() &&
+                                            currentConfig.animation === "pulse"
+                                        ) {
+                                            applyPulseAnimation();
+                                        }
+                                    });
+                                }
+                            },
+                        });
+                        pulseUp.play();
+                    },
+                });
+
+                currentTween = pulseDown;
+                pulseDown.play();
+            } catch (error) {
+                console.error("Error in pulse animation:", error);
+            }
+        }
+
+        function updatePopularityScore() {
+            const shape = emojiAssets.shapes.find(
+                (s) => s.id === currentConfig.shape
+            );
+            const animation = emojiAssets.animations.find(
+                (a) => a.id === currentConfig.animation
+            );
+
+            const colorVibrancy = 0.7;
+
+            const vibrancyScore = Math.min(
+                (shape.vibrancy + colorVibrancy) * 25,
+                50
+            );
+            const uniquenessScore = Math.min(
+                (shape.uniqueness + animation.uniqueness) * 25,
+                50
+            );
+
+            const score = Math.round(vibrancyScore + uniquenessScore);
+            const finalScore = Math.min(score, 100);
+
+            const currentScore =
+                parseInt(document.getElementById("popularityScore").textContent) || 0;
+            animateCounter("popularityScore", currentScore, finalScore, 1000);
+
+            const circle = document.getElementById("popularityIndicator");
+            if (circle) {
+                const radius = 40;
+                const circumference = radius * 2 * Math.PI;
+                const targetOffset =
+                    circumference - (finalScore / 100) * circumference;
+
+                const currentOffset = parseFloat(
+                    circle.style.strokeDashoffset || circumference
+                );
+                animateProgress(circle, currentOffset, targetOffset, 1000);
+            }
+
+            updateStarRating(finalScore);
+        }
+
+        function animateCounter(elementId, start, end, duration) {
+            const element = document.getElementById(elementId);
+            if (!element) return;
+
+            let startTime = null;
+
+            function updateCounter(timestamp) {
+                if (!startTime) startTime = timestamp;
+                const progress = Math.min((timestamp - startTime) / duration, 1);
+                const value = Math.floor(start + (end - start) * progress);
+                element.textContent = value;
+
+                if (progress < 1) {
+                    window.requestAnimationFrame(updateCounter);
+                }
+            }
+
+            window.requestAnimationFrame(updateCounter);
+        }
+
+        function animateProgress(element, start, end, duration) {
+            let startTime = null;
+
+            function updateProgress(timestamp) {
+                if (!startTime) startTime = timestamp;
+                const progress = Math.min((timestamp - startTime) / duration, 1);
+                const currentValue = start + (end - start) * progress;
+                element.style.strokeDashoffset = currentValue;
+
+                if (progress < 1) {
+                    window.requestAnimationFrame(updateProgress);
+                }
+            }
+
+            window.requestAnimationFrame(updateProgress);
+        }
+
+        function updateStarRating(score) {
+            const stars = document.querySelectorAll(".flex .fa-star");
+            if (stars.length === 0) return;
+
+            const numFilledStars = Math.min(Math.ceil(score / 20), 5);
+            const ratingText = stars[0].closest(".flex").nextElementSibling;
+
+            stars.forEach((star, index) => {
+                if (index < numFilledStars) {
+                    star.className = "fas fa-star text-yellow-400";
+                } else {
+                    star.className = "fas fa-star text-surface-300 dark:text-surface-600";
+                }
+            });
+
+            if (ratingText) {
+                const ratingMessages = [
+                    "Needs improvement",
+                    "OK design",
+                    "Good design",
+                    "Great design!",
+                    "Exceptional!",
+                ];
+                ratingText.textContent =
+                    ratingMessages[Math.min(Math.floor(score / 20), 4)];
+            }
+        }
+
+        function suggestTrendingAnimation() {
+            const currentTrending =
+                document.getElementById("trendingAnimation").textContent;
+            let newTrending;
+
+            do {
+                newTrending =
+                    emojiAssets.animations[
+                    Math.floor(Math.random() * emojiAssets.animations.length)
+                    ];
+            } while (newTrending.name === currentTrending);
+
+            const trendingEl = document.getElementById("trendingAnimation");
+            const trendingIcon = document.getElementById("trendingIcon");
+
+            if (trendingEl) {
+                trendingEl.style.opacity = 0;
+                if (trendingIcon) trendingIcon.style.opacity = 0;
+
+                setTimeout(() => {
+                    trendingEl.textContent = newTrending.name;
+                    if (trendingIcon) {
+                        trendingIcon.className = `fas ${newTrending.icon} text-accent-500 text-xl`;
+                    }
+
+                    const percentEl = document.querySelector(".h-full.bg-accent-500");
+                    if (percentEl) {
+                        const popularity = Math.floor(Math.random() * 30) + 65;
+                        percentEl.style.width = `${popularity}%`;
+
+                        const percentText = percentEl
+                            .closest(".flex")
+                            .querySelector(".text-xs");
+                        if (percentText) {
+                            percentText.textContent = `${popularity}% popular`;
+                        }
+                    }
+
+                    trendingEl.style.opacity = 1;
+                    if (trendingIcon) trendingIcon.style.opacity = 1;
+                }, 300);
+            }
+        }
+
+        function saveEmoji() {
+            const newEmoji = {
+                ...currentConfig,
+                id: Date.now().toString(),
+                timestamp: Date.now()
+            };
+
+            savedEmojis.push(newEmoji);
+            localStorage.setItem("savedEmojis", JSON.stringify(savedEmojis));
+
+            renderSavedEmojis();
+
+            // Show save confirmation
+            const saveBtn = document.getElementById("saveBtn");
+            const originalContent = saveBtn.innerHTML;
+
+            saveBtn.innerHTML = '<i class="fas fa-check mr-2"></i><span>Saved!</span>';
+            saveBtn.classList.add("bg-green-600");
+
+            setTimeout(() => {
+                saveBtn.innerHTML = originalContent;
+                saveBtn.classList.remove("bg-green-600");
+            }, 2000);
+
+            return newEmoji;
+        }
+
+        function loadEmoji(emojiConfig) {
+            // Update all form fields
+            document.getElementById("platform").value = emojiConfig.platform;
+            document.getElementById("shape").value = emojiConfig.shape;
+            document.getElementById("animation").value = emojiConfig.animation;
+            document.getElementById("color").value = emojiConfig.color;
+
+            // Update current config
+            currentConfig = { ...emojiConfig };
+
+            // Update the canvas
+            const size = currentConfig.platform === "slack" ? 64 : 100;
+            initCanvas(size);
+            updateEmoji();
+
+            // Scroll preview into view on mobile
+            if (window.innerWidth < 1024) {
+                document.getElementById("stage").scrollIntoView({
+                    behavior: 'smooth',
+                    block: 'center'
+                });
+            }
+        }
+
+        function deleteEmoji(id) {
+            savedEmojis = savedEmojis.filter(emoji => emoji.id !== id);
+            localStorage.setItem("savedEmojis", JSON.stringify(savedEmojis));
+            renderSavedEmojis();
+        }
+
+        function clearAllEmojis() {
+            if (confirm("Are you sure you want to delete all saved emojis?")) {
+                savedEmojis = [];
+                localStorage.setItem("savedEmojis", JSON.stringify(savedEmojis));
+                renderSavedEmojis();
+            }
+        }
+
+        function renderSavedEmojis() {
+            const container = document.getElementById("savedEmojisContainer");
+            if (!container) return;
+
+            // Clear the container
+            container.innerHTML = "";
+
+            if (savedEmojis.length === 0) {
+                container.innerHTML = `
+                    <div class="text-center text-surface-500 dark:text-surface-400 py-4 col-span-full">
+                        No saved emojis yet. Create and save one!
+                    </div>
+                `;
+                return;
+            }
+
+            // Sort emojis by timestamp (newest first)
+            const sortedEmojis = [...savedEmojis].sort((a, b) => b.timestamp - a.timestamp);
+
+            // Create a thumbnail for each saved emoji
+            sortedEmojis.forEach(emoji => {
+                const thumbnailDiv = document.createElement("div");
+                thumbnailDiv.className = "saved-emoji-item group";
+                thumbnailDiv.setAttribute("aria-label", `Load ${emoji.shape} emoji with ${emoji.animation} animation`);
+                thumbnailDiv.innerHTML = `
+                    <div class="delete-btn" data-emoji-id="${emoji.id}" aria-label="Delete this emoji">
+                        <i class="fas fa-times"></i>
+                    </div>
+                    <div id="emoji-${emoji.id}" class="w-full h-full"></div>
+                    <div class="absolute bottom-0 left-0 right-0 bg-black/50 text-white text-xs p-1 text-center opacity-0 group-hover:opacity-100 transition-opacity">
+                        ${emoji.shape} • ${emoji.animation}
+                    </div>
+                `;
+
+                container.appendChild(thumbnailDiv);
+
+                // Create a mini Konva stage for the thumbnail
+                setTimeout(() => {
+                    createThumbnail(emoji, `emoji-${emoji.id}`);
+                }, 10);
+
+                // Add click event to load this emoji
+                thumbnailDiv.addEventListener("click", (e) => {
+                    // Don't trigger load if clicked on delete button
+                    if (e.target.closest(".delete-btn")) return;
+                    loadEmoji(emoji);
+                });
+            });
+
+            // Add event listeners for delete buttons
+            document.querySelectorAll(".delete-btn").forEach(btn => {
+                btn.addEventListener("click", (e) => {
+                    e.stopPropagation();
+                    const id = btn.dataset.emojiId;
+                    deleteEmoji(id);
+                });
+            });
+        }
+
+        function createThumbnail(emojiConfig, containerId) {
+            const container = document.getElementById(containerId);
+            if (!container) return;
+
+            const size = 80; // Size of the thumbnail
+            const stage = new Konva.Stage({
+                container: containerId,
+                width: size,
+                height: size
+            });
+
+            const layer = new Konva.Layer();
+            stage.add(layer);
+
+            // Create shape based on config
+            let shape;
+            switch (emojiConfig.shape) {
+                case "circle":
+                    shape = new Konva.Circle({
+                        x: size / 2,
+                        y: size / 2,
+                        radius: size / 3,
+                        fill: emojiConfig.color,
+                        shadowColor: "rgba(0,0,0,0.2)",
+                        shadowBlur: 5,
+                        shadowOffset: { x: 0, y: 3 },
+                        shadowOpacity: 0.2,
+                    });
+                    break;
+                case "star":
+                    shape = new Konva.Star({
+                        x: size / 2,
+                        y: size / 2,
+                        numPoints: 5,
+                        innerRadius: size / 6,
+                        outerRadius: size / 3,
+                        fill: emojiConfig.color,
+                        shadowColor: "rgba(0,0,0,0.2)",
+                        shadowBlur: 5,
+                        shadowOffset: { x: 0, y: 3 },
+                        shadowOpacity: 0.2,
+                    });
+                    break;
+                case "heart":
+                    shape = new Konva.Path({
+                        x: size / 2,
+                        y: size / 2,
+                        data: "M 0 -10 C -10 -20 -20 -15 -20 -5 C -20 5 -10 10 0 20 C 10 10 20 5 20 -5 C 20 -15 10 -20 0 -10 Z",
+                        fill: emojiConfig.color,
+                        scale: { x: size / 80, y: size / 80 },
+                        shadowColor: "rgba(0,0,0,0.2)",
+                        shadowBlur: 5,
+                        shadowOffset: { x: 0, y: 3 },
+                        shadowOpacity: 0.2,
+                    });
+                    break;
+            }
+
+            if (shape) {
+                layer.add(shape);
+                layer.draw();
+            }
+        }
+
+        const debouncedUpdate = _.debounce(() => {
+            const size = currentConfig.platform === "slack" ? 64 : 100;
+            initCanvas(size);
+            updateEmoji();
+        }, 100);
+
+        document.addEventListener("DOMContentLoaded", () => {
+            // Load saved emojis from localStorage
+            const savedEmojisData = localStorage.getItem("savedEmojis");
+            if (savedEmojisData) {
+                try {
+                    savedEmojis = JSON.parse(savedEmojisData);
+                    renderSavedEmojis();
+                } catch (e) {
+                    console.error("Error loading saved emojis:", e);
+                    savedEmojis = [];
+                }
+            }
+
+            initCanvas(100);
+            updateEmoji();
+
+            suggestTrendingAnimation();
+            setInterval(suggestTrendingAnimation, 10000);
+
+            const toggleTheme = document.getElementById("toggleTheme");
+            if (toggleTheme) {
+                const prefersDark = window.matchMedia(
+                    "(prefers-color-scheme: dark)"
+                ).matches;
+                const savedTheme = localStorage.getItem("theme");
+
+                if (savedTheme === "dark" || (!savedTheme && prefersDark)) {
+                    document.documentElement.classList.add("dark");
+                    toggleTheme.checked = true;
+                }
+
+                toggleTheme.addEventListener("change", function () {
+                    if (this.checked) {
+                        document.documentElement.classList.add("dark");
+                        localStorage.setItem("theme", "dark");
+                    } else {
+                        document.documentElement.classList.remove("dark");
+                        localStorage.setItem("theme", "light");
+                    }
+
+                    if (stage) {
+                        stage.container().style.backgroundColor = this.checked
+                            ? "#1e293b"
+                            : "#ffffff";
+                        layer.draw();
+                    }
+
+                    // Refresh saved emoji thumbnails
+                    renderSavedEmojis();
+                });
+            }
+
+            // Set up Clear All button
+            document.getElementById("clearAllBtn").addEventListener("click", clearAllEmojis);
+        });
+
+        document.getElementById("platform").addEventListener("change", (e) => {
+            currentConfig.platform = e.target.value;
+            updateInfoDisplays();
+            debouncedUpdate();
+        });
+
+        document.getElementById("shape").addEventListener("change", (e) => {
+            currentConfig.shape = e.target.value;
+            updateInfoDisplays();
+            debouncedUpdate();
+        });
+
+        document.getElementById("color").addEventListener("input", (e) => {
+            currentConfig.color = e.target.value;
+            updateColorDisplay(e.target.value);
+            debouncedUpdate();
+        });
+
+        document.getElementById("animation").addEventListener("change", (e) => {
+            currentConfig.animation = e.target.value;
+            updateInfoDisplays();
+            debouncedUpdate();
+        });
+
+        document.getElementById("saveBtn").addEventListener("click", () => {
+            saveEmoji();
+        });
+
+        document.getElementById("exportBtn").addEventListener("click", () => {
+            const exportBtn = document.getElementById("exportBtn");
+            const originalContent = exportBtn.innerHTML;
+
+            exportBtn.innerHTML = '<i class="fas fa-spinner spinner mr-2"></i><span>Exporting...</span>';
+            exportBtn.disabled = true;
+
+            setTimeout(() => {
+                const link = document.createElement("a");
+                link.download = `emoji_${currentConfig.shape}_${currentConfig.platform}.png`;
+                link.href = stage.toDataURL();
+                link.click();
+
+                exportBtn.innerHTML = '<i class="fas fa-check mr-2"></i><span>Exported!</span>';
+
+                setTimeout(() => {
+                    exportBtn.innerHTML = originalContent;
+                    exportBtn.disabled = false;
+                }, 2000);
+            }, 500);
+        });
+    </script>
+</body>
+
+</html>

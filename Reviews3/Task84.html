@@ -1,0 +1,738 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hydraulic System Debugger</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.4.2/p5.min.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        indigo: {
+                            50: '#eef2ff',
+                            100: '#e0e7ff',
+                            200: '#c7d2fe',
+                            300: '#a5b4fc',
+                            400: '#818cf8',
+                            500: '#6366f1',
+                            600: '#4f46e5',
+                            700: '#4338ca',
+                            800: '#3730a3',
+                            900: '#312e81',
+                        }
+                    },
+                    animation: {
+                        'pulse-slow': 'pulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite',
+                        'bounce-slow': 'bounce 2s infinite'
+                    }
+                }
+            }
+        }
+    </script>
+</head>
+
+<body class="bg-gray-50 dark:bg-gray-900 text-gray-800 dark:text-gray-100 transition-colors duration-200">
+    <div class="min-h-screen flex flex-col md:flex-row">
+        <!-- Sidebar -->
+        <div
+            class="w-full md:w-1/3 p-6 bg-white dark:bg-gray-800 shadow-lg border-r border-gray-200 dark:border-gray-700 flex flex-col">
+            <div class="flex justify-between items-center mb-6">
+                <div>
+                    <h1 class="text-2xl font-bold text-indigo-600 dark:text-indigo-400 flex items-center">
+                        <i class="fas fa-tachometer-alt mr-2"></i> Hydraulic Debugger
+                    </h1>
+                    <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">Real-time system monitoring</p>
+                </div>
+                <!-- Dark Mode Toggle -->
+                <button id="theme-toggle"
+                    class="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+                    aria-label="Toggle dark mode">
+                    <i id="theme-icon" class="fas fa-moon text-gray-700 dark:text-yellow-300"></i>
+                </button>
+            </div>
+
+            <!-- System Status Card -->
+            <div id="status-card"
+                class="mb-6 p-4 bg-gradient-to-r from-indigo-50 to-blue-50 dark:from-gray-700 dark:to-gray-800 rounded-lg border border-indigo-100 dark:border-gray-600 shadow-sm transition-all duration-300 hover:shadow-md">
+                <div class="flex justify-between items-center">
+                    <div>
+                        <h3 class="font-medium text-indigo-700 dark:text-indigo-300 flex items-center">
+                            <i class="fas fa-info-circle mr-2"></i> System Status
+                        </h3>
+                        <p id="status-message" class="text-sm mt-1">All parameters within normal range</p>
+                    </div>
+                    <div id="status-indicator" class="w-3 h-3 bg-green-500 rounded-full animate-pulse-slow"></div>
+                </div>
+            </div>
+
+            <!-- Industry Selector -->
+            <div class="mb-6">
+                <label for="industry"
+                    class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1 flex items-center">
+                    <i class="fas fa-industry mr-2 text-indigo-500"></i> Industry
+                </label>
+                <div class="relative">
+                    <select id="industry"
+                        class="w-full px-3 py-2 pl-10 bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 text-gray-900 dark:text-gray-100 appearance-none">
+                        <option value="construction">Construction Equipment</option>
+                        <option value="aerospace">Aerospace Actuators</option>
+                        <option value="industrial">Industrial Presses</option>
+                    </select>
+                    <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                        <i class="fas fa-cog text-gray-400"></i>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Parameter Controls -->
+            <div class="space-y-6 flex-grow">
+                <!-- Pressure Control -->
+                <div
+                    class="p-4 bg-gray-50 dark:bg-gray-700 rounded-lg border border-gray-200 dark:border-gray-600 transition-all hover:border-indigo-300">
+                    <div class="flex justify-between items-center mb-1">
+                        <label for="pressure"
+                            class="block text-sm font-medium text-gray-700 dark:text-gray-300 flex items-center">
+                            <i class="fas fa-tachometer-alt mr-2 text-indigo-500"></i> Pump Pressure
+                        </label>
+                        <span id="pressure-value"
+                            class="text-sm font-medium bg-indigo-100 dark:bg-gray-600 px-2 py-1 rounded text-indigo-600 dark:text-indigo-400">150
+                            bar</span>
+                    </div>
+                    <input type="range" id="pressure" min="50" max="300" value="150"
+                        class="w-full h-2 bg-gray-200 dark:bg-gray-600 rounded-lg appearance-none cursor-pointer accent-indigo-600 hover:accent-indigo-700 transition-colors">
+                    <div class="flex justify-between text-xs text-gray-500 dark:text-gray-400 mt-1">
+                        <span>50 bar</span>
+                        <span>300 bar</span>
+                    </div>
+                </div>
+
+                <!-- Valve Control -->
+                <div
+                    class="p-4 bg-gray-50 dark:bg-gray-700 rounded-lg border border-gray-200 dark:border-gray-600 transition-all hover:border-indigo-300">
+                    <div class="flex justify-between items-center mb-1">
+                        <label for="valve"
+                            class="block text-sm font-medium text-gray-700 dark:text-gray-300 flex items-center">
+                            <i class="fas fa-filter mr-2 text-indigo-500"></i> Valve Opening
+                        </label>
+                        <span id="valve-value"
+                            class="text-sm font-medium bg-indigo-100 dark:bg-gray-600 px-2 py-1 rounded text-indigo-600 dark:text-indigo-400">50%</span>
+                    </div>
+                    <input type="range" id="valve" min="0" max="100" value="50"
+                        class="w-full h-2 bg-gray-200 dark:bg-gray-600 rounded-lg appearance-none cursor-pointer accent-indigo-600 hover:accent-indigo-700 transition-colors">
+                    <div class="flex justify-between text-xs text-gray-500 dark:text-gray-400 mt-1">
+                        <span>0%</span>
+                        <span>100%</span>
+                    </div>
+                </div>
+
+                <!-- Leak Control -->
+                <div
+                    class="p-4 bg-gray-50 dark:bg-gray-700 rounded-lg border border-gray-200 dark:border-gray-600 transition-all hover:border-indigo-300">
+                    <div class="flex justify-between items-center mb-1">
+                        <label for="leak"
+                            class="block text-sm font-medium text-gray-700 dark:text-gray-300 flex items-center">
+                            <i class="fas fa-tint mr-2 text-indigo-500"></i> Leak Rate
+                        </label>
+                        <span id="leak-value"
+                            class="text-sm font-medium bg-indigo-100 dark:bg-gray-600 px-2 py-1 rounded text-indigo-600 dark:text-indigo-400">5%</span>
+                    </div>
+                    <input type="range" id="leak" min="0" max="20" value="5"
+                        class="w-full h-2 bg-gray-200 dark:bg-gray-600 rounded-lg appearance-none cursor-pointer accent-indigo-600 hover:accent-indigo-700 transition-colors">
+                    <div class="flex justify-between text-xs text-gray-500 dark:text-gray-400 mt-1">
+                        <span>0%</span>
+                        <span>20%</span>
+                    </div>
+                </div>
+
+                <!-- Reliability Score -->
+                <div
+                    class="mt-auto p-4 bg-indigo-50 dark:bg-gray-700 rounded-lg border border-indigo-100 dark:border-gray-600 shadow-sm">
+                    <div class="flex justify-between items-center mb-2">
+                        <h3 class="text-sm font-medium text-gray-700 dark:text-gray-300 flex items-center">
+                            <i class="fas fa-shield-alt mr-2 text-indigo-500"></i> System Reliability
+                        </h3>
+                        <span id="reliability" class="text-lg font-bold text-indigo-600 dark:text-indigo-400">50%</span>
+                    </div>
+                    <div class="w-full bg-gray-200 dark:bg-gray-600 rounded-full h-3 mb-1">
+                        <div id="reliability-bar"
+                            class="bg-indigo-600 h-3 rounded-full transition-all duration-500 ease-out"
+                            style="width: 50%"></div>
+                    </div>
+                    <div class="flex justify-between text-xs text-gray-500 dark:text-gray-400">
+                        <span>Low</span>
+                        <span>Optimal</span>
+                        <span>High</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Action Buttons -->
+            <div class="mt-6 grid grid-cols-2 gap-3">
+                <button id="save"
+                    class="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-md shadow-sm transition-all flex items-center justify-center focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 hover:shadow-md">
+                    <i class="fas fa-save mr-2"></i> Save
+                </button>
+                <button id="export"
+                    class="px-4 py-2 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-200 rounded-md shadow-sm transition-all flex items-center justify-center focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 hover:shadow-md">
+                    <i class="fas fa-file-export mr-2"></i> Export
+                </button>
+                <button id="reset"
+                    class="px-4 py-2 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-200 rounded-md shadow-sm transition-all flex items-center justify-center focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 hover:shadow-md">
+                    <i class="fas fa-undo mr-2"></i> Reset
+                </button>
+                <button id="help"
+                    class="px-4 py-2 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-200 rounded-md shadow-sm transition-all flex items-center justify-center focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 hover:shadow-md">
+                    <i class="fas fa-question-circle mr-2"></i> Help
+                </button>
+            </div>
+        </div>
+
+        <!-- Canvas Area -->
+        <div class="w-full md:w-2/3 p-6 flex flex-col">
+            <div class="flex justify-between items-center mb-4">
+                <h2 class="text-lg font-semibold text-indigo-600 dark:text-indigo-400 flex items-center">
+                    <i class="fas fa-project-diagram mr-2"></i> System Visualization
+                </h2>
+                <div class="flex space-x-2">
+                    <button id="zoom-in"
+                        class="p-2 bg-gray-100 dark:bg-gray-700 rounded hover:bg-gray-200 dark:hover:bg-gray-600">
+                        <i class="fas fa-search-plus"></i>
+                    </button>
+                    <button id="zoom-out"
+                        class="p-2 bg-gray-100 dark:bg-gray-700 rounded hover:bg-gray-200 dark:hover:bg-gray-600">
+                        <i class="fas fa-search-minus"></i>
+                    </button>
+                </div>
+            </div>
+
+            <div id="canvas-container"
+                class="flex-grow bg-white dark:bg-gray-800 rounded-lg shadow-lg overflow-hidden border border-gray-200 dark:border-gray-700 relative">
+                <div id="tooltip"
+                    class="absolute hidden bg-gray-900 text-white text-xs px-2 py-1 rounded pointer-events-none z-10">
+                </div>
+            </div>
+
+            <div class="mt-4 grid grid-cols-3 gap-4">
+                <div class="p-3 bg-indigo-50 dark:bg-gray-700 rounded-lg border border-indigo-100 dark:border-gray-600">
+                    <div class="text-xs text-indigo-600 dark:text-indigo-400 mb-1">Current Pressure</div>
+                    <div id="current-pressure" class="text-xl font-bold">150 bar</div>
+                </div>
+                <div class="p-3 bg-indigo-50 dark:bg-gray-700 rounded-lg border border-indigo-100 dark:border-gray-600">
+                    <div class="text-xs text-indigo-600 dark:text-indigo-400 mb-1">Flow Rate</div>
+                    <div id="flow-rate" class="text-xl font-bold">45 L/min</div>
+                </div>
+                <div class="p-3 bg-indigo-50 dark:bg-gray-700 rounded-lg border border-indigo-100 dark:border-gray-600">
+                    <div class="text-xs text-indigo-600 dark:text-indigo-400 mb-1">Efficiency</div>
+                    <div id="efficiency" class="text-xl font-bold">78%</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Help Modal -->
+    <div id="help-modal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 hidden">
+        <div class="bg-white dark:bg-gray-800 rounded-lg shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+            <div class="p-6">
+                <div class="flex justify-between items-center mb-4">
+                    <h3 class="text-xl font-bold text-indigo-600 dark:text-indigo-400">
+                        <i class="fas fa-question-circle mr-2"></i> Hydraulic Debugger Help
+                    </h3>
+                    <button id="close-help" class="text-gray-500 hover:text-gray-700 dark:hover:text-gray-300">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+                <div class="space-y-4">
+                    <div>
+                        <h4 class="font-medium text-indigo-600 dark:text-indigo-400 mb-2">Getting Started</h4>
+                        <p class="text-sm text-gray-700 dark:text-gray-300">Use the controls on the left panel to adjust
+                            hydraulic system parameters. The visualization will update in real-time to reflect your
+                            changes.</p>
+                    </div>
+                    <div>
+                        <h4 class="font-medium text-indigo-600 dark:text-indigo-400 mb-2">Parameters</h4>
+                        <ul class="text-sm text-gray-700 dark:text-gray-300 space-y-2">
+                            <li><span class="font-medium">Pump Pressure</span>: Adjusts the system pressure (50-300 bar)
+                            </li>
+                            <li><span class="font-medium">Valve Opening</span>: Controls the flow restriction (0-100%)
+                            </li>
+                            <li><span class="font-medium">Leak Rate</span>: Simulates system leaks (0-20%)</li>
+                        </ul>
+                    </div>
+                    <div>
+                        <h4 class="font-medium text-indigo-600 dark:text-indigo-400 mb-2">Reliability Score</h4>
+                        <p class="text-sm text-gray-700 dark:text-gray-300">The system calculates a reliability score
+                            based on how close your settings are to optimal values for the selected industry.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // System Data
+        const systemData = {
+            construction: {
+                pressure: 150,
+                valve: 50,
+                leak: 5,
+                optimal: { pressure: 180, valve: 60, leak: 2 },
+                maxFlow: 60
+            },
+            aerospace: {
+                pressure: 200,
+                valve: 70,
+                leak: 3,
+                optimal: { pressure: 220, valve: 75, leak: 1 },
+                maxFlow: 45
+            },
+            industrial: {
+                pressure: 120,
+                valve: 40,
+                leak: 8,
+                optimal: { pressure: 140, valve: 45, leak: 3 },
+                maxFlow: 80
+            }
+        };
+
+        // State
+        let currentIndustry = 'construction';
+        let particles = [];
+        let surge = 0;
+        let zoomLevel = 1;
+        let canvasWidth, canvasHeight;
+
+        // p5.js Sketch
+        function sketch(p) {
+            p.setup = function () {
+                const container = document.getElementById('canvas-container');
+                canvasWidth = container.offsetWidth;
+                canvasHeight = container.offsetHeight;
+                let canvas = p.createCanvas(canvasWidth, canvasHeight);
+                canvas.parent('canvas-container');
+
+                // Initialize particles
+                for (let i = 0; i < 50; i++) { // Reduced particle count for performance
+                    particles.push({
+                        x: p.random(p.width),
+                        y: p.random(p.height),
+                        vx: p.random(-1, 1),
+                        vy: p.random(-1, 1),
+                        size: p.random(3, 6)
+                    });
+                }
+
+                // Add event listeners for tooltips
+                container.addEventListener('mousemove', (e) => {
+                    const tooltip = document.getElementById('tooltip');
+                    const rect = container.getBoundingClientRect();
+                    const x = (e.clientX - rect.left) / zoomLevel;
+                    const y = (e.clientY - rect.top) / zoomLevel;
+
+                    // Check if mouse is over a component
+                    if (isOverPipe(x, y)) {
+                        tooltip.textContent = `Hydraulic Pipe - Pressure: ${document.getElementById('pressure').value} bar`;
+                        tooltip.style.left = `${Math.min(e.clientX + 10, window.innerWidth - tooltip.offsetWidth - 10)}px`;
+                        tooltip.style.top = `${Math.min(e.clientY + 10, window.innerHeight - tooltip.offsetHeight - 10)}px`;
+                        tooltip.classList.remove('hidden');
+                    } else {
+                        tooltip.classList.add('hidden');
+                    }
+                });
+
+                // Handle window resize
+                window.addEventListener('resize', () => {
+                    canvasWidth = container.offsetWidth;
+                    canvasHeight = container.offsetHeight;
+                    p.resizeCanvas(canvasWidth, canvasHeight);
+                });
+            };
+
+            function isOverPipe(x, y) {
+                const pipeWidth = 12;
+                return (
+                    (y >= 50 - pipeWidth / 2 && y <= 50 + pipeWidth / 2 && x >= 50 && x <= canvasWidth - 50) || // Top pipe
+                    (y >= canvasHeight - 50 - pipeWidth / 2 && y <= canvasHeight - 50 + pipeWidth / 2 && x >= 50 && x <= canvasWidth - 50) || // Bottom pipe
+                    (x >= 50 - pipeWidth / 2 && x <= 50 + pipeWidth / 2 && y >= 50 && y <= canvasHeight - 50) || // Left pipe
+                    (x >= canvasWidth - 50 - pipeWidth / 2 && x <= canvasWidth - 50 + pipeWidth / 2 && y >= 50 && y <= canvasHeight - 50) // Right pipe
+                );
+            }
+
+            p.draw = function () {
+                p.background(240);
+                p.push();
+                p.scale(zoomLevel);
+
+                // Draw pipes with gradient
+                drawPipe(50, 50, canvasWidth - 50, 50); // Top
+                drawPipe(50, canvasHeight - 50, canvasWidth - 50, canvasHeight - 50); // Bottom
+                drawPipe(50, 50, 50, canvasHeight - 50); // Left
+                drawPipe(canvasWidth - 50, 50, canvasWidth - 50, canvasHeight - 50); // Right
+
+                // Draw fluid particles
+                const pressure = parseFloat(document.getElementById('pressure').value);
+                const valve = parseFloat(document.getElementById('valve').value) / 100;
+
+                for (let particle of particles) {
+                    // Adjust velocity based on pressure and valve opening
+                    particle.vx = p.constrain(particle.vx * (pressure / 150) * valve, -3, 3);
+                    particle.vy = p.constrain(particle.vy * (pressure / 150) * valve, -3, 3);
+
+                    particle.x += particle.vx;
+                    particle.y += particle.vy;
+
+                    // Bounce off walls
+                    if (particle.x < 0 || particle.x > p.width) particle.vx *= -1;
+                    if (particle.y < 0 || particle.y > p.height) particle.vy *= -1;
+
+                    // Surge effect
+                    const col = surge > 0 ?
+                        p.color(239, 68, 68, 200) :
+                        p.lerpColor(
+                            p.color(99, 102, 241, 150),
+                            p.color(79, 70, 229, 200),
+                            pressure / 300
+                        );
+
+                    p.fill(col);
+                    p.noStroke();
+                    p.ellipse(particle.x, particle.y, particle.size * (1 + surge), particle.size * (1 + surge));
+                }
+                surge *= 0.9; // Decay surge effect
+
+                p.pop();
+
+                // Draw pressure gauge
+                drawPressureGauge(p.width - 120, 20, 80, pressure / 300);
+            };
+
+            function drawPipe(x1, y1, x2, y2) {
+                const pressure = parseFloat(document.getElementById('pressure').value);
+                const leak = parseFloat(document.getElementById('leak').value);
+
+                // Pipe color based on pressure and leaks
+                let pipeColor;
+                if (leak > 10) {
+                    pipeColor = p.color(220, 38, 38); // Red for high leaks
+                } else if (pressure > 250) {
+                    pipeColor = p.color(249, 115, 22); // Orange for high pressure
+                } else {
+                    pipeColor = p.lerpColor(
+                        p.color(100, 100, 100),
+                        p.color(30, 58, 138),
+                        pressure / 300
+                    );
+                }
+
+                p.stroke(pipeColor);
+                p.strokeWeight(12);
+                p.line(x1, y1, x2, y2);
+
+                // Add pipe fittings
+                p.fill(150);
+                p.noStroke();
+                p.ellipse(x1, y1, 15, 15);
+                p.ellipse(x2, y2, 15, 15);
+            }
+
+            function drawPressureGauge(x, y, size, value) {
+                // Gauge background
+                p.fill(240);
+                p.stroke(150);
+                p.strokeWeight(2);
+                p.ellipse(x + size / 2, y + size / 2, size, size);
+
+                // Gauge needle
+                p.push();
+                p.translate(x + size / 2, y + size / 2);
+                p.rotate(p.PI * 0.75 + value * p.PI * 1.5);
+                p.stroke(239, 68, 68);
+                p.strokeWeight(3);
+                p.line(0, 0, size * 0.4, 0);
+                p.pop();
+
+                // Gauge label
+                p.noStroke();
+                p.fill(0);
+                p.textSize(12);
+                p.textAlign(p.CENTER);
+                p.text("Pressure", x + size / 2, y + size + 15);
+            }
+        }
+
+        // Create p5 instance
+        new p5(sketch);
+
+        // Update system metrics
+        function updateSystemMetrics() {
+            const pressure = parseFloat(document.getElementById('pressure').value);
+            const valve = parseFloat(document.getElementById('valve').value);
+            const leak = parseFloat(document.getElementById('leak').value);
+            const optimal = systemData[currentIndustry].optimal;
+
+            // Update slider value displays
+            document.getElementById('pressure-value').textContent = `${pressure} bar`;
+            document.getElementById('valve-value').textContent = `${valve}%`;
+            document.getElementById('leak-value').textContent = `${leak}%`;
+
+            // Calculate derived metrics
+            const flowRate = Math.round(systemData[currentIndustry].maxFlow * (valve / 100) * (1 - leak / 50));
+            const efficiency = Math.round(100 - Math.abs(pressure - optimal.pressure) / 3 - leak * 2);
+
+            // Update display
+            document.getElementById('current-pressure').textContent = `${pressure} bar`;
+            document.getElementById('flow-rate').textContent = `${flowRate} L/min`;
+            document.getElementById('efficiency').textContent = `${Math.max(0, efficiency)}%`;
+
+            // Update reliability score
+            updateReliability();
+        }
+
+        // Update reliability score
+        function updateReliability() {
+            const pressure = parseFloat(document.getElementById('pressure').value);
+            const valve = parseFloat(document.getElementById('valve').value);
+            const leak = parseFloat(document.getElementById('leak').value);
+            const optimal = systemData[currentIndustry].optimal;
+
+            let score = 100;
+            score -= Math.abs(pressure - optimal.pressure) / 3;
+            score -= Math.abs(valve - optimal.valve) / 2;
+            score -= leak * 3;
+            score = Math.max(0, Math.min(100, Math.round(score)));
+
+            // Update reliability display
+            document.getElementById('reliability').textContent = `${score}%`;
+            document.getElementById('reliability-bar').style.width = `${score}%`;
+
+            // Change bar color based on score
+            const bar = document.getElementById('reliability-bar');
+            const statusCard = document.getElementById('status-card');
+            const statusMessage = document.getElementById('status-message');
+            const statusIndicator = document.getElementById('status-indicator');
+
+            if (score < 30) {
+                bar.className = 'bg-red-500 h-3 rounded-full transition-all duration-500 ease-out';
+                statusMessage.textContent = 'Critical system state!';
+                statusIndicator.className = 'w-3 h-3 bg-red-500 rounded-full animate-pulse';
+                statusCard.className = 'mb-6 p-4 bg-gradient-to-r from-red-50 to-pink-50 dark:from-gray-700 dark:to-gray-800 rounded-lg border border-red-200 dark:border-gray-600 shadow-sm transition-all duration-300 hover:shadow-md';
+            } else if (score < 70) {
+                bar.className = 'bg-yellow-500 h-3 rounded-full transition-all duration-500 ease-out';
+                statusMessage.textContent = 'Suboptimal performance';
+                statusIndicator.className = 'w-3 h-3 bg-yellow-500 rounded-full animate-pulse';
+                statusCard.className = 'mb-6 p-4 bg-gradient-to-r from-yellow-50 to-amber-50 dark:from-gray-700 dark:to-gray-800 rounded-lg border border-yellow-200 dark:border-gray-600 shadow-sm transition-all duration-300 hover:shadow-md';
+            } else {
+                bar.className = 'bg-indigo-600 h-3 rounded-full transition-all duration-500 ease-out';
+                statusMessage.textContent = 'All parameters within normal range';
+                statusIndicator.className = 'w-3 h-3 bg-green-500 rounded-full animate-pulse-slow';
+                statusCard.className = 'mb-6 p-4 bg-gradient-to-r from-indigo-50 to-blue-50 dark:from-gray-700 dark:to-gray-800 rounded-lg border border-indigo-100 dark:border-gray-600 shadow-sm transition-all duration-300 hover:shadow-md';
+            }
+
+            // Trigger surge if parameters are critical
+            if (Math.abs(pressure - optimal.pressure) > 80 || leak > 15) {
+                surge = 1;
+            }
+        }
+
+        // Notification function
+        function showNotification(message, type) {
+            const notification = document.createElement('div');
+            const colors = {
+                success: 'bg-green-500',
+                error: 'bg-red-500',
+                info: 'bg-blue-500'
+            };
+
+            notification.className = `fixed bottom-4 right-4 px-4 py-2 ${colors[type] || 'bg-indigo-600'} text-white rounded-md shadow-lg flex items-center animate-fade-in`;
+            notification.innerHTML = `
+        <i class="fas ${type === 'success' ? 'fa-check-circle' : type === 'error' ? 'fa-exclamation-circle' : 'fa-info-circle'} mr-2"></i>
+        ${message}
+    `;
+            document.body.appendChild(notification);
+
+            setTimeout(() => {
+                notification.classList.add('animate-fade-out');
+                setTimeout(() => notification.remove(), 300);
+            }, 3000);
+        }
+
+        // Load saved settings
+        function loadSettings() {
+            try {
+                const savedSettings = localStorage.getItem('hydraulicSettings');
+                if (savedSettings) {
+                    const settings = JSON.parse(savedSettings);
+                    if (systemData[settings.industry]) {
+                        currentIndustry = settings.industry;
+                        document.getElementById('industry').value = currentIndustry;
+                        document.getElementById('pressure').valuedocument.getElementById('pressure').value = settings.pressure;
+                        document.getElementById('valve').value = settings.valve;
+                        document.getElementById('leak').value = settings.leak;
+
+                        document.getElementById('pressure-value').textContent = `${settings.pressure} bar`;
+                        document.getElementById('valve-value').textContent = `${settings.valve}%`;
+                        document.getElementById('leak-value').textContent = `${settings.leak}%`;
+
+                        updateSystemMetrics();
+                        showNotification('Previous settings loaded', 'info');
+                    }
+                }
+            } catch (e) {
+                console.error('Error loading settings:', e);
+                showNotification('Failed to load settings', 'error');
+            }
+        }
+
+        // Save settings
+        function saveSettings() {
+            try {
+                const settings = {
+                    industry: currentIndustry,
+                    pressure: parseFloat(document.getElementById('pressure').value),
+                    valve: parseFloat(document.getElementById('valve').value),
+                    leak: parseFloat(document.getElementById('leak').value)
+                };
+                localStorage.setItem('hydraulicSettings', JSON.stringify(settings));
+                showNotification('Settings saved successfully', 'success');
+            } catch (e) {
+                console.error('Error saving settings:', e);
+                showNotification('Failed to save settings', 'error');
+            }
+        }
+
+        // Export settings
+        function exportSettings() {
+            try {
+                const settings = {
+                    industry: currentIndustry,
+                    pressure: parseFloat(document.getElementById('pressure').value),
+                    valve: parseFloat(document.getElementById('valve').value),
+                    leak: parseFloat(document.getElementById('leak').value)
+                };
+                const blob = new Blob([JSON.stringify(settings, null, 2)], { type: 'application/json' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = 'hydraulic-settings.json';
+                a.click();
+                URL.revokeObjectURL(url);
+                showNotification('Settings exported successfully', 'success');
+            } catch (e) {
+                console.error('Error exporting settings:', e);
+                showNotification('Failed to export settings', 'error');
+            }
+        }
+
+        // Reset settings
+        function resetSettings() {
+            const defaults = systemData[currentIndustry];
+            document.getElementById('pressure').value = defaults.pressure;
+            document.getElementById('valve').value = defaults.valve;
+            document.getElementById('leak').value = defaults.leak;
+
+            document.getElementById('pressure-value').textContent = `${defaults.pressure} bar`;
+            document.getElementById('valve-value').textContent = `${defaults.valve}%`;
+            document.getElementById('leak-value').textContent = `${defaults.leak}%`;
+
+            updateSystemMetrics();
+            showNotification('Settings reset to defaults', 'info');
+        }
+
+        // Dark mode toggle
+        function toggleDarkMode() {
+            document.documentElement.classList.toggle('dark');
+            const isDark = document.documentElement.classList.contains('dark');
+            localStorage.setItem('darkMode', isDark ? 'enabled' : 'disabled');
+            document.getElementById('theme-icon').className = `fas ${isDark ? 'fa-sun' : 'fa-moon'} text-gray-700 dark:text-yellow-300`;
+        }
+
+        // Initialize dark mode
+        function initDarkMode() {
+            const darkMode = localStorage.getItem('darkMode');
+            if (darkMode === 'enabled') {
+                document.documentElement.classList.add('dark');
+                document.getElementById('theme-icon').className = 'fas fa-sun text-gray-700 dark:text-yellow-300';
+            }
+        }
+
+        // Event listeners
+        document.addEventListener('DOMContentLoaded', () => {
+            // Initialize dark mode
+            initDarkMode();
+
+            // Slider inputs
+            ['pressure', 'valve', 'leak'].forEach(id => {
+                const slider = document.getElementById(id);
+                if (slider) {
+                    slider.addEventListener('input', () => {
+                        updateSystemMetrics();
+                    });
+                }
+            });
+
+            // Industry selector
+            const industrySelect = document.getElementById('industry');
+            if (industrySelect) {
+                industrySelect.addEventListener('change', () => {
+                    currentIndustry = industrySelect.value;
+                    resetSettings();
+                });
+            }
+
+            // Buttons
+            const saveBtn = document.getElementById('save');
+            if (saveBtn) saveBtn.addEventListener('click', saveSettings);
+
+            const exportBtn = document.getElementById('export');
+            if (exportBtn) exportBtn.addEventListener('click', exportSettings);
+
+            const resetBtn = document.getElementById('reset');
+            if (resetBtn) resetBtn.addEventListener('click', resetSettings);
+
+            const helpBtn = document.getElementById('help');
+            if (helpBtn) {
+                helpBtn.addEventListener('click', () => {
+                    document.getElementById('help-modal').classList.remove('hidden');
+                });
+            }
+
+            const closeHelpBtn = document.getElementById('close-help');
+            if (closeHelpBtn) {
+                closeHelpBtn.addEventListener('click', () => {
+                    document.getElementById('help-modal').classList.add('hidden');
+                });
+            }
+
+            const themeToggle = document.getElementById('theme-toggle');
+            if (themeToggle) themeToggle.addEventListener('click', toggleDarkMode);
+
+            // Zoom buttons
+            const zoomInBtn = document.getElementById('zoom-in');
+            if (zoomInBtn) {
+                zoomInBtn.addEventListener('click', () => {
+                    zoomLevel = Math.min(zoomLevel + 0.1, 2);
+                    showNotification(`Zoom: ${(zoomLevel * 100).toFixed(0)}%`, 'info');
+                });
+            }
+
+            const zoomOutBtn = document.getElementById('zoom-out');
+            if (zoomOutBtn) {
+                zoomOutBtn.addEventListener('click', () => {
+                    zoomLevel = Math.max(zoomLevel - 0.1, 0.5);
+                    showNotification(`Zoom: ${(zoomLevel * 100).toFixed(0)}%`, 'info');
+                });
+            }
+
+            // Load settings
+            loadSettings();
+        });
+
+    </script>
+</body>
+
+</html>

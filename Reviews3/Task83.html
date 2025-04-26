@@ -1,0 +1,1122 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Neon Flow | Process Editor</title>
+  <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <style>
+    :root {
+      --node-scale: 1;
+      --primary: #6366f1;
+      --primary-dark: #4f46e5;
+      --primary-light: #a5b4fc;
+      --secondary: #8b5cf6;
+      --accent: #ec4899;
+      --dark: #0f172a;
+      --darker: #020617;
+      --light: #f8fafc;
+      --lighter: #ffffff;
+      --success: #10b981;
+      --warning: #f59e0b;
+      --danger: #ef4444;
+      --gray: #64748b;
+      --light-gray: #e2e8f0;
+      --glass: rgba(255, 255, 255, 0.08);
+      --glass-border: rgba(255, 255, 255, 0.1);
+      --node-border: 2px solid var(--primary-light);
+      --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.1);
+      --shadow-md: 0 4px 6px rgba(0, 0, 0, 0.1);
+      --shadow-lg: 0 10px 15px rgba(0, 0, 0, 0.1);
+      --shadow-xl: 0 20px 25px rgba(0, 0, 0, 0.1);
+      --transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+      --transition-slow: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+      --border-radius: 12px;
+      --border-radius-lg: 16px;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: 'Manrope', sans-serif;
+      margin: 0;
+      background: linear-gradient(135deg, var(--darker), var(--dark));
+      color: var(--light);
+      overflow: hidden;
+      line-height: 1.6;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    header {
+      background: linear-gradient(135deg, var(--primary-dark), var(--secondary));
+      color: var(--lighter);
+      padding: 0.75rem 2rem;
+      text-align: center;
+      font-size: 1.5rem;
+      font-weight: 700;
+      box-shadow: var(--shadow-md);
+      position: relative;
+      z-index: 20;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      backdrop-filter: blur(8px);
+      -webkit-backdrop-filter: blur(8px);
+      border-bottom: 1px solid var(--glass-border);
+    }
+
+    .logo {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+    }
+
+    .logo-icon {
+      font-size: 1.8rem;
+      color: var(--accent);
+    }
+
+    .header-actions {
+      display: flex;
+      gap: 1rem;
+    }
+
+    .main {
+      display: flex;
+      height: calc(100vh - 64px);
+      flex-direction: row;
+      overflow: hidden;
+    }
+
+    .toolbox {
+      width: 280px;
+      padding: 1.5rem;
+      background: var(--glass);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border-right: 1px solid var(--glass-border);
+      display: flex;
+      flex-direction: column;
+      z-index: 10;
+    }
+
+    .toolbox-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 1.5rem;
+    }
+
+    .toolbox-title {
+      font-size: 1.25rem;
+      font-weight: 600;
+      color: var(--lighter);
+    }
+
+    .toolbox-items {
+      display: grid;
+      gap: 0.75rem;
+      width: 100%;
+    }
+
+    .toolbox-item {
+      padding: 0.75rem 1rem;
+      background: var(--glass);
+      border-radius: var(--border-radius);
+      cursor: grab;
+      transition: var(--transition);
+      border: 1px solid var(--glass-border);
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      font-weight: 500;
+      color: var(--light);
+      backdrop-filter: blur(4px);
+      -webkit-backdrop-filter: blur(4px);
+    }
+
+    .toolbox-item:active {
+      cursor: grabbing;
+      transform: scale(0.98);
+    }
+
+    .toolbox-item:hover {
+      background: rgba(99, 102, 241, 0.2);
+      border-color: var(--primary-light);
+      transform: translateY(-2px);
+    }
+
+    .toolbox-item i {
+      font-size: 1.1rem;
+      color: var(--primary-light);
+    }
+
+    .toolbox-controls {
+      margin-top: 1.5rem;
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+    }
+
+    .control-group {
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+    }
+
+    .control-label {
+      font-size: 0.875rem;
+      color: var(--light-gray);
+      font-weight: 500;
+    }
+
+    input[type="range"] {
+      -webkit-appearance: none;
+      height: 6px;
+      background: var(--glass);
+      border-radius: 3px;
+      margin: 0.5rem 0;
+    }
+
+    input[type="range"]::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      width: 16px;
+      height: 16px;
+      background: var(--primary);
+      border-radius: 50%;
+      cursor: pointer;
+      transition: var(--transition);
+      border: 2px solid var(--lighter);
+    }
+
+    input[type="range"]::-webkit-slider-thumb:hover {
+      transform: scale(1.2);
+      background: var(--accent);
+    }
+
+    .btn {
+      padding: 0.75rem 1rem;
+      border: none;
+      border-radius: var(--border-radius);
+      font-size: 0.95rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: var(--transition);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.5rem;
+    }
+
+    .btn-primary {
+      background: var(--primary);
+      color: var(--lighter);
+      box-shadow: 0 2px 8px rgba(99, 102, 241, 0.3);
+    }
+
+    .btn-primary:hover {
+      background: var(--primary-dark);
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(99, 102, 241, 0.4);
+    }
+
+    .btn-secondary {
+      background: var(--glass);
+      color: var(--light);
+      border: 1px solid var(--glass-border);
+    }
+
+    .btn-secondary:hover {
+      background: rgba(255, 255, 255, 0.1);
+      transform: translateY(-2px);
+    }
+
+    .btn-danger {
+      background: var(--danger);
+      color: var(--lighter);
+    }
+
+    .btn-danger:hover {
+      background: #dc2626;
+      transform: translateY(-2px);
+    }
+
+    .canvas-container {
+      flex-grow: 1;
+      overflow: auto;
+      position: relative;
+      background: radial-gradient(circle at center, var(--darker), var(--dark));
+      background-size: 30px 30px;
+      background-image:
+        linear-gradient(to right, rgba(71, 85, 105, 0.2) 1px, transparent 1px),
+        linear-gradient(to bottom, rgba(71, 85, 105, 0.2) 1px, transparent 1px);
+    }
+
+    .plot-container {
+      width: 380px;
+      padding: 1.5rem;
+      display: flex;
+      flex-direction: column;
+      gap: 1.5rem;
+      background: var(--glass);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border-left: 1px solid var(--glass-border);
+      overflow-y: auto;
+    }
+
+    #canvas {
+      position: absolute;
+      pointer-events: none;
+      width: 100%;
+      height: 100%;
+    }
+
+    .node {
+      position: absolute;
+      padding: 1rem;
+      border: var(--node-border);
+      background: rgba(15, 23, 42, 0.7);
+      border-radius: var(--border-radius-lg);
+      cursor: move;
+      user-select: none;
+      text-align: center;
+      min-width: 140px;
+      box-shadow: var(--shadow-lg);
+      transition: var(--transition);
+      transform: scale(var(--node-scale));
+      overflow: visible;
+      font-size: 0.95rem;
+      backdrop-filter: blur(4px);
+      -webkit-backdrop-filter: blur(4px);
+    }
+
+    .node:hover {
+      background: rgba(30, 41, 59, 0.8);
+      transform: scale(calc(var(--node-scale) * 1.05));
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
+      z-index: 20;
+      border-color: var(--accent);
+    }
+
+    .node.selected {
+      animation: pulse 1.5s infinite;
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px rgba(236, 72, 153, 0.3);
+    }
+
+    .node strong {
+      display: block;
+      margin-bottom: 0.5rem;
+      color: var(--primary-light);
+      font-weight: 600;
+    }
+
+    .connection-point {
+      position: absolute;
+      width: 14px;
+      height: 14px;
+      border-radius: 50%;
+      background: var(--primary);
+      cursor: pointer;
+      z-index: 10;
+      transition: var(--transition);
+      border: 2px solid var(--dark);
+      box-shadow: 0 0 0 2px var(--primary);
+    }
+
+    .connection-point:hover {
+      transform: scale(1.3);
+      background: var(--accent);
+      box-shadow: 0 0 0 2px var(--accent);
+    }
+
+    .input-point {
+      left: -7px;
+      top: 50%;
+      transform: translateY(-50%);
+    }
+    
+    .output-point {
+      right: -7px;
+      top: 50%;
+      transform: translateY(-50%);
+    }
+    
+    .connection-line {
+      stroke: var(--primary);
+      stroke-width: 2;
+      fill: none;
+      marker-end: url(#arrowhead);
+      filter: drop-shadow(0 0 4px rgba(99, 102, 241, 0.5));
+    }
+    
+    #arrowhead {
+      fill: var(--primary);
+    }
+
+    @keyframes pulse {
+      0% { transform: scale(var(--node-scale)); }
+      50% { transform: scale(calc(var(--node-scale) * 1.05)); }
+      100% { transform: scale(var(--node-scale)); }
+    }
+
+    /* Custom scrollbar */
+    ::-webkit-scrollbar {
+      width: 8px;
+      height: 8px;
+    }
+
+    ::-webkit-scrollbar-track {
+      background: rgba(0, 0, 0, 0.2);
+      border-radius: 10px;
+    }
+
+    ::-webkit-scrollbar-thumb {
+      background: var(--primary);
+      border-radius: 10px;
+    }
+
+    ::-webkit-scrollbar-thumb:hover {
+      background: var(--accent);
+    }
+
+    /* Tooltip for nodes */
+    .node::after {
+      content: attr(data-tooltip);
+      position: absolute;
+      bottom: 100%;
+      left: 50%;
+      transform: translateX(-50%);
+      background: var(--dark);
+      color: white;
+      padding: 0.5rem 1rem;
+      border-radius: 6px;
+      font-size: 0.8rem;
+      white-space: nowrap;
+      opacity: 0;
+      pointer-events: none;
+      transition: var(--transition);
+      box-shadow: var(--shadow-sm);
+      font-weight: 500;
+    }
+
+    .node:hover::after {
+      opacity: 1;
+      margin-bottom: 10px;
+    }
+
+    /* Responsive adjustments */
+    @media (max-width: 1200px) {
+      .plot-container {
+        width: 340px;
+      }
+    }
+
+    @media (max-width: 992px) {
+      .main {
+        flex-direction: column;
+      }
+      .plot-container {
+        width: 100%;
+        height: 300px;
+        flex-direction: row;
+        overflow-x: auto;
+      }
+      .plot-container > div {
+        min-width: 300px;
+      }
+    }
+
+    /* Floating action button */
+    .fab {
+      position: fixed;
+      bottom: 2rem;
+      right: 2rem;
+      width: 56px;
+      height: 56px;
+      border-radius: 50%;
+      background: var(--primary);
+      color: white;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.5rem;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+      cursor: pointer;
+      transition: var(--transition);
+      z-index: 100;
+      border: none;
+    }
+
+    .fab:hover {
+      transform: translateY(-3px) scale(1.1);
+      background: var(--accent);
+      box-shadow: 0 6px 16px rgba(0, 0, 0, 0.3);
+    }
+
+    /* Notification */
+    .notification {
+      position: fixed;
+      bottom: 1rem;
+      right: 1rem;
+      background: var(--success);
+      color: white;
+      padding: 1rem 1.5rem;
+      border-radius: var(--border-radius);
+      box-shadow: var(--shadow-lg);
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      z-index: 1000;
+      transform: translateY(20px);
+      opacity: 0;
+      transition: var(--transition-slow);
+    }
+
+    .notification.show {
+      transform: translateY(0);
+      opacity: 1;
+    }
+
+    .notification i {
+      font-size: 1.2rem;
+    }
+
+    /* Plotly chart styling */
+    .js-plotly-plot .plotly .modebar {
+      background: transparent !important;
+    }
+
+    .js-plotly-plot .plotly .modebar-btn path {
+      fill: var(--light-gray) !important;
+    }
+
+    .js-plotly-plot .plotly .modebar-btn:hover path {
+      fill: var(--primary-light) !important;
+    }
+
+    /* Connection animation */
+    @keyframes dash {
+      to {
+        stroke-dashoffset: 0;
+      }
+    }
+
+    .animate-connection {
+      stroke-dasharray: 10;
+      animation: dash 0.5s linear forwards;
+    }
+
+    /* Glass morphism effect */
+    .glass {
+      background: rgba(255, 255, 255, 0.08);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      box-shadow: 0 4px 30px rgba(0, 0, 0, 0.1);
+    }
+  </style>
+</head>
+<body>
+    <header>
+      <div class="logo">
+        <i class="fas fa-project-diagram logo-icon"></i>
+        <span>Neon Flow</span>
+      </div>
+      <div class="header-actions">
+        <button class="btn btn-secondary" onclick="exportDiagram()">
+          <i class="fas fa-file-export"></i> Export
+        </button>
+      </div>
+    </header>
+    
+    <div class="main">
+      <div class="toolbox glass">
+        <div class="toolbox-header">
+          <h3 class="toolbox-title">Components</h3>
+          <button class="btn btn-secondary" onclick="clearSelection()" style="padding: 0.5rem;">
+            <i class="fas fa-times"></i>
+          </button>
+        </div>
+        
+        <div class="toolbox-items">
+          <div class="toolbox-item" draggable="true" data-type="Pump">
+            <i class="fas fa-tint"></i>
+            <span>Pump</span>
+          </div>
+          <div class="toolbox-item" draggable="true" data-type="Valve">
+            <i class="fas fa-filter"></i>
+            <span>Valve</span>
+          </div>
+          <div class="toolbox-item" draggable="true" data-type="Tank">
+            <i class="fas fa-flask"></i>
+            <span>Tank</span>
+          </div>
+          <div class="toolbox-item" draggable="true" data-type="Pipe">
+            <i class="fas fa-pipe"></i>
+            <span>Pipe</span>
+          </div>
+          <div class="toolbox-item" draggable="true" data-type="Sensor">
+            <i class="fas fa-bolt"></i>
+            <span>Sensor</span>
+          </div>
+          <div class="toolbox-item" draggable="true" data-type="Filter">
+            <i class="fas fa-fan"></i>
+            <span>Filter</span>
+          </div>
+        </div>
+        
+        <div class="toolbox-controls">
+          <div class="control-group">
+            <label class="control-label">Canvas Size</label>
+            <input type="range" id="sizeSlider" min="300" max="2000" value="800">
+            <span id="sizeValue" style="font-size: 0.8rem; color: var(--light-gray);">800px</span>
+          </div>
+          
+          <div class="control-group">
+            <label class="control-label">Node Scale</label>
+            <input type="range" id="nodeScale" min="0.5" max="2" step="0.1" value="1">
+          </div>
+          
+          <button class="btn btn-primary" onclick="exportDiagram()">
+            <i class="fas fa-file-export"></i> Export Diagram
+          </button>
+          <button class="btn btn-secondary" onclick="clearSelection()">
+            <i class="fas fa-times"></i> Clear Selection
+          </button>
+          <button class="btn btn-danger" onclick="clearCanvas()">
+            <i class="fas fa-trash"></i> Clear Canvas
+          </button>
+        </div>
+      </div>
+  
+      <div class="canvas-container" id="canvasContainer">
+        <svg id="canvas"></svg>
+      </div>
+  
+      <div class="plot-container glass">
+        <div id="sankeyPlot"></div>
+        <div id="barPlot"></div>
+        <div id="linePlot"></div>
+      </div>
+    </div>
+    
+    <button class="fab" onclick="addRandomNode()">
+      <i class="fas fa-plus"></i>
+    </button>
+    
+    <div id="notification" class="notification">
+      <i class="fas fa-check-circle"></i>
+      <span>Diagram exported successfully!</span>
+    </div>
+  
+    <footer>
+      <div style="display: flex; justify-content: center; gap: 2rem;">
+        <span><i class="fas fa-code"></i> with <i class="fas fa-heart" style="color: var(--accent);"></i> by Process Flow</span>
+        <span>v3.0.0</span>
+      </div>
+    </footer>
+
+  <script>
+    // Modernized JavaScript with additional features
+    const components = [
+      { id: 'pump1', type: 'Pump', x: 200, y: 200, connections: [], description: 'Centrifugal Pump' },
+      { id: 'valve1', type: 'Valve', x: 400, y: 250, connections: [], description: 'Gate Valve' }
+    ];
+    
+    let nodes = [...components];
+    let editCount = 0;
+    let editHistory = [{ time: new Date(), count: 0 }];
+    let selectedNode = null;
+    let connectingNode = null;
+
+    // DOM Elements
+    const canvas = document.getElementById('canvas');
+    const nodeScaleSlider = document.getElementById('nodeScale');
+    const canvasContainer = document.getElementById('canvasContainer');
+    const sizeSlider = document.getElementById('sizeSlider');
+    const sizeValue = document.getElementById('sizeValue');
+    const notification = document.getElementById('notification');
+    
+    // Create arrowhead marker for connections
+    const defs = document.createElementNS('http://www.w3.org/2000/svg', 'defs');
+    const marker = document.createElementNS('http://www.w3.org/2000/svg', 'marker');
+    marker.setAttribute('id', 'arrowhead');
+    marker.setAttribute('markerWidth', '10');
+    marker.setAttribute('markerHeight', '7');
+    marker.setAttribute('refX', '9');
+    marker.setAttribute('refY', '3.5');
+    marker.setAttribute('orient', 'auto');
+    const arrow = document.createElementNS('http://www.w3.org/2000/svg', 'polygon');
+    arrow.setAttribute('points', '0 0, 10 3.5, 0 7');
+    arrow.setAttribute('fill', 'var(--primary)');
+    marker.appendChild(arrow);
+    defs.appendChild(marker);
+    canvas.appendChild(defs);
+
+    // Set initial node scale
+    document.documentElement.style.setProperty("--node-scale", nodeScaleSlider.value);
+
+    // Drag and drop functionality
+    let draggedComponentType = null;
+
+    document.querySelectorAll('.toolbox-item').forEach(item => {
+      item.addEventListener('dragstart', (e) => {
+        draggedComponentType = e.target.dataset.type || e.target.parentElement.dataset.type;
+        e.dataTransfer.setData('text/plain', '');
+        e.dataTransfer.effectAllowed = 'copy';
+        
+        const ghost = e.target.cloneNode(true);
+        ghost.style.position = 'absolute';
+        ghost.style.opacity = '0.7';
+        ghost.style.pointerEvents = 'none';
+        ghost.style.transform = 'rotate(5deg)';
+        document.body.appendChild(ghost);
+        e.dataTransfer.setDragImage(ghost, e.offsetX, e.offsetY);
+        
+        setTimeout(() => document.body.removeChild(ghost), 0);
+      });
+    });
+
+    canvasContainer.addEventListener('dragover', (e) => {
+      e.preventDefault();
+      e.dataTransfer.dropEffect = 'copy';
+    });
+
+    canvasContainer.addEventListener('drop', (e) => {
+      e.preventDefault();
+      if (!draggedComponentType) return;
+
+      const rect = canvasContainer.getBoundingClientRect();
+      const x = e.clientX - rect.left - 60;
+      const y = e.clientY - rect.top - 30;
+
+      addNode(draggedComponentType, x, y);
+      draggedComponentType = null;
+    });
+
+    // Canvas size control
+    sizeSlider.addEventListener('input', () => {
+      const size = sizeSlider.value;
+      sizeValue.textContent = `${size}px`;
+      
+      canvasContainer.style.width = `${size}px`;
+      canvasContainer.style.height = `${size}px`;
+      
+      canvas.setAttribute('width', size);
+      canvas.setAttribute('height', size);
+      
+      updateCanvas();
+    });
+
+    // Node scale control
+    nodeScaleSlider.oninput = () => {
+      const newScale = nodeScaleSlider.value;
+      document.documentElement.style.setProperty("--node-scale", newScale);
+    };
+
+    // Add a new node to the canvas
+    function addNode(type, x, y) {
+      const id = `${type.toLowerCase()}${nodes.length + 1}`;
+      const node = {
+        id: id,
+        type: type,
+        x: x,
+        y: y,
+        connections: [],
+        description: `${type} ${nodes.length + 1}`
+      };
+
+      nodes.push(node);
+      createNode(node);
+      updateCanvas();
+      recordEdit();
+      updatePlots();
+    }
+
+    // Create DOM element for a node
+    function createNode(node) {
+      const div = document.createElement('div');
+      div.className = 'node';
+      div.id = node.id;
+      div.style.left = `${node.x}px`;
+      div.style.top = `${node.y}px`;
+      div.innerHTML = `<strong>${node.type}</strong><br>${node.description}`;
+      div.setAttribute('data-tooltip', `ID: ${node.id}`);
+      div.draggable = true;
+      
+      // Connection points
+      const inputPoint = document.createElement('div');
+      inputPoint.className = 'connection-point input-point';
+      inputPoint.dataset.type = 'input';
+      inputPoint.dataset.nodeId = node.id;
+      
+      const outputPoint = document.createElement('div');
+      outputPoint.className = 'connection-point output-point';
+      outputPoint.dataset.type = 'output';
+      outputPoint.dataset.nodeId = node.id;
+      
+      div.appendChild(inputPoint);
+      div.appendChild(outputPoint);
+
+      // Drag handler
+      div.ondragstart = (e) => {
+        if (e.target === div) {
+          selectedNode = div;
+          e.dataTransfer.setData('text', div.id);
+          
+          // Create ghost element for dragging
+          const ghost = div.cloneNode(true);
+          ghost.style.position = 'absolute';
+          ghost.style.opacity = '0.8';
+          ghost.style.transform = 'rotate(3deg)';
+          ghost.style.pointerEvents = 'none';
+          document.body.appendChild(ghost);
+          e.dataTransfer.setDragImage(ghost, e.offsetX, e.offsetY);
+          setTimeout(() => document.body.removeChild(ghost), 0);
+        }
+      };
+
+      // Output connection handler
+      outputPoint.onclick = (e) => {
+        e.stopPropagation();
+        if (!connectingNode) {
+          connectingNode = {
+            node: node,
+            point: 'output',
+            element: outputPoint
+          };
+          outputPoint.style.background = 'var(--accent)';
+          outputPoint.style.boxShadow = '0 0 0 2px var(--accent)';
+        } else {
+          resetConnectionPoint(outputPoint);
+          connectingNode = null;
+        }
+      };
+
+      // Input connection handler
+      inputPoint.onclick = (e) => {
+        e.stopPropagation();
+        if (connectingNode && connectingNode.point === 'output' && connectingNode.node.id !== node.id) {
+          // Create connection
+          connectingNode.node.connections.push({
+            targetId: node.id,
+            sourcePoint: 'output',
+            targetPoint: 'input'
+          });
+          
+          // Reset connection points
+          resetConnectionPoint(connectingNode.element);
+          resetConnectionPoint(inputPoint);
+          connectingNode = null;
+          
+          // Update canvas with animation
+          updateCanvas(true);
+          recordEdit();
+          updatePlots();
+        }
+      };
+
+      // Node click handler
+      div.onclick = (e) => {
+        if (e.target === div) {
+          e.stopPropagation();
+          // Select node
+          document.querySelectorAll('.node').forEach(n => n.classList.remove('selected'));
+          div.classList.add('selected');
+          selectedNode = div;
+        }
+      };
+
+      // Double click to edit description
+      div.ondblclick = (e) => {
+        if (e.target === div) {
+          const newDesc = prompt('Edit description:', node.description);
+          if (newDesc !== null) {
+            node.description = newDesc;
+            div.innerHTML = `<strong>${node.type}</strong><br>${node.description}`;
+            div.appendChild(inputPoint);
+            div.appendChild(outputPoint);
+            recordEdit();
+          }
+        }
+      };
+
+      canvasContainer.appendChild(div);
+    }
+
+    // Reset connection point styling
+    function resetConnectionPoint(point) {
+      point.style.background = 'var(--primary)';
+      point.style.boxShadow = '0 0 0 2px var(--primary)';
+    }
+
+    // Update canvas with connections
+    function updateCanvas(animate = false) {
+      canvas.innerHTML = '';
+      canvas.appendChild(defs);
+      
+      nodes.forEach(node => {
+        node.connections.forEach(connection => {
+          const sourceNode = node;
+          const targetNode = nodes.find(n => n.id === connection.targetId);
+          
+          if (targetNode) {
+            const sourceEl = document.getElementById(sourceNode.id);
+            const targetEl = document.getElementById(targetNode.id);
+            
+            if (sourceEl && targetEl) {
+              const sourceRect = sourceEl.getBoundingClientRect();
+              const targetRect = targetEl.getBoundingClientRect();
+              const containerRect = canvasContainer.getBoundingClientRect();
+              
+              const x1 = sourceRect.right - containerRect.left;
+              const y1 = sourceRect.top + sourceRect.height / 2 - containerRect.top;
+              const x2 = targetRect.left - containerRect.left;
+              const y2 = targetRect.top + targetRect.height / 2 - containerRect.top;
+              
+              const line = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+              
+              // Create curved path
+              const midX = (x1 + x2) / 2;
+              const pathData = `M${x1},${y1} C${midX},${y1} ${midX},${y2} ${x2},${y2}`;
+              
+              line.setAttribute('d', pathData);
+              line.classList.add('connection-line');
+              if (animate) {
+                line.classList.add('animate-connection');
+              }
+              canvas.appendChild(line);
+            }
+          }
+        });
+      });
+    }
+
+    // Clear current selection
+    function clearSelection() {
+      if (connectingNode && connectingNode.element) {
+        resetConnectionPoint(connectingNode.element);
+        connectingNode = null;
+      }
+      document.querySelectorAll('.node').forEach(n => n.classList.remove('selected'));
+      selectedNode = null;
+    }
+
+    // Clear entire canvas
+    function clearCanvas() {
+      if (nodes.length > 0 && confirm('Are you sure you want to clear the entire canvas?')) {
+        nodes = [];
+        document.querySelectorAll('.node').forEach(node => node.remove());
+        updateCanvas();
+        updatePlots();
+        recordEdit();
+        showNotification('Canvas cleared');
+      }
+    }
+
+    // Export diagram as JSON
+    function exportDiagram() {
+      const data = {
+        metadata: {
+          name: "Process Flow Diagram",
+          version: "3.0",
+          created: new Date().toISOString(),
+          nodeCount: nodes.length,
+          connectionCount: nodes.reduce((acc, node) => acc + node.connections.length, 0)
+        },
+        nodes: nodes
+      };
+      
+      const jsonStr = JSON.stringify(data, null, 2);
+      const blob = new Blob([jsonStr], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `process-flow-${new Date().toISOString().slice(0,10)}.json`;
+      a.click();
+      URL.revokeObjectURL(url);
+      
+      showNotification('Diagram exported successfully!');
+    }
+
+    // Show notification
+    function showNotification(message) {
+      notification.querySelector('span').textContent = message;
+      notification.classList.add('show');
+      setTimeout(() => {
+        notification.classList.remove('show');
+      }, 3000);
+    }
+
+    // Record edit history
+    function recordEdit() {
+      editCount++;
+      editHistory.push({ 
+        time: new Date(), 
+        count: editCount,
+        action: 'edit'
+      });
+    }
+
+    // Update visualization plots
+    function updatePlots() {
+      // Sankey diagram
+      const sankeyData = {
+        type: 'sankey',
+        node: {
+          label: nodes.map(n => n.id),
+          color: nodes.map(n => {
+            switch(n.type) {
+              case 'Pump': return '#6366f1';
+              case 'Valve': return '#8b5cf6';
+              case 'Tank': return '#ec4899';
+              case 'Pipe': return '#10b981';
+              default: return '#64748b';
+            }
+          })
+        },
+        link: {
+          source: [],
+          target: [],
+          value: [],
+          color: nodes.map(() => 'rgba(99, 102, 241, 0.4)')
+        }
+      };
+      
+      nodes.forEach((node, i) => {
+        node.connections.forEach(conn => {
+          const targetIdx = nodes.findIndex(n => n.id === conn.targetId);
+          if (targetIdx !== -1) {
+            sankeyData.link.source.push(i);
+            sankeyData.link.target.push(targetIdx);
+            sankeyData.link.value.push(1);
+          }
+        });
+      });
+      
+      const plotLayout = {
+        title: 'Flow Connections',
+        font: { family: 'Manrope', color: 'var(--light)' },
+        plot_bgcolor: 'rgba(0,0,0,0)',
+        paper_bgcolor: 'rgba(0,0,0,0)',
+        margin: { t: 40, b: 20, l: 20, r: 20 },
+        hovermode: 'closest',
+        hoverlabel: {
+          bgcolor: 'var(--dark)',
+          font: { family: 'Manrope', color: 'white' }
+        }
+      };
+      
+      Plotly.newPlot('sankeyPlot', [sankeyData], plotLayout, { 
+        responsive: true,
+        displayModeBar: true
+      });
+     
+      // Component usage bar chart
+      const types = [...new Set(nodes.map(n => n.type))];
+      const counts = types.map(t => nodes.filter(n => n.type === t).length);
+      Plotly.newPlot('barPlot', [{
+        x: types,
+        y: counts,
+        type: 'bar',
+        marker: { 
+          color: types.map(t => {
+            switch(t) {
+              case 'Pump': return '#6366f1';
+              case 'Valve': return '#8b5cf6';
+              case 'Tank': return '#ec4899';
+              case 'Pipe': return '#10b981';
+              default: return '#64748b';
+            }
+          })
+        }
+      }], { 
+        ...plotLayout,
+        title: 'Component Usage',
+        xaxis: { title: 'Component Type' },
+        yaxis: { title: 'Count' }
+      }, { responsive: true });
+      
+      // Edit history line chart
+      Plotly.newPlot('linePlot', [{
+        x: editHistory.map(h => h.time),
+        y: editHistory.map(h => h.count),
+        type: 'scatter',
+        mode: 'lines+markers',
+        line: { color: 'var(--primary)', width: 2 },
+        marker: { size: 8, color: 'var(--accent)' }
+      }], { 
+        ...plotLayout,
+        title: 'Edit History',
+        xaxis: { title: 'Time' },
+        yaxis: { title: 'Edit Count' }
+      }, { responsive: true });
+    }
+    
+    // Add random node (for FAB)
+    function addRandomNode() {
+      const types = ['Pump', 'Valve', 'Tank', 'Pipe', 'Sensor', 'Filter'];
+      const randomType = types[Math.floor(Math.random() * types.length)];
+      const x = Math.random() * (canvasContainer.clientWidth - 120);
+      const y = Math.random() * (canvasContainer.clientHeight - 80);
+      addNode(randomType, x, y);
+    }
+
+    // Initialize
+    nodes.forEach(createNode);
+    updateCanvas();
+    updatePlots();
+    
+    // Keyboard shortcuts
+    document.addEventListener('keydown', (e) => {
+      // Delete key - remove selected node
+      if ((e.key === 'Delete' || e.key === 'Backspace') && selectedNode) {
+        const nodeId = selectedNode.id;
+        nodes = nodes.filter(n => n.id !== nodeId);
+        document.getElementById(nodeId)?.remove();
+        
+        // Remove any connections to this node
+        nodes.forEach(n => {
+          n.connections = n.connections.filter(conn => conn.targetId !== nodeId);
+        });
+        
+        updateCanvas();
+        updatePlots();
+        recordEdit();
+        showNotification('Node deleted');
+        selectedNode = null;
+      }
+      
+      // Escape key - clear selection
+      if (e.key === 'Escape') {
+        clearSelection();
+      }
+    });
+
+    // Canvas drop handler for moving nodes
+    canvasContainer.ondragover = (e) => e.preventDefault();
+    canvasContainer.ondrop = (e) => {
+      e.preventDefault();
+      if (selectedNode) {
+        const node = nodes.find(n => n.id === selectedNode.id);
+        if (node) {
+          node.x = e.offsetX - 60;
+          node.y = e.offsetY - 30;
+          selectedNode.style.left = `${node.x}px`;
+          selectedNode.style.top = `${node.y}px`;
+          updateCanvas();
+          recordEdit();
+        }
+      }
+    };
+  </script>
+</body>
+</html>

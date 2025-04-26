@@ -1,0 +1,518 @@
+<!DOCTYPE html>
+<html lang="en" class="h-full">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Predictive Model Playground</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@700&family=Poppins:wght@400;500;600&display=swap"
+        rel="stylesheet" />
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/regression@2.0.1/dist/regression.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/lottie-web/5.9.6/lottie.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
+    <style>
+        .ripple {
+            position: absolute;
+            width: 100px;
+            height: 100px;
+            background: rgba(255, 255, 255, 0.35);
+            border-radius: 50%;
+            transform: translate(-50%, -50%);
+            animation: ripple 0.6s linear;
+            pointer-events: none;
+        }
+
+        @keyframes ripple {
+            from {
+                transform: scale(0);
+                opacity: 1;
+            }
+
+            to {
+                transform: scale(4);
+                opacity: 0;
+            }
+        }
+
+        .resize-handle:hover {
+            background-color: rgba(99, 102, 241, 0.5);
+        }
+
+        .tooltip {
+            position: absolute;
+            padding: 8px;
+            background: rgba(0, 0, 0, 0.8);
+            color: white;
+            border-radius: 4px;
+            pointer-events: none;
+            font-size: 12px;
+            z-index: 100;
+            display: none;
+        }
+
+        @media (max-width: 768px) {
+            .mobile-stack {
+                grid-template-columns: 1fr !important;
+            }
+        }
+    </style>
+</head>
+
+<body class="min-h-screen flex flex-col bg-gradient-to-br from-slate-900 to-slate-800 text-slate-100">
+    <header class="flex items-center justify-center gap-4 py-6 bg-slate-950 shadow-md">
+        <div id="title-icon" class="w-12 h-12"></div>
+        <h1 id="hero-title" class="font-inter text-2xl sm:text-3xl font-bold tracking-wide"></h1>
+    </header>
+    <main class="flex-1 flex flex-col md:grid md:grid-cols-[30%_2px_1fr] mobile-stack overflow-hidden">
+        <section id="left-panel"
+            class="flex flex-col divide-y divide-slate-700 bg-slate-900/50 backdrop-blur p-4 overflow-y-auto">
+            <div id="upload-section" class="pb-4">
+                <h2 class="text-lg font-semibold mb-4">Data Upload</h2>
+                <div id="drop-zone"
+                    class="flex flex-col items-center justify-center border-2 border-dashed border-slate-500/60 rounded-lg p-6 text-center text-slate-400 cursor-pointer transition hover:border-slate-400">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" class="w-10 h-10 fill-current mb-3">
+                        <path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z" />
+                    </svg>
+                    <p class="text-sm">
+                        Drag &amp; Drop CSV/JSON here<br />or click to upload
+                    </p>
+                </div>
+                <p id="file-info" class="mt-2 text-sm text-slate-300"></p>
+                <div id="column-selectors" class="hidden mt-4 space-y-3">
+                    <label class="block">
+                        <span class="text-sm">X-Axis</span>
+                        <select id="x-select"
+                            class="mt-1 w-full bg-slate-800 border border-slate-700 rounded px-2 py-1"></select>
+                    </label>
+                    <label class="block">
+                        <span class="text-sm">Y-Axis</span>
+                        <select id="y-select"
+                            class="mt-1 w-full bg-slate-800 border border-slate-700 rounded px-2 py-1"></select>
+                    </label>
+                    <label class="block">
+                        <span class="text-sm">Model Type</span>
+                        <select id="model-select"
+                            class="mt-1 w-full bg-slate-800 border border-slate-700 rounded px-2 py-1">
+                            <option value="linear">Linear Regression</option>
+                            <option value="exponential">Exponential</option>
+                            <option value="polynomial">Polynomial (2nd degree)</option>
+                            <option value="power">Power Law</option>
+                        </select>
+                    </label>
+                    <div class="flex gap-2">
+                        <button id="update-chart"
+                            class="flex-1 bg-indigo-600 hover:bg-indigo-500 px-3 py-1.5 rounded relative overflow-hidden">
+                            Update Chart
+                        </button>
+                        <button id="export-btn"
+                            class="bg-slate-700 hover:bg-slate-600 px-3 py-1.5 rounded relative overflow-hidden"
+                            title="Export as PNG">
+                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" class="w-5 h-5 fill-current">
+                                <path d="M5 20h14v-2H5v2zm0-10h4v6h6v-6h4l-7-7-7 7z" />
+                            </svg>
+                        </button>
+                    </div>
+                </div>
+            </div>
+            <div id="results-section" class="pt-4">
+                <div class="flex items-center justify-between">
+                    <h2 class="text-lg font-semibold">Model Results</h2>
+                    <button id="toggle-results"
+                        class="text-sm bg-slate-700 hover:bg-slate-600 px-3 py-1 rounded relative overflow-hidden">
+                        Hide
+                    </button>
+                </div>
+                <div id="results-content" class="mt-3 pl-2 text-slate-300">
+                    <p>Upload a dataset to see predictive model results.</p>
+                </div>
+            </div>
+        </section>
+        <div id="handle1" class="hidden md:block w-0.5 bg-slate-700 resize-handle cursor-col-resize"></div>
+        <section id="visualization-panel" class="bg-slate-900/50 backdrop-blur p-4 overflow-hidden">
+            <div class="flex justify-between items-center mb-4">
+                <h2 class="text-lg font-semibold">Data Visualization</h2>
+                <div class="flex gap-2">
+                    <select id="chart-type" class="bg-slate-800 border border-slate-700 rounded px-2 py-1 text-sm">
+                        <option value="scatter">Scatter Plot</option>
+                        <option value="line">Line Chart</option>
+                        <option value="bar">Bar Chart</option>
+                    </select>
+                </div>
+            </div>
+            <div class="relative w-full h-56 sm:h-64 md:h-full">
+                <canvas id="data-chart" class="absolute inset-0 w-full h-full"></canvas>
+                <div id="chart-tooltip" class="tooltip"></div>
+            </div>
+        </section>
+    </main>
+    <footer class="text-center py-3 text-sm bg-slate-950/80 shadow-inner">
+        &copy; 2025. All rights reserved.
+    </footer>
+    <script>
+        document.addEventListener("DOMContentLoaded", () => {
+            // Enhanced animations
+            lottie.loadAnimation({
+                container: document.getElementById("title-icon"),
+                renderer: "svg",
+                loop: true,
+                autoplay: true,
+                path: "https://assets2.lottiefiles.com/packages/lf20_tfb3estd.json",
+            });
+
+            const titleEl = document.getElementById("hero-title");
+            const fullText = "Predictive Model Playground";
+            let tIdx = 0;
+            (function type() {
+                if (tIdx <= fullText.length) {
+                    titleEl.textContent = fullText.slice(0, tIdx);
+                    tIdx++;
+                    setTimeout(type, 80);
+                }
+            })();
+
+            // Enhanced ripple effect
+            document.querySelectorAll("button").forEach((btn) =>
+                btn.addEventListener("click", (e) => {
+                    const r = document.createElement("span");
+                    r.className = "ripple";
+                    const rect = btn.getBoundingClientRect();
+                    r.style.left = e.clientX - rect.left + "px";
+                    r.style.top = e.clientY - rect.top + "px";
+                    btn.appendChild(r);
+                    setTimeout(() => r.remove(), 600);
+                })
+            );
+
+            // Enhanced chart with tooltips
+            const ctx = document.getElementById("data-chart").getContext("2d");
+            const tooltip = document.getElementById("chart-tooltip");
+
+            const chart = new Chart(ctx, {
+                type: "scatter",
+                data: { datasets: [] },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        x: {
+                            beginAtZero: true,
+                            title: { display: true, text: 'X-Axis' }
+                        },
+                        y: {
+                            beginAtZero: true,
+                            title: { display: true, text: 'Y-Axis' }
+                        }
+                    },
+                    plugins: {
+                        legend: { display: true },
+                        tooltip: {
+                            enabled: false,
+                            external: (context) => {
+                                if (!context.tooltip || !context.tooltip.dataPoints) {
+                                    tooltip.style.display = 'none';
+                                    return;
+                                }
+
+                                const { dataPoints } = context.tooltip;
+                                const { x, y } = dataPoints[0].parsed;
+
+                                tooltip.innerHTML = `X: ${x.toFixed(2)}<br>Y: ${y.toFixed(2)}`;
+                                tooltip.style.display = 'block';
+                                tooltip.style.left = context.tooltip.caretX + 'px';
+                                tooltip.style.top = context.tooltip.caretY + 'px';
+                            }
+                        }
+                    },
+                    interaction: {
+                        intersect: false,
+                        mode: 'nearest'
+                    }
+                },
+            });
+
+            // Enhanced file handling with PapaParse
+            const dz = document.getElementById("drop-zone");
+            const fi = document.createElement("input");
+            fi.type = "file";
+            fi.accept = ".csv,.json";
+            fi.multiple = false;
+
+            dz.addEventListener("click", () => fi.click());
+
+            ["dragover"].forEach((evt) =>
+                dz.addEventListener(evt, (e) => {
+                    e.preventDefault();
+                    dz.classList.add("border-indigo-500");
+                })
+            );
+
+            ["dragleave", "drop"].forEach((evt) =>
+                dz.addEventListener(evt, (e) => {
+                    e.preventDefault();
+                    dz.classList.remove("border-indigo-500");
+                })
+            );
+
+            dz.addEventListener("drop", (e) => handleFiles(e.dataTransfer.files));
+            fi.addEventListener("change", () => handleFiles(fi.files));
+
+            // Enhanced file handling
+            function handleFiles(files) {
+                const f = files[0];
+                if (!f || (!f.name.endsWith(".csv") && !f.name.endsWith(".json"))) {
+                    document.getElementById("file-info").textContent =
+                        "Please upload a valid CSV or JSON file";
+                    return;
+                }
+
+                document.getElementById("file-info").textContent = `Loaded: ${f.name}`;
+                const reader = new FileReader();
+
+                reader.onload = (e) => {
+                    try {
+                        let data;
+                        if (f.name.endsWith(".csv")) {
+                            const result = Papa.parse(e.target.result, {
+                                header: true,
+                                skipEmptyLines: true,
+                                dynamicTyping: true
+                            });
+                            data = result.data;
+                        } else {
+                            data = JSON.parse(e.target.result);
+                        }
+
+                        if (!data.length) {
+                            document.getElementById("file-info").textContent = "File appears empty";
+                            return;
+                        }
+
+                        populateSelectors(data);
+                        drawChart(data);
+                    } catch (err) {
+                        document.getElementById("file-info").textContent = `Error: ${err.message}`;
+                    }
+                };
+
+                reader.readAsText(f);
+            }
+
+            function numericColumns(data) {
+                if (!data.length) return [];
+                const keys = Object.keys(data[0]);
+                return keys.filter((k) =>
+                    data.every((r) => typeof r[k] === 'number' || !isNaN(parseFloat(r[k])))
+                );
+            }
+
+            function populateSelectors(data) {
+                const cols = numericColumns(data);
+                const xSel = document.getElementById("x-select");
+                const ySel = document.getElementById("y-select");
+                xSel.innerHTML = ySel.innerHTML = "";
+
+                if (cols.length < 2) {
+                    document.getElementById("results-content").innerHTML =
+                        '<p class="text-red-400">Need at least two numeric columns.</p>';
+                    return;
+                }
+
+                cols.forEach((c) => {
+                    xSel.appendChild(new Option(c, c));
+                    ySel.appendChild(new Option(c, c));
+                });
+
+                ySel.selectedIndex = 1;
+                document.getElementById("column-selectors").classList.remove("hidden");
+                document.getElementById("update-chart").onclick = () => drawChart(data);
+            }
+
+            // Enhanced chart drawing with regression models
+            function drawChart(data) {
+                const xKey = document.getElementById("x-select").value;
+                const yKey = document.getElementById("y-select").value;
+                const modelType = document.getElementById("model-select").value;
+                const chartType = document.getElementById("chart-type").value;
+
+                if (!xKey || !yKey || xKey === yKey) {
+                    document.getElementById("results-content").innerHTML =
+                        '<p class="text-red-400">Please choose two different numeric columns.</p>';
+                    return;
+                }
+
+                const dataset = data
+                    .map((r) => ({ x: +r[xKey], y: +r[yKey] }))
+                    .filter((p) => !isNaN(p.x) && !isNaN(p.y));
+
+                if (!dataset.length) {
+                    document.getElementById("results-content").innerHTML =
+                        '<p class="text-red-400">No valid data points found.</p>';
+                    return;
+                }
+
+                // Calculate regression
+                const points = dataset.map(p => [p.x, p.y]);
+                let regressionResult;
+                let predictionLine = [];
+
+                try {
+                    switch (modelType) {
+                        case 'linear':
+                            regressionResult = regression.linear(points);
+                            break;
+                        case 'exponential':
+                            regressionResult = regression.exponential(points);
+                            break;
+                        case 'polynomial':
+                            regressionResult = regression.polynomial(points, { order: 2 });
+                            break;
+                        case 'power':
+                            regressionResult = regression.power(points);
+                            break;
+                        default:
+                            regressionResult = regression.linear(points);
+                    }
+
+                    // Generate prediction line
+                    const minX = Math.min(...dataset.map(p => p.x));
+                    const maxX = Math.max(...dataset.map(p => p.x));
+                    const step = (maxX - minX) / 100;
+
+                    for (let x = minX; x <= maxX; x += step) {
+                        predictionLine.push({
+                            x: x,
+                            y: regressionResult.predict(x)[1]
+                        });
+                    }
+                } catch (err) {
+                    console.error("Regression error:", err);
+                    predictionLine = [];
+                }
+
+                // Update chart
+                chart.config.type = chartType;
+
+                chart.data = {
+                    datasets: [
+                        {
+                            label: "Dataset",
+                            data: dataset,
+                            backgroundColor: "rgba(99, 102, 241, 0.6)",
+                            borderColor: "rgba(99, 102, 241, 1)",
+                            borderWidth: 1,
+                            pointRadius: 5,
+                            pointHoverRadius: 7
+                        },
+                        {
+                            label: "Regression Line",
+                            data: predictionLine,
+                            backgroundColor: "rgba(236, 72, 153, 0.2)",
+                            borderColor: "rgba(236, 72, 153, 1)",
+                            borderWidth: 2,
+                            pointRadius: 0,
+                            showLine: true,
+                            fill: false,
+                            tension: 0.1
+                        }
+                    ]
+                };
+
+                chart.options.scales.x.title.text = xKey;
+                chart.options.scales.y.title.text = yKey;
+                chart.update();
+
+                // Enhanced results display
+                updateResults(dataset, regressionResult, xKey, yKey);
+            }
+
+            function updateResults(data, regression, xKey, yKey) {
+                if (!data.length) return;
+
+                const sumX = data.reduce((s, p) => s + p.x, 0);
+                const sumY = data.reduce((s, p) => s + p.y, 0);
+                const avgX = sumX / data.length;
+                const avgY = sumY / data.length;
+
+                let resultsHTML = `
+            <div class="space-y-2">
+              <div class="p-2 bg-slate-800/50 rounded">
+                <h3 class="font-medium text-indigo-300">Dataset Statistics</h3>
+                <p><strong>Data points:</strong> ${data.length}</p>
+                <p><strong>Avg ${xKey}:</strong> ${avgX.toFixed(4)}</p>
+                <p><strong>Avg ${yKey}:</strong> ${avgY.toFixed(4)}</p>
+              </div>`;
+
+                if (regression) {
+                    const r2 = regression.r2 || 0;
+                    const equation = regression.string || "N/A";
+
+                    resultsHTML += `
+              <div class="p-2 bg-slate-800/50 rounded mt-2">
+                <h3 class="font-medium text-pink-300">Regression Analysis</h3>
+                <p><strong>Model:</strong> ${document.getElementById("model-select").selectedOptions[0].text}</p>
+                <p><strong>Equation:</strong> ${equation}</p>
+                <p><strong>R²:</strong> ${r2.toFixed(4)}</p>
+                <p><strong>Correlation:</strong> ${Math.sqrt(r2).toFixed(4)}</p>
+              </div>`;
+                }
+
+                resultsHTML += `</div>`;
+                document.getElementById("results-content").innerHTML = resultsHTML;
+            }
+
+            // Enhanced panel resizing
+            const resSection = document.getElementById("results-section");
+            const resToggle = document.getElementById("toggle-results");
+            resToggle.addEventListener("click", () => {
+                resSection.classList.toggle("hidden");
+                resToggle.textContent = resSection.classList.contains("hidden")
+                    ? "Show"
+                    : "Hide";
+            });
+
+            const handle = document.getElementById("handle1");
+            const grid = document.querySelector("main");
+            let resizing = false;
+
+            handle.addEventListener("mousedown", () => {
+                resizing = true;
+                document.body.style.cursor = "col-resize";
+                handle.style.backgroundColor = "rgba(99, 102, 241, 0.7)";
+            });
+
+            document.addEventListener("mousemove", (e) => {
+                if (!resizing) return;
+                const rect = grid.getBoundingClientRect();
+                const pct = ((e.clientX - rect.left) / rect.width) * 100;
+                grid.style.gridTemplateColumns = `${Math.max(20, Math.min(50, pct))}% 2px 1fr`;
+            });
+
+            document.addEventListener("mouseup", () => {
+                resizing = false;
+                document.body.style.cursor = "default";
+                handle.style.backgroundColor = "";
+            });
+
+            // Chart type switching
+            document.getElementById("chart-type").addEventListener("change", () => {
+                if (chart.data.datasets.length) {
+                    drawChart(chart.data.datasets[0].data.map(p => ({ [document.getElementById("x-select").value]: p.x, [document.getElementById("y-select").value]: p.y })));
+                }
+            });
+
+            // Export functionality
+            document.getElementById("export-btn").addEventListener("click", () => {
+                if (!chart.data.datasets.length) return;
+
+                const link = document.createElement('a');
+                link.download = 'chart-export.png';
+                link.href = document.getElementById("data-chart").toDataURL('image/png');
+                link.click();
+            });
+        });
+    </script>
+</body>
+
+</html>

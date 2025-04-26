@@ -1,0 +1,1114 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Retro Digital Journal</title>
+    <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=Inter:wght@400;600&display=swap"
+        rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/interactjs/dist/interact.min.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        :root {
+            --primary: #F9FAFB;
+            --accent: #A78BFA;
+            --secondary: #EDE9FE;
+            --text: #1F2937;
+            --highlight-yellow: #FEF3C7;
+            --highlight-pink: #FBCFE8;
+            --highlight-green: #D1FAE5;
+        }
+
+        [data-theme="dark"] {
+            --primary: #1F2937;
+            --accent: #C4B5FD;
+            --secondary: #374151;
+            --text: #F9FAFB;
+            --highlight-yellow: #D97706;
+            --highlight-pink: #DB2777;
+            --highlight-green: #059669;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            transition: background-color 0.3s, color 0.3s;
+            display: block;
+            background: linear-gradient(to bottom right, var(--primary), var(--secondary)), url('https://www.transparenttextures.com/patterns/paper-fibers.png');
+            background-blend-mode: overlay;
+        }
+
+        .journal {
+            position: relative;
+            z-index: 1;
+            display: block;
+        }
+
+        .glassmorphic {
+            background: rgba(255, 255, 255, 0.15);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .toolbar {
+            position: relative;
+            z-index: 40;
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+            gap: 8px;
+        }
+
+        .entry-display {
+            white-space: pre-wrap;
+            outline: none;
+            font-family: 'Courier New', monospace;
+            font-size: clamp(16px, 2.5vw, 18px);
+            line-height: 1.6;
+            position: relative;
+            overflow: visible;
+            z-index: 5;
+            min-height: 400px;
+            display: block;
+            transition: border-color 0.3s;
+        }
+
+        .entry-display.read-only {
+            border-color: var(--accent);
+            pointer-events: none;
+            background: rgba(255, 255, 255, 0.05);
+        }
+
+        .sticker {
+            display: inline-block;
+            vertical-align: middle;
+            margin: 0 2px;
+            user-select: none;
+            line-height: 1;
+            cursor: grab;
+            position: absolute;
+        }
+
+        .sticker:active {
+            cursor: grabbing;
+        }
+
+        .highlight-yellow {
+            background-color: var(--highlight-yellow);
+        }
+
+        .highlight-pink {
+            background-color: var(--highlight-pink);
+        }
+
+        .highlight-green {
+            background-color: var(--highlight-green);
+        }
+
+        .text-small {
+            font-size: clamp(10px, 2vw, 12px);
+        }
+
+        .text-medium {
+            font-size: clamp(14px, 2.5vw, 16px);
+        }
+
+        .text-large {
+            font-size: clamp(18px, 3vw, 20px);
+        }
+
+        .sticker-tray {
+            transition: transform 0.3s ease;
+            z-index: 20;
+        }
+
+        #journalInput {
+            caret-color: var(--text);
+            animation: caret-blink 1s step-start infinite;
+            font-family: 'Courier New', monospace;
+            font-size: clamp(16px, 2.5vw, 18px);
+            line-height: 1.6;
+            display: block;
+        }
+
+        #journalInput::placeholder {
+            color: var(--text);
+            opacity: 0.6;
+        }
+
+        @keyframes caret-blink {
+            50% {
+                caret-color: transparent;
+            }
+        }
+
+        .tape {
+            border: 1px solid #2D2D2D;
+        }
+
+        [data-theme="light"] .secondary-text {
+            color: var(--text);
+        }
+
+        [data-theme="dark"] .secondary-text {
+            color: var(--text);
+        }
+
+        [data-theme="light"] .accent-text {
+            color: var(--text);
+        }
+
+        [data-theme="dark"] .accent-text {
+            color: var(--text);
+        }
+
+        [data-theme="dark"] .text-sm.secondary-text {
+            color: var(--text);
+        }
+
+        [data-theme="dark"] .dropdown-btn,
+        [data-theme="dark"] .export-btn,
+        [data-theme="dark"] #clearEntry {
+            color: #1F2937;
+        }
+
+        .dropdown-container {
+            position: relative;
+            z-index: 50;
+            min-width: 120px;
+        }
+
+        .dropdown-btn,
+        .export-btn,
+        #clearEntry {
+            background: var(--accent);
+            color: var(--text);
+            font-weight: 600;
+            padding: 8px 12px;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 5px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+            border: 1px solid var(--text);
+            width: 100%;
+            white-space: nowrap;
+            font-size: clamp(12px, 1.8vw, 13px);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .dropdown-btn::before,
+        .dropdown-btn::after,
+        .export-btn::before,
+        .export-btn::after,
+        #clearEntry::before,
+        #clearEntry::after {
+            content: '';
+            position: absolute;
+            width: 8px;
+            height: 8px;
+            background: var(--secondary);
+            border-radius: 50%;
+            top: 50%;
+            transform: translateY(-50%);
+        }
+
+        .dropdown-btn::before,
+        .export-btn::before,
+        #clearEntry::before {
+            left: 10px;
+        }
+
+        .dropdown-btn::after,
+        .export-btn::after,
+        #clearEntry::after {
+            right: 10px;
+        }
+
+        .dropdown-btn:hover,
+        .export-btn:hover,
+        #clearEntry:hover {
+            transform: scale(1.05);
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+        }
+
+        .dropdown-btn:active::before,
+        .dropdown-btn:active::after,
+        .export-btn:active::before,
+        .export-btn:active::after,
+        #clearEntry:active::before,
+        #clearEntry::after {
+            animation: tapeSpin 0.2s linear;
+        }
+
+        @keyframes tapeSpin {
+            0% {
+                transform: translateY(-50%) rotate(0deg);
+            }
+
+            100% {
+                transform: translateY(-50%) rotate(360deg);
+            }
+        }
+
+        .dropdown-btn::after {
+            content: '▼';
+            font-size: 10px;
+            margin-left: 5px;
+            position: static;
+        }
+
+        .dropdown-btn span {
+            padding: 2px 4px;
+            border-radius: 3px;
+        }
+
+        .dropdown-menu {
+            position: absolute;
+            top: 100%;
+            left: 0;
+            background: var(--primary);
+            border: 1px solid var(--text);
+            border-radius: 8px;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+            z-index: 1000;
+            min-width: 120px;
+            display: none;
+            width: 100%;
+            margin-top: 4px;
+        }
+
+        .dropdown-menu.show {
+            display: block;
+            animation: fadeIn 0.2s ease-in-out;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(-10px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .dropdown-item {
+            padding: 8px 12px;
+            cursor: pointer;
+            color: var(--text);
+            font-size: clamp(12px, 2vw, 14px);
+            border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+            transition: background 0.2s ease;
+        }
+
+        .dropdown-item:last-child {
+            border-bottom: none;
+        }
+
+        .dropdown-item:hover {
+            background: var(--accent);
+        }
+
+        .dropdown-item.active {
+            background: var(--accent);
+            font-weight: bold;
+        }
+
+        .close-sticker-tray {
+            position: absolute;
+            top: 8px;
+            right: 8px;
+            width: 24px;
+            height: 24px;
+            background: var(--accent);
+            color: var(--text);
+            border-radius: 50%;
+            text-align: center;
+            line-height: 24px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+        }
+
+        .close-sticker-tray:hover {
+            transform: scale(1.1);
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+        }
+
+        .close-sticker-tray:active {
+            transform: scale(0.9);
+        }
+
+        .archive-sidebar {
+            background: var(--primary);
+            border-right: 2px solid var(--text);
+            padding: 10px;
+            max-width: 200px;
+            overflow-y: auto;
+            border-radius: 8px;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+        }
+
+        .archive-item {
+            padding: 8px;
+            cursor: pointer;
+            color: var(--text);
+            font-size: clamp(12px, 2vw, 14px);
+            border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+            transition: background 0.2s ease;
+        }
+
+        .archive-item:hover {
+            background: var(--accent);
+        }
+
+        span[data-unstyled] {
+            display: inline;
+        }
+
+        /* Toast styles for export feedback */
+        .toast {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: var(--accent);
+            color: var(--text);
+            padding: 15px 30px;
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+            z-index: 2100;
+            display: none;
+            font-size: clamp(14px, 2.5vw, 16px);
+            font-weight: 600;
+            text-align: center;
+            min-width: 200px;
+        }
+
+        .toast.show {
+            display: block;
+            animation: slideIn 0.4s ease-in-out, fadeOut 0.4s ease-in-out 3.6s;
+        }
+
+        @keyframes slideIn {
+            from {
+                transform: translateX(100%);
+                opacity: 0;
+            }
+
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
+
+        @keyframes fadeOut {
+            from {
+                opacity: 1;
+            }
+
+            to {
+                opacity: 0;
+            }
+        }
+
+        /* CRT Effect */
+        .crt-effect {
+            position: relative;
+        }
+
+        .crt-effect::before {
+            content: "";
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background:
+                linear-gradient(rgba(18, 16, 16, 0) 50%,
+                    rgba(0, 0, 0, 0.25) 50%),
+                linear-gradient(90deg, rgba(255, 0, 0, 0.06), rgba(0, 255, 0, 0.02), rgba(0, 0, 255, 0.06));
+            background-size: 100% 2px, 3px 100%;
+            pointer-events: none;
+            z-index: 10;
+            mix-blend-mode: overlay;
+        }
+
+        /* Mobile Responsiveness */
+        @media (max-width: 640px) {
+            .toolbar {
+                grid-template-columns: repeat(2, 1fr);
+            }
+
+            .dropdown-container {
+                min-width: auto;
+            }
+
+            .flex.w-full.max-w-5xl.gap-4 {
+                flex-direction: column;
+            }
+
+            .archive-sidebar {
+                max-width: 100%;
+                border-right: none;
+                border-bottom: 2px solid var(--text);
+                margin-bottom: 1rem;
+            }
+        }
+    </style>
+</head>
+
+<body class="min-h-screen p-4 sm:p-8 flex items-center justify-center" data-theme="light">
+    <div class="flex w-full max-w-5xl gap-4">
+        <div class="archive-sidebar">
+            <h2 class="text-lg font-bold mb-4 font-['DM_Serif_Display'] text-[var(--text)]">Entries</h2>
+            <div id="archiveList"></div>
+        </div>
+        <div
+            class="journal max-w-4xl w-full bg-[var(--primary)] rounded-2xl shadow-xl p-6 sm:p-8 relative border-4 border-black crt-effect">
+            <div class="tape absolute -top-3 -left-3 w-20 h-5 bg-[var(--accent)] rotate-[-10deg] shadow-md"></div>
+            <div class="tape absolute -top-3 -right-3 w-20 h-5 bg-[var(--accent)] rotate-[10deg] shadow-md"></div>
+
+            <header class="mb-8">
+                <div class="flex flex-col gap-4">
+                    <div
+                        class="flex justify-between items-center pb-3 border-b-2 border-[var(--text)] border-opacity-20">
+                        <h1 class="text-3xl sm:text-4xl font-['DM_Serif_Display'] text-[var(--text)] tracking-wide">
+                            Retro Journal</h1>
+                        <div class="flex items-center gap-2">
+                            <button id="toggleTheme"
+                                class="flex items-center gap-1 bg-[var(--secondary)] secondary-text font-semibold px-3 py-1.5 rounded-lg hover:scale-105 transition-transform shadow-sm text-sm">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 24 24" fill="none"
+                                    stroke="currentColor" stroke-width="2">
+                                    <path stroke-linecap="round" stroke-linejoin="round"
+                                        d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z" />
+                                </svg>
+                                <span>Dark Mode</span>
+                            </button>
+                            <button id="toggleCRT"
+                                class="flex items-center gap-1 bg-[var(--secondary)] secondary-text font-semibold px-3 py-1.5 rounded-lg hover:scale-105 transition-transform shadow-sm text-sm">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 24 24" fill="none"
+                                    stroke="currentColor" stroke-width="2">
+                                    <path stroke-linecap="round" stroke-linejoin="round"
+                                        d="M9 3v2m6-2v2M9 19v2m6-2v2M5 9H3m2 6H3m18-6h-2m2 6h-2M7 19h10a2 2 0 002-2V7a2 2 0 00-2-2H7a2 2 0 00-2 2v10a2 2 0 002 2zM9 9h6v6H9V9z" />
+                                </svg>
+                                <span>CRT Effect</span>
+                            </button>
+                            <button id="togglePreview"
+                                class="flex items-center gap-1 bg-[var(--accent)] accent-text font-semibold px-3 py-1.5 rounded-lg hover:scale-105 transition-transform shadow-sm text-sm">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 24 24" fill="none"
+                                    stroke="currentColor" stroke-width="2">
+                                    <path stroke-linecap="round" stroke-linejoin="round"
+                                        d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                                    <path stroke-linecap="round" stroke-linejoin="round"
+                                        d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                                </svg>
+                                <span>Preview</span>
+                            </button>
+                        </div>
+                    </div>
+                    <nav class="flex flex-wrap gap-2 items-center justify-between">
+                        <input type="date" id="entryDate"
+                            class="border-2 border-[var(--text)] rounded-lg p-2 bg-[var(--primary)] text-[var(--text)] text-sm">
+                    </nav>
+                </div>
+            </header>
+
+            <textarea id="journalInput"
+                class="w-full h-32 p-4 border-2 border-[var(--text)] rounded-lg bg-[var(--primary)] text-[var(--text)] mb-4 resize-none focus:ring-2 focus:ring-[var(--secondary)]"
+                placeholder="Write your thoughts here..."></textarea>
+
+            <div class="toolbar grid mb-6 glassmorphic p-3 rounded-lg">
+                <div class="dropdown-container">
+                    <button id="highlightDropdown" class="dropdown-btn secondary-text">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 24 24" fill="none"
+                            stroke="currentColor" stroke-width="2">
+                            <path stroke-linecap="round" stroke-linejoin="round"
+                                d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                        </svg>
+                        Highlight
+                    </button>
+                    <div id="highlightMenu" class="dropdown-menu">
+                        <option class="dropdown-item" data-color="yellow">Yellow</option>
+                        <option class="dropdown-item" data-color="pink">Pink</option>
+                        <option class="dropdown-item" data-color="green">Green</option>
+                    </div>
+                </div>
+                <div class="dropdown-container">
+                    <button id="sizeDropdown" class="dropdown-btn secondary-text">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 24 24" fill="none"
+                            stroke="currentColor" stroke-width="2">
+                            <path stroke-linecap="round" stroke-linejoin="round"
+                                d="M3 4h13M3 8h9m-9 4h6m4 0l4-4m0 0l4 4m-4-4v12" />
+                        </svg>
+                        Size: Small
+                    </button>
+                    <div id="sizeMenu" class="dropdown-menu">
+                        <option class="dropdown-item" data-size="0.5" data-size-class="small">Small</option>
+                        <option class="dropdown-item" data-size="1" data-size-class="medium">Medium</option>
+                        <option class="dropdown-item" data-size="1.5" data-size-class="large">Large</option>
+                    </div>
+                </div>
+                <div class="dropdown-container">
+                    <button id="formatDropdown" class="dropdown-btn secondary-text">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 24 24" fill="none"
+                            stroke="currentColor" stroke-width="2">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4" />
+                        </svg>
+                        Format
+                    </button>
+                    <div id="formatMenu" class="dropdown-menu">
+                        <option class="dropdown-item" data-command="bold">Bold</option>
+                        <option class="dropdown-item" data-command="italic">Italic</option>
+                        <option class="dropdown-item" data-command="underline">Underline</option>
+                        <option class="dropdown-item" data-command="justifyCenter">Center</option>
+                    </div>
+                </div>
+                <div class="dropdown-container relative">
+                    <button id="toggleStickerTray"
+                        class="dropdown-btn secondary-text flex items-center justify-center gap-1">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 24 24" fill="none"
+                            stroke="currentColor" stroke-width="2">
+                            <path stroke-linecap="round" stroke-linejoin="round"
+                                d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21" />
+                        </svg>
+                        <span>Stickers</span>
+                    </button>
+                    <div id="stickerTray" class="dropdown-menu">
+                        <img src="https://img.icons8.com/emoji/48/star-emoji.png"
+                            class="sticker-option w-8 h-8 cursor-pointer hover:scale-110 transition-transform"
+                            data-type="star" title="Star">
+                        <img src="https://img.icons8.com/emoji/48/red-heart.png"
+                            class="sticker-option w-8 h-8 cursor-pointer hover:scale-110 transition-transform"
+                            data-type="heart" title="Heart">
+                        <img src="https://cdn-icons-png.flaticon.com/512/10872/10872579.png"
+                            class="sticker-option w-8 h-8 cursor-pointer hover:scale-110 transition-transform"
+                            data-type="rainbow" title="Rainbow">
+                        <img src="https://cdn-icons-png.flaticon.com/512/7603/7603259.png"
+                            class="sticker-option w-8 h-8 cursor-pointer hover:scale-110 transition-transform"
+                            data-type="cassette" title="Cassette">
+                        <img src="https://cdn-icons-png.flaticon.com/512/7602/7602756.png"
+                            class="sticker-option w-8 h-8 cursor-pointer hover:scale-110 transition-transform"
+                            data-type="floppy" title="Floppy">
+                    </div>
+                </div>
+                <button id="exportBtn"
+                    class="export-btn bg-[var(--accent)] accent-text font-semibold px-3 py-2 rounded-lg hover:scale-105 transition-transform shadow-sm">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 inline mr-1" viewBox="0 0 24 24" fill="none"
+                        stroke="currentColor" stroke-width="2">
+                        <path stroke-linecap="round" stroke-linejoin="round"
+                            d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                    </svg>
+                    Export
+                </button>
+            </div>
+
+            <div class="entry-display min-h-[400px] p-6 border-2 border-[var(--text)] rounded-lg bg-[var(--primary)] text-[var(--text)] relative"
+                id="entryDisplay" contenteditable="true"></div>
+
+            <div class="flex justify-end mt-4">
+                <button id="clearEntry"
+                    class="bg-red-500 text-white font-semibold px-4 py-2 rounded-lg hover:scale-105 transition-transform shadow-sm">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 inline mr-1" viewBox="0 0 24 24" fill="none"
+                        stroke="currentColor" stroke-width="2">
+                        <path stroke-linecap="round" stroke-linejoin="round"
+                            d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                    </svg>
+                    Clear Entry
+                </button>
+            </div>
+            <!-- Toast element for export feedback -->
+            <div id="toast" class="toast"></div>
+        </div>
+    </div>
+
+    <script>
+        // Initialization
+        document.addEventListener('DOMContentLoaded', () => {
+            // DOM Elements
+            const textarea = document.getElementById('journalInput');
+            const entryDisplay = document.getElementById('entryDisplay');
+            const stickerTray = document.getElementById('stickerTray');
+            const toggleStickerTray = document.getElementById('toggleStickerTray');
+            const toggleTheme = document.getElementById('toggleTheme');
+            const toggleCRT = document.getElementById('toggleCRT');
+            const togglePreview = document.getElementById('togglePreview');
+            const clearEntry = document.getElementById('clearEntry');
+            const sizeDropdown = document.getElementById('sizeDropdown');
+            const sizeMenu = document.getElementById('sizeMenu');
+            const formatDropdown = document.getElementById('formatDropdown');
+            const formatMenu = document.getElementById('formatMenu');
+            const highlightDropdown = document.getElementById('highlightDropdown');
+            const highlightMenu = document.getElementById('highlightMenu');
+            const entryDate = document.getElementById('entryDate');
+            const archiveList = document.getElementById('archiveList');
+            const toast = document.getElementById('toast');
+            const exportBtn = document.getElementById('exportBtn');
+            const journalContainer = document.querySelector('.journal');
+            let isPreviewMode = false;
+            let selectedColor = null;
+            let selectedSize = 0.5;
+            let selectedSizeClass = 'text-small';
+            let isClearing = false;
+            let savedRange = null;
+            let currentEntryDate = new Date().toISOString().split('T')[0];
+
+            // Sound Effects using Web Audio API
+            function playSound(frequency, duration, type = 'sine') {
+                const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+                const oscillator = audioCtx.createOscillator();
+                const gainNode = audioCtx.createGain();
+                oscillator.type = type;
+                oscillator.frequency.setValueAtTime(frequency, audioCtx.currentTime);
+                gainNode.gain.setValueAtTime(0.2, audioCtx.currentTime);
+                oscillator.connect(gainNode);
+                gainNode.connect(audioCtx.destination);
+                oscillator.start();
+                oscillator.stop(audioCtx.currentTime + duration);
+            }
+
+            // Show toast notification for export
+            function showToast(message) {
+                toast.textContent = message;
+                toast.classList.add('show');
+                setTimeout(() => {
+                    toast.classList.remove('show');
+                }, 4000);
+            }
+
+            // Core Functions
+
+            // Saves the current text selection for formatting
+            function saveSelection() {
+                const selection = window.getSelection();
+                if (selection.rangeCount > 0 && entryDisplay.contains(selection.anchorNode) && !selection.isCollapsed) {
+                    savedRange = selection.getRangeAt(0);
+                } else {
+                    savedRange = null;
+                }
+            }
+
+            // Restores the saved text selection
+            function restoreSelection() {
+                if (savedRange && entryDisplay.contains(savedRange.commonAncestorContainer)) {
+                    const selection = window.getSelection();
+                    selection.removeAllRanges();
+                    selection.addRange(savedRange);
+                    return true;
+                }
+                return false;
+            }
+
+            // Positions the cursor after a node
+            function forceCursorPosition(node) {
+                try {
+                    const selection = window.getSelection();
+                    const range = document.createRange();
+                    if (node.nodeType === Node.TEXT_NODE) {
+                        range.setStart(node, node.length);
+                        range.setEnd(node, node.length);
+                    } else if (node.firstChild && node.firstChild.nodeType === Node.TEXT_NODE) {
+                        range.setStart(node.firstChild, node.firstChild.length);
+                        range.setEnd(node.firstChild, node.firstChild.length);
+                    } else {
+                        range.setStartAfter(node);
+                        range.setEndAfter(node);
+                    }
+                    selection.removeAllRanges();
+                    selection.addRange(range);
+                    entryDisplay.focus();
+                } catch (e) {
+                    const selection = window.getSelection();
+                    const range = document.createRange();
+                    range.selectNodeContents(entryDisplay);
+                    range.collapse(false);
+                    selection.removeAllRanges();
+                    selection.addRange(range);
+                    entryDisplay.focus();
+                }
+            }
+
+            // Loads saved journal entry for a given date
+            function loadSavedData(date = currentEntryDate) {
+                if (isClearing) return;
+                const savedEntry = localStorage.getItem(`journalEntry_${date}`);
+                const savedTheme = localStorage.getItem('theme') || 'light';
+                document.body.dataset.theme = savedTheme;
+                toggleTheme.textContent = savedTheme === 'light' ? 'Dark Mode' : 'Light Mode';
+                if (savedEntry) {
+                    textarea.value = savedEntry.replace(/<br>/g, '\n').replace(/<[^>]+>/g, '');
+                    entryDisplay.innerHTML = savedEntry;
+                    // Initialize stickers after loading
+                    setTimeout(() => {
+                        initializeStickers();
+                        makeAllStickersDraggable();
+                    }, 100);
+                } else {
+                    entryDisplay.innerHTML = '';
+                    textarea.value = '';
+                }
+                entryDate.value = date;
+                updateArchive();
+            }
+
+            // Updates the archive sidebar with saved entries
+            function updateArchive() {
+                archiveList.innerHTML = '';
+                const entries = Object.keys(localStorage).filter(key => key.startsWith('journalEntry_')).map(key => key.split('_')[1]).sort().reverse();
+                entries.forEach(date => {
+                    const item = document.createElement('div');
+                    item.className = 'archive-item';
+                    item.textContent = new Date(date).toLocaleDateString();
+                    item.dataset.date = date;
+                    item.addEventListener('click', () => {
+                        currentEntryDate = date;
+                        loadSavedData(date);
+                        if (isPreviewMode) togglePreviewMode();
+                    });
+                    archiveList.appendChild(item);
+                });
+            }
+
+            // Debounces a function to limit execution rate
+            function debounce(func, wait) {
+                let timeout;
+                return function (...args) {
+                    clearTimeout(timeout);
+                    timeout = setTimeout(() => func.apply(this, args), wait);
+                };
+            }
+
+            // Saves the current entry to localStorage
+            const saveData = debounce(() => {
+                if (isClearing) return;
+                localStorage.setItem(`journalEntry_${currentEntryDate}`, entryDisplay.innerHTML);
+                localStorage.setItem('theme', document.body.dataset.theme);
+                updateArchive();
+            }, 500);
+
+            // Updates the entry display from textarea input
+            function updateDisplay() {
+                const tempDiv = document.createElement('div');
+                tempDiv.innerHTML = textarea.value.replace(/\n/g, '<br>');
+                entryDisplay.innerHTML = tempDiv.innerHTML;
+                initializeStickers();
+                makeAllStickersDraggable();
+                saveData();
+            }
+
+            // Makes all stickers draggable
+            function makeAllStickersDraggable() {
+                document.querySelectorAll('.sticker').forEach(sticker => {
+                    makeStickerDraggable(sticker);
+                    animateSticker(sticker);
+                });
+            }
+
+            // Makes a single sticker draggable
+            function makeStickerDraggable(sticker) {
+                interact(sticker).draggable({
+                    inertia: true,
+                    modifiers: [
+                        interact.modifiers.restrictRect({
+                            restriction: 'parent',
+                            endOnly: true
+                        })
+                    ],
+                    autoScroll: true,
+                    listeners: {
+                        move: dragMoveListener,
+                        end(event) {
+                            saveData();
+                        }
+                    }
+                });
+
+                function dragMoveListener(event) {
+                    const target = event.target;
+                    const x = (parseFloat(target.getAttribute('data-x')) || 0) + event.dx;
+                    const y = (parseFloat(target.getAttribute('data-y')) || 0) + event.dy;
+
+                    target.style.transform = `translate(${x}px, ${y}px)`;
+                    target.setAttribute('data-x', x);
+                    target.setAttribute('data-y', y);
+                }
+            }
+
+            // Animates stickers based on their type
+            function animateSticker(sticker) {
+                const type = sticker.dataset.type;
+                switch (type) {
+                    case 'star':
+                        gsap.to(sticker, { scale: 1.1, opacity: 0.8, yoyo: true, repeat: -1, duration: 1.5 });
+                        break;
+                    case 'heart':
+                        gsap.to(sticker, { y: -5, duration: 1, yoyo: true, repeat: -1, ease: 'sine.inOut' });
+                        break;
+                    case 'rainbow':
+                        gsap.to(sticker, { scale: 1.1, opacity: 0.8, yoyo: true, repeat: -1, duration: 1.5 });
+                        break;
+                    case 'cassette':
+                        gsap.to(sticker, { rotation: 5, yoyo: true, repeat: -1, duration: 2, ease: 'power1.inOut' });
+                        break;
+                    case 'floppy':
+                        gsap.to(sticker, { scale: 1.05, duration: 1.2, yoyo: true, repeat: -1, ease: 'sine.inOut' });
+                        break;
+                }
+            }
+
+            // Initializes stickers in the entry display
+            function initializeStickers() {
+                document.querySelectorAll('.sticker').forEach(sticker => {
+                    if (!sticker.dataset.initialized) {
+                        sticker.dataset.initialized = true;
+                        makeStickerDraggable(sticker);
+                        animateSticker(sticker);
+                    }
+                });
+            }
+
+            // Applies formatting to selected text
+            function applyFormatting(command) {
+                if (restoreSelection()) {
+                    document.execCommand(command, false, null);
+                    saveData();
+                    playSound(500, 0.1, 'square');
+                }
+            }
+
+            // Applies highlighting to selected text
+            function applyHighlight(color) {
+                if (restoreSelection()) {
+                    const selection = window.getSelection();
+                    const range = savedRange;
+                    const span = document.createElement('span');
+                    span.className = `highlight-${color}`;
+                    try {
+                        range.surroundContents(span);
+                        selection.removeAllRanges();
+                        forceCursorPosition(span);
+                        saveData();
+                        playSound(600, 0.1, 'triangle');
+                    } catch (e) {
+                        console.error('Highlight failed:', e);
+                    }
+                }
+            }
+
+            // Applies text size to selected text
+            function applySize(size, sizeClass) {
+                if (restoreSelection()) {
+                    const selection = window.getSelection();
+                    const range = savedRange;
+                    const span = document.createElement('span');
+                    span.className = `text-${sizeClass}`;
+                    span.style.fontSize = `${size}rem`;
+                    try {
+                        range.surroundContents(span);
+                        selection.removeAllRanges();
+                        forceCursorPosition(span);
+                        saveData();
+                        playSound(550, 0.1, 'sawtooth');
+                    } catch (e) {
+                        console.error('Size change failed:', e);
+                    }
+                }
+            }
+
+            // Toggles preview mode
+            function togglePreviewMode() {
+                isPreviewMode = !isPreviewMode;
+                entryDisplay.classList.toggle('read-only', isPreviewMode);
+                entryDisplay.contentEditable = !isPreviewMode;
+                textarea.style.display = isPreviewMode ? 'none' : 'block';
+                togglePreview.textContent = isPreviewMode ? 'Edit' : 'Preview';
+                togglePreview.querySelector('span').textContent = isPreviewMode ? 'Edit' : 'Preview';
+                playSound(400, 0.1);
+            }
+
+            // Exports the journal entry as a text file
+            function exportEntry() {
+                const content = entryDisplay.innerText;
+                const date = entryDate.value || new Date().toISOString().split('T')[0];
+                const blob = new Blob([content], { type: 'text/plain' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `journal_entry_${date}.txt`;
+                a.click();
+                URL.revokeObjectURL(url);
+                showToast('Entry exported successfully!');
+                playSound(700, 0.2);
+            }
+
+            // Event Listeners
+
+            // Textarea input updates the display
+            textarea.addEventListener('input', () => {
+                updateDisplay();
+            });
+
+            // Entry display input saves data
+            entryDisplay.addEventListener('input', () => {
+                saveData();
+            });
+
+            // Save selection on mouseup or keyup
+            entryDisplay.addEventListener('mouseup', saveSelection);
+            entryDisplay.addEventListener('keyup', saveSelection);
+
+            // Date change loads corresponding entry
+            entryDate.addEventListener('change', (e) => {
+                currentEntryDate = e.target.value;
+                loadSavedData(currentEntryDate);
+                playSound(450, 0.1);
+            });
+
+            // Toggle theme between light and dark
+            toggleTheme.addEventListener('click', () => {
+                const newTheme = document.body.dataset.theme === 'light' ? 'dark' : 'light';
+                document.body.dataset.theme = newTheme;
+                toggleTheme.querySelector('span').textContent = newTheme === 'light' ? 'Dark Mode' : 'Light Mode';
+                localStorage.setItem('theme', newTheme);
+                playSound(300, 0.1);
+            });
+
+            // Toggle CRT effect
+            toggleCRT.addEventListener('click', () => {
+                journalContainer.classList.toggle('crt-effect');
+                toggleCRT.querySelector('span').textContent = journalContainer.classList.contains('crt-effect') ? 'CRT Off' : 'CRT Effect';
+                playSound(350, 0.1);
+            });
+
+            // Toggle preview mode
+            togglePreview.addEventListener('click', togglePreviewMode);
+
+            // Clear entry
+            clearEntry.addEventListener('click', () => {
+                if (confirm('Are you sure you want to clear this entry?')) {
+                    isClearing = true;
+                    entryDisplay.innerHTML = '';
+                    textarea.value = '';
+                    localStorage.removeItem(`journalEntry_${currentEntryDate}`);
+                    updateArchive();
+                    isClearing = false;
+                    playSound(200, 0.2);
+                }
+            });
+
+            // Export button
+            exportBtn.addEventListener('click', exportEntry);
+
+            // Sticker tray toggle
+            toggleStickerTray.addEventListener('click', () => {
+                stickerTray.classList.toggle('hidden');
+                stickerTray.classList.toggle('show');
+                playSound(400, 0.1);
+            });
+
+            // Sticker selection
+            stickerTray.querySelectorAll('.sticker-option').forEach(option => {
+                option.addEventListener('click', () => {
+                    const type = option.dataset.type;
+                    const img = document.createElement('img');
+                    img.src = option.src;
+                    img.className = 'sticker w-12 h-12';
+                    img.dataset.type = type;
+                    img.style.position = 'absolute';
+                    img.style.left = '50px';
+                    img.style.top = '50px';
+                    entryDisplay.appendChild(img);
+                    initializeStickers();
+                    makeStickerDraggable(img);
+                    animateSticker(img);
+                    saveData();
+                    playSound(650, 0.1);
+                });
+            });
+
+            // Dropdown menu handling
+            function setupDropdown(button, menu, action) {
+                button.addEventListener('click', () => {
+                    const isOpen = menu.classList.contains('show');
+                    document.querySelectorAll('.dropdown-menu.show').forEach(m => m.classList.remove('show'));
+                    if (!isOpen) {
+                        menu.classList.add('show');
+                    }
+                    playSound(400, 0.05);
+                });
+
+                menu.querySelectorAll('.dropdown-item').forEach(item => {
+                    item.addEventListener('click', () => {
+                        menu.querySelectorAll('.dropdown-item').forEach(i => i.classList.remove('active'));
+                        item.classList.add('active');
+                        action(item);
+                        menu.classList.remove('show');
+                        playSound(450, 0.05);
+                    });
+                });
+            }
+
+            // Highlight dropdown
+            setupDropdown(highlightDropdown, highlightMenu, (item) => {
+                selectedColor = item.dataset.color;
+                applyHighlight(selectedColor);
+                highlightDropdown.querySelector('span')?.remove();
+                const span = document.createElement('span');
+                span.textContent = item.textContent;
+                highlightDropdown.appendChild(span);
+            });
+
+            // Size dropdown
+            setupDropdown(sizeDropdown, sizeMenu, (item) => {
+                selectedSize = parseFloat(item.dataset.size);
+                selectedSizeClass = item.dataset.sizeClass;
+                applySize(selectedSize, selectedSizeClass);
+                sizeDropdown.querySelector('span')?.remove();
+                const span = document.createElement('span');
+                span.textContent = `Size: ${item.textContent}`;
+                sizeDropdown.appendChild(span);
+            });
+
+            // Format dropdown
+            setupDropdown(formatDropdown, formatMenu, (item) => {
+                const command = item.dataset.command;
+                applyFormatting(command);
+                formatDropdown.querySelector('span')?.remove();
+                const span = document.createElement('span');
+                span.textContent = item.textContent;
+                formatDropdown.appendChild(span);
+            });
+
+            // Close dropdowns when clicking outside
+            document.addEventListener('click', (e) => {
+                if (!e.target.closest('.dropdown-container')) {
+                    document.querySelectorAll('.dropdown-menu.show').forEach(menu => menu.classList.remove('show'));
+                }
+            });
+
+            // Initial setup
+            loadSavedData();
+            updateArchive();
+            initializeStickers();
+            makeAllStickersDraggable();
+
+            // GSAP animation for journal entrance
+            gsap.from('.journal', {
+                opacity: 0,
+                y: 50,
+                duration: 1,
+                ease: 'power2.out',
+                onComplete: () => playSound(500, 0.2)
+            });
+        });
+    </script>
+</body>
+
+</html>

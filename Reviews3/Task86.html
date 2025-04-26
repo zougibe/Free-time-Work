@@ -1,0 +1,569 @@
+<!DOCTYPE html>
+<html lang="en" class="h-full">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Generating Function Identity Explorer</title>
+
+    <!-- Google Fonts: Poppins -->
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap"
+        rel="stylesheet" />
+    <!-- Material Icons -->
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet" />
+
+    <!-- TailwindCSS config -->
+    <script>
+        tailwind.config = {
+            darkMode: "class",
+            theme: { extend: { fontFamily: { sans: ["Poppins", "sans-serif"] } } },
+        };
+    </script>
+    <script src="https://cdn.tailwindcss.com"></script>
+
+    <!-- p5.js -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.4.2/p5.min.js"></script>
+    <!-- html2canvas for export -->
+    <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
+    <!-- MathJax -->
+    <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+
+    <style>
+        html,
+        body {
+            margin: 0;
+            padding: 0;
+        }
+
+        #canvas-container {
+            width: 100%;
+            height: 100%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        canvas {
+            display: block;
+            border-radius: 0.5rem;
+            background: rgba(255, 255, 255, 0.05);
+        }
+
+        .coef-term {
+            display: inline-block;
+            margin: 0.25rem;
+            padding: 0.25rem 0.8rem;
+            background: rgba(255, 255, 255, 0.1);
+            color: #fff;
+            border-radius: 0.25rem;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        .coef-term:hover {
+            background: rgba(255, 255, 255, 0.3);
+        }
+    </style>
+</head>
+
+<body class="min-h-screen bg-gradient-to-br from-gray-900 via-indigo-900 to-slate-800 font-sans">
+    <header class="fixed top-0 inset-x-0 bg-white/10 backdrop-blur-md border-b border-white/20 py-4 z-10">
+        <h1 class="text-center text-2xl font-semibold text-white">Generating Function Identity Explorer</h1>
+    </header>
+
+    <main id="main-content" class="pt-20 max-w-6xl mx-auto p-4 grid grid-cols-1 md:grid-cols-2 gap-6">
+        <section
+            class="bg-white/10 backdrop-blur-sm border border-white/20 rounded-2xl shadow-xl p-6 flex flex-col items-center">
+            <h2 class="text-xl font-medium text-white mb-4">
+                Visualization
+                <span class="material-icons align-middle text-base ml-1"
+                    title="Visual derivation via p5.js">visibility</span>
+            </h2>
+            <div id="canvas-container"></div>
+        </section>
+
+        <section class="bg-white/10 backdrop-blur-sm border border-white/20 rounded-2xl shadow-xl p-6">
+            <div class="mb-6">
+                <label for="identity" class="block text-white text-sm font-medium">
+                    Select Identity
+                    <span class="material-icons align-middle text-base ml-1"
+                        title="Choose generating function identity">help</span>
+                </label>
+                <select id="identity"
+                    class="mt-1 block w-full p-2 border border-white/30 rounded-md bg-gray-800 text-white focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                    <option value="binomial">Binomial Theorem</option>
+                    <option value="geometric">Geometric Series</option>
+                    <option value="catalan">Catalan Numbers</option>
+                </select>
+            </div>
+
+            <div id="params" class="mb-6"></div>
+
+            <div class="border-b border-white/30 mb-4">
+                <nav class="-mb-px flex space-x-4">
+                    <button id="tab-proof-btn"
+                        class="py-2 px-3 text-sm font-medium text-white border-b-2 border-transparent hover:border-indigo-300 active:border-indigo-500">
+                        Proof
+                    </button>
+                    <button id="tab-description-btn"
+                        class="py-2 px-3 text-sm font-medium text-white border-b-2 border-transparent hover:border-indigo-300">
+                        Description
+                    </button>
+                    <button id="tab-info-btn"
+                        class="py-2 px-3 text-sm font-medium text-white border-b-2 border-transparent hover:border-indigo-300">
+                        Identity Info
+                    </button>
+                </nav>
+            </div>
+
+            <div id="tab-proof" class="space-y-3 text-sm text-white"></div>
+            <div id="coef-list" class="mb-4"></div>
+            <div id="tab-description" class="hidden space-y-3 text-sm text-white"></div>
+            <div id="tab-info" class="hidden space-y-3 text-sm text-white"></div>
+
+            <div class="mt-6">
+                <button id="export-btn"
+                    class="w-full py-2 px-4 bg-indigo-600 hover:bg-indigo-500 text-white rounded-md">
+                    Export as PNG
+                </button>
+            </div>
+        </section>
+    </main>
+
+    <div id="toast-container" class="fixed bottom-4 right-4 space-y-2"></div>
+
+    <footer class="mt-12 text-center text-xs text-gray-300">
+        Select an identity and adjust parameters to explore visual and algebraic derivations.
+    </footer>
+
+    <script>
+        // State
+        let currentIdentity = "binomial",
+            n = 5,
+            x = 0.5,
+            k = 3,
+            t = 0,
+            hoverIndex = null;
+
+        // Toast
+        function showToast(msg, type = "info") {
+            const colors = { success: "bg-emerald-500", error: "bg-red-500", info: "bg-indigo-500" };
+            const div = document.createElement("div");
+            div.textContent = msg;
+            div.className = `px-4 py-2 rounded-lg shadow-lg text-white ${colors[type]}`;
+            document.getElementById("toast-container").appendChild(div);
+            setTimeout(() => div.remove(), 3000);
+        }
+
+        // p5.js setup
+        function setup() {
+            const c = document.getElementById("canvas-container"),
+                w = c.clientWidth,
+                h = Math.min(Math.round(w * 0.8), 400);
+            createCanvas(w, h).parent("canvas-container");
+            updateAll();
+            switchTab("proof");
+        }
+
+        function windowResized() {
+            const c = document.getElementById("canvas-container"),
+                w = c.clientWidth,
+                h = Math.min(Math.round(w * 0.8), 400);
+            resizeCanvas(w, h);
+        }
+
+        // Modify the draw function to only animate until completion
+        function draw() {
+            // Only update t if animation is in progress
+            if (t < 1) {
+                t = Math.min(t + 0.02, 1); // Cap at 1 to stop animation
+
+                if (currentIdentity === "binomial") drawBinomial();
+                else if (currentIdentity === "geometric") drawGeometric();
+                else drawCatalan();
+            }
+        }
+
+        // Update the updateAll function to reset t to 0 to trigger a new animation
+        function updateAll() {
+            updateParams();
+            updateProof();
+            updateDescription();
+            updateInfo();
+            showToast(`Now exploring: ${document.getElementById("identity").value}`, "success");
+            t = 0; // Reset animation when parameters change
+            hoverIndex = null;
+        }
+
+        // Also add this to ensure the first render happens
+        function setup() {
+            const c = document.getElementById("canvas-container"),
+                w = c.clientWidth,
+                h = Math.min(Math.round(w * 0.8), 400);
+            createCanvas(w, h).parent("canvas-container");
+            updateAll();
+            switchTab("proof");
+
+            // Force an initial render
+            if (currentIdentity === "binomial") drawBinomial();
+            else if (currentIdentity === "geometric") drawGeometric();
+            else drawCatalan();
+        }
+
+        // Draw functions
+        function drawBinomial() {
+            clear();
+            background(15, 23, 42, 50);
+
+            const coeffs = binomialCoefficients(n),
+                maxC = Math.max(...coeffs),
+                barWidth = width / (n + 2),
+                margin = barWidth * 0.2,
+                chartHeight = height * 0.7,
+                bottom = height * 0.85;
+
+            // Draw bars
+            for (let i = 0; i <= n; i++) {
+                const barHeight = map(coeffs[i], 0, maxC, 0, chartHeight),
+                    animHeight = barHeight * easeInOut(t),
+                    xPos = (i + 0.5) * barWidth,
+                    yPos = bottom - animHeight;
+
+                // Highlight hovered bar
+                if (hoverIndex === i) {
+                    fill(234, 179, 8); // yellow-500
+                    stroke(234, 179, 8);
+                } else {
+                    fill(79, 70, 229); // indigo-600
+                    stroke(79, 70, 229);
+                }
+
+                rect(xPos - barWidth / 2 + margin / 2, yPos, barWidth - margin, animHeight, 4);
+
+                // Label value
+                fill(255);
+                noStroke();
+                textSize(12);
+                textAlign(CENTER);
+                text(coeffs[i], xPos, yPos - 15);
+            }
+
+            // Draw x-axis labels
+            fill(255);
+            textSize(14);
+            textAlign(CENTER, CENTER);
+            for (let i = 0; i <= n; i++) {
+                text(`k=${i}`, (i + 0.5) * barWidth, bottom + 20);
+            }
+
+            // Title
+            textSize(16);
+            text(`Binomial Coefficients for (1 + x)^${n}`, width / 2, 30);
+        }
+
+        function drawGeometric() {
+            clear();
+            background(15, 23, 42, 50);
+
+            const terms = geometricTerms(x, 10),
+                maxTerm = Math.max(...terms),
+                barWidth = width / 10,
+                margin = barWidth * 0.2,
+                chartHeight = height * 0.7,
+                bottom = height * 0.85;
+
+            // Draw bars
+            for (let i = 0; i < terms.length; i++) {
+                const barHeight = map(terms[i], 0, maxTerm, 0, chartHeight),
+                    animHeight = barHeight * easeInOut(t),
+                    xPos = (i + 0.5) * barWidth,
+                    yPos = bottom - animHeight;
+
+                // Highlight hovered bar
+                if (hoverIndex === i) {
+                    fill(234, 179, 8); // yellow-500
+                    stroke(234, 179, 8);
+                } else {
+                    fill(79, 70, 229); // indigo-600
+                    stroke(79, 70, 229);
+                }
+
+                rect(xPos - barWidth / 2 + margin / 2, yPos, barWidth - margin, animHeight, 4);
+
+                // Label value
+                fill(255);
+                noStroke();
+                textSize(12);
+                textAlign(CENTER);
+                text(terms[i].toFixed(2), xPos, yPos - 15);
+            }
+
+            // Draw x-axis labels
+            fill(255);
+            textSize(14);
+            textAlign(CENTER, CENTER);
+            for (let i = 0; i < terms.length; i++) {
+                text(`x^${i}`, (i + 0.5) * barWidth, bottom + 20);
+            }
+
+            // Title
+            textSize(16);
+            text(`Geometric Series Terms for x = ${x}`, width / 2, 30);
+        }
+
+        function drawCatalan() {
+            clear();
+            background(15, 23, 42, 50);
+
+            const paths = catalanPaths(k),
+                gridSize = Math.min(width, height) / (k + 3),
+                startX = (width - (k + 1) * gridSize) / 2,
+                startY = (height - (k + 1) * gridSize) / 2;
+
+            // Draw grid
+            for (let i = 0; i <= k; i++) {
+                for (let j = 0; j <= k; j++) {
+                    if (i + j <= k) {
+                        const xPos = startX + i * gridSize,
+                            yPos = startY + j * gridSize;
+
+                        // Highlight hovered cell
+                        if (hoverIndex === `${i},${j}`) {
+                            fill(234, 179, 8, 200); // yellow-500
+                            stroke(234, 179, 8);
+                        } else {
+                            fill(79, 70, 229, 100); // indigo-600
+                            stroke(79, 70, 229);
+                        }
+
+                        rect(xPos, yPos, gridSize, gridSize);
+                    }
+                }
+            }
+
+            // Title
+            fill(255);
+            noStroke();
+            textSize(16);
+            textAlign(CENTER);
+            text(`Catalan Number C_${k} = ${paths}`, width / 2, 30);
+        }
+
+        // Helpers
+        function choose(n, r) {
+            if (r < 0 || r > n) return 0;
+            let res = 1;
+            for (let i = 1; i <= r; i++) res *= (n - i + 1) / i;
+            return Math.round(res);
+        }
+
+        function binomialCoefficients(n) {
+            const a = [];
+            for (let i = 0; i <= n; i++) a.push(choose(n, i));
+            return a;
+        }
+
+        function geometricTerms(x, m) {
+            const a = [];
+            for (let i = 0; i < m; i++) a.push(x ** i);
+            return a;
+        }
+
+        function catalanPaths(n) {
+            return choose(2 * n, n) / (n + 1);
+        }
+
+        function easeInOut(t) {
+            return t < 0.5 ? 2 * t * t : -1 + (4 - 2 * t) * t;
+        }
+
+        function map(value, start1, stop1, start2, stop2) {
+            return start2 + (stop2 - start2) * ((value - start1) / (stop1 - start1));
+        }
+
+        // UI updates
+        function updateParams() {
+            t = 0;
+            hoverIndex = null;
+            const c = document.getElementById("params"),
+                sel = currentIdentity;
+            let html = "";
+            if (sel === "binomial") {
+                html = `<label class="block text-white text-sm font-medium">n:</label>
+              <input id="param-n" type="number" min="1" max="15" value="${n}"
+                class="mt-1 block w-full p-2 border border-white/30 rounded-md bg-gray-700 text-white focus:ring-2 focus:ring-indigo-500">`;
+            } else if (sel === "geometric") {
+                html = `<label class="block text-white text-sm font-medium">x:</label>
+              <input id="param-x" type="number" step="0.1" min="0.1" max="0.9" value="${x}"
+                class="mt-1 block w-full p-2 border border-white/30 rounded-md bg-gray-700 text-white focus:ring-2 focus:ring-indigo-500">`;
+            } else {
+                html = `<label class="block text-white text-sm font-medium">k:</label>
+              <input id="param-k" type="number" min="1" max="8" value="${k}"
+                class="mt-1 block w-full p-2 border border-white/30 rounded-md bg-gray-700 text-white focus:ring-2 focus:ring-indigo-500">`;
+            }
+            c.innerHTML = html;
+            if (sel === "binomial")
+                c.querySelector("#param-n").addEventListener("input", (e) => {
+                    n = Math.max(1, Math.min(15, +e.target.value || 1));
+                    updateAll();
+                });
+            if (sel === "geometric")
+                c.querySelector("#param-x").addEventListener("input", (e) => {
+                    x = Math.max(0.1, Math.min(0.9, +e.target.value || 0.1));
+                    updateAll();
+                });
+            if (sel === "catalan")
+                c.querySelector("#param-k").addEventListener("input", (e) => {
+                    k = Math.max(1, Math.min(8, +e.target.value || 1));
+                    updateAll();
+                });
+        }
+
+        function updateProof() {
+            const d = document.getElementById("tab-proof"),
+                sel = currentIdentity;
+            let html = "";
+            if (sel === "binomial") {
+                html = `<div>The binomial theorem: \\((1+x)^n=\\sum_{i=0}^n\\binom{n}{i}x^i\\).</div>
+              <div>For n=${n}, coeffs: ${binomialCoefficients(n).join(", ")}.</div>`;
+            } else if (sel === "geometric") {
+                html = `<div>Geometric series: \\(1/(1-x)=\\sum_{i=0}^\\infty x^i\\).</div>
+              <div>Terms: ${geometricTerms(x, 10)
+                        .map((v) => v.toFixed(2))
+                        .join(", ")}.</div>`;
+            } else {
+                html = `<div>Catalan: \\(C_n=\\frac1{n+1}\\binom{2n}{n}\\).</div>
+              <div>For k=${k}, C_${k}=${catalanPaths(k)}.</div>`;
+            }
+            d.innerHTML = html;
+            MathJax.typeset();
+            renderCoefList();
+        }
+
+        function renderCoefList() {
+            const list = document.getElementById("coef-list"),
+                sel = currentIdentity;
+            list.innerHTML = "";
+            if (sel === "binomial") {
+                for (let i = 0; i <= n; i++) {
+                    const sp = document.createElement("span");
+                    sp.className = "coef-term";
+                    sp.textContent = `k=${i}`;
+                    sp.onmouseenter = () => (hoverIndex = i);
+                    sp.onmouseleave = () => (hoverIndex = null);
+                    list.append(sp);
+                }
+            } else if (sel === "geometric") {
+                for (let i = 0; i < 10; i++) {
+                    const sp = document.createElement("span");
+                    sp.className = "coef-term";
+                    sp.textContent = `x^${i}`;
+                    sp.onmouseenter = () => (hoverIndex = i);
+                    sp.onmouseleave = () => (hoverIndex = null);
+                    list.append(sp);
+                }
+            } else {
+                for (let i = 0; i <= k; i++) {
+                    for (let j = 0; j <= k; j++) {
+                        if (i + j <= k) {
+                            const sp = document.createElement("span");
+                            sp.className = "coef-term";
+                            sp.textContent = `(${i},${j})`;
+                            sp.onmouseenter = () => (hoverIndex = `${i},${j}`);
+                            sp.onmouseleave = () => (hoverIndex = null);
+                            list.append(sp);
+                        }
+                    }
+                }
+            }
+        }
+
+        function updateDescription() {
+            const d = document.getElementById("tab-description");
+            let html = "";
+            if (currentIdentity === "binomial") {
+                html = `
+          <p>The <strong>Binomial Theorem</strong> describes the expansion of <em>(1 + x)<sup>n</sup></em> into a sum of terms involving binomial coefficients.  
+          Combinatorially, <em>\\(\\binom{n}{k}\\)</em> counts the number of ways to choose <em>k</em> items from <em>n</em>.</p>
+          <p>Generating function: <em>G(x) = (1 + x)<sup>n</sup></em>, valid for all <em>x</em>.</p>`;
+            } else if (currentIdentity === "geometric") {
+                html = `
+          <p>The <strong>Geometric Series</strong> is <em>\\(\\sum_{k=0}^\\infty x^k\\)</em>, valid when <em>|x| &lt; 1</em>.  
+          It models uniform growth or decay.</p>
+          <p>Generating function: <em>G(x) = \\frac{1}{1 - x}</em>, radius of convergence <em>|x| &lt; 1</em>.</p>`;
+            } else {
+                html = `
+          <p><strong>Catalan Numbers</strong> count combinatorial structures:  
+          lattice paths that stay below the diagonal, full binary trees, and more.</p>
+          <p>They satisfy <em>C<sub>0</sub>=1</em> and <em>C<sub>n+1</sub>=\\sum_{i=0}^n C_iC_{n-i}</em>.</p>
+          <p>Generating function: <em>C(x)=\\frac{1-\\sqrt{1-4x}}{2x}</em>, convergent for <em>|x| &lt; 1/4</em>.</p>`;
+            }
+            d.innerHTML = html;
+            MathJax.typeset();
+        }
+
+        function updateInfo() {
+            const d = document.getElementById("tab-info");
+            let html = "";
+            if (currentIdentity === "binomial") {
+                html = `
+          <p><em>(1 + x)<sup>n</sup> = \\sum_{k=0}^n \\binom{n}{k} x^k</em></p>
+          <p>Closed‐form: \\(\\binom{n}{k}=\\frac{n!}{k!(n-k)!}\\).</p>`;
+            } else if (currentIdentity === "geometric") {
+                html = `
+          <p>\\(\\sum_{k=0}^\\infty x^k = \\frac{1}{1 - x}\\), for <em>|x| &lt; 1</em>.</p>
+          <p>Partial sum: \\(\\sum_{k=0}^{N}x^k=\\frac{1-x^{N+1}}{1-x}\\).</p>`;
+            } else {
+                html = `
+          <p>\\(\\sum_{n=0}^\\infty C_n x^n = \\frac{1 - \\sqrt{1-4x}}{2x}\\).</p>
+          <p>Closed‐form: \\(C_n=\\frac{1}{n+1}\\binom{2n}{n}\\).</p>
+          <p>Radius: <em>|x| &lt; 1/4</em>.</p>`;
+            }
+            d.innerHTML = html;
+            MathJax.typeset();
+        }
+
+        function switchTab(tab) {
+            ["proof", "description", "info"].forEach((name) => {
+                document.getElementById("tab-" + name).classList.toggle("hidden", name !== tab);
+                document.getElementById(`tab-${name}-btn`).classList.toggle("active:border-indigo-500", name === tab);
+            });
+        }
+
+        function updateAll() {
+            updateParams();
+            updateProof();
+            updateDescription();
+            updateInfo();
+            showToast(`Now exploring: ${document.getElementById("identity").value}`, "success");
+            t = 0;
+            hoverIndex = null;
+        }
+
+        // Event listeners
+        document.getElementById("identity").addEventListener("change", (e) => {
+            currentIdentity = e.target.value;
+            updateAll();
+            switchTab("proof");
+        });
+        document.getElementById("tab-proof-btn").addEventListener("click", () => switchTab("proof"));
+        document.getElementById("tab-description-btn").addEventListener("click", () => switchTab("description"));
+        document.getElementById("tab-info-btn").addEventListener("click", () => switchTab("info"));
+        document.getElementById("export-btn").addEventListener("click", () => {
+            html2canvas(document.getElementById("main-content")).then((canvas) => {
+                const link = document.createElement("a");
+                link.download = `identity-${currentIdentity}.png`;
+                link.href = canvas.toDataURL("image/png");
+                link.click();
+                showToast("Exported PNG successfully!", "success");
+            });
+        });
+
+        // expose p5
+        window.setup = setup;
+        window.draw = draw;
+        window.windowResized = windowResized;
+    </script>
+</body>
+
+</html>

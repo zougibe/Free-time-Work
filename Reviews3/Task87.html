@@ -1,0 +1,602 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Flair Designer</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        // Configure Tailwind to use class-based dark mode
+        tailwind.config = {
+            darkMode: 'class',
+        };
+    </script>
+    <script src="https://unpkg.com/konva@9.3.6/konva.min.js"></script>
+    <style>
+        .canvas-container {
+            margin: 0 auto;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+        }
+
+        .asset-btn:hover {
+            transform: translateY(-2px);
+        }
+
+        .trending-badge {
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+
+            0%,
+            100% {
+                opacity: 0.8;
+            }
+
+            50% {
+                opacity: 1;
+            }
+        }
+
+        .score-meter {
+            height: 8px;
+            border-radius: 4px;
+            background: linear-gradient(90deg, #4f46e5 0%, #10b981 50%, #ef4444 100%);
+        }
+    </style>
+</head>
+
+<body
+    class="bg-gray-100 dark:bg-gray-900 text-gray-900 dark:text-gray-100 min-h-screen flex flex-col transition-colors duration-200">
+    <header class="bg-indigo-600 dark:bg-indigo-800 p-4 flex justify-between items-center shadow-md">
+        <div class="flex items-center">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8 mr-2" fill="none" viewBox="0 0 24 24"
+                stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                    d="M7 21a4 4 0 01-4-4V5a2 2 0 012-2h4a2 2 0 012 2v12a4 4 0 01-4 4zm0 0h12a2 2 0 002-2v-4a2 2 0 00-2-2h-2.343M11 7.343l1.657-1.657a2 2 0 012.828 0l2.829 2.829a2 2 0 010 2.828l-8.486 8.485M7 17h.01" />
+            </svg>
+            <h1 class="text-2xl font-bold">Flair Designer</h1>
+        </div>
+        <button id="theme-toggle"
+            class="p-2 bg-gray-200 dark:bg-gray-700 rounded-full hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors">
+            <span id="dark-mode-icon" class="hidden">🌙</span>
+            <span id="light-mode-icon">☀️</span>
+        </button>
+    </header>
+    <main class="flex-1 p-4 flex flex-col lg:flex-row gap-6 max-w-7xl mx-auto w-full">
+        <div class="flex-1 bg-white dark:bg-gray-800 p-6 rounded-xl shadow-lg">
+            <div class="mb-6">
+                <label for="platform-select" class="block text-sm font-medium mb-2">Platform</label>
+                <select id="platform-select"
+                    class="mt-1 p-3 border rounded-lg w-full dark:bg-gray-700 dark:border-gray-600 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition">
+                    <option value="reddit">Reddit (40×40)</option>
+                    <option value="discord">Discord (128×128)</option>
+                    <option value="twitter">Twitter (64×64)</option>
+                    <option value="custom">Custom Size</option>
+                </select>
+                <div id="custom-size-container" class="mt-3 hidden grid grid-cols-2 gap-3">
+                    <div>
+                        <label for="custom-width" class="block text-sm font-medium mb-1">Width</label>
+                        <input type="number" id="custom-width"
+                            class="p-2 border rounded-lg w-full dark:bg-gray-700 dark:border-gray-600" min="16"
+                            max="256" value="64">
+                    </div>
+                    <div>
+                        <label for="custom-height" class="block text-sm font-medium mb-1">Height</label>
+                        <input type="number" id="custom-height"
+                            class="p-2 border rounded-lg w-full dark:bg-gray-700 dark:border-gray-600" min="16"
+                            max="256" value="64">
+                    </div>
+                </div>
+            </div>
+            <div class="flex justify-center">
+                <div id="canvas-container"
+                    class="canvas-container bg-gray-50 dark:bg-gray-700 rounded-lg overflow-hidden"></div>
+            </div>
+            <div class="mt-4 flex gap-2">
+                <button id="clear-canvas"
+                    class="px-4 py-2 bg-gray-200 dark:bg-gray-700 rounded-lg hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors">Clear</button>
+                <button id="undo-action"
+                    class="px-4 py-2 bg-gray-200 dark:bg-gray-700 rounded-lg hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors">Undo</button>
+            </div>
+        </div>
+        <aside class="w-full lg:w-96 bg-white dark:bg-gray-800 p-6 rounded-xl shadow-lg">
+            <h2 class="text-xl font-semibold mb-6 flex items-center">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24"
+                    stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M13 10V3L4 14h7v7l9-11h-7z" />
+                </svg>
+                Design Tools
+            </h2>
+            <div class="mb-6">
+                <h3 class="text-sm font-medium mb-3 flex items-center">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24"
+                        stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
+                    </svg>
+                    Assets
+                </h3>
+                <div class="mb-4">
+                    <div class="flex border-b dark:border-gray-600 mb-3">
+                        <button
+                            class="tab-btn active px-4 py-2 font-medium text-indigo-600 dark:text-indigo-400 border-b-2 border-indigo-600 dark:border-indigo-400"
+                            data-tab="icons">Icons</button>
+                        <button class="tab-btn px-4 py-2 font-medium text-gray-500 dark:text-gray-400"
+                            data-tab="text">Text</button>
+                        <button class="tab-btn px-4 py-2 font-medium text-gray-500 dark:text-gray-400"
+                            data-tab="effects">Effects</button>
+                    </div>
+                    <div id="asset-list" class="grid grid-cols-3 gap-3"></div>
+                </div>
+            </div>
+            <div class="mb-6 p-4 bg-gray-100 dark:bg-gray-700 rounded-lg">
+                <h3 class="text-sm font-medium mb-2">Community Appeal Score</h3>
+                <div id="appeal-score" class="text-3xl font-bold text-indigo-600 dark:text-indigo-400 mb-1">0</div>
+                <div class="score-meter">
+                    <div id="score-meter-fill" class="h-full bg-indigo-600 rounded" style="width: 0%"></div>
+                </div>
+                <p id="score-feedback" class="text-xs mt-2 text-gray-600 dark:text-gray-300">Add elements to increase
+                    your score</p>
+            </div>
+            <div class="mb-6 p-4 bg-gray-100 dark:bg-gray-700 rounded-lg">
+                <div class="flex justify-between items-center mb-2">
+                    <h3 class="text-sm font-medium">Trending Flair Style</h3>
+                    <span
+                        class="px-2 py-1 text-xs bg-indigo-100 dark:bg-indigo-900 text-indigo-800 dark:text-indigo-200 rounded-full trending-badge">Hot</span>
+                </div>
+                <div id="trending-flair" class="text-sm mb-3 italic">Loading...</div>
+                <button id="refresh-trending"
+                    class="w-full px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors flex items-center justify-center">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24"
+                        stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                    </svg>
+                    Refresh Trend
+                </button>
+            </div>
+            <div class="flex gap-3">
+                <button id="save-flair"
+                    class="flex-1 px-4 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors flex items-center justify-center">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-1" fill="none" viewBox="0 0 24 24"
+                        stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4" />
+                    </svg>
+                    Save
+                </button>
+                <button id="export-png"
+                    class="flex-1 px-4 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center justify-center">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-1" fill="none" viewBox="0 0 24 24"
+                        stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                    </svg>
+                    Export
+                </button>
+            </div>
+        </aside>
+    </main>
+    <script>
+        // Asset data
+        const assets = {
+            icons: [
+                { name: "Star", url: "https://cdn.jsdelivr.net/npm/emoji-datasource-apple/img/apple/64/2b50.png" },
+                { name: "Heart", url: "https://cdn.jsdelivr.net/npm/emoji-datasource-apple/img/apple/64/2764-fe0f.png" },
+                { name: "Fire", url: "https://cdn.jsdelivr.net/npm/emoji-datasource-apple/img/apple/64/1f525.png" },
+                { name: "Rocket", url: "https://cdn.jsdelivr.net/npm/emoji-datasource-apple/img/apple/64/1f680.png" },
+                { name: "Trophy", url: "https://cdn.jsdelivr.net/npm/emoji-datasource-apple/img/apple/64/1f3c6.png" },
+                { name: "Lightning", url: "https://cdn.jsdelivr.net/npm/emoji-datasource-apple/img/apple/64/26a1.png" },
+            ],
+            textStyles: [
+                { name: "Bold", font: "Arial Black", size: 16, color: "#000000", weight: "bold" },
+                { name: "Red", font: "Verdana", size: 14, color: "#FF0000" },
+                { name: "Gradient", font: "Impact", size: 18, color: "linear-gradient(#ff0000, #0000ff)" },
+                { name: "Outline", font: "Comic Sans MS", size: 16, color: "#FFFFFF", stroke: "#000000", strokeWidth: 2 },
+            ],
+            effects: [
+                {
+                    name: "Glow",
+                    apply: (node) => {
+                        node.shadowColor(node.fill() || '#ffff00');
+                        node.shadowBlur(10);
+                        node.shadowOpacity(0.8);
+                    },
+                    description: "Adds a glowing effect"
+                },
+                {
+                    name: "Pulse",
+                    apply: (node) => {
+                        node.to({
+                            scaleX: 1.2,
+                            scaleY: 1.2,
+                            duration: 0.5,
+                            yoyo: true,
+                            repeat: Infinity
+                        });
+                    },
+                    description: "Creates a pulsing animation"
+                },
+                {
+                    name: "Spin",
+                    apply: (node) => {
+                        node.to({
+                            rotation: 360,
+                            duration: 2,
+                            easing: Konva.Easings.Linear,
+                            onFinish: () => node.rotation(0)
+                        }).to({
+                            rotation: 360,
+                            duration: 2,
+                            easing: Konva.Easings.Linear,
+                            onFinish: () => node.rotation(0)
+                        });
+                    },
+                    description: "Rotates the element continuously"
+                },
+            ],
+        };
+
+        // Trending styles and feedback
+        const trendingStyles = [
+            "Minimalist Glow with Single Icon",
+            "Bold Neon Text with Outline",
+            "Retro Pixel Art Style",
+            "Elegant Gradient Text",
+            "Animated Pulsing Badge",
+            "Duotone Color Scheme"
+        ];
+        const feedbackMessages = {
+            0: "Start adding elements to your flair!",
+            20: "Good start! Try adding more elements.",
+            50: "Looking creative! Consider some effects.",
+            80: "Excellent! This will stand out in the community.",
+            100: "Perfect! This flair is community-ready!"
+        };
+
+        // Canvas state
+        let stage, layer, transformer;
+        let history = [];
+        const MAX_HISTORY = 20;
+
+        // Theme toggle
+        function initTheme() {
+            const themeToggle = document.getElementById('theme-toggle');
+            const darkModeIcon = document.getElementById('dark-mode-icon');
+            const lightModeIcon = document.getElementById('light-mode-icon');
+
+            // Initialize theme based on saved preference or system setting
+            const savedTheme = localStorage.getItem('theme');
+            const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+            const isDark = savedTheme === 'dark' || (!savedTheme && prefersDark);
+
+            // Apply initial theme
+            document.documentElement.classList.toggle('dark', isDark);
+            darkModeIcon.classList.toggle('hidden', !isDark);
+            lightModeIcon.classList.toggle('hidden', isDark);
+            // console.log('Initial theme:', isDark ? 'dark' : 'light');
+
+            // Toggle theme on click
+            themeToggle.addEventListener('click', () => {
+                const isDark = document.documentElement.classList.toggle('dark');
+                localStorage.setItem('theme', isDark ? 'dark' : 'light');
+                darkModeIcon.classList.toggle('hidden', !isDark);
+                lightModeIcon.classList.toggle('hidden', isDark);
+                // console.log('Toggled theme:', isDark ? 'dark' : 'light');
+            });
+        }
+
+        // Initialize canvas
+        function initCanvas(width, height) {
+            const container = document.getElementById('canvas-container');
+            container.innerHTML = '';
+
+            stage = new Konva.Stage({
+                container: 'canvas-container',
+                width,
+                height,
+            });
+
+            layer = new Konva.Layer();
+            stage.add(layer);
+
+            transformer = new Konva.Transformer({
+                rotateEnabled: true,
+                boundBoxFunc: (oldBox, newBox) => {
+                    if (newBox.width < 10 || newBox.height < 10) return oldBox;
+                    return newBox;
+                }
+            });
+            layer.add(transformer);
+
+            stage.on('click tap', (e) => {
+                transformer.nodes(e.target === stage ? [] : [e.target]);
+            });
+
+            layer.on('change', () => {
+                saveState();
+                updateAppealScore();
+            });
+        }
+
+        // Save canvas state
+        function saveState() {
+            history.push(stage.toJSON());
+            if (history.length > MAX_HISTORY) history.shift();
+        }
+
+        // Undo action
+        function undoAction() {
+            if (history.length <= 1) return;
+            history.pop();
+            const prevState = history[history.length - 1];
+            stage = Konva.Node.create(prevState, 'canvas-container');
+            layer = stage.children[0];
+
+            transformer = new Konva.Transformer();
+            layer.add(transformer);
+            stage.on('click tap', (e) => {
+                transformer.nodes(e.target === stage ? [] : [e.target]);
+            });
+
+            updateAppealScore();
+        }
+
+        // Clear canvas
+        function clearCanvas() {
+            if (!confirm('Are you sure you want to clear the canvas?')) return;
+            layer.destroyChildren();
+            layer.add(transformer);
+            layer.draw();
+            saveState();
+            updateAppealScore();
+        }
+
+        // Populate assets
+        function populateAssets(tab = 'icons') {
+            const assetList = document.getElementById('asset-list');
+            assetList.innerHTML = '';
+
+            if (tab === 'icons') {
+                assets.icons.forEach(icon => {
+                    const btn = document.createElement('button');
+                    btn.className = 'asset-btn p-2 bg-gray-200 dark:bg-gray-700 rounded-lg hover:bg-gray-300 dark:hover:bg-gray-600 transition-all flex flex-col items-center';
+                    btn.innerHTML = `
+                        <img src="${icon.url}" alt="${icon.name}" class="w-8 h-8 mb-1 object-contain">
+                        <span class="text-xs">${icon.name}</span>
+                    `;
+                    btn.onclick = () => addIcon(icon);
+                    assetList.appendChild(btn);
+                });
+            } else if (tab === 'text') {
+                assets.textStyles.forEach(style => {
+                    const btn = document.createElement('button');
+                    btn.className = 'asset-btn p-2 bg-gray-200 dark:bg-gray-700 rounded-lg hover:bg-gray-300 dark:hover:bg-gray-600 transition-all';
+                    const preview = document.createElement('div');
+                    preview.className = 'text-center';
+                    preview.style.fontFamily = style.font;
+                    preview.style.fontSize = `${style.size}px`;
+                    preview.style.color = style.color;
+                    if (style.stroke) preview.style.textShadow = `1px 1px 0 ${style.stroke}, -1px -1px 0 ${style.stroke}`;
+                    if (style.weight) preview.style.fontWeight = style.weight;
+                    preview.textContent = 'Abc';
+                    btn.appendChild(preview);
+                    btn.innerHTML += `<div class="text-xs mt-1">${style.name}</div>`;
+                    btn.onclick = () => addText(style);
+                    assetList.appendChild(btn);
+                });
+            } else if (tab === 'effects') {
+                assets.effects.forEach(effect => {
+                    const btn = document.createElement('button');
+                    btn.className = 'asset-btn p-2 bg-gray-200 dark:bg-gray-700 rounded-lg hover:bg-gray-300 dark:hover:bg-gray-600 transition-all';
+                    btn.innerHTML = `
+                        <div class="font-medium mb-1">${effect.name}</div>
+                        <div class="text-xs text-gray-600 dark:text-gray-300">${effect.description}</div>
+                    `;
+                    btn.onclick = () => applyEffect(effect);
+                    assetList.appendChild(btn);
+                });
+            }
+        }
+
+        // Add icon
+        function addIcon(icon) {
+            Konva.Image.fromURL(icon.url, (imageNode) => {
+                imageNode.setAttrs({
+                    x: stage.width() / 2 - 16,
+                    y: stage.height() / 2 - 16,
+                    width: 32,
+                    height: 32,
+                    draggable: true,
+                    name: icon.name
+                });
+                layer.add(imageNode);
+                transformer.nodes([imageNode]);
+                layer.draw();
+            });
+        }
+
+        // Add text
+        function addText(style) {
+            const textNode = new Konva.Text({
+                x: 10,
+                y: 10,
+                text: 'Flair',
+                fontFamily: style.font,
+                fontSize: style.size,
+                fill: style.color,
+                draggable: true,
+                name: style.name,
+                stroke: style.stroke,
+                strokeWidth: style.strokeWidth || 0,
+                fontStyle: style.weight || 'normal'
+            });
+            layer.add(textNode);
+            transformer.nodes([textNode]);
+            layer.draw();
+        }
+
+        // Apply effect
+        function applyEffect(effect) {
+            const nodes = transformer.nodes();
+            if (!nodes.length) return alert('Please select an element first');
+            effect.apply(nodes[0]);
+            nodes[0].setAttr('effect', effect.name);
+            layer.draw();
+        }
+
+        // Update appeal score
+        function updateAppealScore() {
+            let score = 0;
+            const nodes = layer.children.filter(n => n !== transformer);
+            const platform = document.getElementById('platform-select').value;
+
+            score += nodes.length * 10;
+            nodes.forEach(node => {
+                if (node.getAttr('effect')) score += 15;
+            });
+
+            if (platform === 'reddit' && nodes.length > 0) score += 20;
+            if (platform === 'discord' && nodes.length > 1) score += 30;
+            if (platform === 'twitter' && nodes.some(n => n.className === 'Text')) score += 25;
+
+            score = Math.min(score, 100);
+
+            document.getElementById('appeal-score').textContent = score;
+            document.getElementById('score-meter-fill').style.width = `${score}%`;
+
+            let feedback = feedbackMessages[0];
+            for (const threshold in feedbackMessages) {
+                if (score >= parseInt(threshold)) feedback = feedbackMessages[threshold];
+            }
+            document.getElementById('score-feedback').textContent = feedback;
+        }
+
+        // Show trending flair
+        function showTrendingFlair() {
+            const flair = trendingStyles[Math.floor(Math.random() * trendingStyles.length)];
+            document.getElementById('trending-flair').textContent = `"${flair}"`;
+            const badge = document.querySelector('.trending-badge');
+            badge.classList.remove('trending-badge');
+            void badge.offsetWidth;
+            badge.classList.add('trending-badge');
+        }
+
+        // Save flair
+        function saveFlair() {
+            localStorage.setItem('savedFlair', stage.toJSON());
+            const notification = document.createElement('div');
+            notification.className = 'fixed bottom-4 right-4 px-4 py-2 bg-green-600 text-white rounded-lg shadow-lg';
+            notification.textContent = 'Flair saved successfully!';
+            document.body.appendChild(notification);
+            setTimeout(() => {
+                notification.classList.add('opacity-0', 'transition-opacity', 'duration-300');
+                setTimeout(() => notification.remove(), 300);
+            }, 2000);
+        }
+
+        // Export PNG
+        function exportPNG() {
+            const platform = document.getElementById('platform-select').value;
+            const scale = platform === 'reddit' ? 4 : platform === 'twitter' ? 2 : 1;
+            const dataURL = stage.toDataURL({ pixelRatio: scale, quality: 1, mimeType: 'image/png' });
+            const link = document.createElement('a');
+            link.href = dataURL;
+            link.download = `flair-${platform}-${new Date().toISOString().slice(0, 10)}.png`;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        }
+
+        // Handle platform change
+        function handlePlatformChange() {
+            const platform = document.getElementById('platform-select').value;
+            const customSizeContainer = document.getElementById('custom-size-container');
+
+            if (platform === 'custom') {
+                customSizeContainer.classList.remove('hidden');
+                const width = parseInt(document.getElementById('custom-width').value) || 64;
+                const height = parseInt(document.getElementById('custom-height').value) || 64;
+                initCanvas(width, height);
+            } else {
+                customSizeContainer.classList.add('hidden');
+                const sizes = {
+                    reddit: { width: 40, height: 40 },
+                    discord: { width: 128, height: 128 },
+                    twitter: { width: 64, height: 64 },
+                };
+                initCanvas(sizes[platform].width, sizes[platform].height);
+            }
+            updateAppealScore();
+        }
+
+        // Handle custom size change
+        function handleCustomSizeChange() {
+            if (document.getElementById('platform-select').value !== 'custom') return;
+            const width = parseInt(document.getElementById('custom-width').value) || 64;
+            const height = parseInt(document.getElementById('custom-height').value) || 64;
+            stage.width(width);
+            stage.height(height);
+            stage.draw();
+        }
+
+        // Initialize tabs
+        function initTabs() {
+            const tabs = document.querySelectorAll('.tab-btn');
+            tabs.forEach(tab => {
+                tab.addEventListener('click', () => {
+                    tabs.forEach(t => {
+                        t.classList.remove('active', 'text-indigo-600', 'dark:text-indigo-400', 'border-indigo-600', 'dark:border-indigo-400');
+                        t.classList.add('text-gray-500', 'dark:text-gray-400');
+                    });
+                    tab.classList.add('active', 'text-indigo-600', 'dark:text-indigo-400', 'border-indigo-600', 'dark:border-indigo-400');
+                    tab.classList.remove('text-gray-500', 'dark:text-gray-400');
+                    populateAssets(tab.dataset.tab);
+                });
+            });
+        }
+
+        // Initialize app
+        function initApp() {
+            initTheme();
+            initCanvas(250, 250);
+            initTabs();
+            populateAssets('icons');
+            showTrendingFlair();
+
+            document.getElementById('platform-select').addEventListener('change', handlePlatformChange);
+            document.getElementById('custom-width').addEventListener('change', handleCustomSizeChange);
+            document.getElementById('custom-height').addEventListener('change', handleCustomSizeChange);
+            document.getElementById('refresh-trending').addEventListener('click', showTrendingFlair);
+            document.getElementById('save-flair').addEventListener('click', saveFlair);
+            document.getElementById('export-png').addEventListener('click', exportPNG);
+            document.getElementById('clear-canvas').addEventListener('click', clearCanvas);
+            document.getElementById('undo-action').addEventListener('click', undoAction);
+
+            const savedFlair = localStorage.getItem('savedFlair');
+            if (savedFlair) {
+                try {
+                    stage = Konva.Node.create(savedFlair, 'canvas-container');
+                    layer = stage.children[0];
+                    transformer = new Konva.Transformer();
+                    layer.add(transformer);
+                    stage.on('click tap', (e) => {
+                        transformer.nodes(e.target === stage ? [] : [e.target]);
+                    });
+                    saveState();
+                    updateAppealScore();
+                } catch (e) {
+                    console.error('Error loading saved flair:', e);
+                }
+            }
+        }
+
+        // Start app
+        document.addEventListener('DOMContentLoaded', initApp);
+    </script>
+</body>
+
+</html>
