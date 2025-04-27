@@ -1,0 +1,1081 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>FitFlow - Workout Planner</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: {
+                            50: '#f0f9ff',
+                            100: '#e0f2fe',
+                            500: '#3b82f6',
+                            600: '#2563eb',
+                            700: '#1d4ed8',
+                        },
+                        success: '#10b981',
+                        warning: '#f59e0b',
+                        danger: '#ef4444',
+                    },
+                    boxShadow: {
+                        card: '0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05)',
+                        'card-hover': '0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)',
+                    },
+                }
+            }
+        }
+    </script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4"></script>
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        .drag-over {
+            background-color: rgba(59, 130, 246, 0.1);
+            transform: scale(1.02);
+            transition: all 0.2s ease;
+        }
+
+        .exercise-card {
+            transition: all 0.2s ease;
+        }
+
+        .exercise-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+        }
+
+        .day-column {
+            min-height: 300px;
+            transition: all 0.2s ease;
+        }
+
+        .sidebar {
+            scrollbar-width: thin;
+            scrollbar-color: #e5e7eb #f3f4f6;
+        }
+
+        .sidebar::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        .sidebar::-webkit-scrollbar-track {
+            background: #f3f4f6;
+        }
+
+        .sidebar::-webkit-scrollbar-thumb {
+            background-color: #e5e7eb;
+            border-radius: 6px;
+        }
+
+        @media (max-width: 768px) {
+            .mobile-menu-button {
+                display: block;
+            }
+
+            .sidebar {
+                position: fixed;
+                z-index: 50;
+                left: -100%;
+                top: 64px;
+                height: calc(100vh - 64px);
+                transition: left 0.3s ease;
+            }
+
+            .sidebar.open {
+                left: 0;
+            }
+
+            .sidebar-overlay {
+                display: none;
+                position: fixed;
+                top: 64px;
+                left: 0;
+                right: 0;
+                bottom: 0;
+                background-color: rgba(0, 0, 0, 0.5);
+                z-index: 40;
+            }
+
+            .sidebar-overlay.open {
+                display: block;
+            }
+        }
+    </style>
+</head>
+
+<body class="bg-gray-50 text-gray-900 antialiased relative">
+    <!-- Header -->
+    <header class="bg-white shadow-md sticky top-0 z-30">
+        <div class="container mx-auto flex items-center justify-between px-4 py-3">
+            <div class="flex items-center space-x-4">
+                <button id="mobile-menu-button" class="mobile-menu-button md:hidden text-gray-600">
+                    <i class="fas fa-bars text-xl"></i>
+                </button>
+                <h1 class="text-2xl font-bold text-primary-700">FitFlow</h1>
+            </div>
+            <div class="flex space-x-3">
+                <button id="export-btn"
+                    class="flex items-center space-x-2 text-sm px-4 py-2 bg-primary-100 text-primary-700 rounded-lg hover:bg-primary-200 transition">
+                    <i class="fas fa-share-alt"></i>
+                    <span class="hidden sm:inline">Share Routine</span>
+                </button>
+                <div class="relative">
+                    <button id="export-dropdown-btn"
+                        class="flex items-center space-x-2 text-sm px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition">
+                        <i class="fas fa-download"></i>
+                        <span class="hidden sm:inline">Export</span>
+                    </button>
+                    <div id="export-dropdown"
+                        class="hidden absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg z-10">
+                        <div class="py-1">
+                            <button id="export-md"
+                                class="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">Markdown
+                                (.md)</button>
+                            <button id="export-json"
+                                class="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">JSON</button>
+                            <button id="export-png"
+                                class="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">Image
+                                (PNG)</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Sidebar Overlay (Mobile) -->
+    <div id="sidebar-overlay" class="sidebar-overlay"></div>
+
+    <div class="flex flex-col md:flex-row">
+        <!-- Sidebar -->
+        <aside id="sidebar"
+            class="sidebar w-full md:w-72 bg-white h-[calc(100vh-64px)] overflow-y-auto shadow-md md:shadow-none transition-all duration-200">
+            <div class="px-4 py-3">
+                <div class="relative mb-4">
+                    <input id="exercise-search" type="text" placeholder="Search exercises..."
+                        class="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500" />
+                    <i class="fas fa-search absolute left-3 top-3 text-gray-400"></i>
+                </div>
+
+                <div class="mb-6">
+                    <h3 class="font-semibold text-gray-800 mb-3 flex items-center">
+                        <i class="fas fa-filter mr-2 text-primary-600"></i>
+                        Filters
+                    </h3>
+                    <div class="flex flex-wrap gap-3">
+                        <label class="inline-flex items-center">
+                            <input type="checkbox" data-type="Strength" checked
+                                class="rounded border-gray-300 text-primary-600 shadow-sm focus:border-primary-300 focus:ring focus:ring-primary-200 focus:ring-opacity-50">
+                            <span class="ml-2 text-sm text-gray-700">Strength</span>
+                        </label>
+                        <label class="inline-flex items-center">
+                            <input type="checkbox" data-type="Cardio" checked
+                                class="rounded border-gray-300 text-primary-600 shadow-sm focus:border-primary-300 focus:ring focus:ring-primary-200 focus:ring-opacity-50">
+                            <span class="ml-2 text-sm text-gray-700">Cardio</span>
+                        </label>
+                        <label class="inline-flex items-center">
+                            <input type="checkbox" data-type="Core" checked
+                                class="rounded border-gray-300 text-primary-600 shadow-sm focus:border-primary-300 focus:ring focus:ring-primary-200 focus:ring-opacity-50">
+                            <span class="ml-2 text-sm text-gray-700">Core</span>
+                        </label>
+                    </div>
+                </div>
+
+                <div class="mb-6">
+                    <h3 class="font-semibold text-gray-800 mb-3 flex items-center">
+                        <i class="fas fa-star mr-2 text-yellow-500"></i>
+                        Favorites
+                    </h3>
+                    <div id="favorites-list" class="grid grid-cols-2 gap-3"></div>
+                    <p id="no-favorites" class="text-sm text-gray-500 text-center py-2 hidden">No favorite exercises yet
+                    </p>
+                </div>
+
+                <div class="mb-6">
+                    <h3 class="font-semibold text-gray-800 mb-3 flex items-center">
+                        <i class="fas fa-history mr-2 text-primary-600"></i>
+                        Recent
+                    </h3>
+                    <div id="recent-list" class="flex flex-wrap gap-2"></div>
+                    <p id="no-recents" class="text-sm text-gray-500 text-center py-2 hidden">No recent exercises</p>
+                </div>
+
+                <div>
+                    <h3 class="font-semibold text-gray-800 mb-3 flex items-center">
+                        <i class="fas fa-dumbbell mr-2 text-primary-600"></i>
+                        Exercise Library
+                    </h3>
+                    <div id="exercise-library" class="grid grid-cols-2 gap-3 pb-4"></div>
+                </div>
+            </div>
+        </aside>
+
+        <!-- Main Content -->
+        <div class="flex-1 overflow-y-auto">
+            <main class="container mx-auto px-4 py-6 space-y-8">
+                <!-- Weekly Schedule -->
+                <section>
+                    <div class="flex justify-between items-center mb-4">
+                        <h2 class="text-xl font-bold text-gray-800">Weekly Schedule</h2>
+                        <button id="clear-all"
+                            class="text-sm px-3 py-1 bg-gray-100 text-gray-600 rounded hover:bg-gray-200 transition">
+                            Clear All
+                        </button>
+                    </div>
+                    <div class="overflow-x-auto overflow-y-visible pb-6">
+                        <div id="schedule-grid" class="min-w-[700px] grid grid-cols-7 gap-4"></div>
+                    </div>
+                </section>
+
+                <!-- Progress Dashboard -->
+                <section>
+                    <h2 class="text-xl font-bold text-gray-800 mb-4">Progress Dashboard</h2>
+                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                        <!-- Completion + Stats -->
+                        <div class="bg-white p-6 rounded-xl shadow-card flex flex-col">
+                            <h3 class="font-semibold text-lg mb-4 text-gray-800">Completion Progress</h3>
+                            <div class="w-full bg-gray-200 rounded-full h-4 mb-3">
+                                <div id="completion-bar"
+                                    class="bg-success h-4 rounded-full transition-all duration-500 ease-out"
+                                    style="width: 0%"></div>
+                            </div>
+                            <p id="completion-text" class="text-sm text-gray-600 mb-6">
+                                0% completed (0/0 exercises)
+                            </p>
+
+                            <div id="favorites-stats" class="space-y-3 mb-6">
+                                <h4 class="font-semibold text-gray-800 mb-2">Your Stats</h4>
+                                <div class="flex items-center text-sm text-gray-700 bg-gray-50 p-3 rounded-lg">
+                                    <i class="fas fa-dumbbell w-5 text-primary-600"></i>
+                                    <span class="ml-2">
+                                        <span class="font-medium">Favorite Exercise:</span>
+                                        <span id="stat-fav-exercise" class="ml-1">—</span>
+                                    </span>
+                                </div>
+                                <div class="flex items-center text-sm text-gray-700 bg-gray-50 p-3 rounded-lg">
+                                    <i class="fas fa-calendar-alt w-5 text-primary-600"></i>
+                                    <span class="ml-2">
+                                        <span class="font-medium">Favorite Day:</span>
+                                        <span id="stat-fav-day" class="ml-1">—</span>
+                                    </span>
+                                </div>
+                                <div class="flex items-center text-sm text-gray-700 bg-gray-50 p-3 rounded-lg">
+                                    <i class="fas fa-heart w-5 text-primary-600"></i>
+                                    <span class="ml-2">
+                                        <span class="font-medium">Favorite Type:</span>
+                                        <span id="stat-fav-type" class="ml-1">—</span>
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Charts -->
+                        <div class="bg-white p-6 rounded-xl shadow-card">
+                            <div class="flex justify-between items-center mb-4">
+                                <h3 class="font-semibold text-lg text-gray-800">Type Distribution</h3>
+                                <div class="flex space-x-2">
+                                    <button id="chart-pie-btn"
+                                        class="text-xs px-2 py-1 bg-primary-100 text-primary-700 rounded">Pie</button>
+                                    <button id="chart-radar-btn"
+                                        class="text-xs px-2 py-1 bg-gray-100 text-gray-700 rounded">Radar</button>
+                                </div>
+                            </div>
+                            <div class="w-full" style="height: 300px; position: relative">
+                                <canvas id="type-chart"></canvas>
+                            </div>
+                        </div>
+
+                        <!-- Weekday Chart -->
+                        <div class="bg-white p-6 rounded-xl shadow-card">
+                            <h3 class="font-semibold text-lg text-gray-800 mb-4">Workouts per Day</h3>
+                            <div class="w-full" style="height: 300px; position: relative">
+                                <canvas id="weekday-chart"></canvas>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+            </main>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <footer class="bg-white border-t text-center py-4 text-sm text-gray-500">
+        <div class="container mx-auto px-4">
+            &copy; 2025 FitFlow | <a href="#" class="text-primary-600 hover:underline">Privacy Policy</a> | <a href="#"
+                class="text-primary-600 hover:underline">Terms of Service</a>
+        </div>
+    </footer>
+
+    <!-- Share Modal -->
+    <div id="share-modal" class="fixed inset-0 z-50 hidden overflow-y-auto">
+        <div class="flex items-center justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
+            <div class="fixed inset-0 transition-opacity" aria-hidden="true">
+                <div class="absolute inset-0 bg-gray-500 opacity-75"></div>
+            </div>
+            <span class="hidden sm:inline-block sm:align-middle sm:h-screen" aria-hidden="true">&#8203;</span>
+            <div
+                class="inline-block align-bottom bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg sm:w-full">
+                <div class="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
+                    <h3 class="text-lg leading-6 font-medium text-gray-900 mb-4">Share Your Routine</h3>
+                    <div class="mb-4">
+                        <label for="share-url" class="block text-sm font-medium text-gray-700 mb-1">Shareable
+                            Link</label>
+                        <div class="flex">
+                            <input type="text" id="share-url" readonly
+                                class="flex-1 min-w-0 block w-full px-3 py-2 rounded-l-md border border-gray-300 focus:outline-none focus:ring-primary-500 focus:border-primary-500 sm:text-sm">
+                            <button id="copy-url"
+                                class="inline-flex items-center px-3 py-2 border border-l-0 border-gray-300 rounded-r-md bg-gray-50 text-sm font-medium text-gray-700 hover:bg-gray-100 focus:outline-none focus:ring-1 focus:ring-primary-500 focus:border-primary-500">
+                                Copy
+                            </button>
+                        </div>
+                    </div>
+                    <div class="mb-4">
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Share via</label>
+                        <div class="flex space-x-3">
+                            <button
+                                class="w-10 h-10 rounded-full bg-blue-600 text-white flex items-center justify-center hover:bg-blue-700">
+                                <i class="fab fa-facebook-f"></i>
+                            </button>
+                            <button
+                                class="w-10 h-10 rounded-full bg-blue-400 text-white flex items-center justify-center hover:bg-blue-500">
+                                <i class="fab fa-twitter"></i>
+                            </button>
+                            <button
+                                class="w-10 h-10 rounded-full bg-red-600 text-white flex items-center justify-center hover:bg-red-700">
+                                <i class="fab fa-pinterest-p"></i>
+                            </button>
+                            <button
+                                class="w-10 h-10 rounded-full bg-gray-800 text-white flex items-center justify-center hover:bg-gray-900">
+                                <i class="fab fa-github"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                <div class="bg-gray-50 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse">
+                    <button type="button" id="close-share-modal"
+                        class="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-primary-600 text-base font-medium text-white hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 sm:ml-3 sm:w-auto sm:text-sm">
+                        Done
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Enhanced Data Structure
+        const exercises = [
+            { id: 1, name: "Push-ups", type: "Strength", description: "A classic bodyweight exercise that targets the chest, shoulders, and triceps.", icon: "fa-person-burst" },
+            { id: 2, name: "Squats", type: "Strength", description: "A fundamental lower body exercise that works the quads, hamstrings, and glutes.", icon: "fa-person-walking" },
+            { id: 3, name: "Running", type: "Cardio", description: "Improves cardiovascular health and endurance.", icon: "fa-person-running" },
+            { id: 4, name: "Plank", type: "Core", description: "An isometric core exercise that strengthens the abs and back.", icon: "fa-arrows-up-down-left-right" },
+            { id: 5, name: "Lunges", type: "Strength", description: "Works each leg individually to improve balance and leg strength.", icon: "fa-shoe-prints" },
+            { id: 6, name: "Pull-ups", type: "Strength", description: "A challenging upper body exercise that targets the back and arms.", icon: "fa-person-praying" },
+            { id: 7, name: "Burpees", type: "Cardio", description: "A full-body exercise that combines strength and cardio.", icon: "fa-person-falling" },
+            { id: 8, name: "Bench Press", type: "Strength", description: "A compound exercise that primarily works the chest, shoulders, and triceps.", icon: "fa-weight-hanging" },
+            { id: 9, name: "Deadlift", type: "Strength", description: "A fundamental exercise for building overall strength, particularly in the posterior chain.", icon: "fa-dumbbell" },
+            { id: 10, name: "Bicycle Crunches", type: "Core", description: "An effective abdominal exercise that targets the obliques and rectus abdominis.", icon: "fa-person-biking" },
+            { id: 11, name: "Jumping Jacks", type: "Cardio", description: "A simple cardio exercise that gets the heart rate up quickly.", icon: "fa-person-circle-exclamation" },
+            { id: 12, name: "Mountain Climbers", type: "Cardio", description: "A dynamic exercise that combines core strength with cardio.", icon: "fa-mountain" },
+            { id: 13, name: "Shoulder Press", type: "Strength", description: "Targets the deltoid muscles of the shoulders.", icon: "fa-arrow-up" },
+            { id: 14, name: "Bicep Curls", type: "Strength", description: "Isolates and strengthens the biceps.", icon: "fa-arrows-up-to-line" },
+            { id: 15, name: "Tricep Dips", type: "Strength", description: "Targets the triceps using body weight.", icon: "fa-down-long" },
+        ];
+
+        // Initialize data from localStorage or defaults
+        let schedule = JSON.parse(localStorage.getItem("schedule")) || {
+            Monday: [], Tuesday: [], Wednesday: [], Thursday: [], Friday: [], Saturday: [], Sunday: []
+        };
+
+        let favorites = JSON.parse(localStorage.getItem("favorites")) || [];
+        let recents = JSON.parse(localStorage.getItem("recents")) || [];
+
+        const dayNames = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
+        let activeChartType = 'pie'; // 'pie' or 'radar'
+
+        // DOM Elements
+        const sidebar = document.getElementById("sidebar");
+        const mobileMenuButton = document.getElementById("mobile-menu-button");
+        const sidebarOverlay = document.getElementById("sidebar-overlay");
+        const searchInput = document.getElementById("exercise-search");
+        const filterChecks = [...document.querySelectorAll("#sidebar input[type=checkbox]")];
+        const lib = document.getElementById("exercise-library");
+        const favList = document.getElementById("favorites-list");
+        const noFavorites = document.getElementById("no-favorites");
+        const recList = document.getElementById("recent-list");
+        const noRecents = document.getElementById("no-recents");
+        const daysContainer = document.getElementById("schedule-grid");
+        const clearAllBtn = document.getElementById("clear-all");
+        const exportBtn = document.getElementById("export-btn");
+        const exportDropdownBtn = document.getElementById("export-dropdown-btn");
+        const exportDropdown = document.getElementById("export-dropdown");
+        const shareModal = document.getElementById("share-modal");
+        const closeShareModal = document.getElementById("close-share-modal");
+        const copyUrlBtn = document.getElementById("copy-url");
+        const chartPieBtn = document.getElementById("chart-pie-btn");
+        const chartRadarBtn = document.getElementById("chart-radar-btn");
+
+        // Initialize Charts
+        const typeChart = new Chart(
+            document.getElementById("type-chart").getContext("2d"),
+            getChartConfig('pie')
+        );
+
+        const weekdayChart = new Chart(
+            document.getElementById("weekday-chart").getContext("2d"),
+            {
+                type: "bar",
+                data: {
+                    labels: dayNames,
+                    datasets: [
+                        {
+                            label: "Completed",
+                            data: [0, 0, 0, 0, 0, 0, 0],
+                            backgroundColor: "rgba(59, 130, 246, 0.7)",
+                            borderColor: "rgba(59, 130, 246, 1)",
+                            borderWidth: 1
+                        },
+                        {
+                            label: "Planned",
+                            data: [0, 0, 0, 0, 0, 0, 0],
+                            backgroundColor: "rgba(209, 213, 219, 0.7)",
+                            borderColor: "rgba(209, 213, 219, 1)",
+                            borderWidth: 1
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            ticks: { precision: 0 }
+                        }
+                    },
+                    plugins: {
+                        legend: {
+                            position: 'top',
+                        }
+                    }
+                }
+            }
+        );
+
+        function getChartConfig(type) {
+            return {
+                type: type,
+                data: {
+                    labels: ["Strength", "Cardio", "Core"],
+                    datasets: [{
+                        data: [0, 0, 0],
+                        backgroundColor: [
+                            'rgba(59, 130, 246, 0.7)',
+                            'rgba(16, 185, 129, 0.7)',
+                            'rgba(245, 158, 11, 0.7)'
+                        ],
+                        borderColor: [
+                            'rgba(59, 130, 246, 1)',
+                            'rgba(16, 185, 129, 1)',
+                            'rgba(245, 158, 11, 1)'
+                        ],
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'top',
+                        }
+                    }
+                }
+            };
+        }
+
+        // Mobile Menu Toggle
+        mobileMenuButton.addEventListener("click", () => {
+            sidebar.classList.toggle("open");
+            sidebarOverlay.classList.toggle("open");
+        });
+
+        sidebarOverlay.addEventListener("click", () => {
+            sidebar.classList.remove("open");
+            sidebarOverlay.classList.remove("open");
+        });
+
+        // Export Dropdown Toggle
+        exportDropdownBtn.addEventListener("click", (e) => {
+            e.stopPropagation();
+            exportDropdown.classList.toggle("hidden");
+        });
+
+        document.addEventListener("click", (e) => {
+            if (!exportDropdown.contains(e.target) && e.target !== exportDropdownBtn) {
+                exportDropdown.classList.add("hidden");
+            }
+        });
+
+        // Chart Type Toggle
+        chartPieBtn.addEventListener("click", () => {
+            if (activeChartType !== 'pie') {
+                activeChartType = 'pie';
+                typeChart.destroy();
+                typeChart.config = getChartConfig('pie');
+                typeChart.update();
+                chartPieBtn.classList.remove("bg-gray-100", "text-gray-700");
+                chartPieBtn.classList.add("bg-primary-100", "text-primary-700");
+                chartRadarBtn.classList.remove("bg-primary-100", "text-primary-700");
+                chartRadarBtn.classList.add("bg-gray-100", "text-gray-700");
+            }
+        });
+
+        chartRadarBtn.addEventListener("click", () => {
+            if (activeChartType !== 'radar') {
+                activeChartType = 'radar';
+                typeChart.destroy();
+                typeChart.config = getChartConfig('radar');
+                typeChart.update();
+                chartRadarBtn.classList.remove("bg-gray-100", "text-gray-700");
+                chartRadarBtn.classList.add("bg-primary-100", "text-primary-700");
+                chartPieBtn.classList.remove("bg-primary-100", "text-primary-700");
+                chartPieBtn.classList.add("bg-gray-100", "text-gray-700");
+            }
+        });
+
+        // Search & filters
+        function applyLibrary() {
+            const q = searchInput.value.toLowerCase();
+            const activeTypes = filterChecks
+                .filter((c) => c.checked)
+                .map((c) => c.dataset.type);
+
+            const list = exercises.filter(
+                (ex) => activeTypes.includes(ex.type) &&
+                    (ex.name.toLowerCase().includes(q) ||
+                        ex.description.toLowerCase().includes(q))
+            );
+
+            renderLibrary(list);
+            renderFavorites();
+            renderRecents();
+        }
+
+        searchInput.addEventListener("input", applyLibrary);
+        filterChecks.forEach((c) => c.addEventListener("change", applyLibrary));
+
+        // Render library
+        function renderLibrary(list) {
+            lib.innerHTML = "";
+
+            if (list.length === 0) {
+                lib.innerHTML = `<p class="col-span-2 text-center text-gray-500 py-4">No exercises found matching your search</p>`;
+                return;
+            }
+
+            list.forEach((ex) => {
+                const card = document.createElement("div");
+                card.className = `
+            exercise-card bg-white rounded-lg shadow-card p-3 text-sm relative 
+            cursor-grab active:cursor-grabbing border border-transparent hover:border-primary-200
+          `;
+
+                card.innerHTML = `
+            <button class="fav-btn absolute top-2 right-2 p-1 rounded-full hover:bg-gray-100">
+              <i class="${favorites.includes(ex.id) ? "fas" : "far"} fa-star text-yellow-500"></i>
+            </button>
+            <div class="flex items-center mb-1">
+              <i class="fas ${ex.icon || 'fa-dumbbell'} text-primary-600 mr-2"></i>
+              <strong class="font-medium">${ex.name}</strong>
+            </div>
+            <span class="inline-block px-2 py-0.5 text-xs rounded-full mb-1 ${ex.type === 'Strength' ? 'bg-blue-100 text-blue-800' :
+                        ex.type === 'Cardio' ? 'bg-green-100 text-green-800' :
+                            'bg-yellow-100 text-yellow-800'
+                    }">${ex.type}</span>
+            <p class="text-xs text-gray-600 line-clamp-2">${ex.description}</p>`;
+
+                card.draggable = true;
+                card.dataset.exercise = JSON.stringify(ex);
+
+                card.addEventListener("dragstart", (e) => {
+                    e.dataTransfer.setData("text/plain", e.target.dataset.exercise);
+                    e.target.classList.add("opacity-50");
+                });
+
+                card.addEventListener("dragend", (e) => {
+                    e.target.classList.remove("opacity-50");
+                });
+
+                card.querySelector(".fav-btn").addEventListener("click", (e) => {
+                    e.stopPropagation();
+                    toggleFavorite(ex.id);
+                });
+
+                card.addEventListener("click", () => {
+                    addToRecent(ex.id);
+                });
+
+                lib.append(card);
+            });
+        }
+
+        // Toggle favorite
+        function toggleFavorite(id) {
+            const idx = favorites.indexOf(id);
+            if (idx > -1) {
+                favorites.splice(idx, 1);
+            } else {
+                favorites.push(id);
+            }
+            localStorage.setItem("favorites", JSON.stringify(favorites));
+            applyLibrary();
+            renderFavorites();
+        }
+
+        // Add to recent
+        function addToRecent(id) {
+            const idx = recents.indexOf(id);
+            if (idx > -1) recents.splice(idx, 1);
+            recents.push(id);
+            if (recents.length > 10) recents.shift();
+            localStorage.setItem("recents", JSON.stringify(recents));
+            renderRecents();
+        }
+
+        // Render favorites
+        function renderFavorites() {
+            favList.innerHTML = "";
+
+            if (favorites.length === 0) {
+                noFavorites.classList.remove("hidden");
+                return;
+            }
+
+            noFavorites.classList.add("hidden");
+
+            favorites.forEach((id) => {
+                const ex = exercises.find((x) => x.id === id);
+                if (!ex) return;
+
+                const card = document.createElement("div");
+                card.className = `
+            exercise-card bg-white rounded-lg shadow-card p-3 text-sm relative 
+            cursor-grab active:cursor-grabbing border border-transparent hover:border-primary-200
+          `;
+
+                card.innerHTML = `
+            <div class="flex items-center mb-1">
+              <i class="fas ${ex.icon || 'fa-dumbbell'} text-primary-600 mr-2"></i>
+              <strong class="font-medium">${ex.name}</strong>
+            </div>
+            <span class="inline-block px-2 py-0.5 text-xs rounded-full ${ex.type === 'Strength' ? 'bg-blue-100 text-blue-800' :
+                        ex.type === 'Cardio' ? 'bg-green-100 text-green-800' :
+                            'bg-yellow-100 text-yellow-800'
+                    }">${ex.type}</span>`;
+
+                card.draggable = true;
+                card.dataset.exercise = JSON.stringify(ex);
+
+                card.addEventListener("dragstart", (e) => {
+                    e.dataTransfer.setData("text/plain", e.target.dataset.exercise);
+                    e.target.classList.add("opacity-50");
+                });
+
+                card.addEventListener("dragend", (e) => {
+                    e.target.classList.remove("opacity-50");
+                });
+
+                card.addEventListener("click", () => {
+                    const idx = favorites.indexOf(ex.id);
+                    if (idx > -1) {
+                        favorites.splice(idx, 1);
+                        localStorage.setItem("favorites", JSON.stringify(favorites));
+                        applyLibrary();
+                    }
+                });
+
+                favList.append(card);
+            });
+        }
+
+        // Render recents
+        function renderRecents() {
+            recList.innerHTML = "";
+
+            if (recents.length === 0) {
+                noRecents.classList.remove("hidden");
+                return;
+            }
+
+            noRecents.classList.add("hidden");
+
+            recents
+                .slice(-5)
+                .reverse()
+                .forEach((id) => {
+                    const ex = exercises.find((x) => x.id === id);
+                    if (!ex) return;
+
+                    const btn = document.createElement("button");
+                    btn.textContent = ex.name;
+                    btn.className = `
+              px-3 py-1 rounded-full text-xs font-medium
+              ${ex.type === 'Strength' ? 'bg-blue-100 text-blue-800 hover:bg-blue-200' :
+                            ex.type === 'Cardio' ? 'bg-green-100 text-green-800 hover:bg-green-200' :
+                                'bg-yellow-100 text-yellow-800 hover:bg-yellow-200'}
+            `;
+
+                    btn.addEventListener("click", () => {
+                        const exData = JSON.stringify(ex);
+                        const day = getCurrentDay();
+                        schedule[day].push({ ...ex, completed: false });
+                        saveAndRefresh(day, ex);
+                    });
+
+                    recList.append(btn);
+                });
+        }
+
+        // Get current day name
+        function getCurrentDay() {
+            const dayIndex = new Date().getDay();
+            return dayNames[dayIndex];
+        }
+
+        // Schedule grid setup
+        function initializeScheduleGrid() {
+            daysContainer.innerHTML = "";
+
+            dayNames.forEach((day) => {
+                const col = document.createElement("div");
+                col.className = `
+            day-column bg-white p-4 rounded-xl shadow-card flex flex-col
+            border-2 border-transparent hover:border-primary-100
+          `;
+
+                col.dataset.day = day;
+                col.innerHTML = `
+            <div class="flex justify-between items-center mb-3">
+              <h3 class="font-semibold ${day === getCurrentDay() ? 'text-primary-600' : 'text-gray-800'
+                    }">${day}</h3>
+              <button data-day="${day}" class="clear-day text-xs px-2 py-1 bg-gray-100 text-gray-600 rounded hover:bg-gray-200 transition">
+                Clear
+              </button>
+            </div>
+            <div class="day-exercises flex-1 space-y-2 min-h-[50px]"></div>
+            <div class="mt-2 text-xs text-center text-gray-400 pt-2 border-t border-gray-100">
+              Drag exercises here
+            </div>`;
+
+                col.addEventListener("dragover", (e) => {
+                    e.preventDefault();
+                    e.dataTransfer.dropEffect = "copy";
+                });
+
+                col.addEventListener("dragenter", (e) => {
+                    e.preventDefault();
+                    col.classList.add("drag-over");
+                });
+
+                col.addEventListener("dragleave", () => {
+                    col.classList.remove("drag-over");
+                });
+                col.addEventListener("drop", (e) => {
+                    e.preventDefault();
+                    col.classList.remove("drag-over");
+                    const exerciseData = JSON.parse(e.dataTransfer.getData("text/plain"));
+                    schedule[day].push({ ...exerciseData, completed: false });
+                    saveAndRefresh(day, exerciseData);
+                });
+
+                daysContainer.append(col);
+            });
+
+            // Clear day buttons
+            document.querySelectorAll(".clear-day").forEach((btn) => {
+                btn.addEventListener("click", () => {
+                    const day = btn.dataset.day;
+                    schedule[day] = [];
+                    saveAndRefresh();
+                });
+            });
+
+            renderSchedule();
+        }
+
+        // Save schedule and refresh UI
+        function saveAndRefresh(day, exerciseData) {
+            localStorage.setItem("schedule", JSON.stringify(schedule));
+            if (exerciseData) {
+                addToRecent(exerciseData.id);
+            }
+            renderSchedule();
+            updateProgress();
+            updateCharts();
+        }
+
+        // Render schedule
+        function renderSchedule() {
+            Object.keys(schedule).forEach((day) => {
+                const col = daysContainer.querySelector(`[data-day="${day}"]`);
+                const exercisesDiv = col.querySelector(".day-exercises");
+                exercisesDiv.innerHTML = "";
+
+                if (schedule[day].length === 0) {
+                    exercisesDiv.innerHTML = `<p class="text-sm text-gray-400 text-center">No exercises planned</p>`;
+                    return;
+                }
+
+                schedule[day].forEach((ex, index) => {
+                    const card = document.createElement("div");
+                    card.className = `
+              exercise-card bg-gray-50 p-3 rounded-lg border border-gray-100 hover:bg-gray-100
+              flex items-center justify-between text-sm
+            `;
+
+                    card.innerHTML = `
+              <div class="flex items-center space-x-2">
+                <input type="checkbox" ${ex.completed ? "checked" : ""} 
+                  class="complete-checkbox h-4 w-4 text-primary-600 rounded focus:ring-primary-500">
+                <div>
+                  <div class="flex items-center">
+                    <i class="fas ${ex.icon || 'fa-dumbbell'} text-primary-600 mr-2"></i>
+                    <span class="font-medium ${ex.completed ? 'line-through text-gray-500' : ''}">
+                      ${ex.name}
+                    </span>
+                  </div>
+                  <span class="inline-block px-2 py-0.5 text-xs rounded-full mt-1 ${ex.type === 'Strength' ? 'bg-blue-100 text-blue-800' :
+                            ex.type === 'Cardio' ? 'bg-green-100 text-green-800' :
+                                'bg-yellow-100 text-yellow-800'
+                        }">${ex.type}</span>
+                </div>
+              </div>
+              <button class="remove-exercise text-gray-400 hover:text-danger p-1">
+                <i class="fas fa-trash"></i>
+              </button>
+            `;
+
+                    // Completion toggle
+                    card.querySelector(".complete-checkbox").addEventListener("change", (e) => {
+                        schedule[day][index].completed = e.target.checked;
+                        saveAndRefresh();
+                    });
+
+                    // Remove exercise
+                    card.querySelector(".remove-exercise").addEventListener("click", () => {
+                        schedule[day].splice(index, 1);
+                        saveAndRefresh();
+                    });
+
+                    exercisesDiv.append(card);
+                });
+            });
+        }
+
+        // Clear all schedule
+        clearAllBtn.addEventListener("click", () => {
+            Object.keys(schedule).forEach((day) => {
+                schedule[day] = [];
+            });
+            saveAndRefresh();
+        });
+
+        // Update progress dashboard
+        function updateProgress() {
+            const totalExercises = Object.values(schedule).reduce(
+                (sum, day) => sum + day.length, 0
+            );
+            const completedExercises = Object.values(schedule).reduce(
+                (sum, day) => sum + day.filter((ex) => ex.completed).length, 0
+            );
+
+            const percentage = totalExercises > 0
+                ? Math.round((completedExercises / totalExercises) * 100)
+                : 0;
+
+            document.getElementById("completion-bar").style.width = `${percentage}%`;
+            document.getElementById("completion-text").textContent =
+                `${percentage}% completed (${completedExercises}/${totalExercises} exercises)`;
+
+            // Update stats
+            const favoriteExercise = getMostFrequentExercise();
+            const favoriteDay = getMostActiveDay();
+            const favoriteType = getMostCommonType();
+
+            document.getElementById("stat-fav-exercise").textContent = favoriteExercise || "—";
+            document.getElementById("stat-fav-day").textContent = favoriteDay || "—";
+            document.getElementById("stat-fav-type").textContent = favoriteType || "—";
+        }
+
+        // Helper functions for stats
+        function getMostFrequentExercise() {
+            const exerciseCounts = {};
+            Object.values(schedule).flat().forEach((ex) => {
+                exerciseCounts[ex.name] = (exerciseCounts[ex.name] || 0) + 1;
+            });
+            return Object.entries(exerciseCounts).sort((a, b) => b[1] - a[1])[0]?.[0];
+        }
+
+        function getMostActiveDay() {
+            const dayCounts = {};
+            Object.entries(schedule).forEach(([day, exercises]) => {
+                dayCounts[day] = exercises.length;
+            });
+            return Object.entries(dayCounts).sort((a, b) => b[1] - a[1])[0]?.[0];
+        }
+
+        function getMostCommonType() {
+            const typeCounts = { Strength: 0, Cardio: 0, Core: 0 };
+            Object.values(schedule).flat().forEach((ex) => {
+                typeCounts[ex.type]++;
+            });
+            return Object.entries(typeCounts).sort((a, b) => b[1] - a[1])[0]?.[0];
+        }
+
+        // Update charts
+        function updateCharts() {
+            // Update type chart
+            const typeCounts = { Strength: 0, Cardio: 0, Core: 0 };
+            Object.values(schedule).flat().forEach((ex) => {
+                typeCounts[ex.type]++;
+            });
+            typeChart.data.datasets[0].data = [
+                typeCounts.Strength,
+                typeCounts.Cardio,
+                typeCounts.Core
+            ];
+            typeChart.update();
+
+            // Update weekday chart
+            const completedData = dayNames.map((day) =>
+                schedule[day].filter((ex) => ex.completed).length
+            );
+            const plannedData = dayNames.map((day) => schedule[day].length);
+
+            weekdayChart.data.datasets[0].data = completedData;
+            weekdayChart.data.datasets[1].data = plannedData;
+            weekdayChart.update();
+        }
+
+        // Share modal
+        exportBtn.addEventListener("click", () => {
+            const shareUrl = generateShareUrl();
+            document.getElementById("share-url").value = shareUrl;
+            shareModal.classList.remove("hidden");
+        });
+
+        closeShareModal.addEventListener("click", () => {
+            shareModal.classList.add("hidden");
+        });
+
+        copyUrlBtn.addEventListener("click", () => {
+            const urlInput = document.getElementById("share-url");
+            urlInput.select();
+            document.execCommand("copy");
+            copyUrlBtn.textContent = "Copied!";
+            setTimeout(() => {
+                copyUrlBtn.textContent = "Copy";
+            }, 2000);
+        });
+
+        // Generate share URL
+        function generateShareUrl() {
+            const data = btoa(JSON.stringify(schedule));
+            return `${window.location.origin}?schedule=${data}`;
+        }
+
+        // Export functionality
+        document.getElementById("export-md").addEventListener("click", () => {
+            const markdown = generateMarkdown();
+            downloadFile("workout-plan.md", markdown);
+        });
+
+        document.getElementById("export-json").addEventListener("click", () => {
+            const json = JSON.stringify(schedule, null, 2);
+            downloadFile("workout-plan.json", json);
+        });
+
+        document.getElementById("export-png").addEventListener("click", () => {
+            html2canvas(document.getElementById("schedule-grid")).then((canvas) => {
+                const link = document.createElement("a");
+                link.download = "workout-plan.png";
+                link.href = canvas.toDataURL("image/png");
+                link.click();
+            });
+        });
+
+        // Generate Markdown
+        function generateMarkdown() {
+            let md = "# Weekly Workout Plan\n\n";
+            dayNames.forEach((day) => {
+                md += `## ${day}\n`;
+                if (schedule[day].length === 0) {
+                    md += "No exercises planned\n\n";
+                    return;
+                }
+                schedule[day].forEach((ex) => {
+                    md += `- [${ex.completed ? 'x' : ' '}] ${ex.name} (${ex.type})\n`;
+                });
+                md += "\n";
+            });
+            return md;
+        }
+
+        // Download file helper
+        function downloadFile(filename, content) {
+            const blob = new Blob([content], { type: "text/plain" });
+            const url = URL.createObjectURL(blob);
+            const link = document.createElement("a");
+            link.href = url;
+            link.download = filename;
+            link.click();
+            URL.revokeObjectURL(url);
+        }
+
+        // Initialize
+        function initialize() {
+            applyLibrary();
+            initializeScheduleGrid();
+            updateProgress();
+            updateCharts();
+        }
+
+        // Load shared schedule from URL
+        function loadSharedSchedule() {
+            const params = new URLSearchParams(window.location.search);
+            const sharedData = params.get("schedule");
+            if (sharedData) {
+                try {
+                    schedule = JSON.parse(atob(sharedData));
+                    localStorage.setItem("schedule", JSON.stringify(schedule));
+                    renderSchedule();
+                    updateProgress();
+                    updateCharts();
+                } catch (e) {
+                    console.error("Failed to load shared schedule", e);
+                }
+            }
+        }
+
+        // Add html2canvas for PNG export
+        const script = document.createElement("script");
+        script.src = "https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js";
+        document.head.appendChild(script);
+
+        // Start the app
+        initialize();
+        loadSharedSchedule();
+    </script>
+</body>
+
+</html>

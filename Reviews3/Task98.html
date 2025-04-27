@@ -1,0 +1,462 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Fan Message Wall Creator</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap"
+        rel="stylesheet">
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Poppins', 'sans-serif'],
+                    },
+                }
+            }
+        };
+    </script>
+    <!-- Konva.js CDN -->
+    <script src="https://unpkg.com/konva@9.3.6/konva.min.js"></script>
+    <!-- html2canvas CDN -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+</head>
+
+<body
+    class="bg-gray-100 dark:bg-gray-900 text-gray-900 dark:text-gray-100 min-h-screen flex flex-col transition-colors duration-300">
+    <!-- Header -->
+    <header
+        class="bg-gradient-to-r from-purple-500 to-pink-500 dark:from-purple-500/30 dark:to-pink-500/30 p-4 flex justify-between items-center">
+        <h1 class="text-2xl font-bold text-white">Fan Message Wall</h1>
+        <div class="flex items-center">
+            <span id="textToggleTheme" class="text-md me-3">Dark/Light Mode</span>
+            <label class="relative inline-flex items-center cursor-pointer">
+                <input type="checkbox" id="dark-mode-toggle" class="sr-only peer">
+                <div
+                    class="w-14 h-7 bg-cyan-800/20 dark:bg-border-dark rounded-full peer peer-checked:bg-accent-gray-400/80 transition-all">
+                </div>
+                <div
+                    class="absolute left-1 top-1 w-5 h-5 bg-gray-200/80 dark:bg-white rounded-full transition-all peer-checked:translate-x-7">
+                </div>
+            </label>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="flex flex-col lg:flex-row p-4 gap-4 flex-1">
+
+        <!-- Side Panel -->
+        <div class="w-full lg:w-80 bg-gray-200 dark:bg-gray-700 rounded-lg shadow-lg p-4 flex flex-col gap-4">
+            <!-- Platform Selector -->
+            <div class="relative">
+                <label class="block text-lg font-semibold mb-2">Select Platform</label>
+                <button id="dropdown-btn"
+                    class="w-full px-4 py-2 rounded-xl bg-white dark:bg-gray-600 text-gray-900 dark:text-gray-100 flex justify-between items-center">
+                    <span id="dropdown-selected">Twitter</span>
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                        <path fill-rule="evenodd"
+                            d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z"
+                            clip-rule="evenodd" />
+                    </svg>
+                </button>
+                <ul id="dropdown-menu"
+                    class="absolute z-10 w-full bg-white dark:bg-gray-600 text-gray-900 dark:text-gray-100 rounded shadow-lg mt-1 hidden">
+                    <li class="px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-500 cursor-pointer" data-value="twitter">
+                        Twitter</li>
+                    <li class="px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-500 cursor-pointer"
+                        data-value="instagram">Instagram</li>
+                    <li class="px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-500 cursor-pointer" data-value="tiktok">
+                        TikTok</li>
+                </ul>
+            </div>
+
+            <!-- Assets -->
+            <div class="mt-2">
+                <h2 class="text-lg font-semibold mb-2">Add Elements</h2>
+                <div id="assets" class="grid grid-cols-2 gap-2"></div>
+            </div>
+
+            <!-- Connection Score -->
+            <div class="mt-2">
+                <h2 class="text-lg font-semibold mb-2">Community Connection</h2>
+                <div id="connection-score" class="text-2xl font-bold text-green-600 dark:text-green-400">0</div>
+            </div>
+
+            <!-- Trending Theme -->
+            <div class="mt-2">
+                <h2 class="text-lg font-semibold mb-2">Trending Theme</h2>
+                <div id="trending-theme" class="italic text-purple-600 dark:text-purple-400"></div>
+            </div>
+            <div class="flex flex-col md:flex-row gap-4">
+                <button id="save-btn"
+                    class="bg-blue-500 text-white px-4 py-2 rounded-2xl hover:bg-blue-600 w-full md:w-auto">
+                    Save Wall
+                </button>
+                <button id="export-btn"
+                    class="bg-green-500 text-white px-4 py-2 rounded-2xl hover:bg-green-600 w-full md:w-auto">
+                    Export as PNG
+                </button>
+            </div>
+        </div>
+        <!-- Canvas Area -->
+        <div class="flex-1 min-w-0 bg-white dark:bg-gray-800 rounded-lg shadow-lg p-4 min-h-[300px] flex flex-col">
+            <div id="canvas-container" class=" w-full h-full border-4 rounded-2xl overflow-hidden"
+                style="border-color: #3B82F6;"></div>
+        </div>
+    </main>
+    <div id="saved-walls" class="mt-4 p-4">
+        <h2 class="text-lg font-semibold mb-2">Saved Walls</h2>
+        <div id="wall-list" class="grid grid-cols-1 md:grid-cols-3 xl:grid-cols-5 gap-6"></div>
+    </div>
+    <!-- Footer -->
+
+    <script>
+        const html = document.documentElement;
+        let isDarkMode = html.classList.contains('dark');
+        document.getElementById('dark-mode-toggle').addEventListener('change', () => {
+            html.classList.toggle('dark');
+            checkDarkMode();
+        });
+
+        function checkDarkMode() {
+            isDarkMode = html.classList.contains('dark');
+            document.getElementById('textToggleTheme').textContent = isDarkMode ? 'Dark mode 🌙' : 'Light mode ☀️';
+        }
+
+        checkDarkMode();
+
+        // Mock JSON dataset for assets
+        const assets = [
+            { id: 'msg1', type: 'text', content: 'Love your posts!', color: '#EF4444', isBright: true },
+            { id: 'msg2', type: 'text', content: "You're amazing!", color: '#3B82F6', isBright: true },
+            {
+                id: 'sticker1', type: 'sticker',
+                content: 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmcnIHZpZXdCb3g9JzAgMCAzMiAzMic+PHBhdGggZD0nTTI0LjQ4IDRjLTIuNjkgMC01LjI5IDEuMjktNi44OCAzLjM4QzE2LjgxIDUuMjkgMTQuMjEgNCAxMS41MiA0QzYuOTUgNCAzLjUgNy41MyAzLjUgMTIuMDFjMCA0LjA1IDMuMjkgNy4zOCA4LjMxIDEyLjA2bDEuNzIgMS41M2MuNTUuNDkgMS40My40OSAxLjk4IDBsMS43Mi0xLjUzYzUuMDItNC42OCA4LjMxLTguMDEgOC4zMS0xMi4wNiAwLTQuNDgtMy40NS04LjAxLTguMDItOC4wMXonIGZpbGw9JyNmNTU2OGQnLz48L3N2Zz4=',
+                scale: 1
+            },
+            { id: 'sticker2', type: 'sticker', content: 'https://cdn.jsdelivr.net/gh/hfg-gmuend/openmoji@14.0.0/color/svg/2B50.svg', scale: 1 },
+            { id: 'sticker3', type: 'sticker', content: 'https://cdn.jsdelivr.net/gh/hfg-gmuend/openmoji@14.0.0/color/svg/1F525.svg', scale: 1 },
+            { id: 'sticker4', type: 'sticker', content: 'https://cdn.jsdelivr.net/gh/hfg-gmuend/openmoji@14.0.0/color/svg/1F389.svg', scale: 1 },
+            { id: 'sticker5', type: 'sticker', content: 'https://cdn.jsdelivr.net/gh/hfg-gmuend/openmoji@14.0.0/color/svg/1F44D.svg', scale: 1 },
+            { id: 'effect1', type: 'effect', content: 'Pulsating Cheers', color: '#F59E0B', isBright: true }
+        ];
+
+        // Trending themes
+        const trendingThemes = ['Gratitude Glow', 'Fan Fiesta', 'Vibrant Cheers', 'Heartfelt Vibes'];
+
+        // Initialize Konva stage
+        let stage = new Konva.Stage({
+            container: 'canvas-container',
+            width: document.getElementById('canvas-container').offsetWidth,
+            height: 500
+        });
+        let layer = new Konva.Layer();
+        stage.add(layer);
+
+        // Track added elements for connection score
+        let addedElements = { text: new Set(), stickers: new Set(), effects: new Set() };
+
+        let selectedPlatform = 'twitter';
+        document.addEventListener('DOMContentLoaded', () => {
+            const dropdownBtn = document.getElementById('dropdown-btn');
+            const dropdownMenu = document.getElementById('dropdown-menu');
+            const dropdownSelected = document.getElementById('dropdown-selected');
+
+            // Toggle dropdown menu visibility
+            dropdownBtn.addEventListener('click', () => {
+                dropdownMenu.classList.toggle('hidden');
+            });
+
+            // Handle dropdown item selection
+            dropdownMenu.addEventListener('click', (e) => {
+                if (e.target.tagName === 'LI') {
+                    const selectedValue = e.target.getAttribute('data-value');
+                    selectedPlatform = selectedValue;
+                    dropdownSelected.textContent = e.target.textContent;
+                    dropdownMenu.classList.add('hidden');
+
+                    // Apply platform theme
+                    applyPlatformTheme(selectedPlatform);
+                }
+            });
+
+            // Close dropdown when clicking outside
+            document.addEventListener('click', (e) => {
+                if (!dropdownBtn.contains(e.target) && !dropdownMenu.contains(e.target)) {
+                    dropdownMenu.classList.add('hidden');
+                }
+            });
+        });
+
+        // Apply platform theme
+        function applyPlatformTheme(platform) {
+            const canvasContainer = document.getElementById('canvas-container');
+            if (platform === 'instagram') {
+                canvasContainer.style.borderColor = '#E1306C';
+                canvasContainer.style.background = 'linear-gradient(45deg, #FEDA75, #FA7E1E, #D62976, #962FBF, #4F5BD5)';
+            } else if (platform === 'tiktok') {
+                canvasContainer.style.borderColor = '#00F2EA';
+                canvasContainer.style.background = '#000';
+            } else {
+                canvasContainer.style.borderColor = '#3B82F6';
+                canvasContainer.style.background = '#FFF';
+            }
+        }
+
+        // Populate assets
+        const assetsContainer = document.getElementById('assets');
+        assets.forEach(asset => {
+            const div = document.createElement('div');
+            div.className = 'bg-white dark:bg-gray-600 px-4 py-2 rounded-xl cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-500 flex justify-center items-center';
+            div.draggable = true;
+            div.dataset.assetId = asset.id;
+
+            if (asset.type === 'sticker') {
+                const img = document.createElement('img');
+                img.src = asset.content;
+                img.alt = 'Sticker';
+                img.className = 'w-10 h-10 object-contain';
+                div.appendChild(img);
+            } else {
+                div.innerText = asset.content;
+            }
+            div.addEventListener('dragstart', (e) => {
+                e.dataTransfer.setData('assetId', asset.id);
+            });
+            assetsContainer.appendChild(div);
+        });
+
+        // Handle drag and drop
+        stage.container().addEventListener('dragover', (e) => e.preventDefault());
+        stage.container().addEventListener('drop', (e) => {
+            e.preventDefault();
+            const assetId = e.dataTransfer.getData('assetId');
+            const asset = assets.find(a => a.id === assetId);
+            if (!asset) return;
+
+            stage.setPointersPositions(e);
+            const pos = stage.getPointerPosition();
+
+
+            if (asset.type === 'text') {
+                const text = new Konva.Text({
+                    x: pos.x - 50,
+                    y: pos.y - 10,
+                    text: asset.content,
+                    fontSize: 20,
+                    fill: asset.color,
+                    draggable: true
+                });
+                layer.add(text);
+                addedElements.text.add(asset.id);
+            } else if (asset.type === 'sticker') {
+                const img = new Image();
+                img.src = asset.content;
+                img.onload = () => {
+                    const sticker = new Konva.Image({
+                        x: pos.x - 25,
+                        y: pos.y - 25,
+                        image: img,
+                        width: 50,
+                        height: 50,
+                        draggable: true,
+                        imageSrc: asset.content
+                    });
+                    layer.add(sticker);
+                    addedElements.stickers.add(asset.id);
+
+                    new Konva.Tween({
+                        node: sticker,
+                        scaleX: 1.2,
+                        scaleY: 1.2,
+                        duration: 0.5,
+                        yoyo: true,
+                        repeat: Infinity
+                    }).play();
+                };
+            } else if (asset.type === 'effect') {
+                const text = new Konva.Text({
+                    x: pos.x,
+                    y: pos.y,
+                    text: asset.content,
+                    fontSize: 24,
+                    fill: asset.color,
+                    draggable: true
+                });
+                layer.add(text);
+                layer.draw();
+                addedElements.effects.add(asset.id);
+
+                new Konva.Tween({
+                    node: text,
+                    scaleX: 1.1,
+                    scaleY: 1.1,
+                    duration: 0.5,
+                    yoyo: true,
+                    repeat: Infinity
+                }).play();
+            }
+
+            updateConnectionScore();
+            layer.draw();
+            layer.draw();
+        });
+
+
+        // Update connection score
+        function updateConnectionScore() {
+            let score = 0;
+            score += addedElements.text.size * 10; // 10 points per unique text
+            score += addedElements.stickers.size * 5; // 5 points per sticker
+            score += addedElements.effects.size * 10; // 10 points per effect
+            // Add points for bright colors
+            assets.forEach(asset => {
+                if (asset.isBright && (addedElements.text.has(asset.id) || addedElements.effects.has(asset.id))) {
+                    score += 10;
+                }
+            });
+            document.getElementById('connection-score').innerText = score;
+        }
+
+        // Save to localStorage
+        document.getElementById('save-btn').addEventListener('click', () => {
+            let walls = JSON.parse(localStorage.getItem('fan-walls')) || [];
+
+            const wallName = prompt('Enter a name for your wall:');
+            if (!wallName) return;
+
+            const json = stage.toJSON();
+            const elementCount = layer.getChildren().length;
+
+            walls.push({ name: wallName, data: json, elementCount: elementCount, platform: selectedPlatform });
+
+            localStorage.setItem('fan-walls', JSON.stringify(walls));
+
+            alert('Wall saved!');
+            loadSavedWalls();
+        });
+
+        // Export as PNG
+        document.getElementById('export-btn').addEventListener('click', () => {
+            const dataURL = stage.toDataURL({ pixelRatio: 3 }); // Increase quality with pixelRatio
+            const link = document.createElement('a');
+            link.download = 'fan-wall.png';
+            link.href = dataURL;
+            link.click();
+        });
+
+
+        function loadSavedWalls() {
+            const wallList = document.getElementById('wall-list');
+            wallList.innerHTML = '';
+
+            const walls = JSON.parse(localStorage.getItem('fan-walls')) || [];
+
+            if (!walls.length) {
+                wallList.innerHTML = `
+          <div class="col-span-1 md:col-span-3 bg-white dark:bg-gray-800 p-8 rounded-2xl shadow-lg border border-gray-100 dark:border-gray-700 text-center">
+            <h3 class="text-lg font-semibold text-gray-700 dark:text-gray-200 mb-2">No Saved Walls Yet</h3>
+            <p class="text-gray-500 dark:text-gray-400 text-sm mb-4">Save your first wall to see it appear here!</p>
+          </div>
+        `;
+                return;
+            }
+
+            walls.forEach((wall, idx) => {
+                console.log(wall);
+                const card = document.createElement('div');
+                card.className = 'feed-card bg-gray-700/10 dark:bg-gray-800/10 p-5 rounded-2xl shadow-lg border border-gray-100 dark:border-gray-700';
+                card.innerHTML = `
+          <div class="flex items-center mb-4">
+            <div class="w-10 h-10 rounded-full bg-gradient-to-r from-blue-500 to-indigo-600 dark:from-blue-500/50 dark:to-indigo-600/30 flex items-center justify-center text-white font-bold text-sm shadow-md">
+              ${idx + 1}
+            </div>
+            <h3 class="text-md font-semibold ml-3 text-gray-800 dark:text-gray-100 truncate">${wall.name || 'Untitled Wall'}</h3>
+          </div>
+          <p class="text-xs text-gray-600 dark:text-gray-400 mb-2">
+            <span class="font-medium">Elements:</span> ${wall.elementCount || '?'}
+          </p>
+          <button class="mt-2 w-full text-md bg-violet-100 hover:bg-violet-200 text-violet-700 px-3 py-1 rounded-full transition-colors">
+            Load Wall
+          </button>
+        `;
+
+                card.querySelector('button').addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    loadWall(idx);
+                });
+
+                card.addEventListener('click', () => loadWall(idx));
+
+                wallList.appendChild(card);
+                requestAnimationFrame(() => card.classList.add('loaded'));
+            });
+        }
+
+        function loadWall(index) {
+            const walls = JSON.parse(localStorage.getItem('fan-walls')) || [];
+            const wall = walls[index];
+            if (!wall) return;
+
+            if (wall.platform) {
+                selectedPlatform = wall.platform;
+                document.getElementById('dropdown-selected').textContent = wall.platform.charAt(0).toUpperCase() + wall.platform.slice(1);
+                applyPlatformTheme(wall.platform);
+            }
+            stage.destroy();
+            stage = Konva.Node.create(wall.data, 'canvas-container');
+            layer = stage.findOne('Layer');
+
+            layer.find('Image').forEach((imageNode) => {
+                const src = imageNode.attrs.imageSrc;
+                if (src) {
+                    const img = new window.Image();
+                    img.src = src;
+                    img.onload = () => {
+                        imageNode.image(img);
+                        layer.batchDraw();
+                    };
+                }
+            });
+
+            addedElements = { text: new Set(), stickers: new Set(), effects: new Set() };
+
+            layer.getChildren().forEach((node) => {
+                if (node.className === 'Text') {
+                    if (node.text() === 'Pulsating Cheers') {
+                        addedElements.effects.add('effect1');
+                    } else {
+                        const asset = assets.find(a => a.type === 'text' && a.content === node.text());
+                        if (asset) {
+                            addedElements.text.add(asset.id);
+                        }
+                    }
+                } else if (node.className === 'Image') {
+                    addedElements.stickers.add('sticker');
+                }
+            });
+
+            updateConnectionScore();
+
+            const canvasContainer = document.getElementById('canvas-container');
+            canvasContainer.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
+
+
+        loadSavedWalls();
+        // Display trending theme
+        const randomTheme = trendingThemes[Math.floor(Math.random() * trendingThemes.length)];
+        document.getElementById('trending-theme').innerText = randomTheme;
+
+        // Apply initial platform theme
+        applyPlatformTheme('twitter');
+
+    </script>
+</body>
+
+</html>

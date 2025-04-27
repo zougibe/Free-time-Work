@@ -1,0 +1,651 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Traffic Simulation App</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+</head>
+
+<body class="bg-gray-950 text-gray-100 min-h-screen flex">
+
+    <aside class="bg-gray-900 w-16 flex flex-col items-center">
+        <button id="roadBtn"
+            class="group sidebar-btn w-full h-14 flex items-center justify-center relative overflow-visible">
+            <div data-lucide="map" class="w-6 h-6"></div>
+            <span
+                class="tooltip-text absolute left-full top-1/2 ml-1 -translate-y-1/2 bg-gray-700 text-sm px-4 py-2 rounded-lg shadow-lg opacity-0 group-hover:opacity-100 group-hover:translate-x-2 transition-all duration-300 whitespace-nowrap z-50">
+                Add Road
+            </span>
+        </button>
+
+        <button id="trafficLightBtn"
+            class="group sidebar-btn w-full h-14 flex items-center justify-center relative overflow-visible">
+            <div data-lucide="alert-triangle" class="w-6 h-6"></div>
+            <span
+                class="tooltip-text absolute left-full top-1/2 ml-1 -translate-y-1/2 bg-gray-700 text-sm px-4 py-2 rounded-lg shadow-lg opacity-0 group-hover:opacity-100 group-hover:translate-x-2 transition-all duration-300 whitespace-nowrap z-50">
+                Add Traffic Light
+            </span>
+        </button>
+
+        <button id="eraserBtn"
+            class="group sidebar-btn w-full h-14 flex items-center justify-center relative overflow-visible">
+            <div data-lucide="eraser" class="w-6 h-6"></div>
+            <span
+                class="tooltip-text absolute left-full top-1/2 ml-1 -translate-y-1/2 bg-gray-700 text-sm px-4 py-2 rounded-lg shadow-lg opacity-0 group-hover:opacity-100 group-hover:translate-x-2 transition-all duration-300 whitespace-nowrap z-50">
+                Erase
+            </span>
+        </button>
+
+        <button id="helpBtn"
+            class="group sidebar-btn w-full h-14 flex items-center justify-center relative overflow-visible mt-auto">
+            <div data-lucide="help-circle" class="w-6 h-6"></div>
+            <span
+                class="tooltip-text absolute left-full top-1/2 ml-1 -translate-y-1/2 bg-gray-700 text-sm px-4 py-2 rounded-lg shadow-lg opacity-0 group-hover:opacity-100 group-hover:translate-x-2 transition-all duration-300 whitespace-nowrap z-50">
+                Help
+            </span>
+        </button>
+    </aside>
+
+    <div class="flex-1 relative overflow-hidden">
+        <canvas id="cityCanvas" class="w-full h-full bg-gray-800 relative z-0"></canvas>
+
+        <div class="absolute top-4 right-4 flex gap-2 z-20">
+            <button id="toggleMetrics" class="bg-gray-800 hover:bg-gray-700 p-2 rounded-full shadow-lg">
+                <div data-lucide="bar-chart-3" class="w-6 h-6 text-white"></div>
+            </button>
+            <button id="toggleSettings" class="bg-gray-800 hover:bg-gray-700 p-2 rounded-full shadow-lg">
+                <div data-lucide="settings" class="w-6 h-6 text-white"></div>
+            </button>
+        </div>
+
+        <div id="metricsPanel"
+            class="hidden absolute top-16 right-4 bg-gray-900 p-4 rounded-lg shadow-lg w-64 space-y-4 z-20">
+            <div class="flex justify-between items-center mb-2">
+                <h2 class="text-lg font-semibold">Metrics</h2>
+                <button id="closeMetrics" class="text-gray-400 hover:text-white">
+                    <div data-lucide="x" class="w-5 h-5"></div>
+                </button>
+            </div>
+            <div class="flex gap-4">
+                <div class="flex-1 bg-gray-800 p-3 rounded-lg flex flex-col items-center shadow">
+                    <div class="w-6 h-6 text-blue-400 mb-2">
+                        <div data-lucide="gauge"></div>
+                    </div>
+                    <div id="avgSpeed" class="text-lg font-bold">0 km/h</div>
+                    <div class="text-xs text-gray-400">Avg Speed</div>
+                </div>
+                <div class="flex-1 bg-gray-800 p-3 rounded-lg flex flex-col items-center shadow">
+                    <div class="w-6 h-6 text-red-400 mb-2">
+                        <div data-lucide="traffic-cone"></div>
+                    </div>
+                    <div id="congestion" class="text-lg font-bold">0%</div>
+                    <div class="text-xs text-gray-400">Congestion</div>
+                </div>
+            </div>
+        </div>
+
+        <div id="settingsPanel"
+            class="hidden absolute top-16 right-4 bg-gray-900 p-4 rounded-lg shadow-lg w-64 space-y-4 z-20">
+            <div class="flex justify-between items-center mb-2">
+                <h2 class="text-lg font-semibold">Settings</h2>
+                <button id="closeSettings" class="text-gray-400 hover:text-white">
+                    <div data-lucide="x" class="w-5 h-5"></div>
+                </button>
+            </div>
+
+            <div>
+                <label class="text-sm">Traffic Light Timing</label>
+                <input type="range" id="lightTiming" min="5" max="30" value="10" class="w-full">
+                <div class="text-right text-xs" id="lightTimingValue">10s</div>
+            </div>
+
+            <div>
+                <label class="text-sm">Vehicle Spawn Rate</label>
+                <input type="range" id="spawnRate" min="10" max="100" value="30" class="w-full">
+                <div class="text-right text-xs" id="spawnRateValue">30/min</div>
+            </div>
+
+            <button id="togglePeak" class="w-full bg-yellow-600 hover:bg-yellow-700 px-3 py-2 rounded text-sm">
+                Peak Hours: OFF</button>
+        </div>
+
+    </div>
+
+    <div id="helpModal" class="fixed inset-0 bg-black bg-opacity-50 hidden flex items-center justify-center z-50">
+        <div class="bg-gray-900 p-6 rounded-2xl shadow-2xl w-96 relative transform scale-90 opacity-0 transition-all duration-300"
+            id="helpContent">
+            <button id="closeHelp" class="absolute top-3 right-3 text-gray-400 hover:text-white">
+                <div data-lucide="x" class="w-6 h-6"></div>
+            </button>
+            <h2 class="text-2xl font-bold mb-6 flex items-center gap-2">
+                <div data-lucide="help-circle" class="w-8 h-8 text-blue-400"></div>
+                Instructions
+            </h2>
+            <ul class="space-y-4 text-gray-300">
+                <li class="flex items-start gap-3">
+                    <span><b>Add Road:</b> Click and drag to draw roads.</span>
+                </li>
+                <li class="flex items-start gap-3">
+                    <span><b>Add Traffic Light:</b> Click on intersections to place traffic lights.</span>
+                </li>
+                <li class="flex items-start gap-3">
+                    <span><b>Erase:</b> Remove roads and traffic lights by clicking them.</span>
+                </li>
+                <li class="flex items-start gap-3">
+                    <span><b>Settings:</b> Adjust traffic light timings, spawn rates, and peak hour mode.</span>
+                </li>
+                <li class="flex items-start gap-3">
+                    <span><b>Metrics:</b> View real-time traffic statistics.</span>
+                </li>
+            </ul>
+        </div>
+    </div>
+
+    <script>
+        lucide.createIcons();
+
+        let peakHours = false;
+        let semaphores = [];
+        const cityCanvas = document.getElementById('cityCanvas');
+        const ctx = cityCanvas.getContext('2d');
+
+        window.addEventListener('resize', () => {
+            location.reload();
+        });
+        window.addEventListener('resize', resizeCanvas);
+
+        // Help Modal
+        const helpBtn = document.getElementById('helpBtn');
+        const helpModal = document.getElementById('helpModal');
+        const helpContent = document.getElementById('helpContent');
+        const closeHelp = document.getElementById('closeHelp');
+
+        helpBtn.addEventListener('click', () => {
+            helpModal.classList.remove('hidden');
+            setTimeout(() => {
+                helpContent.classList.remove('scale-90', 'opacity-0');
+                helpContent.classList.add('scale-100', 'opacity-100');
+            }, 10);
+        });
+
+        closeHelp.addEventListener('click', closeModal);
+        helpModal.addEventListener('click', (e) => {
+            if (e.target === helpModal) closeModal();
+        });
+
+        function closeModal() {
+            helpContent.classList.remove('scale-100', 'opacity-100');
+            helpContent.classList.add('scale-90', 'opacity-0');
+            setTimeout(() => {
+                helpModal.classList.add('hidden');
+            }, 300);
+        }
+
+        // Toggle Panels
+        const toggleMetricsBtn = document.getElementById('toggleMetrics');
+        const toggleSettingsBtn = document.getElementById('toggleSettings');
+        const metricsPanel = document.getElementById('metricsPanel');
+        const settingsPanel = document.getElementById('settingsPanel');
+        const closeMetricsBtn = document.getElementById('closeMetrics');
+        const closeSettingsBtn = document.getElementById('closeSettings');
+
+        toggleMetricsBtn.addEventListener('click', () => {
+            metricsPanel.classList.toggle('hidden');
+            settingsPanel.classList.add('hidden');
+        });
+
+        toggleSettingsBtn.addEventListener('click', () => {
+            settingsPanel.classList.toggle('hidden');
+            metricsPanel.classList.add('hidden');
+        });
+
+        closeMetricsBtn.addEventListener('click', () => {
+            metricsPanel.classList.add('hidden');
+        });
+
+        closeSettingsBtn.addEventListener('click', () => {
+            settingsPanel.classList.add('hidden');
+        });
+
+        const togglePeak = document.getElementById('togglePeak');
+
+        togglePeak.addEventListener('click', () => {
+            peakHours = !peakHours;
+            togglePeak.textContent = peakHours ? "Peak Hours: ON" : "Peak Hours: OFF";
+        });
+
+        // Sliders
+        const lightTiming = document.getElementById('lightTiming');
+        const lightTimingValue = document.getElementById('lightTimingValue');
+        const spawnRate = document.getElementById('spawnRate');
+        const spawnRateValue = document.getElementById('spawnRateValue');
+
+        lightTiming.addEventListener('input', () => {
+            lightTimingValue.textContent = lightTiming.value + "s";
+        });
+
+        spawnRate.addEventListener('input', () => {
+            spawnRateValue.textContent = spawnRate.value + "/min";
+        });
+
+        // Canvas Drawing
+        const gridSize = 40;
+        let tilesX = Math.floor((window.innerWidth - 64) / gridSize);
+        let tilesY = Math.floor(window.innerHeight / gridSize);
+        let tiles = Array.from({ length: tilesX }, () => Array(tilesY).fill(0));
+
+        let isDrawing = false;
+
+        function resizeCanvas() {
+            cityCanvas.width = window.innerWidth - 64;
+            cityCanvas.height = window.innerHeight;
+        }
+        window.addEventListener('resize', () => {
+            resizeCanvas();
+            recalculateTiles();
+        });
+        resizeCanvas();
+
+        function recalculateTiles() {
+            tilesX = Math.floor((window.innerWidth - 64) / gridSize);
+            tilesY = Math.floor(window.innerHeight / gridSize);
+            tiles = Array.from({ length: tilesX }, () => Array(tilesY).fill(0));
+        }
+
+        function drawGrid() {
+            ctx.strokeStyle = "#2d2d2d";
+            ctx.lineWidth = 1;
+            for (let x = 0; x < cityCanvas.width; x += gridSize) {
+                ctx.beginPath();
+                ctx.moveTo(x, 0);
+                ctx.lineTo(x, cityCanvas.height);
+                ctx.stroke();
+            }
+            for (let y = 0; y < cityCanvas.height; y += gridSize) {
+                ctx.beginPath();
+                ctx.moveTo(0, y);
+                ctx.lineTo(cityCanvas.width, y);
+                ctx.stroke();
+            }
+        }
+
+        function getTileConnections(x, y) {
+            return {
+                up: tiles[x]?.[y - 1] === 1,
+                down: tiles[x]?.[y + 1] === 1,
+                left: tiles[x - 1]?.[y] === 1,
+                right: tiles[x + 1]?.[y] === 1
+            };
+        }
+
+        function classifyTile(connections) {
+            const { up, down, left, right } = connections;
+            const total = [up, down, left, right].filter(Boolean).length;
+
+            if (total === 1) {
+                return "end";
+            }
+            if (total === 2) {
+                if ((up && down) || (left && right)) {
+                    return "straight";
+                } else {
+                    return "curve";
+                }
+            }
+            if (total === 3) {
+                return "t";
+            }
+            if (total === 4) {
+                return "cross";
+            }
+            return "solo";
+        }
+
+        function drawDashedLine(fromX, fromY, toX, toY, dashLength = 5, gapLength = 5) {
+            const deltaX = toX - fromX;
+            const deltaY = toY - fromY;
+            const distance = Math.hypot(deltaX, deltaY);
+            const dashCount = Math.floor(distance / (dashLength + gapLength));
+            const stepX = (deltaX / distance) * (dashLength + gapLength);
+            const stepY = (deltaY / distance) * (dashLength + gapLength);
+
+            for (let i = 0; i < dashCount; i++) {
+                const startX = fromX + i * stepX;
+                const startY = fromY + i * stepY;
+                const endX = startX + (deltaX / distance) * dashLength;
+                const endY = startY + (deltaY / distance) * dashLength;
+
+                ctx.beginPath();
+                ctx.moveTo(startX, startY);
+                ctx.lineTo(endX, endY);
+                ctx.stroke();
+            }
+        }
+
+        // Draw tiles based on connections
+        function drawTiles(x, y) {
+            const posX = x * gridSize;
+            const posY = y * gridSize;
+            const centerX = posX + gridSize / 2;
+            const centerY = posY + gridSize / 2;
+            const roadWidth = 20;
+            const laneLineWidth = 2;
+
+            const connections = getTileConnections(x, y);
+            const { up, down, left, right } = connections;
+            const connectionCount = [up, down, left, right].filter(Boolean).length;
+
+            ctx.lineCap = "round";
+
+            ctx.fillStyle = "#2c2c2c";
+
+            if (connectionCount >= 2) {
+                ctx.fillRect(centerX - roadWidth / 2, centerY - roadWidth / 2, roadWidth, roadWidth);
+            } else {
+                ctx.beginPath();
+                ctx.arc(centerX, centerY, roadWidth / 2, 0, Math.PI * 2);
+                ctx.fill();
+            }
+
+            if (up) {
+                ctx.fillRect(centerX - roadWidth / 2, posY, roadWidth, centerY - posY);
+            }
+            if (down) {
+                ctx.fillRect(centerX - roadWidth / 2, centerY, roadWidth, posY + gridSize - centerY);
+            }
+            if (left) {
+                ctx.fillRect(posX, centerY - roadWidth / 2, centerX - posX, roadWidth);
+            }
+            if (right) {
+                ctx.fillRect(centerX, centerY - roadWidth / 2, posX + gridSize - centerX, roadWidth);
+            }
+
+            ctx.strokeStyle = "white";
+            ctx.lineWidth = laneLineWidth;
+            ctx.beginPath();
+
+            if (!up && (y > 0)) {
+                ctx.moveTo(centerX - roadWidth / 2 + 2, posY);
+                ctx.lineTo(centerX + roadWidth / 2 - 2, posY);
+            }
+            if (!down && (y < tiles[0].length - 1)) {
+                ctx.moveTo(centerX - roadWidth / 2 + 2, posY + gridSize);
+                ctx.lineTo(centerX + roadWidth / 2 - 2, posY + gridSize);
+            }
+            if (!left && (x > 0)) {
+                ctx.moveTo(posX, centerY - roadWidth / 2 + 2);
+                ctx.lineTo(posX, centerY + roadWidth / 2 - 2);
+            }
+            if (!right && (x < tiles.length - 1)) {
+                ctx.moveTo(posX + gridSize, centerY - roadWidth / 2 + 2);
+                ctx.lineTo(posX + gridSize, centerY + roadWidth / 2 - 2);
+            }
+
+            ctx.stroke();
+
+            ctx.strokeStyle = "white";
+            ctx.lineWidth = 1;
+            if (up) {
+                drawDashedLine(centerX, centerY, centerX, posY);
+            }
+            if (down) {
+                drawDashedLine(centerX, centerY, centerX, posY + gridSize);
+            }
+            if (left) {
+                drawDashedLine(centerX, centerY, posX, centerY);
+            }
+            if (right) {
+                drawDashedLine(centerX, centerY, posX + gridSize, centerY);
+            }
+        }
+
+        function drawSemaphores() {
+            semaphores.forEach(({ x, y, state }) => {
+                const posX = x * gridSize;
+                const posY = y * gridSize;
+                const centerX = posX + gridSize / 2;
+                const centerY = posY + gridSize / 2;
+
+                ctx.fillStyle = (state === "green") ? "limegreen" : "red";
+                ctx.beginPath();
+                ctx.arc(centerX, centerY, 6, 0, Math.PI * 2);
+                ctx.fill();
+            });
+        }
+
+        // Main render loop
+        function render() {
+            ctx.fillStyle = "#1a1a1a";
+            ctx.fillRect(0, 0, cityCanvas.width, cityCanvas.height);
+
+            drawGrid();
+
+            for (let x = 0; x < tiles.length; x++) {
+                for (let y = 0; y < tiles[0].length; y++) {
+                    if (tiles[x][y] === 1) {
+                        drawTiles(x, y);
+                    }
+                }
+            }
+
+            updateSemaphoreState();
+            drawSemaphores();
+
+            requestAnimationFrame(render);
+        }
+        render();
+
+        function updateSemaphoreState() {
+            const now = performance.now();
+            const interval = parseInt(lightTiming.value) * 1000;
+
+            semaphores.forEach(semaphore => {
+                if (now - semaphore.lastSwitchTime > interval) {
+                    semaphore.state = (semaphore.state === "green") ? "red" : "green";
+                    semaphore.lastSwitchTime = now;
+                }
+            });
+        }
+
+        // Interaction with the canvas
+        cityCanvas.addEventListener('mousedown', (e) => {
+            isDrawing = true;
+            handlePaint(e);
+        });
+
+        cityCanvas.addEventListener('mousemove', (e) => {
+            if (isDrawing) {
+                handlePaint(e);
+            }
+        });
+
+        cityCanvas.addEventListener('mouseup', () => {
+            isDrawing = false;
+        });
+
+        cityCanvas.addEventListener('mouseleave', () => {
+            isDrawing = false;
+        });
+
+        cityCanvas.addEventListener('touchstart', (e) => {
+            e.preventDefault();
+            isDrawing = true;
+            handlePaint(e.touches[0]);
+        });
+
+        cityCanvas.addEventListener('touchmove', (e) => {
+            e.preventDefault();
+            if (isDrawing) {
+                handlePaint(e.touches[0]);
+            }
+        });
+
+        cityCanvas.addEventListener('touchend', () => {
+            isDrawing = false;
+        });
+
+        cityCanvas.addEventListener('touchcancel', () => {
+            isDrawing = false;
+        });
+
+        // Road Painting
+        let currentMode = "road";
+
+        const roadBtn = document.getElementById('roadBtn');
+        const trafficLightBtn = document.getElementById('trafficLightBtn');
+        const eraserBtn = document.getElementById('eraserBtn');
+
+        const sidebarButtons = document.querySelectorAll('.sidebar-btn');
+
+        roadBtn.addEventListener('click', () => {
+            currentMode = "road";
+            setActiveButton(roadBtn);
+        });
+
+        trafficLightBtn.addEventListener('click', () => {
+            currentMode = "traffic-light";
+            setActiveButton(trafficLightBtn);
+        });
+
+        eraserBtn.addEventListener('click', () => {
+            currentMode = "erase";
+            setActiveButton(eraserBtn);
+        });
+
+        function setActiveButton(activeButton) {
+            sidebarButtons.forEach(btn => {
+                btn.classList.remove('bg-blue-700', 'scale-110', 'shadow-md');
+                btn.classList.add('bg-gray-900');
+            });
+            activeButton.classList.remove('bg-gray-900');
+            activeButton.classList.add('bg-blue-700', 'scale-110', 'shadow-md');
+        }
+
+        setActiveButton(roadBtn);
+
+        // Function to handle painting on the canvas
+        function handlePaint(e) {
+            const rect = cityCanvas.getBoundingClientRect();
+            const mouseX = e.clientX - rect.left;
+            const mouseY = e.clientY - rect.top;
+
+            const gridX = Math.floor(mouseX / gridSize);
+            const gridY = Math.floor(mouseY / gridSize);
+
+            if (tiles[gridX] && tiles[gridX][gridY] !== undefined) {
+                if (currentMode === "road") {
+                    tiles[gridX][gridY] = 1;
+                } else if (currentMode === "traffic-light") {
+                    const connections = getTileConnections(gridX, gridY);
+                    const type = classifyTile(connections);
+
+                    if (type === "t" || type === "cross") {
+                        const index = semaphores.findIndex(p => p.x === gridX && p.y === gridY);
+                        if (index === -1) {
+                            semaphores.push({
+                                x: gridX,
+                                y: gridY,
+                                state: "green",
+                                lastSwitchTime: performance.now()
+                            });
+                        } else {
+                            semaphores.splice(index, 1);
+                        }
+                    } else {
+                        showToast("Only intersections can have traffic lights.", "alert-triangle");
+                    }
+                } else if (currentMode === "erase") {
+                    tiles[gridX][gridY] = 0;
+                    semaphores = semaphores.filter(p => !(p.x === gridX && p.y === gridY));
+                }
+            }
+        }
+
+
+        function showToast(message, icon = "alert-triangle") {
+            const toast = document.createElement('div');
+            toast.className = `
+        fixed bottom-8 left-1/2 transform -translate-x-1/2 
+        bg-gray-800 text-white px-4 py-3 rounded-lg shadow-2xl z-50 
+        flex items-center gap-3 text-sm opacity-0 translate-y-4 transition-all duration-300
+    `;
+
+            const iconDiv = document.createElement('div');
+            iconDiv.setAttribute('data-lucide', icon);
+            iconDiv.className = 'w-5 h-5 text-yellow-400';
+            toast.appendChild(iconDiv);
+
+            const messageSpan = document.createElement('span');
+            messageSpan.textContent = message;
+            toast.appendChild(messageSpan);
+
+            document.body.appendChild(toast);
+
+            lucide.createIcons();
+
+            requestAnimationFrame(() => {
+                toast.classList.remove('opacity-0', 'translate-y-4');
+            });
+
+            setTimeout(() => {
+                toast.classList.add('opacity-0', 'translate-y-4');
+            }, 2200);
+
+            setTimeout(() => {
+                document.body.removeChild(toast);
+            }, 2700);
+        }
+
+        function countTrafficElements() {
+            let intersections = 0;
+            let trafficLights = semaphores.length;
+            let roads = 0;
+
+            for (let x = 0; x < tiles.length; x++) {
+                for (let y = 0; y < tiles[0].length; y++) {
+                    if (tiles[x][y] === 1) {
+                        roads++;
+                        const conn = getTileConnections(x, y);
+                        const total = Object.values(conn).filter(Boolean).length;
+                        if (total >= 3) intersections++;
+                    }
+                }
+            }
+            return { intersections, trafficLights, roads };
+        }
+
+        // Update metrics every 500ms
+        function updateMetrics() {
+            const { intersections, trafficLights, roads } = countTrafficElements();
+
+            if (roads === 0) {
+                document.getElementById('avgSpeed').textContent = `0 km/h`;
+                document.getElementById('congestion').textContent = `0%`;
+                return;
+            }
+
+            const lightTime = parseInt(lightTiming.value);
+            const spawn = parseInt(spawnRate.value);
+
+            let effectiveSpawnRate = peakHours ? spawn * 1.5 : spawn;
+            let vehiclesOnMap = (effectiveSpawnRate / 60) * lightTime * intersections;
+
+            let congestion = (vehiclesOnMap / (tilesX * tilesY)) * 200;
+            congestion += peakHours ? 10 : 0;
+            congestion = Math.min(congestion, 100);
+
+            let avgSpeed = 60 - (congestion * 0.4) - (lightTime * 0.5);
+            avgSpeed = Math.max(avgSpeed, 5);
+
+            document.getElementById('avgSpeed').textContent = `${Math.round(avgSpeed)} km/h`;
+            document.getElementById('congestion').textContent = `${Math.round(congestion)}%`;
+        }
+
+        setInterval(updateMetrics, 500);
+    </script>
+</body>
+
+</html>
